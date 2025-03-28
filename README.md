@@ -35,10 +35,18 @@ Useful resources include:
     - https://docs.pipecat.ai/server/services/video/simli
     - https://docs.pipecat.ai/server/services/video/tavus
     - Here is how these folks integrated heygen for avatar video animation generation (which is not directly integrated in pipecat) and may be worth taking inspiration for our Ready player me integration: https://github.com/HeyGen-Official/pipecat-realtime-demo/blob/main/heygen_video_service.py 
+    - https://docs.readyplayer.me/ready-player-me/api-reference/avatars/morph-targets/apple-arkit
+    - https://docs.readyplayer.me/ready-player-me/api-reference/avatars/morph-targets/oculus-ovr-libsync
+    - https://readyplayer.me/developers/video-tutorials/face-animations-generated-from-audio-with-oculus-lipsync
     - https://community.openai.com/t/how-to-implement-real-time-lip-sync-of-avatar-chatbot-powered-by-gpt/534035/10
 - [] Experiment and eventually integrate pipecat flows (https://github.com/pipecat-ai/pipecat-flows)
 - [] [LOW PRIORITY FOR NOW] Make the server code more modular (see https://docs.pipecat.ai/guides/features/openai-audio-models-and-apis as an example) 
 - [] [LOWER PRIORITY FOR NOW] Integrate multimodal models (including video). I have tried with Gemini multimodal realtime API is and CRAZY!!!!! The code we have should be a good start for this and we can also follow this guide (https://docs.pipecat.ai/guides/features/gemini-multimodal-live)
+- [] animations (https://readyplayerme.github.io/visage/?path=/docs/components-avatar--docs)
+    - [] play with camera settings
+    - [] add some more body animations
+    - [] [CRITICAL] VISEMES
+    - [] play with M and F animations
 
 
 
