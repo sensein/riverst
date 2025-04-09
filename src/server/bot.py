@@ -11,6 +11,7 @@ import aiohttp
 from dotenv import load_dotenv
 from loguru import logger
 from runner import configure
+from pipecat.audio.filters.noisereduce_filter import NoisereduceFilter
 from pipecat.audio.vad.silero import SileroVADAnalyzer
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.runner import PipelineRunner
@@ -27,6 +28,9 @@ import wave
 import datetime
 import aiofiles
 import uuid
+from pipecat.adapters.schemas.function_schema import FunctionSchema
+from pipecat.adapters.schemas.tools_schema import ToolsSchema
+from pipecat.processors.frameworks.rtvi import RTVIServerMessageFrame
 
 async def save_audio_file(audio: bytes, filename: str, sample_rate: int, num_channels: int):
     """Save audio data to a WAV file."""
@@ -63,6 +67,7 @@ async def main():
             DailyParams(
                 audio_out_enabled=True,
                 camera_out_enabled=False,
+                audio_in_filter=NoisereduceFilter(),
                 vad_enabled=True,
                 vad_audio_passthrough=True,
                 vad_analyzer=SileroVADAnalyzer(),
@@ -70,10 +75,29 @@ async def main():
             ),
         )
 
+        trigger_animation_function = FunctionSchema(
+            name="trigger_animation",
+            description="Trigger an avatar animation",
+            properties={
+                "animation_id": {
+                    "type": "string",
+                    "enum": ["dance", "none"],
+                    "description": "Type of animation to play"
+                },
+                "timing": {
+                    "type": "string",
+                    "enum": ["start"],
+                    "description": "When to play the animation"
+                }
+            },
+            required=["animation_id", "timing"]
+        )
+        tools = ToolsSchema(standard_tools=[trigger_animation_function])
+
         messages = [
             {
                 "role": "system",
-                "content": "You are Chatbot, a friendly, helpful robot. Your name is KIVA. Your goal is to teach to 5-graders new vocabulary. Your output will be converted to audio so don't include special characters in your answers. Respond to what the user said in a creative and helpful way, but keep your responses brief. Start by introducing yourself and ask if they want to learn a new word."
+                "content": "You are Voicebot, a friendly, helpful robot. Your name is KIVA. Your goal is to teach to 5-graders new vocabulary. Your output will be converted to audio so don't include special characters in your answers. Respond to what the user said in a creative and helpful way, but keep your responses brief. Start by introducing yourself and ask if they want to learn a new word. When the user says the right definition or example, congratulate and (sometimes) dance."
             },
         ]
 
@@ -112,7 +136,10 @@ async def main():
 
         # Set up conversation context and management
         # The context_aggregator will automatically collect conversation context
-        context = OpenAILLMContext(messages)
+        context = OpenAILLMContext(
+            messages=messages,
+            tools=tools
+        )
         context_aggregator = llm.create_context_aggregator(context)
 
         #
@@ -122,6 +149,27 @@ async def main():
 
         # Create an audio buffer processor
         audiobuffer = AudioBufferProcessor(enable_turn_audio=True)
+
+
+        async def handle_animation(function_name, tool_call_id, args, llm, context, result_callback):
+            animation_id = args.get("animation_id", "none")
+            timing = args.get("timing", "start")
+            print(f"Triggering animation: {animation_id} at {timing}")
+            
+            if animation_id != "none":
+                # send to avatar client (e.g., via websocket)
+                frame = RTVIServerMessageFrame(
+                    data={
+                        "type": "animation-event",
+                        "payload": {"animation_id": animation_id, "timing": timing},
+                    }
+                )
+                await rtvi.push_frame(frame)
+            
+            await result_callback({"status": "animation_triggered"})
+            
+        llm.register_function("trigger_animation", handle_animation)
+
 
         if tts:
             pipeline = Pipeline(

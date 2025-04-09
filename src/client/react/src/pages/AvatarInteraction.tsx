@@ -64,6 +64,23 @@ function BotVideo() {
     }, [stopRandomVisemeLoop])
   );
 
+  useRTVIClientEvent(
+    RTVIEvent.ServerMessage,
+    useCallback(
+      (data: any) => {
+        // Only log final transcripts
+        if (data.type === 'animation-event') {
+          log(`[QQQ] Animation event: ${data.payload.animation_id} at ${data.payload.timing}`);
+          if (data.payload.animation_id === 'dance') {
+            triggerDance();
+          }
+        }
+      },
+      [log]
+    )
+  );
+
+
   /*
   useRTVIClientEvent(
     RTVIEvent.ServerMessage,
@@ -113,7 +130,7 @@ function BotVideo() {
         />
 
         <div style={{ position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)' }}>
-          <button onClick={triggerDance}>Dance</button>
+          <button onClick={triggerDance}>Dance</button> 
         </div>
       </div>
     </div>
