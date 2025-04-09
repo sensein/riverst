@@ -1,9 +1,4 @@
-#
-# Copyright (c) 2024–2025, Daily
-#
-# SPDX-License-Identifier: BSD 2-Clause License
-#
-
+"""This module provides functions for configuring the Daily room and Daily REST helper."""
 import argparse
 import os
 

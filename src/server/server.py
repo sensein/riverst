@@ -1,25 +1,4 @@
-#
-# Copyright (c) 2024–2025, Daily
-#
-# SPDX-License-Identifier: BSD 2-Clause License
-#
-
-"""RTVI Bot Server Implementation.
-
-This FastAPI server manages RTVI bot instances and provides endpoints for both
-direct browser access and RTVI client connections. It handles:
-- Creating Daily rooms
-- Managing bot processes
-- Providing connection credentials
-- Monitoring bot status
-
-Requirements:
-- Daily API key (set in .env file)
-- Python 3.10+
-- FastAPI
-- Running bot implementation
-"""
-
+"""This module includes the riverst FastAPI server."""
 import argparse
 import os
 import subprocess
@@ -56,20 +35,6 @@ def cleanup():
         proc = entry[0]
         proc.terminate()
         proc.wait()
-
-
-def get_bot_file():
-    bot_implementation = os.getenv("BOT_IMPLEMENTATION", "openai").lower().strip()
-    # If blank or None, default to openai
-    if not bot_implementation:
-        bot_implementation = "openai_realtime_beta"
-    if bot_implementation not in ["openai", "openai_realtime_beta", "gemini"]:
-        raise ValueError(
-            f"Invalid BOT_IMPLEMENTATION: {bot_implementation}. Must be 'openai', 'openai_realtime_beta', or 'gemini'"
-        )
-    print("Running it with bot implementation: ", bot_implementation)
-    return f"bot-{bot_implementation}"
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -150,7 +115,7 @@ async def start_agent(request: Request):
 
     # Spawn a new bot process
     try:
-        bot_file = get_bot_file()
+        bot_file = "bot"
         proc = subprocess.Popen(
             [f"python3 -m {bot_file} -u {room_url} -t {token}"],
             shell=True,
@@ -182,7 +147,7 @@ async def rtvi_connect(request: Request) -> Dict[Any, Any]:
 
     # Start the bot process
     try:
-        bot_file = get_bot_file()
+        bot_file = "bot"
         proc = subprocess.Popen(
             [f"python3 -m {bot_file} -u {room_url} -t {token}"],
             shell=True,
@@ -220,6 +185,33 @@ def get_status(pid: int):
     # Check the status of the subprocess
     status = "running" if proc[0].poll() is None else "finished"
     return JSONResponse({"bot_id": pid, "status": status})
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint to verify server status.
+
+    Returns:
+        JSONResponse: A simple status message
+    """
+    print("Health check endpoint called")
+    return JSONResponse({"status": "ok"})
+
+stored_avatar_url = 'https://models.readyplayer.me/67eaadeeffcddc994a40ed15.glb?morphTargets=mouthOpen,Oculus Visemes' 
+
+@app.post("/avatar")
+async def save_avatar(request: Request):
+    data = await request.json()
+    global stored_avatar_url
+    stored_avatar_url = data.get("avatar_url")
+    print("Avatar URL received and saved:", stored_avatar_url)
+    return JSONResponse({"status": "ok", "stored_avatar_url": stored_avatar_url})
+
+@app.get("/avatar")
+async def get_avatar():
+    """Returns the currently stored avatar URL."""
+    if stored_avatar_url:
+        return JSONResponse({"avatar_url": stored_avatar_url})
+    return JSONResponse({"avatar_url": None})
 
 
 if __name__ == "__main__":
