@@ -11,7 +11,7 @@ import './DebugDisplay.css';
 
 export function DebugDisplay() {
   const debugLogRef = useRef<HTMLDivElement>(null);
-  const client = useRTVIClient();
+  // const client = useRTVIClient();
 
   const log = useCallback((message: string) => {
     if (!debugLogRef.current) return;
@@ -31,6 +31,7 @@ export function DebugDisplay() {
   }, []);
 
   // Log transport state changes
+  /*
   useRTVIClientEvent(
     RTVIEvent.TransportStateChanged,
     useCallback(
@@ -40,7 +41,9 @@ export function DebugDisplay() {
       [log]
     )
   );
+  /*
 
+  /*
   // Log bot connection events
   useRTVIClientEvent(
     RTVIEvent.BotConnected,
@@ -51,7 +54,9 @@ export function DebugDisplay() {
       [log]
     )
   );
+  */
 
+  /*
   useRTVIClientEvent(
     RTVIEvent.BotDisconnected,
     useCallback(
@@ -61,7 +66,9 @@ export function DebugDisplay() {
       [log]
     )
   );
+  */
 
+  /*
   // Log track events
   useRTVIClientEvent(
     RTVIEvent.TrackStarted,
@@ -74,7 +81,9 @@ export function DebugDisplay() {
       [log]
     )
   );
+  */
 
+  /*
   useRTVIClientEvent(
     RTVIEvent.TrackedStopped,
     useCallback(
@@ -86,7 +95,9 @@ export function DebugDisplay() {
       [log]
     )
   );
+  */
 
+  /*
   // Log bot ready state and check tracks
   useRTVIClientEvent(
     RTVIEvent.BotReady,
@@ -94,7 +105,6 @@ export function DebugDisplay() {
       log(`Bot ready`);
 
       if (!client) return;
-
       const tracks = client.tracks();
       log(
         `Available tracks: ${JSON.stringify({
@@ -110,6 +120,7 @@ export function DebugDisplay() {
       );
     }, [client, log])
   );
+  */
 
   // Log transcripts
   useRTVIClientEvent(
@@ -137,7 +148,7 @@ export function DebugDisplay() {
 
   return (
     <div className="debug-panel">
-      <h3>Debug Info</h3>
+      <h3>Subtitles</h3>
       <div ref={debugLogRef} className="debug-log" />
     </div>
   );
