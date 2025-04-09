@@ -1,8 +1,10 @@
 /*
+  Notes for lip sync:
     - https://docs.readyplayer.me/ready-player-me/api-reference/avatars/morph-targets/apple-arkit
     - https://docs.readyplayer.me/ready-player-me/api-reference/avatars/morph-targets/oculus-ovr-libsync
     - https://readyplayer.me/developers/video-tutorials/face-animations-generated-from-audio-with-oculus-lipsync
     - https://community.openai.com/t/how-to-implement-real-time-lip-sync-of-avatar-chatbot-powered-by-gpt/534035/10
+    - https://github.com/pipecat-ai/pipecat/issues/1516
 */
 
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
@@ -32,7 +34,7 @@ const HEADSHOT_CAMERA_SETTINGS: CameraSettings = {
   fov: 40,
 };
 
-const MAX_IDLE_ANIMATIONS = 10;
+const MAX_IDLE_ANIMATIONS = 6;
 
 
 // Blend shapes that trigger teeth movement
@@ -168,7 +170,7 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
     const idleNumber = String(currentIdleRef.current).padStart(3, '0');
     const idleUrl = `/animations/idle/F_Standing_Idle_${idleNumber}.glb`;
 
-    console.log('Loading idle animation:', idleNumber);
+    // console.log('Loading idle animation:', idleNumber);
 
     new GLTFLoader().load(idleUrl, (gltf) => {
       if (!mixerRef.current) return;
@@ -196,7 +198,7 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
 
   const playBodyAnimation = useCallback((type: string) => {
     if (!mixerRef.current) return;
-    console.log("Loading body animation: ", type);
+    // console.log("Loading body animation: ", type);
 
     let animationUrl = '';
     switch (type) {

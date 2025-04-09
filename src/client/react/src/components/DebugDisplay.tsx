@@ -146,6 +146,19 @@ export function DebugDisplay() {
     )
   );
 
+  useRTVIClientEvent(
+    RTVIEvent.ServerMessage,
+    useCallback(
+      (data) => {
+        // Only log final transcripts
+        if (data.type === 'animation-event') {
+          log(`Animation event: ${data.payload.animation_id} at ${data.payload.timing}`);
+        }
+      },
+      [log]
+    )
+  );
+
   return (
     <div className="debug-panel">
       <h3>Subtitles</h3>

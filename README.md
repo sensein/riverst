@@ -27,21 +27,22 @@ The code has a client-server architecture. You find instructions on how to run t
 
 
 ## TODO:
-- AvatarImplement a way for Realtime to output body motions (Fabio)
+- [x] AvatarImplement a way for Realtime to output body motions (Fabio)
     - https://platform.openai.com/docs/guides/realtime-conversations
     - https://github.com/pipecat-ai/pipecat/blob/main/src/pipecat/services/openai_realtime_beta/openai.py
     - https://github.com/pipecat-ai/pipecat/blob/main/src/pipecat/services/openai_realtime_beta/events.py
-    - add some more animations
+    - add some more animations (in the future)
 - [x] Getting visemes more closely aligned with speech (Fabio)
-- more structured conversation flows (pipecat flows) (Bruce)
-- summarizing sessions, saving (we save already the audio, but would be great if we also save transcripts and video). RAG model (Bruce)
-- Find better models (opensource) (Fabio)
-- speaker verification (multi-user sessions)
+- [ ] Find better models and services (Fabio)
+    - speaker verification (multi-user sessions)
+    - going opensource
+- [ ] more structured conversation flows (pipecat flows) (Bruce)
+- [ ] summarizing sessions, saving (we save already the audio, but would be great if we also save transcripts and video). RAG model (Bruce)
 
-- incorporating video (one line with google gemini, but doesn't work very well)
-- reducing latency
-- understanding emotions, speech emotion detection
-- animations (https://readyplayerme.github.io/visage/?path=/docs/components-avatar--docs)
+- [ ] incorporating video (one line with google gemini, but doesn't work very well)
+- [ ] reducing latency
+- [ ] understanding emotions, speech emotion detection
+- [ ] animations (https://readyplayerme.github.io/visage/?path=/docs/components-avatar--docs)
 
 ## Notes:
 - https://www.sesame.com/research/crossing_the_uncanny_valley_of_voice#demo

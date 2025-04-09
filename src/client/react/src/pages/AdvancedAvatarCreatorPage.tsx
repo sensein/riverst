@@ -9,11 +9,11 @@ const AdvancedAvatarCreatorPage = () => {
 
   const handleAvatarCreated = async (url: string) => {
     setAvatarUrl(url);
-    console.log('✅ Avatar created:', url);
+    // console.log('Avatar created:', url);
     try {
       await axios.post('http://localhost:7860/avatar', { avatar_url: url });
     } catch (error) {
-      console.error('❌ Failed to save avatar to server:', error);
+      console.error('Failed to save avatar to server:', error);
     }
     navigate('/');
   };
