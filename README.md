@@ -33,16 +33,17 @@ The code has a client-server architecture. You find instructions on how to run t
     - https://github.com/pipecat-ai/pipecat/blob/main/src/pipecat/services/openai_realtime_beta/events.py
     - add some more animations (in the future)
 - [x] Getting visemes more closely aligned with speech (Fabio)
-- [ ] Find better models and services (Fabio)
-    - speaker verification (multi-user sessions)
-    - going opensource
+- [ ] going opensource (Fabio)
+    - [x] models (we have llama3.2 as llm and piper as tts for now)
+    - [ ] infrastructure
 - [ ] more structured conversation flows (pipecat flows) (Bruce)
 - [ ] summarizing sessions, saving (we save already the audio, but would be great if we also save transcripts and video). RAG model (Bruce)
 
 - [ ] incorporating video (one line with google gemini, but doesn't work very well)
-- [ ] reducing latency
 - [ ] understanding emotions, speech emotion detection
-- [ ] animations (https://readyplayerme.github.io/visage/?path=/docs/components-avatar--docs)
+- [ ] speaker verification (multi-user sessions) - is it just about looking for a good model that can do it?
+- [ ] adding more animations (https://readyplayerme.github.io/visage/?path=/docs/components-avatar--docs)
+- [ ] cleaning up the code
 
 ## Notes:
 - https://www.sesame.com/research/crossing_the_uncanny_valley_of_voice#demo
