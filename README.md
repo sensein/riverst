@@ -27,11 +27,11 @@ The code has a client-server architecture. You find instructions on how to run t
 
 
 ## TODO:
-- [x] AvatarImplement a way for Realtime to output body motions (Fabio)
+- [x] Implement a way for Realtime to output body motions (Fabio)
     - https://platform.openai.com/docs/guides/realtime-conversations
     - https://github.com/pipecat-ai/pipecat/blob/main/src/pipecat/services/openai_realtime_beta/openai.py
     - https://github.com/pipecat-ai/pipecat/blob/main/src/pipecat/services/openai_realtime_beta/events.py
-    - add some more animations (in the future)
+    - add some more animations
 - [x] Getting visemes more closely aligned with speech (Fabio)
 - [ ] going opensource (Fabio)
     - [x] models (we have llama3.2 as llm and piper as tts for now)
