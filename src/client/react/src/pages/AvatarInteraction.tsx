@@ -73,6 +73,12 @@ function BotVideo() {
           log(`[QQQ] Animation event: ${data.payload.animation_id} at ${data.payload.timing}`);
           if (data.payload.animation_id === 'dance') {
             triggerDance();
+          } else if (data.payload.animation_id === 'i_dont_know') {
+            triggerIDontKnow();
+          } else if (data.payload.animation_id === 'wave') {
+            triggerWave();
+          } else {
+            log(`[QQQ] Unknown animation event: ${data.payload.animation_id}`);
           }
         }
       },
@@ -109,17 +115,14 @@ function BotVideo() {
   }, []);
 
   const triggerDance = () => setAnimationTrigger('dance');
+  const triggerIDontKnow = () => setAnimationTrigger('i_dont_know');
+  const triggerWave = () => setAnimationTrigger('wave');
 
   if (!avatarUrl) return <div>Loading avatar...</div>;
 
   return (
     <div className="bot-container">
       <div style={{ width: '800px', height: '600px', position: 'relative' }}>
-        <div style={{ position: 'absolute', top: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 10 }}>
-          <button onClick={() => setCameraType('full_body')}>Full Body</button>
-          <button onClick={() => setCameraType('half_body')}>Half Body</button>
-          <button onClick={() => setCameraType('headshot')}>Headshot</button>
-        </div>
 
         <AvatarRenderer
           avatarUrl={avatarUrl}
@@ -129,9 +132,19 @@ function BotVideo() {
           currentViseme={currentViseme}
         />
 
+        <div style={{ position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 10 }}>
+          <button onClick={() => setCameraType('full_body')}>Full Body</button>
+          <button onClick={() => setCameraType('half_body')}>Half Body</button>
+          <button onClick={() => setCameraType('headshot')}>Headshot</button>
+        </div>
+
+        {/*
         <div style={{ position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)' }}>
           <button onClick={triggerDance}>Dance</button> 
+          <button onClick={triggerIDontKnow}>I don't know</button> 
+          <button onClick={triggerWave}>Wave</button>
         </div>
+        */}
       </div>
     </div>
   );

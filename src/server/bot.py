@@ -131,9 +131,9 @@ async def main():
         tools = ToolsSchema(standard_tools=[
             FunctionSchema(
                 name="trigger_animation",
-                description="Trigger an avatar animation",
+                description="Trigger an avatar animation (only one animation at a time).",
                 properties={
-                    "animation_id": {"type": "string", "enum": ["dance", "none"]},
+                    "animation_id": {"type": "string", "enum": ["dance", "wave", "i_dont_know", "none"]},
                     "timing": {"type": "string", "enum": ["start"]},
                 },
                 required=["animation_id", "timing"],
@@ -145,10 +145,15 @@ async def main():
                 "role": "system",
                 "content": (
                     "You are Voicebot, a friendly, helpful robot. Your name is KIVA. Your goal is to teach to 5-graders new vocabulary." 
+                    "Vocabulary should be from the book of Harry Potter (e.g., philosopher). "
                     "Your output will be converted to audio so don't include special characters or emojis in your answers. " 
-                    "Respond to what the user said in a creative and helpful way, but keep your responses brief. " 
+                    "Respond to what the user said in a creative and helpful way, but keep your responses brief and concise. " 
                     "Start by introducing yourself and ask if they want to learn a new word. " 
                     "When the user says the right definition or example, congratulate and (sometimes) dance."
+                    "When the user joins the room say hi and (sometimes) wave with the hand. "
+                    "When you don't know something, you can do the i don't know animation. "
+                    "Never say aloud the animation you are going to do. "
+                    "You can run only one animation at a time. "
                 ),
             },
         ]

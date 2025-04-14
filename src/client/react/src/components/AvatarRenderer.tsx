@@ -124,6 +124,24 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
     }
   }, [cameraType]);
 
+  function sanitizeAnimationClip(
+    clip: THREE.AnimationClip,
+    avatar: THREE.Group
+  ): THREE.AnimationClip {
+    const existingBoneNames = new Set<string>();
+    avatar.traverse((obj) => {
+      if (obj.name) existingBoneNames.add(obj.name);
+    });
+  
+    const filteredTracks = clip.tracks.filter((track) => {
+      const nodeName = track.name.split('.')[0];
+      return existingBoneNames.has(nodeName);
+    });
+  
+    return new THREE.AnimationClip(clip.name, clip.duration, filteredTracks);
+  }
+  
+
   useEffect(() => {
     new GLTFLoader().load(avatarUrl, (gltf) => {
       const scene = gltf.scene;
@@ -170,7 +188,7 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
     const idleNumber = String(currentIdleRef.current).padStart(3, '0');
     const idleUrl = `/animations/idle/F_Standing_Idle_${idleNumber}.glb`;
 
-    // console.log('Loading idle animation:', idleNumber);
+    console.log('Loading idle animation:', idleNumber);
 
     new GLTFLoader().load(idleUrl, (gltf) => {
       if (!mixerRef.current) return;
@@ -198,19 +216,27 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
 
   const playBodyAnimation = useCallback((type: string) => {
     if (!mixerRef.current) return;
-    // console.log("Loading body animation: ", type);
+    console.log("Loading body animation: ", type);
 
     let animationUrl = '';
     switch (type) {
       case 'dance':
         animationUrl = '/animations/dance/F_Dances_001.glb';
         break;
+      case 'wave':
+        animationUrl = '/animations/wave/M_Standing_Expressions_001.glb';
+        break;
+      case 'i_dont_know':
+        animationUrl = '/animations/i_dont_know/M_Standing_Expressions_005.glb';
+        break;
       default:
         console.warn('Animation type not found:', type);
         return;
+
+      // more available animations: https://github.com/readyplayerme/animation-library/tree/master
     }
 
-    new GLTFLoader().load(animationUrl, (gltf) => {
+    new GLTFLoader().load(animationUrl, (gltf) => {    
       const clip = gltf.animations[0];
       const newBodyAction = mixerRef.current!.clipAction(clip);
 
@@ -317,11 +343,12 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
         </mesh>
       )}
 
-      {/* Ground plane with soft white material */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1, 0]} receiveShadow>
-        <planeGeometry args={[10, 10]} />
-        <meshStandardMaterial color="#ffffff" />
-      </mesh>
+      {/* Ground plane with soft white material 
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1, 0]} receiveShadow>
+          <planeGeometry args={[10, 10]} />
+          <meshStandardMaterial color="#ffffff" />
+        </mesh>
+      */}
 
       {/* 
         {currentViseme !== null && (
