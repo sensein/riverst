@@ -122,25 +122,7 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
       default:
         return FULL_BODY_CAMERA_SETTINGS;
     }
-  }, [cameraType]);
-
-  function sanitizeAnimationClip(
-    clip: THREE.AnimationClip,
-    avatar: THREE.Group
-  ): THREE.AnimationClip {
-    const existingBoneNames = new Set<string>();
-    avatar.traverse((obj) => {
-      if (obj.name) existingBoneNames.add(obj.name);
-    });
-  
-    const filteredTracks = clip.tracks.filter((track) => {
-      const nodeName = track.name.split('.')[0];
-      return existingBoneNames.has(nodeName);
-    });
-  
-    return new THREE.AnimationClip(clip.name, clip.duration, filteredTracks);
-  }
-  
+  }, [cameraType]);  
 
   useEffect(() => {
     new GLTFLoader().load(avatarUrl, (gltf) => {
