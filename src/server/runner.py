@@ -24,7 +24,6 @@ async def configure(aiohttp_session: aiohttp.ClientSession):
     args, unknown = parser.parse_known_args()
 
     url = args.url or os.getenv("DAILY_SAMPLE_ROOM_URL")
-    print("AAAAAA:, ", url)
 
     key = args.apikey or os.getenv("DAILY_API_KEY")
 

@@ -34,6 +34,8 @@ from pipecat.processors.audio.audio_buffer_processor import AudioBufferProcessor
 from pipecat.transports.services.daily import DailyTransport, DailyParams
 from pipecat.adapters.schemas.function_schema import FunctionSchema
 from pipecat.adapters.schemas.tools_schema import ToolsSchema
+from pipecat.frames.frames import BotSpeakingFrame, LLMFullResponseEndFrame, TTSSpeakFrame, LLMMessagesFrame
+import time
 
 
 async def save_audio_file(audio: bytes, filename: str, sample_rate: int, num_channels: int):
@@ -106,6 +108,11 @@ async def main():
     load_dotenv(override=True)
     logger.remove()
     logger.add(sys.stderr, level="DEBUG")
+
+    last_activity_time = time.time()  # Initialize last activity time (global variable). 
+    # This is used to track the last time anyone in the session spoke. 
+    # If no one has spoken for X seconds (X is 15 seconds by default), the bot will generate a message to re-engage the user.
+    idle_checker_task = None
 
     async with aiohttp.ClientSession() as session:
         room_url, token = await configure(session)
@@ -214,10 +221,29 @@ async def main():
             params=PipelineParams(
                 allow_interruptions=True,
                 enable_metrics=True,
-                enable_usage_metrics=True,
+                enable_usage_metrics=True
             ),
             observers=[RTVIObserver(rtvi)],
         )
+
+        async def idle_checker(task, interval=1, timeout=15):
+            global last_activity_time
+            try:
+                while True:
+                    await asyncio.sleep(interval)
+                    time_since_last = time.time() - last_activity_time
+                    if time_since_last > timeout:
+                        logger.info(f"Detected idle timeout after {time_since_last:.1f}s (last activity: {last_activity_time} and current time: {time.time()}).")
+                        messages = [
+                            {
+                                "role": "system",
+                                "content": "The session has been quiet. Generate a friendly message to re-engage the user."
+                            }
+                        ]
+                        await task.queue_frame(LLMMessagesFrame(messages))
+                        last_activity_time = time.time()
+            except asyncio.CancelledError:
+                logger.info("Idle checker task cancelled.")
 
         @audiobuffer.event_handler("on_audio_data")
         async def on_audio_data(_, audio, sr, ch):
@@ -225,11 +251,17 @@ async def main():
 
         @audiobuffer.event_handler("on_user_turn_audio_data")
         async def on_user_audio(_, audio, sr, ch):
+            global last_activity_time
+            last_activity_time = time.time()
+            logger.debug(f"Updated last_activity_time at {last_activity_time} from user audio")
             name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f") + "_USER.wav"
             await save_audio_file(audio, f"{session_dir}/{name}", sr, ch)
 
         @audiobuffer.event_handler("on_bot_turn_audio_data")
         async def on_bot_audio(_, audio, sr, ch):
+            global last_activity_time
+            last_activity_time = time.time()
+            logger.debug(f"Updated last_activity_time at {last_activity_time} from bot audio")
             name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f") + "_AGENT.wav"
             await save_audio_file(audio, f"{session_dir}/{name}", sr, ch)
 
@@ -239,14 +271,20 @@ async def main():
 
         @transport.event_handler("on_first_participant_joined")
         async def on_participant_joined(_, participant):
+            global last_activity_time
+            last_activity_time = time.time()
             await transport.capture_participant_transcription(participant["id"])
             await audiobuffer.start_recording()
             await task.queue_frames([context_aggregator.user().get_context_frame()])
-
+            idle_checker_task = asyncio.create_task(idle_checker(task))
+        
         @transport.event_handler("on_participant_left")
         async def on_participant_left(_event, participant, _reason):
             print(f"Participant left: {participant}")
             await audiobuffer.stop_recording()
+            if idle_checker_task:
+                idle_checker_task.cancel()
+                await asyncio.gather(idle_checker_task, return_exceptions=True)
             await task.cancel()
 
         await PipelineRunner().run(task)
