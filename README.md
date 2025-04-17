@@ -43,6 +43,7 @@ The code has a client-server architecture. You find instructions on how to run t
 - [ ] understanding emotions, speech emotion detection
 - [ ] speaker verification (multi-user sessions) - is it just about looking for a good model that can do it?
 - [ ] remove dependency from Daily
+- [ ] there is something off with UserTranscript (it seems that the event is received twice on the client)
 
 ## Notes:
 - https://www.sesame.com/research/crossing_the_uncanny_valley_of_voice#demo
