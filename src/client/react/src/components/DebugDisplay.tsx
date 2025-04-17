@@ -1,3 +1,4 @@
+// DebugDisplay.tsx
 import { useRef, useCallback } from 'react';
 import {
   Participant,
@@ -10,6 +11,8 @@ import { useRTVIClient, useRTVIClientEvent } from '@pipecat-ai/client-react';
 import './DebugDisplay.css';
 
 export function DebugDisplay() {
+  const lastUserTranscriptRef = useRef<string | null>(null);
+  const lastBotTranscriptRef = useRef<string | null>(null);
   const debugLogRef = useRef<HTMLDivElement>(null);
   // const client = useRTVIClient();
 
@@ -30,107 +33,16 @@ export function DebugDisplay() {
     debugLogRef.current.scrollTop = debugLogRef.current.scrollHeight;
   }, []);
 
-  // Log transport state changes
-  /*
-  useRTVIClientEvent(
-    RTVIEvent.TransportStateChanged,
-    useCallback(
-      (state: TransportState) => {
-        log(`Transport state changed: ${state}`);
-      },
-      [log]
-    )
-  );
-  /*
-
-  /*
-  // Log bot connection events
-  useRTVIClientEvent(
-    RTVIEvent.BotConnected,
-    useCallback(
-      (participant?: Participant) => {
-        log(`Bot connected: ${JSON.stringify(participant)}`);
-      },
-      [log]
-    )
-  );
-  */
-
-  /*
-  useRTVIClientEvent(
-    RTVIEvent.BotDisconnected,
-    useCallback(
-      (participant?: Participant) => {
-        log(`Bot disconnected: ${JSON.stringify(participant)}`);
-      },
-      [log]
-    )
-  );
-  */
-
-  /*
-  // Log track events
-  useRTVIClientEvent(
-    RTVIEvent.TrackStarted,
-    useCallback(
-      (track: MediaStreamTrack, participant?: Participant) => {
-        log(
-          `Track started: ${track.kind} from ${participant?.name || 'unknown'}`
-        );
-      },
-      [log]
-    )
-  );
-  */
-
-  /*
-  useRTVIClientEvent(
-    RTVIEvent.TrackedStopped,
-    useCallback(
-      (track: MediaStreamTrack, participant?: Participant) => {
-        log(
-          `Track stopped: ${track.kind} from ${participant?.name || 'unknown'}`
-        );
-      },
-      [log]
-    )
-  );
-  */
-
-  /*
-  // Log bot ready state and check tracks
-  useRTVIClientEvent(
-    RTVIEvent.BotReady,
-    useCallback(() => {
-      log(`Bot ready`);
-
-      if (!client) return;
-      const tracks = client.tracks();
-      log(
-        `Available tracks: ${JSON.stringify({
-          local: {
-            audio: !!tracks.local.audio,
-            video: !!tracks.local.video,
-          },
-          bot: {
-            audio: !!tracks.bot?.audio,
-            video: !!tracks.bot?.video,
-          },
-        })}`
-      );
-    }, [client, log])
-  );
-  */
-
   // Log transcripts
   useRTVIClientEvent(
     RTVIEvent.UserTranscript,
     useCallback(
       (data: TranscriptData) => {
         // Only log final transcripts
-        if (data.final) {
+        if (data.final && data.text !== lastUserTranscriptRef.current) {
+          lastUserTranscriptRef.current = data.text;
           log(`User: ${data.text}`);
-        }
+        }  
       },
       [log]
     )
@@ -140,19 +52,9 @@ export function DebugDisplay() {
     RTVIEvent.BotTranscript,
     useCallback(
       (data: BotLLMTextData) => {
-        log(`Bot: ${data.text}`);
-      },
-      [log]
-    )
-  );
-
-  useRTVIClientEvent(
-    RTVIEvent.ServerMessage,
-    useCallback(
-      (data) => {
-        // Only log final transcripts
-        if (data.type === 'animation-event') {
-          log(`Animation event: ${data.payload.animation_id} at ${data.payload.timing}`);
+        if (data.text !== lastBotTranscriptRef.current) {
+          lastBotTranscriptRef.current = data.text;
+          log(`Bot: ${data.text}`);
         }
       },
       [log]
