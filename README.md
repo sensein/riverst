@@ -31,18 +31,18 @@ The code has a client-server architecture. You find instructions on how to run t
     - https://platform.openai.com/docs/guides/realtime-conversations
     - https://github.com/pipecat-ai/pipecat/blob/main/src/pipecat/services/openai_realtime_beta/openai.py
     - https://github.com/pipecat-ai/pipecat/blob/main/src/pipecat/services/openai_realtime_beta/events.py
-    - add some more animations
+- [x] add some more animations (Fabio)
 - [x] incorporating video (with google gemini, but honestly doesn't work very well) (Fabio)
 - [x] Getting visemes more closely aligned with speech (Fabio)
-- [ ] going opensource (Fabio)
-    - [x] models (we have llama3.2 as llm and piper as tts for now)
-    - [ ] infrastructure (remove dependency from Daily)
+- [x] allowing opensource models (we have llama3.2 as llm and piper as tts that work decenlty for now) (Fabio)
 - [ ] more structured conversation flows (pipecat flows) (Bruce)
 - [ ] summarizing sessions, saving (we save already the audio, but would be great if we also save transcripts and video). RAG model (Bruce)
+- [ ] cleaning up the code and making it more modular (Fabio)
 
+- [ ] cleaning animations (they are just not good if you play them multiple times)
 - [ ] understanding emotions, speech emotion detection
 - [ ] speaker verification (multi-user sessions) - is it just about looking for a good model that can do it?
-- [ ] cleaning up the code
+- [ ] remove dependency from Daily
 
 ## Notes:
 - https://www.sesame.com/research/crossing_the_uncanny_valley_of_voice#demo

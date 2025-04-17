@@ -36,7 +36,10 @@ from pipecat.adapters.schemas.function_schema import FunctionSchema
 from pipecat.adapters.schemas.tools_schema import ToolsSchema
 from pipecat.frames.frames import BotSpeakingFrame, LLMFullResponseEndFrame, TTSSpeakFrame, LLMMessagesFrame
 import time
-
+from transformers import pipeline as transformers_pipeline
+import torch
+import numpy as np
+import json
 
 async def save_audio_file(audio: bytes, filename: str, sample_rate: int, num_channels: int):
     """Save audio data to a WAV file.
@@ -102,6 +105,33 @@ def build_llm_and_tts(bot_type: str, session: aiohttp.ClientSession):
 
     return llm, tts
 
+def clean_visemes(visemes_durations, silence_viseme=0, silence_threshold=0.2, general_threshold=0.05):
+    cleaned = []
+    skip_next_unwanted_duration = 0.0
+
+    for i, current in enumerate(visemes_durations):
+        vis = current["visemes"]
+        dur = current["duration"]
+
+        # Merge skipped durations
+        if skip_next_unwanted_duration > 0:
+            dur += skip_next_unwanted_duration
+
+        # Short viseme or silence
+        if (vis == [silence_viseme] and dur < silence_threshold) or dur < general_threshold:
+            # Add the pause duration or short viseme duration to next non-silence viseme
+            skip_next_unwanted_duration += dur
+            continue
+
+        if skip_next_unwanted_duration > 0:
+            skip_next_unwanted_duration = 0.0
+
+        cleaned.append({
+            "visemes": vis,
+            "duration": round(dur, 6)
+        })
+
+    return cleaned
 
 async def main():
     """Main entry point for bot execution."""
@@ -114,6 +144,51 @@ async def main():
     # If no one has spoken for X seconds (X is 15 seconds by default), the bot will generate a message to re-engage the user.
     idle_checker_task = None
 
+    phoneme_viseme_map_file = "./assets/phoneme_viseme_map.json"
+    with open(phoneme_viseme_map_file, "r") as f:
+        phoneme_viseme_map = json.load(f)
+
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
+
+    asr_pipeline = transformers_pipeline(
+        "automatic-speech-recognition",
+        model="bookbot/wav2vec2-ljspeech-gruut",
+        device=device,
+        torch_dtype=torch.float16
+    )
+
+    print("ASR pipeline loaded on device:", device)
+    dummy_audio = np.random.rand(16000).astype(np.int16) * 2 - 1  # values in [-1, 1]
+    _ = asr_pipeline(dummy_audio)
+    print("ASR pipeline warmed up")
+
+    async def process_visemes_in_thread(audio_bytes, sample_rate, num_channels, phoneme_viseme_map):
+        try:
+            waveform = np.frombuffer(audio_bytes, dtype=np.int16)
+
+            with torch.inference_mode():
+                phonemes = asr_pipeline(waveform.squeeze(), return_timestamps="char")
+
+            visemes_durations = [
+                {
+                    "visemes": phoneme_viseme_map.get(chunk["text"], []),
+                    "duration": round(chunk["timestamp"][1] - chunk["timestamp"][0], 2)
+                }
+                for chunk in phonemes["chunks"]
+            ]
+
+            cleaned_visemes_durations = clean_visemes(visemes_durations)
+            # print("cleaned_visemes_durations: ", cleaned_visemes_durations)
+            return cleaned_visemes_durations
+        except Exception as e:
+            print(f"Error processing audio: {e}")
+            return None
+        
     async with aiohttp.ClientSession() as session:
         room_url, token = await configure(session)
         session_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + str(uuid.uuid4())[:8]
@@ -201,6 +276,10 @@ async def main():
 
 
         audiobuffer = AudioBufferProcessor(enable_turn_audio=True)
+        viseme_audiobuffer = AudioBufferProcessor(enable_turn_audio=True,
+                                           sample_rate=16000,
+                                           buffer_size=0.2 * 1 * 24000 * 2 # sec * channels * sampling_rate * bit_depth
+                                           )
 
         llm.register_function("trigger_animation", handle_animation)
 
@@ -210,6 +289,7 @@ async def main():
             context_aggregator.user(),
             llm,
             tts if tts else None,
+            viseme_audiobuffer,
             transport.output(),
             audiobuffer,
             context_aggregator.assistant(),
@@ -226,22 +306,30 @@ async def main():
             observers=[RTVIObserver(rtvi)],
         )
 
-        async def idle_checker(task, interval=1, timeout=15):
+        async def idle_checker(task, interval=1, base_timeout=15):
             global last_activity_time
+            idle_counter = 1  # start at 1 to make first timeout = base_timeout
+            max_idle_counter = 3  # cannot wait more than 45 seconds
+
             try:
                 while True:
                     await asyncio.sleep(interval)
                     time_since_last = time.time() - last_activity_time
-                    if time_since_last > timeout:
-                        logger.info(f"Detected idle timeout after {time_since_last:.1f}s (last activity: {last_activity_time} and current time: {time.time()}).")
-                        messages = [
-                            {
-                                "role": "system",
-                                "content": "The session has been quiet. Generate a friendly message to re-engage the user."
-                            }
-                        ]
-                        await task.queue_frame(LLMMessagesFrame(messages))
+                    current_timeout = idle_counter * base_timeout
+                    if time_since_last > current_timeout:
+                        logger.info(f"Detected idle timeout after {time_since_last:.1f}s (last activity: {last_activity_time} and current time: {time.time()}, timeout is {current_timeout:.1f}s).")
+                        context.add_message({
+                            "role": "system",
+                            "content": (
+                                "The user has been inactive for a while. Based on the current topic, generate a short, friendly message "
+                                "to re-engage them. Use the most recent question or word you were discussing as a reference point."
+                            )
+                        })
+                        await task.queue_frame(context_aggregator.assistant().get_context_frame())
                         last_activity_time = time.time()
+                        idle_counter += 1
+                        if idle_counter > max_idle_counter:
+                            idle_counter = 1
             except asyncio.CancelledError:
                 logger.info("Idle checker task cancelled.")
 
@@ -253,7 +341,7 @@ async def main():
         async def on_user_audio(_, audio, sr, ch):
             global last_activity_time
             last_activity_time = time.time()
-            logger.debug(f"Updated last_activity_time at {last_activity_time} from user audio")
+            #logger.debug(f"Updated last_activity_time at {last_activity_time} from user audio")
             name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f") + "_USER.wav"
             await save_audio_file(audio, f"{session_dir}/{name}", sr, ch)
 
@@ -261,9 +349,36 @@ async def main():
         async def on_bot_audio(_, audio, sr, ch):
             global last_activity_time
             last_activity_time = time.time()
-            logger.debug(f"Updated last_activity_time at {last_activity_time} from bot audio")
+            #logger.debug(f"Updated last_activity_time at {last_activity_time} from bot audio")
             name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f") + "_AGENT.wav"
             await save_audio_file(audio, f"{session_dir}/{name}", sr, ch)
+
+        @viseme_audiobuffer.event_handler("on_track_audio_data")
+        async def on_track_audio_data(buffer, user_audio: bytes, bot_audio: bytes,
+            sample_rate: int, num_channels: int):
+
+            start_time = time.time()
+
+            loop = asyncio.get_running_loop()
+            visemes_durations = await loop.run_in_executor(
+                None,
+                lambda: asyncio.run(process_visemes_in_thread(bot_audio, sample_rate, num_channels, phoneme_viseme_map))
+            )
+
+            end_time = time.time()
+            # logger.info(f"Viseme computation took {end_time - start_time:.6f} seconds")
+
+            if visemes_durations and isinstance(visemes_durations, list) and len(visemes_durations) == 1 and visemes_durations[0]["visemes"] == [0]:
+                # logger.info("Skipping visemes-event message due to empty or silent visemes.")
+                return
+
+            frame = RTVIServerMessageFrame(
+                data={
+                    "type": "visemes-event",
+                    "payload": visemes_durations
+                }
+            )
+            await rtvi.push_frame(frame)
 
         @rtvi.event_handler("on_client_ready")
         async def on_client_ready(rtvi):
@@ -271,16 +386,17 @@ async def main():
 
         @transport.event_handler("on_first_participant_joined")
         async def on_participant_joined(_, participant):
+            await transport.capture_participant_transcription(participant["id"])
+            await viseme_audiobuffer.start_recording()
+            await audiobuffer.start_recording()
             global last_activity_time
             last_activity_time = time.time()
-            await transport.capture_participant_transcription(participant["id"])
-            await audiobuffer.start_recording()
-            await task.queue_frames([context_aggregator.user().get_context_frame()])
             idle_checker_task = asyncio.create_task(idle_checker(task))
         
         @transport.event_handler("on_participant_left")
         async def on_participant_left(_event, participant, _reason):
             print(f"Participant left: {participant}")
+            await viseme_audiobuffer.stop_recording()
             await audiobuffer.stop_recording()
             if idle_checker_task:
                 idle_checker_task.cancel()

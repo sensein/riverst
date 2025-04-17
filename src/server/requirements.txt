@@ -6,3 +6,5 @@ flask
 piper-phonemize-cross
 onnxruntime
 numpy
+transformers
+torch

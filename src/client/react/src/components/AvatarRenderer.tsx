@@ -1,3 +1,4 @@
+// AvatarRenderer.tsx
 /*
   Notes for lip sync:
     - https://docs.readyplayer.me/ready-player-me/api-reference/avatars/morph-targets/apple-arkit
@@ -170,7 +171,7 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
     const idleNumber = String(currentIdleRef.current).padStart(3, '0');
     const idleUrl = `/animations/idle/F_Standing_Idle_${idleNumber}.glb`;
 
-    console.log('Loading idle animation:', idleNumber);
+    // console.log('Loading idle animation:', idleNumber);
 
     new GLTFLoader().load(idleUrl, (gltf) => {
       if (!mixerRef.current) return;
@@ -198,7 +199,7 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
 
   const playBodyAnimation = useCallback((type: string) => {
     if (!mixerRef.current) return;
-    console.log("Loading body animation: ", type);
+    // console.log("Loading body animation: ", type);
 
     let animationUrl = '';
     switch (type) {
@@ -240,6 +241,34 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
   useEffect(() => {
     if (bodyAnimation) playBodyAnimation(bodyAnimation);
   }, [bodyAnimation, playBodyAnimation]);
+
+  useEffect(() => {
+    // This is to fix a glitch when the tab is hidden and then shown again
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // console.log('Tab is visible again — fixing blendshape glitch');
+        
+        // Reset delta clock to avoid huge jump
+        clockRef.current = new THREE.Clock();
+  
+        // Reapply last known blendshape values to prevent visual glitch
+        Object.values(morphTargetMeshesRef.current).forEach((mesh) => {
+          const dict = mesh.morphTargetDictionary!;
+          const influences = mesh.morphTargetInfluences!;
+          Object.keys(dict).forEach((shape) => {
+            const index = dict[shape];
+            if (index !== undefined) {
+              influences[index] = currentBlendValuesRef.current[shape] || 0;
+            }
+          });
+        });
+      }
+    };
+  
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+  
 
   const onAnimationFinished = useCallback((e: THREE.Event) => {
     if (e.action === idleActionRef.current && !isBodyPlaying.current) {
@@ -352,7 +381,7 @@ const AvatarRenderer: React.FC<AvatarRendererProps> = ({
   cameraType,
   currentViseme
 }) => (
-  <Canvas shadows>
+  <Canvas shadows gl={{ preserveDrawingBuffer: true }}>
     <React.Suspense fallback={null}>
       <AvatarScene
         avatarUrl={avatarUrl}
