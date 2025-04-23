@@ -1,10 +1,11 @@
 python-dotenv
 fastapi[all]
 uvicorn
-pipecat-ai[daily,elevenlabs,openai,silero,google,noisereduce,ollama,webrtc]
+pipecat-ai[daily,elevenlabs,openai,silero,google,noisereduce,webrtc]
 flask
 piper-phonemize-cross
 onnxruntime
 numpy
 transformers
 torch
+aiofiles
