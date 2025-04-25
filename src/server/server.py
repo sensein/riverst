@@ -1,237 +1,95 @@
-"""This module includes the riverst FastAPI server."""
+#
+# Copyright (c) 2024–2025, Daily
+#
+# SPDX-License-Identifier: BSD 2-Clause License
+#
+
 import argparse
-import os
-import subprocess
+import asyncio
+import sys
 from contextlib import asynccontextmanager
-from typing import Any, Dict
+from typing import Dict
 
-import aiohttp
+import uvicorn
+from bot import run_bot
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi import BackgroundTasks, FastAPI
+from fastapi.responses import RedirectResponse
+from loguru import logger
+from pipecat_ai_small_webrtc_prebuilt.frontend import SmallWebRTCPrebuiltUI
 
-from pipecat.transports.services.helpers.daily_rest import DailyRESTHelper, DailyRoomParams
+from pipecat.transports.network.webrtc_connection import SmallWebRTCConnection
 
-# Load environment variables from .env file
+# Load environment variables
 load_dotenv(override=True)
 
-# Maximum number of bot instances allowed per room
-MAX_BOTS_PER_ROOM = 1
+app = FastAPI()
 
-# Dictionary to track bot processes: {pid: (process, room_url)}
-bot_procs = {}
+# Store connections by pc_id
+pcs_map: Dict[str, SmallWebRTCConnection] = {}
 
-# Store Daily API helpers
-daily_helpers = {}
+ice_servers = ["stun:stun.l.google.com:19302"]
+
+# Mount the frontend at /
+app.mount("/prebuilt", SmallWebRTCPrebuiltUI)
 
 
-def cleanup():
-    """Cleanup function to terminate all bot processes.
+@app.get("/", include_in_schema=False)
+async def root_redirect():
+    return RedirectResponse(url="/prebuilt/")
 
-    Called during server shutdown.
-    """
-    for entry in bot_procs.values():
-        proc = entry[0]
-        proc.terminate()
-        proc.wait()
+
+@app.post("/api/offer")
+async def offer(request: dict, background_tasks: BackgroundTasks):
+    pc_id = request.get("pc_id")
+
+    if pc_id and pc_id in pcs_map:
+        pipecat_connection = pcs_map[pc_id]
+        logger.info(f"Reusing existing connection for pc_id: {pc_id}")
+        await pipecat_connection.renegotiate(
+            sdp=request["sdp"], type=request["type"], restart_pc=request.get("restart_pc", False)
+        )
+    else:
+        pipecat_connection = SmallWebRTCConnection(ice_servers)
+        await pipecat_connection.initialize(sdp=request["sdp"], type=request["type"])
+
+        @pipecat_connection.event_handler("closed")
+        async def handle_disconnected(webrtc_connection: SmallWebRTCConnection):
+            logger.info(f"Discarding peer connection for pc_id: {webrtc_connection.pc_id}")
+            pcs_map.pop(webrtc_connection.pc_id, None)
+
+        background_tasks.add_task(run_bot, pipecat_connection)
+
+    answer = pipecat_connection.get_answer()
+    # Updating the peer connection inside the map
+    pcs_map[answer["pc_id"]] = pipecat_connection
+
+    return answer
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """FastAPI lifespan manager that handles startup and shutdown tasks.
-
-    - Creates aiohttp session
-    - Initializes Daily API helper
-    - Cleans up resources on shutdown
-    """
-    aiohttp_session = aiohttp.ClientSession()
-    daily_helpers["rest"] = DailyRESTHelper(
-        daily_api_key=os.getenv("DAILY_API_KEY", ""),
-        daily_api_url=os.getenv("DAILY_API_URL", "https://api.daily.co/v1"),
-        aiohttp_session=aiohttp_session,
-    )
-    yield
-    await aiohttp_session.close()
-    cleanup()
-
-
-# Initialize FastAPI app with lifespan manager
-app = FastAPI(lifespan=lifespan)
-
-# Configure CORS to allow requests from any origin
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
-async def create_room_and_token() -> tuple[str, str]:
-    """Helper function to create a Daily room and generate an access token.
-
-    Returns:
-        tuple[str, str]: A tuple containing (room_url, token)
-
-    Raises:
-        HTTPException: If room creation or token generation fails
-    """
-    room = await daily_helpers["rest"].create_room(DailyRoomParams(
-        
-    ))
-    if not room.url:
-        raise HTTPException(status_code=500, detail="Failed to create room")
-
-    token = await daily_helpers["rest"].get_token(room.url)
-    if not token:
-        raise HTTPException(status_code=500, detail=f"Failed to get token for room: {room.url}")
-
-    return room.url, token
-
-
-@app.get("/")
-async def start_agent(request: Request):
-    """Endpoint for direct browser access to the bot.
-
-    Creates a room, starts a bot instance, and redirects to the Daily room URL.
-
-    Returns:
-        RedirectResponse: Redirects to the Daily room URL
-
-    Raises:
-        HTTPException: If room creation, token generation, or bot startup fails
-    """
-    print("Creating room")
-    room_url, token = await create_room_and_token()
-    print(f"Room URL: {room_url}")
-
-    # Check if there is already an existing process running in this room
-    num_bots_in_room = sum(
-        1 for proc in bot_procs.values() if proc[1] == room_url and proc[0].poll() is None
-    )
-    if num_bots_in_room >= MAX_BOTS_PER_ROOM:
-        raise HTTPException(status_code=500, detail=f"Max bot limit reached for room: {room_url}")
-
-    # Spawn a new bot process
-    try:
-        bot_file = "bot"
-        proc = subprocess.Popen(
-            [f"python3 -m {bot_file} -u {room_url} -t {token}"],
-            shell=True,
-            bufsize=1,
-            cwd=os.path.dirname(os.path.abspath(__file__)),
-        )
-        bot_procs[proc.pid] = (proc, room_url)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to start subprocess: {e}")
-
-    return RedirectResponse(room_url)
-
-
-@app.post("/connect")
-async def rtvi_connect(request: Request) -> Dict[Any, Any]:
-    """RTVI connect endpoint that creates a room and returns connection credentials.
-
-    This endpoint is called by RTVI clients to establish a connection.
-
-    Returns:
-        Dict[Any, Any]: Authentication bundle containing room_url and token
-
-    Raises:
-        HTTPException: If room creation, token generation, or bot startup fails
-    """
-    print("Creating room for RTVI connection")
-    room_url, token = await create_room_and_token()
-    print(f"Room URL: {room_url}")
-
-    # Start the bot process
-    try:
-        bot_file = "bot"
-        proc = subprocess.Popen(
-            [f"python3 -m {bot_file} -u {room_url} -t {token}"],
-            shell=True,
-            bufsize=1,
-            cwd=os.path.dirname(os.path.abspath(__file__)),
-        )
-        bot_procs[proc.pid] = (proc, room_url)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to start subprocess: {e}")
-
-    # Return the authentication bundle in format expected by DailyTransport
-    return {"room_url": room_url, "token": token}
-
-
-@app.get("/status/{pid}")
-def get_status(pid: int):
-    """Get the status of a specific bot process.
-
-    Args:
-        pid (int): Process ID of the bot
-
-    Returns:
-        JSONResponse: Status information for the bot
-
-    Raises:
-        HTTPException: If the specified bot process is not found
-    """
-    # Look up the subprocess
-    proc = bot_procs.get(pid)
-
-    # If the subprocess doesn't exist, return an error
-    if not proc:
-        raise HTTPException(status_code=404, detail=f"Bot with process id: {pid} not found")
-
-    # Check the status of the subprocess
-    status = "running" if proc[0].poll() is None else "finished"
-    return JSONResponse({"bot_id": pid, "status": status})
-
-@app.get("/health")
-async def health_check():
-    """Health check endpoint to verify server status.
-
-    Returns:
-        JSONResponse: A simple status message
-    """
-    print("Health check endpoint called")
-    return JSONResponse({"status": "ok"})
-
-stored_avatar_url = 'https://models.readyplayer.me/67eaadeeffcddc994a40ed15.glb?morphTargets=mouthOpen,Oculus Visemes' 
-
-@app.post("/avatar")
-async def save_avatar(request: Request):
-    data = await request.json()
-    global stored_avatar_url
-    stored_avatar_url = data.get("avatar_url")
-    print("Avatar URL received and saved:", stored_avatar_url)
-    return JSONResponse({"status": "ok", "stored_avatar_url": stored_avatar_url})
-
-@app.get("/avatar")
-async def get_avatar():
-    """Returns the currently stored avatar URL."""
-    if stored_avatar_url:
-        return JSONResponse({"avatar_url": stored_avatar_url})
-    return JSONResponse({"avatar_url": None})
+    yield  # Run app
+    coros = [pc.close() for pc in pcs_map.values()]
+    await asyncio.gather(*coros)
+    pcs_map.clear()
 
 
 if __name__ == "__main__":
-    import uvicorn
-
-    # Parse command line arguments for server configuration
-    default_host = os.getenv("HOST", "0.0.0.0")
-    default_port = int(os.getenv("FAST_API_PORT", "7860"))
-
-    parser = argparse.ArgumentParser(description="Daily Storyteller FastAPI server")
-    parser.add_argument("--host", type=str, default=default_host, help="Host address")
-    parser.add_argument("--port", type=int, default=default_port, help="Port number")
-    parser.add_argument("--reload", action="store_true", help="Reload code on change")
-
-    config = parser.parse_args()
-
-    # Start the FastAPI server
-    uvicorn.run(
-        "server:app",
-        host=config.host,
-        port=config.port,
-        reload=config.reload,
+    parser = argparse.ArgumentParser(description="WebRTC demo")
+    parser.add_argument(
+        "--host", default="localhost", help="Host for HTTP server (default: localhost)"
     )
+    parser.add_argument(
+        "--port", type=int, default=7860, help="Port for HTTP server (default: 7860)"
+    )
+    parser.add_argument("--verbose", "-v", action="count")
+    args = parser.parse_args()
+
+    logger.remove(0)
+    if args.verbose:
+        logger.add(sys.stderr, level="TRACE")
+    else:
+        logger.add(sys.stderr, level="DEBUG")
+
+    uvicorn.run(app, host=args.host, port=args.port)

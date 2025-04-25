@@ -45,6 +45,25 @@ The code has a client-server architecture. You find instructions on how to run t
 - [ ] remove dependency from Daily
 - [ ] there is something off with UserTranscript (it seems that the event is received twice on the client)
 
+## MORE TODO:
+- CLIENT'S AVATAR!!!!!!
+- SLIDES!!!!!!!
+- MORE MODULAR
+- add more animations (for expressivity!!!): https://github.com/readyplayerme/animation-library/tree/master/masculine/fbx/idle
+
+########## FUTURE WORK ##########
+- TranscriptionLogger: https://github.com/pipecat-ai/pipecat/blob/09ff836ef6dec7070717a03111dc61f252e93814/examples/foundational/13-whisper-transcription.py
+ - https://github.com/pipecat-ai/pipecat/blob/09ff836ef6dec7070717a03111dc61f252e93814/examples/foundational/20a-persistent-context-openai.py
+ - https://github.com/pipecat-ai/pipecat/blob/09ff836ef6dec7070717a03111dc61f252e93814/examples/foundational/20b-persistent-context-openai-realtime.py
+ - https://github.com/pipecat-ai/pipecat/blob/09ff836ef6dec7070717a03111dc61f252e93814/examples/foundational/22-natural-conversation.py
+
+- ALTERNATIVE SMART TURN DETECTION? 
+    - https://github.com/pipecat-ai/pipecat/blob/09ff836ef6dec7070717a03111dc61f252e93814/examples/foundational/22b-natural-conversation-proposal.py
+    - https://github.com/pipecat-ai/pipecat/blob/09ff836ef6dec7070717a03111dc61f252e93814/examples/foundational/22c-natural-conversation-mixed-llms.py
+- RETRIEVAL AUGMENTED GENERATION
+    # https://github.com/pipecat-ai/pipecat/blob/09ff836ef6dec7070717a03111dc61f252e93814/examples/foundational/33-gemini-rag.py
+- MEMORY (long-term)
+
 ## Notes:
 - https://www.sesame.com/research/crossing_the_uncanny_valley_of_voice#demo
 - https://www.linkedin.com/posts/andrewyng_the-voice-stack-is-improving-rapidly-systems-activity-7300912040959778818-B_hc/

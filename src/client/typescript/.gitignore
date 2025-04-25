@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+
+# Vite build
+.vite/
+
+# OS files
+.DS_Store

@@ -1,11 +1,7 @@
 python-dotenv
 fastapi[all]
 uvicorn
-pipecat-ai[daily,elevenlabs,openai,silero,google,noisereduce,webrtc]
-flask
-piper-phonemize-cross
-onnxruntime
-numpy
-transformers
-torch
-aiofiles
+aiortc
+opencv-python
+pipecat-ai[google,silero,webrtc,whisper]
+pipecat-ai-small-webrtc-prebuilt
