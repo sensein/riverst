@@ -21,18 +21,18 @@ interface CameraSettings {
 }
 
 const FULL_BODY_CAMERA_SETTINGS: CameraSettings = {
-  position: [0, 1.4, 2],
-  fov: 40,
+  position: [0, 1.8, 20],
+  fov: 10,
 };
 
 const HALF_BODY_CAMERA_SETTINGS: CameraSettings = {
-  position: [0, 2, 0],
-  fov: 40,
+  position: [0, 2.2, 10],
+  fov: 10,
 };
 
 const HEADSHOT_CAMERA_SETTINGS: CameraSettings = {
-  position: [0, 2.5, -1],
-  fov: 40,
+  position: [0, 2.6, 2],
+  fov: 10,
 };
 
 const MAX_IDLE_ANIMATIONS = 6;
@@ -91,6 +91,7 @@ interface AvatarRendererProps {
   bodyAnimation?: string | null;
   onAnimationEnd?: () => void;
   currentViseme?: number | null;
+  interactionState?: 'speaking' | 'listening' | null;
 }
 
 const AvatarScene: React.FC<AvatarRendererProps> = ({ 
@@ -98,7 +99,8 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
     bodyAnimation, 
     onAnimationEnd,
     cameraType,
-    currentViseme
+    currentViseme,
+    interactionState,
   }) => {
   const avatarRef = useRef<THREE.Group | null>(null);
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
@@ -107,7 +109,7 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
   const [isLoaded, setIsLoaded] = useState(false);
   const idleActionRef = useRef<THREE.AnimationAction | null>(null);
   const bodyActionRef = useRef<THREE.AnimationAction | null>(null);
-  const currentIdleRef = useRef(1);
+  // const currentIdleRef = useRef(1);
   const isBodyPlaying = useRef(false);
 
   const morphTargetMeshesRef = useRef<{ [key: string]: THREE.Mesh }>({});
@@ -167,11 +169,14 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
     
   
 
-  const loadIdleAnimation = useCallback(() => {
-    const idleNumber = String(currentIdleRef.current).padStart(3, '0');
+  const loadIdleAnimation = useCallback((custom_number: number | null = null) => {
+    const idleNumber = custom_number !== null
+      ? String(custom_number).padStart(3, '0')
+      : interactionState !== null
+      ? '001'
+      : String(Math.floor(Math.random() * MAX_IDLE_ANIMATIONS) + 1).padStart(3, '0');
     const idleUrl = `/animations/idle/F_Standing_Idle_${idleNumber}.glb`;
-
-    // console.log('Loading idle animation:', idleNumber);
+    console.log('Loading idle animation:', idleNumber);
 
     new GLTFLoader().load(idleUrl, (gltf) => {
       if (!mixerRef.current) return;
@@ -212,6 +217,9 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
       case 'i_dont_know':
         animationUrl = '/animations/i_dont_know/M_Standing_Expressions_005.glb';
         break;
+      case 'idle':
+        loadIdleAnimation(1);
+        return;
       default:
         console.warn('Animation type not found:', type);
         return;
@@ -272,8 +280,6 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
 
   const onAnimationFinished = useCallback((e: THREE.Event) => {
     if (e.action === idleActionRef.current && !isBodyPlaying.current) {
-      currentIdleRef.current = Math.floor(Math.random() * MAX_IDLE_ANIMATIONS) + 1;
-
       loadIdleAnimation();
     }
 
@@ -281,7 +287,6 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
       isBodyPlaying.current = false;
       bodyActionRef.current = null;
 
-      currentIdleRef.current = Math.floor(Math.random() * MAX_IDLE_ANIMATIONS) + 1;
       loadIdleAnimation();
 
       if (onAnimationEnd) onAnimationEnd();
@@ -379,7 +384,8 @@ const AvatarRenderer: React.FC<AvatarRendererProps> = ({
   bodyAnimation,
   onAnimationEnd,
   cameraType,
-  currentViseme
+  currentViseme,
+  interactionState,
 }) => (
   <Canvas shadows gl={{ preserveDrawingBuffer: true }}>
     <React.Suspense fallback={null}>
@@ -389,6 +395,7 @@ const AvatarRenderer: React.FC<AvatarRendererProps> = ({
         onAnimationEnd={onAnimationEnd}
         cameraType={cameraType}
         currentViseme={currentViseme}
+        interactionState={interactionState}
       />
     </React.Suspense>
   </Canvas>

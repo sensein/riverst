@@ -24,6 +24,7 @@ function BotVideo() {
   const transportState = useRTVIClientTransportState();
   const rtviClient = useRTVIClient();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [interactionState, setInteractionState] = useState<'speaking' | 'listening' | null>(null);
 
   // ————— Fallback random viseme loop —————
   const visemeTimer = useRef<NodeJS.Timeout | null>(null);
@@ -99,6 +100,11 @@ function BotVideo() {
       usingRealVisemesRef.current = false;
       visemeBufferRef.current = [];
       clearAllTimeouts();
+      setInteractionState('speaking');
+      if (!animationTrigger) {
+        console.log("[ZZZ] Setting animation trigger to idle!!!!!");
+        setAnimationTrigger('idle');
+      }
       startRandomVisemeLoop();
     }, [log, clearAllTimeouts, startRandomVisemeLoop])
   );
@@ -113,7 +119,28 @@ function BotVideo() {
       clearAllTimeouts();
       stopRandomVisemeLoop();
       setCurrentViseme(0);
+      setInteractionState(null);
     }, [log, clearAllTimeouts, stopRandomVisemeLoop])
+  );
+
+  useRTVIClientEvent(
+    RTVIEvent.UserStartedSpeaking,
+    useCallback(() => {
+      log('[QQQ] User started speaking');
+      setInteractionState('listening');
+      if (!animationTrigger) {
+        console.log("[ZZZ] Setting animation trigger to idle!!!!!");
+        setAnimationTrigger('idle');
+      }
+    }, [log])
+  );
+
+  useRTVIClientEvent(
+    RTVIEvent.UserStoppedSpeaking,
+    useCallback(() => {
+      log('[QQQ] User stopped speaking');
+      setInteractionState(null);
+    }, [log])
   );
 
   useRTVIClientEvent(
@@ -202,6 +229,7 @@ function BotVideo() {
           onAnimationEnd={() => setAnimationTrigger(null)}
           cameraType={cameraType}
           currentViseme={currentViseme}
+          interactionState={interactionState}
         />
         <div
           style={{

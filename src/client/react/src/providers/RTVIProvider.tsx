@@ -13,48 +13,6 @@ const client = new RTVIClient({
   enableMic: true,
   enableCam: true,
   customConnectHandler: () => Promise.resolve(),
-  callbacks: {
-    onTransportStateChanged: (state) => {
-      console.log(`Transport state: ${state}`);
-    },
-    onConnected: () => {
-      console.log('Connected');
-    },
-    onBotReady: () => {
-      console.log('Bot is ready');
-    },
-    onDisconnected: () => {
-      console.log('Disconnected');
-    },
-    onUserStartedSpeaking: () => {
-      console.log('User started speaking');
-    },
-    onUserStoppedSpeaking: () => {
-      console.log('User stopped speaking');
-    },
-    onBotStartedSpeaking: () => {
-      console.log('Bot started speaking');
-    },
-    onBotStoppedSpeaking: () => {
-      console.log('Bot stopped speaking');
-    },
-    onUserTranscript: (transcript) => {
-      if (transcript.final) {
-        console.log(`User transcript: ${transcript.text}`);
-      }
-    },
-    onBotTranscript: (transcript) => {
-      console.log(`Bot transcript: ${transcript.text}`);
-    },
-    onTrackStarted: (track, participant) => {
-      if (participant?.local) return;
-      console.log('Received a remote track', track);
-      // You can render the track here (e.g., put it in a video element)
-    },
-    onServerMessage: (msg) => {
-      console.log(`Server message: ${JSON.stringify(msg)}`);
-    }
-  },
 });
 
 export function RTVIProvider({ children }: PropsWithChildren) {

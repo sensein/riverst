@@ -1,4 +1,3 @@
-# TODO: push
 # TODO: how to sync video info???
 
 import os
