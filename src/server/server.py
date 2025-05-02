@@ -13,17 +13,28 @@ from typing import Dict
 import uvicorn
 from bot import run_bot
 from dotenv import load_dotenv
-from fastapi import BackgroundTasks, FastAPI
+from fastapi import BackgroundTasks, FastAPI, Request
 from fastapi.responses import RedirectResponse
 from loguru import logger
 from pipecat_ai_small_webrtc_prebuilt.frontend import SmallWebRTCPrebuiltUI
+from fastapi.middleware.cors import CORSMiddleware
 
 from pipecat.transports.network.webrtc_connection import SmallWebRTCConnection
+from fastapi.responses import JSONResponse, RedirectResponse
 
 # Load environment variables
 load_dotenv(override=True)
 
 app = FastAPI()
+
+# Configure CORS to allow requests from any origin
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Store connections by pc_id
 pcs_map: Dict[str, SmallWebRTCConnection] = {}
@@ -40,18 +51,19 @@ async def root_redirect():
 
 
 @app.post("/api/offer")
-async def offer(request: dict, background_tasks: BackgroundTasks):
-    pc_id = request.get("pc_id")
+async def offer(request: Request, background_tasks: BackgroundTasks):
+    data = await request.json()
+    pc_id = data.get("pc_id")
 
     if pc_id and pc_id in pcs_map:
         pipecat_connection = pcs_map[pc_id]
         logger.info(f"Reusing existing connection for pc_id: {pc_id}")
         await pipecat_connection.renegotiate(
-            sdp=request["sdp"], type=request["type"], restart_pc=request.get("restart_pc", False)
+            sdp=data["sdp"], type=data["type"], restart_pc=data.get("restart_pc", False)
         )
     else:
         pipecat_connection = SmallWebRTCConnection(ice_servers)
-        await pipecat_connection.initialize(sdp=request["sdp"], type=request["type"])
+        await pipecat_connection.initialize(sdp=data["sdp"], type=data["type"])
 
         @pipecat_connection.event_handler("closed")
         async def handle_disconnected(webrtc_connection: SmallWebRTCConnection):
@@ -61,10 +73,38 @@ async def offer(request: dict, background_tasks: BackgroundTasks):
         background_tasks.add_task(run_bot, pipecat_connection)
 
     answer = pipecat_connection.get_answer()
-    # Updating the peer connection inside the map
     pcs_map[answer["pc_id"]] = pipecat_connection
 
     return answer
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint to verify server status.
+
+    Returns:
+        JSONResponse: A simple status message
+    """
+    print("Health check endpoint called")
+    return JSONResponse({"status": "ok"})
+
+stored_avatar_url = 'https://models.readyplayer.me/67eaadeeffcddc994a40ed15.glb?morphTargets=mouthOpen,Oculus Visemes' 
+
+@app.post("/avatar")
+async def save_avatar(request: Request):
+    data = await request.json()
+    global stored_avatar_url
+    stored_avatar_url = data.get("avatar_url")
+    print("Avatar URL received and saved:", stored_avatar_url)
+    return JSONResponse({"status": "ok", "stored_avatar_url": stored_avatar_url})
+
+@app.get("/avatar")
+async def get_avatar():
+    """Returns the currently stored avatar URL."""
+    if stored_avatar_url:
+        return JSONResponse({"avatar_url": stored_avatar_url})
+    return JSONResponse({"avatar_url": None})
+
 
 
 @asynccontextmanager

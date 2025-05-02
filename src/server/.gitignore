@@ -21,3 +21,5 @@ recordings/
 recordings/
 en_GB-alba-medium.onnx
 en_GB-alba-medium.onnx.json
+
+*.pt

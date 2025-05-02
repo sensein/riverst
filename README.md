@@ -46,9 +46,11 @@ The code has a client-server architecture. You find instructions on how to run t
 - [ ] there is something off with UserTranscript (it seems that the event is received twice on the client)
 
 ## MORE TODO:
-- CLIENT'S AVATAR!!!!!!
 - SLIDES!!!!!!!
-- MORE MODULAR
+- DO BETTER LIP SYNC (is there an actual advantage in using a frame processor instead of the audio buffer?)
+- Integrate MMPose with onnx to make inference faster
+- Understand how to communicate video-based emotion recognition (+ pose estimation?) to the llm
+- MAKE IT ALL MORE MODULAR
 - add more animations (for expressivity!!!): https://github.com/readyplayerme/animation-library/tree/master/masculine/fbx/idle
 
 ########## FUTURE WORK ##########
