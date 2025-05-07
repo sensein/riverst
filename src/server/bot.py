@@ -27,13 +27,16 @@ from pipecat.pipeline.parallel_pipeline import ParallelPipeline
 from pipecat.services.openai.stt import OpenAISTTService
 from pipecat.adapters.schemas.function_schema import FunctionSchema
 from pipecat.adapters.schemas.tools_schema import ToolsSchema
-from pipecat.frames.frames import EndFrame, LLMMessagesFrame, TTSSpeakFrame
+from pipecat.frames.frames import EndFrame, LLMMessagesFrame, TTSAudioRawFrame, LLMTextFrame
+
+from transformers import AutoProcessor
 
 from deepface import DeepFace
 from ultralytics import YOLO
 from ultralytics.utils import LOGGER
 import logging
 LOGGER.setLevel(logging.WARNING)
+import torchaudio
 
 from pipecat.processors.transcript_processor import TranscriptProcessor
 
@@ -59,7 +62,7 @@ from pipecat.services.ollama import OLLamaLLMService
 from pipecat.services.piper import PiperTTSService
 import aiohttp
 from pipecat.services.whisper.stt import WhisperSTTService, Model
-from pipecat.frames.frames import TranscriptionMessage, TranscriptionUpdateFrame
+from pipecat.frames.frames import TranscriptionMessage, TranscriptionUpdateFrame, TTSTextFrame, TextFrame
 
 from senselab.audio.data_structures import Audio
 from senselab.audio.tasks.features_extraction.api import extract_features_from_audios
@@ -71,6 +74,16 @@ from transformers import Wav2Vec2Processor
 from transformers.models.wav2vec2.modeling_wav2vec2 import Wav2Vec2Model, Wav2Vec2PreTrainedModel
 import torch.nn as nn
 import torch
+from transformers import Wav2Vec2Processor
+import onnxruntime as ort
+from itertools import groupby
+from transformers import AutoProcessor, AutoModelForCTC, Wav2Vec2Processor
+
+from transformers import (
+    Wav2Vec2FeatureExtractor,
+    Wav2Vec2CTCTokenizer,
+    Wav2Vec2Processor,
+)
 
 class RegressionHead(nn.Module):
     def __init__(self, config):
@@ -237,7 +250,7 @@ class TranscriptHandler:
         self.messages.append(new_msg)
         logger.debug(f"Appended new audio-only message: {new_msg}")
         await self.save_messages()
-        asyncio.create_task(self.process_audio_background(audio_file))
+        # asyncio.create_task(self.process_audio_background(audio_file))
 
     async def process_audio_background(self, filepath: str):
         try:
@@ -347,27 +360,24 @@ def build_llm_and_tts(bot_type: str, session: aiohttp.ClientSession, tools = Non
 
 
 async def save_audio_file(audio: bytes, filename: str, sample_rate: int, num_channels: int):
-    """Save audio data to a WAV file.
+    """Fully async save of audio to a WAV file with no event loop blocking."""
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
 
-    Args:
-        audio (bytes): Audio byte stream.
-        filename (str): Output filename.
-        sample_rate (int): Audio sample rate.
-        num_channels (int): Number of audio channels.
-    """
-    if len(audio) > 0:
+    def write_to_buffer():
         with io.BytesIO() as buffer:
             with wave.open(buffer, "wb") as wf:
                 wf.setsampwidth(2)
                 wf.setnchannels(num_channels)
                 wf.setframerate(sample_rate)
                 wf.writeframes(audio)
-            os.makedirs(os.path.dirname(filename), exist_ok=True)
-            async with aiofiles.open(filename, "wb") as file:
-                await file.write(buffer.getvalue())
-        logger.info(f"Audio saved to {filename}")
-    else:
-        print("No audio data to save")
+            return buffer.getvalue()
+
+    # Run the blocking wave logic in a thread
+    wav_bytes = await asyncio.get_event_loop().run_in_executor(None, write_to_buffer)
+
+    # Async write to disk
+    async with aiofiles.open(filename, "wb") as file:
+        await file.write(wav_bytes)
 
 class PassthroughProcessor(FrameProcessor):
     def __init__(self, camera_out_width: int, camera_out_height: int):
@@ -613,34 +623,43 @@ async def run_bot(webrtc_connection):
     print("ASR pipeline warmed up")
 
     def process_visemes(audio_bytes, sample_rate, num_channels, phoneme_viseme_map):
-        def clean_visemes(visemes_durations, silence_viseme=0, silence_threshold=0.2, general_threshold=0.05):
+        def clean_visemes(viseme_durations, silence_viseme=0, silence_threshold=0.2, non_silence_threshold=0.05):
+            # First pass: merge short silences into previous viseme
             cleaned = []
-            skip_next_unwanted_duration = 0.0
+            for current in viseme_durations:
+                viseme = current["visemes"][0]
+                duration = current["duration"]
 
-            for _, current in enumerate(visemes_durations):
-                vis = current["visemes"]
-                dur = current["duration"]
+                if viseme == silence_viseme and duration <= silence_threshold and cleaned:
+                    cleaned[-1]["duration"] += duration
+                else:
+                    cleaned.append(current)
 
-                # Merge skipped durations
-                if skip_next_unwanted_duration > 0:
-                    dur += skip_next_unwanted_duration
+            # Second pass: merge short non-silence visemes
+            final = []
+            i = 0
+            while i < len(cleaned):
+                current = cleaned[i]
+                viseme = current["visemes"][0]
+                duration = current["duration"]
 
-                # Short viseme or silence
-                if (vis == [silence_viseme] and dur < silence_threshold) or dur < general_threshold:
-                    # Add the pause duration or short viseme duration to next non-silence viseme
-                    skip_next_unwanted_duration += dur
-                    continue
+                if viseme != silence_viseme and duration <= non_silence_threshold:
+                    # Merge into previous if it exists
+                    if final:
+                        final[-1]["duration"] += duration
+                    # Else merge into next if available
+                    elif i + 1 < len(cleaned):
+                        cleaned[i + 1]["duration"] += duration
+                    # If no previous or next, just keep it
+                    else:
+                        final.append(current)
+                else:
+                    final.append(current)
+                i += 1
 
-                if skip_next_unwanted_duration > 0:
-                    skip_next_unwanted_duration = 0.0
-
-                cleaned.append({
-                    "visemes": vis,
-                    "duration": round(dur, 6)
-                })
-
-            return cleaned
-
+            return final
+        
+        
         try:
             waveform = np.frombuffer(audio_bytes, dtype=np.int16)
 
@@ -656,7 +675,7 @@ async def run_bot(webrtc_connection):
             ]
 
             cleaned_visemes_durations = clean_visemes(visemes_durations)
-            # print("cleaned_visemes_durations: ", cleaned_visemes_durations)
+            print("visemes_durations: ", visemes_durations, "cleaned_visemes_durations: ", cleaned_visemes_durations)
             return cleaned_visemes_durations
         except Exception as e:
             print(f"Error processing audio: {e}")
@@ -680,7 +699,7 @@ async def run_bot(webrtc_connection):
         vad_enabled=True,
         vad_analyzer=SileroVADAnalyzer(),
         vad_audio_passthrough=True,
-        audio_out_10ms_chunks=4,
+        audio_out_10ms_chunks=2,
     )
 
     pipecat_transport = SmallWebRTCTransport(
@@ -690,11 +709,11 @@ async def run_bot(webrtc_connection):
     audiobuffer = AudioBufferProcessor(enable_turn_audio=True)
     viseme_audiobuffer = AudioBufferProcessor(enable_turn_audio=True,
                                         sample_rate=16000,
-                                        buffer_size=0.2 * 1 * 24000 * 2 # sec * channels * sampling_rate * bit_depth
+                                        buffer_size=0.5* 1 * 24000 * 2 # sec * channels * sampling_rate * bit_depth
                                         )
 
     async with aiohttp.ClientSession() as session:
-        bot_impl = os.getenv("BOT_IMPLEMENTATION", "openai")
+        bot_impl = os.getenv("BOT_IMPLEMENTATION", "gemini")
         print("bot_impl: ", bot_impl)
         tools = ToolsSchema(standard_tools=[
             FunctionSchema(
@@ -819,10 +838,6 @@ async def run_bot(webrtc_connection):
                     llm,
                     tts,
                     viseme_audiobuffer,
-                    VideoProcessor(
-                        transport_params.camera_out_width, transport_params.camera_out_height,
-                        context, context_aggregator
-                    ),  # Sending the video back to the user
                     pipecat_transport.output(),
                     audiobuffer,
                     transcript.assistant(),
@@ -830,6 +845,20 @@ async def run_bot(webrtc_connection):
                     context_aggregator.assistant(),
                 ]
             )
+            '''
+            # after tts
+            PhonemeProcessor(
+                model_id='bookbot/wav2vec2-ljspeech-gruut', # "facebook/wav2vec2-lv-60-espeak-cv-ft",
+                rtvi=rtvi
+            ),
+
+            # after visemebuffer
+            VideoProcessor(
+                transport_params.camera_out_width, transport_params.camera_out_height,
+                context, context_aggregator
+            ),  # Sending the video back to the user
+            '''
+
         else:
             pipeline = Pipeline(
                 [
@@ -861,9 +890,11 @@ async def run_bot(webrtc_connection):
             ),
         )
 
+
         # Register event handler for transcript updates
         @transcript.event_handler("on_transcript_update")
         async def on_transcript_update(processor, frame):
+            # Each message contains role (user/assistant), content, and timestamp
             await transcript_handler.on_transcript_update(processor, frame)
 
         @audiobuffer.event_handler("on_audio_data")

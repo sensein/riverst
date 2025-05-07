@@ -154,12 +154,16 @@ function BotVideo() {
           if (animation_id === 'dance') setAnimationTrigger('dance');
           else if (animation_id === 'wave') setAnimationTrigger('wave');
           else if (animation_id === 'i_dont_know') setAnimationTrigger('i_dont_know');
+        } else if (data.type === 'phonemes-event-new') {
+          console.log(`[TTT1] - ${JSON.stringify(data.payload)}`);
+          // log(`[TTT] NEW Phonemes event: ${JSON.stringify(data.payload)}`);
         }
 
         // — VISEMES —
         if (data.type === 'visemes-event') {
           const payload = data.payload as { duration: number; visemes: number[] }[];
-          // log(`[QQQ] Visemes event: ${JSON.stringify(payload)}`);
+          console.log(`[TTT2] Visemes event: ${JSON.stringify(payload)}`);
+          //log(`[TTT2] Visemes event: ${JSON.stringify(payload)}`);
           // append to buffer
           visemeBufferRef.current.push(...payload);
 

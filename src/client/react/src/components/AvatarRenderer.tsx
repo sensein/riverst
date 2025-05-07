@@ -26,12 +26,12 @@ const FULL_BODY_CAMERA_SETTINGS: CameraSettings = {
 };
 
 const HALF_BODY_CAMERA_SETTINGS: CameraSettings = {
-  position: [0, 2.2, 10],
+  position: [0, 2.3, 10],
   fov: 10,
 };
 
 const HEADSHOT_CAMERA_SETTINGS: CameraSettings = {
-  position: [0, 2.6, 2],
+  position: [0, 2.6, 5],
   fov: 10,
 };
 
@@ -311,7 +311,7 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
         const target = targetBlendValuesRef.current[shape] || 0;
         const current = currentBlendValuesRef.current[shape] || 0;
   
-        const newVal = THREE.MathUtils.lerp(current, target, delta * 5);
+        const newVal = THREE.MathUtils.lerp(current, target, delta * 8);
         currentBlendValuesRef.current[shape] = newVal;
         influences[index] = newVal;
       });
