@@ -1,0 +1,84 @@
+{
+    "title": "Basic Avatar Interaction Configuration",
+    "description": "Schema for configuring a basic avatar interaction activity.",
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "const": "basic-avatar-interaction"
+      },
+      "description": {
+        "type": "string",
+        "const": "Basic avatar interaction activity."
+      },
+      "options": {
+        "type": "object",
+        "properties": {
+          "advanced_flows": {
+            "type": "boolean",
+            "const": false,
+            "default": false,
+            "description": "This activity only supports basic flows. Advanced flows are not allowed for the basic avatar interaction activity and must be set to false. TODO: Integrate the advanced flows for the KIVA activities..."
+          },
+          "camera_settings": {
+            "type": "string",
+            "enum": ["half_body", "headshot", "full_body"],
+            "default": "half_body",
+            "description": "Select the camera framing used for the avatar during the interaction."
+          },
+          "user_description": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Optional free-text field to describe the user (max 200 characters)."
+          },
+          "task_description": {
+            "type": "string",
+            "maxLength": 300,
+            "default": "Demonstrate how you can interact with the user in a short conversation. Assist the user with their requests.",
+            "description": "Free-text description of the task or goal of the interaction (max 300 characters)."
+          },
+          "avatar_description": {
+            "type": "string",
+            "maxLength": 300,
+            "default": "You are the Riverst avatar, a friendly, helpful robot.",
+            "description": "Text describing the avatar’s personality and role."
+          },
+          "avatar_system_prompt": {
+            "type": "string",
+            "maxLength": 300,
+            "default": "You are an interactive robot. Keep your responses brief (one or two sentences at most). Your output will be converted to audio so don't include special characters in your answers. Respond to what the user said in a creative and helpful way. When you want to congratulate, sometimes you can dance. When the user joins the room say hi and (sometimes) wave with the hand. When you don't know something, you can do the i don't know animation. Start the conversation by introducing yourself.",
+            "description": "Instructions defining how the avatar should behave during the interaction."
+          },
+          "video_flag": {
+            "type": "boolean",
+            "const": false,
+            "default": true,
+            "description": "Enable or disable video processing during the session. TODO: This does work but it's not exploited in any way yet."
+          },
+          "user_transcript": {
+            "type": "boolean",
+            "const": false,
+            "default": false,
+            "description": "Enable showing the transcript of the user’s speech. TODO: This doens't work yet because some LLM services send transcripts in the wrong order (see Gemini and OpenAI realtime beta)."
+          },
+          "bot_transcript": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable showing the transcript of the avatar’s speech."
+          }
+        },
+        "required": [
+          "advanced_flows",
+          "camera_settings",
+          "task_description",
+          "avatar_description",
+          "avatar_system_prompt",
+          "video_flag",
+          "user_transcript",
+          "bot_transcript"
+        ]
+      }
+    },
+    "required": ["name", "description", "options"]
+}
+  

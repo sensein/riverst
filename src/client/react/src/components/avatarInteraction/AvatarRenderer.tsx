@@ -26,7 +26,7 @@ const FULL_BODY_CAMERA_SETTINGS: CameraSettings = {
 };
 
 const HALF_BODY_CAMERA_SETTINGS: CameraSettings = {
-  position: [0, 2.3, 10],
+  position: [0, 2.25, 10],
   fov: 10,
 };
 
@@ -199,9 +199,19 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
   }, []);
 
   useEffect(() => {
-    if (isLoaded && !isBodyPlaying.current) loadIdleAnimation();
-  }, [isLoaded, loadIdleAnimation]);
-
+    if (isLoaded && !isBodyPlaying.current) {
+      if (interactionState !== null) {
+        // Force interaction idle
+        console.log('[AvatarRenderer] Triggering idle 001 for interaction');
+        loadIdleAnimation(1);
+      } else {
+        // Play random idle only when not interacting
+        console.log('[AvatarRenderer] Triggering random idle');
+        loadIdleAnimation();
+      }
+    }
+  }, [isLoaded, interactionState, loadIdleAnimation]);  
+  
   const playBodyAnimation = useCallback((type: string) => {
     if (!mixerRef.current) return;
     // console.log("Loading body animation: ", type);
@@ -218,6 +228,7 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
         animationUrl = '/animations/i_dont_know/M_Standing_Expressions_005.glb';
         break;
       case 'idle':
+        console.log("Loading idle animation!!!!!!!");
         loadIdleAnimation(1);
         return;
       default:
@@ -289,7 +300,10 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
 
       loadIdleAnimation();
 
-      if (onAnimationEnd) onAnimationEnd();
+      if (onAnimationEnd) {
+        console.log('[AvatarRenderer] Animation ended — resetting trigger');
+        onAnimationEnd();
+      }
     }
   }, [loadIdleAnimation, onAnimationEnd]);
 

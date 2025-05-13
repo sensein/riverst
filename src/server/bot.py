@@ -1,5 +1,3 @@
-# TODO: how to sync video info???
-
 import os
 import sys
 
@@ -71,94 +69,18 @@ from senselab.audio.tasks.speaker_embeddings import extract_speaker_embeddings_f
 from senselab.utils.data_structures import DeviceType, SpeechBrainModel
 
 from transformers import Wav2Vec2Processor
-from transformers.models.wav2vec2.modeling_wav2vec2 import Wav2Vec2Model, Wav2Vec2PreTrainedModel
-import torch.nn as nn
 import torch
 from transformers import Wav2Vec2Processor
 import onnxruntime as ort
 from itertools import groupby
 from transformers import AutoProcessor, AutoModelForCTC, Wav2Vec2Processor
 
-from transformers import (
-    Wav2Vec2FeatureExtractor,
-    Wav2Vec2CTCTokenizer,
-    Wav2Vec2Processor,
-)
-
-class RegressionHead(nn.Module):
-    def __init__(self, config):
-        super().__init__()
-        self.dense = nn.Linear(config.hidden_size, config.hidden_size)
-        self.dropout = nn.Dropout(config.final_dropout)
-        self.out_proj = nn.Linear(config.hidden_size, config.num_labels)
-
-    def forward(self, features, **kwargs):
-        x = self.dropout(features)
-        x = self.dense(x)
-        x = torch.tanh(x)
-        x = self.dropout(x)
-        return self.out_proj(x)
-
-class EmotionModel(Wav2Vec2PreTrainedModel):
-    def __init__(self, config):
-        super().__init__(config)
-        self.config = config
-        self.wav2vec2 = Wav2Vec2Model(config)
-        self.classifier = RegressionHead(config)
-        self.init_weights()
-
-    def forward(self, input_values):
-        outputs = self.wav2vec2(input_values)
-        hidden_states = outputs[0]
-        pooled = torch.mean(hidden_states, dim=1)
-        logits = self.classifier(pooled)
-        return pooled, logits
-
-
-def load_emotion_model(model_name='audeering/wav2vec2-large-robust-12-ft-emotion-msp-dim', device='cpu'):
-    processor = Wav2Vec2Processor.from_pretrained(model_name)
-    model = EmotionModel.from_pretrained(model_name).to(device)
-    return processor, model
-
-
-import numpy as np
-
-def extract_emotions(audios, output_files, model, processor, device='cpu'):
-    results = []
-
-    for audio in audios:
-        waveform = audio.waveform  # Expected to be a 1D NumPy array
-        sr = audio.sampling_rate
-
-        processed = processor(waveform, sampling_rate=sr, return_tensors="pt", padding=True)
-        input_values = processed['input_values'].to(device)
-
-        with torch.no_grad():
-            _, logits = model(input_values)
-            scores = logits.cpu().numpy()[0].tolist()
-
-        results.append({
-            "arousal": scores[0],
-            "dominance": scores[1],
-            "valence": scores[2]
-        })
-
-    return results  # optionally write to output_files if needed
-
+# from utils.passthrough_video_processor import PassthroughVideoProcessor
+from utils.utils import tensor_to_serializable, save_audio_file
 
 load_dotenv(override=True)
 
 from typing import Optional, List
-
-def tensor_to_serializable(obj):
-    if isinstance(obj, torch.Tensor):
-        return obj.detach().cpu().tolist()
-    elif isinstance(obj, dict):
-        return {k: tensor_to_serializable(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
-        return [tensor_to_serializable(v) for v in obj]
-    return obj
-
 
 class TranscriptHandler:
     """Handles real-time transcript processing and output.
@@ -181,8 +103,6 @@ class TranscriptHandler:
         """
         self.messages: List[dict] = []
         self.output_file: Optional[str] = output_file
-        # Step 4: Emotion recognition
-        self.processor, self.emotion_model = load_emotion_model(device="cpu")
 
         logger.debug(
             f"TranscriptHandler initialized {'with output_file=' + output_file if output_file else 'with log output only'}"
@@ -286,123 +206,6 @@ class TranscriptHandler:
 
         except Exception as e:
             logger.error(f"Error in background audio processing for {filepath}: {e}")
-
-
-def build_llm_and_tts(bot_type: str, session: aiohttp.ClientSession, tools = None):
-    """Construct LLM and TTS services based on configuration.
-
-    Args:
-        bot_type (str): Selected bot backend implementation.
-        session (aiohttp.ClientSession): HTTP session for API communication.
-
-    Returns:
-        tuple: (llm, tts)
-    """
-    llm, tts, stt = None, None, None
-    bot_type = bot_type.lower().strip()
-
-    if bot_type == "openai":
-        stt = OpenAISTTService(
-            api_key=os.getenv("OPENAI_API_KEY"),
-            model="gpt-4o-transcribe",
-            audio_passthrough=True,  # This is fundamental for audiobuffer to work
-        )
-        llm = OpenAILLMService(api_key=os.getenv("OPENAI_API_KEY"), model="gpt-4o")
-        tts = OpenAITTSService(voice="nova", model="gpt-4o-mini-tts")
-
-    elif bot_type == "openai_realtime_beta":
-
-        session_properties = SessionProperties(
-            input_audio_transcription=InputAudioTranscription(),
-            # Set openai TurnDetection parameters. Not setting this at all will turn it
-            # on by default
-            turn_detection=SemanticTurnDetection(),
-            # Or set to False to disable openai turn detection and use transport VAD
-            # turn_detection=False,
-            input_audio_noise_reduction=InputAudioNoiseReduction(type="near_field"),
-            # tools=tools,
-            instructions=SYSTEM_INSTRUCTION,
-        )
-
-        llm = OpenAIRealtimeBetaLLMService(
-            api_key=os.getenv("OPENAI_API_KEY"),
-            model="gpt-4o-realtime-preview-2024-12-17",
-            session_properties=session_properties,
-            start_audio_paused=False,
-            send_transcription_frames=True,
-        )
-
-    elif bot_type == "gemini":
-        llm = GeminiMultimodalLiveLLMService(
-            api_key=os.getenv("GOOGLE_API_KEY"),
-            voice_id="Aoede",
-            transcribe_user_audio=True,
-            transcribe_model_audio=True,
-            system_instruction=SYSTEM_INSTRUCTION,
-            tools=tools
-        )
-        # sad story for now
-        # https://github.com/pipecat-ai/pipecat-flows/issues/66
-        # TODO: make sure to integate this when they implement it
-
-    elif bot_type == "opensource":
-        stt = WhisperSTTService(
-            audio_passthrough=True  # This is fundamental for audiobuffer to work
-        )
-        llm = OLLamaLLMService(model="llama3.2")
-        tts = PiperTTSService(base_url="http://localhost:5001/", aiohttp_session=session)
-        # TODO: check if this works now!!!
-
-    else:
-        raise ValueError(f"Invalid BOT_IMPLEMENTATION: {bot_type}")
-
-    return llm, tts, stt
-
-
-async def save_audio_file(audio: bytes, filename: str, sample_rate: int, num_channels: int):
-    """Fully async save of audio to a WAV file with no event loop blocking."""
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-
-    def write_to_buffer():
-        with io.BytesIO() as buffer:
-            with wave.open(buffer, "wb") as wf:
-                wf.setsampwidth(2)
-                wf.setnchannels(num_channels)
-                wf.setframerate(sample_rate)
-                wf.writeframes(audio)
-            return buffer.getvalue()
-
-    # Run the blocking wave logic in a thread
-    wav_bytes = await asyncio.get_event_loop().run_in_executor(None, write_to_buffer)
-
-    # Async write to disk
-    async with aiofiles.open(filename, "wb") as file:
-        await file.write(wav_bytes)
-
-class PassthroughProcessor(FrameProcessor):
-    def __init__(self, camera_out_width: int, camera_out_height: int):
-        super().__init__()
-        self._camera_out_width = camera_out_width
-        self._camera_out_height = camera_out_height
-
-    async def process_frame(self, frame: Frame, direction: FrameDirection):
-        await super().process_frame(frame, direction)
-
-        if isinstance(frame, InputImageRawFrame):
-            img = np.frombuffer(frame.image, dtype=np.uint8).reshape(
-                (frame.size[1], frame.size[0], 3)
-            )
-
-            desired_size = (self._camera_out_width, self._camera_out_height)
-            if frame.size != desired_size:
-                resized_image = cv2.resize(img, desired_size)
-                output_frame = OutputImageRawFrame(resized_image.tobytes(), desired_size, frame.format)
-            else:
-                output_frame = OutputImageRawFrame(image=img.tobytes(), size=frame.size, format=frame.format)
-
-            await self.push_frame(output_frame)
-        else:
-            await self.push_frame(frame, direction)
 
 class VideoProcessor(FrameProcessor):
     def __init__(self, camera_out_width: int, camera_out_height: int, 
@@ -578,28 +381,110 @@ class VideoProcessor(FrameProcessor):
                     await self.queue_frame(self.context_aggregator.assistant().get_context_frame())
     '''
 
-SYSTEM_INSTRUCTION = f"""
-"You are KIVA, a friendly, helpful robot.
+async def run_bot(webrtc_connection, config: dict, session_dir: str):
+    print("Config:", config)
+    print("Session dir:", session_dir)
 
-Your goal is to demonstrate your vocabulary teching skills in a succinct way.
+    '''
+    SYSTEM_INSTRUCTION = f"""
+    "You are KIVA, a friendly, helpful robot.
 
-Your output will be converted to audio so don't include special characters in your answers.
+    Your goal is to demonstrate your vocabulary teching skills in a succinct way.
 
-Respond to what the user said in a creative and helpful way. Keep your responses brief. One or two sentences at most.
+    Your output will be converted to audio so don't include special characters in your answers.
 
-When you want to congratulate, sometimes you can dance.
+    Respond to what the user said in a creative and helpful way. Keep your responses brief. One or two sentences at most.
 
-When the user joins the room say hi and (sometimes) wave with the hand.
+    When you want to congratulate, sometimes you can dance.
 
-When you don't know something, you can do the i don't know animation.
+    When the user joins the room say hi and (sometimes) wave with the hand.
 
-Start with a friendly greeting and ask how you can help the user.
-"""
+    When you don't know something, you can do the i don't know animation.
+
+    Start with a friendly greeting and ask how you can help the user.
+    """
+    '''
+    SYSTEM_INSTRUCTION = f"""
+    {config['avatar_system_prompt']}
+    Avatar description: {config['avatar_description']}
+    Task description: {config['task_description']}
+    """
+    if 'user_description' in config:
+        SYSTEM_INSTRUCTION += f"User description: {config['user_description']}"
+
+    
+    def build_llm_and_tts(bot_type: str, session: aiohttp.ClientSession, tools = None):
+        """Construct LLM and TTS services based on configuration.
+
+        Args:
+            bot_type (str): Selected bot backend implementation.
+            session (aiohttp.ClientSession): HTTP session for API communication.
+
+        Returns:
+            tuple: (llm, tts)
+        """
+        llm, tts, stt = None, None, None
+        bot_type = bot_type.lower().strip()
+
+        if bot_type == "openai":
+            stt = OpenAISTTService(
+                api_key=os.getenv("OPENAI_API_KEY"),
+                model="gpt-4o-transcribe",
+                audio_passthrough=True,  # This is fundamental for audiobuffer to work
+            )
+            llm = OpenAILLMService(api_key=os.getenv("OPENAI_API_KEY"), model="gpt-4o")
+            tts = OpenAITTSService(voice="nova", model="gpt-4o-mini-tts")
+
+        elif bot_type == "openai_realtime_beta":
+
+            session_properties = SessionProperties(
+                input_audio_transcription=InputAudioTranscription(),
+                # Set openai TurnDetection parameters. Not setting this at all will turn it
+                # on by default
+                turn_detection=SemanticTurnDetection(),
+                # Or set to False to disable openai turn detection and use transport VAD
+                # turn_detection=False,
+                input_audio_noise_reduction=InputAudioNoiseReduction(type="near_field"),
+                # tools=tools,
+                instructions=SYSTEM_INSTRUCTION,
+            )
+
+            llm = OpenAIRealtimeBetaLLMService(
+                api_key=os.getenv("OPENAI_API_KEY"),
+                model="gpt-4o-realtime-preview-2024-12-17",
+                session_properties=session_properties,
+                start_audio_paused=False,
+                send_transcription_frames=True,
+            )
+
+        elif bot_type == "gemini":
+            llm = GeminiMultimodalLiveLLMService(
+                api_key=os.getenv("GOOGLE_API_KEY"),
+                voice_id="Aoede",
+                transcribe_user_audio=True,
+                transcribe_model_audio=True,
+                system_instruction=SYSTEM_INSTRUCTION,
+                tools=tools
+            )
+            # sad story for now
+            # https://github.com/pipecat-ai/pipecat-flows/issues/66
+            # TODO: make sure to integate this when they implement it
+
+        elif bot_type == "opensource":
+            stt = WhisperSTTService(
+                audio_passthrough=True  # This is fundamental for audiobuffer to work
+            )
+            llm = OLLamaLLMService(model="llama3.2")
+            tts = PiperTTSService(base_url="http://localhost:5001/", aiohttp_session=session)
+            # TODO: check if this works now!!!
+
+        else:
+            raise ValueError(f"Invalid BOT_IMPLEMENTATION: {bot_type}")
+
+        return llm, tts, stt
 
 
-async def run_bot(webrtc_connection):
-
-    phoneme_viseme_map_file = "./assets/phoneme_viseme_map.json"
+    phoneme_viseme_map_file = "assets/phoneme_viseme_map.json"
     with open(phoneme_viseme_map_file, "r") as f:
         phoneme_viseme_map = json.load(f)
 
@@ -681,9 +566,9 @@ async def run_bot(webrtc_connection):
             print(f"Error processing audio: {e}")
             return None
 
-    session_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + str(uuid.uuid4())[:8]
-    session_dir = f"recordings/{session_id}"
-    os.makedirs(session_dir, exist_ok=True)
+    #session_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + str(uuid.uuid4())[:8]
+    #session_dir = f"recordings/{session_id}"
+    #os.makedirs(session_dir, exist_ok=True)
 
 
     transport_params = TransportParams(
@@ -713,7 +598,7 @@ async def run_bot(webrtc_connection):
                                         )
 
     async with aiohttp.ClientSession() as session:
-        bot_impl = os.getenv("BOT_IMPLEMENTATION", "gemini")
+        bot_impl = os.getenv("BOT_IMPLEMENTATION", "openai_realtime_beta")
         print("bot_impl: ", bot_impl)
         tools = ToolsSchema(standard_tools=[
             FunctionSchema(
@@ -838,6 +723,10 @@ async def run_bot(webrtc_connection):
                     llm,
                     tts,
                     viseme_audiobuffer,
+                    VideoProcessor(
+                        transport_params.camera_out_width, transport_params.camera_out_height,
+                        context, context_aggregator
+                    ),  # Sending the video back to the user
                     pipecat_transport.output(),
                     audiobuffer,
                     transcript.assistant(),
@@ -845,20 +734,6 @@ async def run_bot(webrtc_connection):
                     context_aggregator.assistant(),
                 ]
             )
-            '''
-            # after tts
-            PhonemeProcessor(
-                model_id='bookbot/wav2vec2-ljspeech-gruut', # "facebook/wav2vec2-lv-60-espeak-cv-ft",
-                rtvi=rtvi
-            ),
-
-            # after visemebuffer
-            VideoProcessor(
-                transport_params.camera_out_width, transport_params.camera_out_height,
-                context, context_aggregator
-            ),  # Sending the video back to the user
-            '''
-
         else:
             pipeline = Pipeline(
                 [

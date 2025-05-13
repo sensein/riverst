@@ -1,0 +1,34 @@
+@import url('https://fonts.googleapis.com/css2?family=Kirang+Haerang&display=swap');
+
+.kirang-haerang-regular {
+font-family: "Kirang Haerang", system-ui;
+font-weight: 400;
+font-style: normal;
+}
+
+.navbar {
+display: flex;
+justify-content: space-between;
+align-items: center;
+background-color: #fff;
+padding: 0 24px;
+height: 64px;
+width: 100%;
+box-shadow: none;
+border-bottom: 1px solid #e0e0e0;
+box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.navbar-logo {
+font-size: 50px;
+display: flex;
+align-items: center;
+}
+
+.navbar-logo-icon {
+width: 40px;
+height: 40px;
+vertical-align: bottom;
+margin-right: 5px;
+}
+  

@@ -10,16 +10,22 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ant-design/v5-patch-for-react-19": "^1.0.3",
     "@pipecat-ai/client-js": "^0.3.5",
-    "@pipecat-ai/small-webrtc-transport": "^0.0.2",
     "@pipecat-ai/client-react": "^0.3.5",
     "@pipecat-ai/daily-transport": "^0.3.8",
+    "@pipecat-ai/small-webrtc-transport": "^0.0.2",
     "@react-three/drei": "^10.0.6",
     "@react-three/fiber": "^9.1.2",
+    "@rjsf/antd": "^6.0.0-beta.6",
+    "@rjsf/core": "^6.0.0-beta.6",
+    "@rjsf/validator-ajv8": "^6.0.0-beta.6",
+    "antd": "^5.25.1",
     "axios": "^1.8.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-router-dom": "^7.5.0",
+    "react-draggable": "^4.4.6",
+    "react-router-dom": "^7.5.3",
     "three": "^0.175.0"
   },
   "devDependencies": {
