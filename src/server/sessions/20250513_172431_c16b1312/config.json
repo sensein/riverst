@@ -1,0 +1,23 @@
+{
+  "advanced_flows": false,
+  "pipeline_modality": "classic",
+  "llm_type": "openai",
+  "stt_type": "whisper",
+  "tts_type": "openai",
+  "body_animations": [
+    "wave",
+    "dance",
+    "i_dont_know"
+  ],
+  "camera_settings": "half_body",
+  "avatar_system_prompt": "You are an interactive robot. Keep your responses brief (one or two sentences at most). Your output will be converted to audio so don't include special characters in your answers. Respond to what the user said in a creative and helpful way. Start the conversation by introducing yourself.",
+  "avatar_personality_description": "You are the Riverst avatar, a friendly, helpful robot.",
+  "task_description": "Demonstrate how you can interact with the user in a short conversation. Assist the user with their requests.",
+  "user_description": "",
+  "video_flag": false,
+  "video_out_width": 640,
+  "video_out_height": 320,
+  "video_out_framerate": 30,
+  "user_transcript": false,
+  "bot_transcript": true
+}

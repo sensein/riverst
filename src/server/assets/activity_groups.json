@@ -32,7 +32,7 @@
         "description": "Let's talk: no script, just connection.",
         "route": "/avatar-interaction-settings",
         "disabled": false,
-        "settings_options_filepath": "/activities/settings/basic-avatar-interaction.json"
+        "settings_options_filepath": "activities/settings/basic-avatar-interaction.json"
       }
     ]
   },

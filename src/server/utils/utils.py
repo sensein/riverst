@@ -3,9 +3,10 @@ import os
 import io
 import wave
 import asyncio
-import torch
 import aiofiles
 from typing import Any
+import torch
+from torch import device as TorchDevice
 
 
 def tensor_to_serializable(obj: Any) -> Any:
@@ -69,3 +70,20 @@ async def save_audio_file(
     # Write to disk asynchronously
     async with aiofiles.open(filename, "wb") as f:
         await f.write(wav_bytes)
+
+def get_best_device() -> TorchDevice:
+    """Returns the "best" available torch device according to the following strategy:
+    
+    1. Use CUDA if available.
+    2. If not, use MPS (Metal Performance Shaders) if available.
+    3. Otherwise, fall back to CPU.
+    
+    Returns:
+        torch.device: The best available torch device ('cuda', 'mps', or 'cpu').
+    """
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        return torch.device("mps")
+    else:
+        return torch.device("cpu")

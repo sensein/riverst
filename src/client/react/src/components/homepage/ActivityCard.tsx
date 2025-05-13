@@ -62,6 +62,8 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ title, images, description,
     </div>
   );
 
+  console.log("settings_options_filepath", settings_options_filepath);
+
   return disabled ? (
     <div>{cardContent}
         <p>{settings_options_filepath}</p>

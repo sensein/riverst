@@ -16,7 +16,7 @@ export default function AvatarInteractionSettings() {
     if (!settingsUrl) return
     const url = settingsUrl.startsWith('http')
       ? settingsUrl
-      : `${window.location.origin}${settingsUrl}`
+      : `http://localhost:7860/${settingsUrl}`
 
     axios
       .get(url)
@@ -42,7 +42,7 @@ export default function AvatarInteractionSettings() {
       <div style={{ maxWidth: 600, margin: '40px auto', padding: 20 }}>
         <Alert
           type="error"
-          message="No activity settings provided."
+          message="No activitysettings provided."
           description={
             <>
               Please start from the <Link to="/">home page</Link>.

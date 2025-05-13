@@ -28,7 +28,6 @@ export default function AvatarInteraction() {
     }
     if (!settings) {
       setError('Missing interaction settings. Please make sure you have the correct link or return to the setup page.')
-      // TODO: error page
       setLoading(false)
       return
     }
