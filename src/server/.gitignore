@@ -1,2 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Environment and model files
 .env
+*.onnx
+*.onnx.json
+
+# Audio and session data
 recordings/
+*.wav
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+
+recordings/
+en_GB-alba-medium.onnx
+en_GB-alba-medium.onnx.json
+
+*.pt

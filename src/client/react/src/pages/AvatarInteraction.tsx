@@ -1,243 +1,67 @@
-// AvatarInteraction.tsx
-import {
-  RTVIClientAudio,
-  useRTVIClientTransportState,
-  useRTVIClientEvent,
-} from '@pipecat-ai/client-react';
-import { RTVIEvent } from '@pipecat-ai/client-js';
-import { RTVIProvider } from '../providers/RTVIProvider';
-import { ConnectButton } from '../components/ConnectButton';
-import { StatusDisplay } from '../components/StatusDisplay';
-import { DebugDisplay } from '../components/DebugDisplay';
-import AvatarRenderer from '../components/AvatarRenderer';
-import './AvatarInteraction.css';
-import { useEffect, useState, useCallback, useRef } from 'react';
-import axios from 'axios';
+// src/pages/AvatarInteraction.tsx
+import { useState, useEffect } from 'react'
+import { useParams, useLocation, Navigate } from 'react-router-dom'
+import { Spin, Alert } from 'antd'
+import { RTVIProvider } from '../providers/RTVIProvider'
+import AvatarInteractionContent from '../components/avatarInteraction/AvatarInteractionContent'
 
+interface SettingsState {
+  camera_settings: 'full_body' | 'half_body' | 'headshot'
+  video_flag: boolean
+  user_transcript: boolean
+  bot_transcript: boolean
+}
 
-function BotVideo() {
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [animationTrigger, setAnimationTrigger] = useState<string | null>(null);
-  const [cameraType, setCameraType] = useState<'full_body' | 'half_body' | 'headshot'>('headshot');
-  const [currentViseme, setCurrentViseme] = useState<number>(0);
-  const transportState = useRTVIClientTransportState();
+export default function AvatarInteraction() {
+  const { sessionId } = useParams<{ sessionId: string }>()
+  const settings = useLocation().state as SettingsState | null
 
-  // ————— Fallback random viseme loop —————
-  const visemeTimer = useRef<NodeJS.Timeout | null>(null);
-  const startRandomVisemeLoop = useCallback(() => {
-    // log('[qqq] Starting random viseme loop...');
-    visemeTimer.current = setInterval(() => {
-      setCurrentViseme(Math.floor(Math.random() * 22));
-    }, 120);
-  }, []);
-  const stopRandomVisemeLoop = useCallback(() => {
-    if (visemeTimer.current) {
-      clearInterval(visemeTimer.current);
-      visemeTimer.current = null;
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    // simple validation: sessionId and settings must both be present
+    if (!sessionId) {
+      setError('No session ID provided. Please start from the settings page.')
+      setLoading(false)
+      return
     }
-    // setCurrentViseme(0);
-  }, []);
-
-  // ————— Buffering & scheduling real visemes —————
-  const startTimeRef = useRef<number | null>(null);
-  const visemeBufferRef = useRef<{ duration: number; visemes: number[] }[]>([]);
-  const usingRealVisemesRef = useRef(false);
-  const timeoutHandlesRef = useRef<NodeJS.Timeout[]>([]);
-
-  const clearAllTimeouts = useCallback(() => {
-    timeoutHandlesRef.current.forEach(clearTimeout);
-    timeoutHandlesRef.current = [];
-  }, []);
-
-  const scheduleVisemeBuffer = useCallback(() => {
-    const buffer = visemeBufferRef.current;
-    const t0 = startTimeRef.current!;
-    const elapsed = performance.now() - t0;
-
-    let acc = 0;
-    let idx = 0;
-    // find current index based on elapsed
-    while (idx < buffer.length && acc + buffer[idx].duration * 1000 < elapsed) {
-      acc += buffer[idx].duration * 1000;
-      idx++;
+    if (!settings) {
+      setError('Missing interaction settings. Please make sure you have the correct link or return to the setup page.')
+      setLoading(false)
+      return
     }
-    if (idx >= buffer.length) return;
+    // everything looks good
+    setLoading(false)
+  }, [sessionId, settings])
 
-    // play the "current" viseme immediately
-    const first = buffer[idx];
-    setCurrentViseme(first.visemes[0]);
-
-    // schedule the rest
-    const timeIntoFirst = elapsed - acc;
-    let offset = first.duration * 1000 - timeIntoFirst;
-    for (let j = idx + 1; j < buffer.length; j++) {
-      const { duration, visemes } = buffer[j];
-      const handle = setTimeout(() => {
-        setCurrentViseme(visemes[0]);
-      }, offset);
-      timeoutHandlesRef.current.push(handle);
-      offset += duration * 1000;
-    }
-    setCurrentViseme(0);
-  }, []);
-
-  const log = useCallback((msg: string) => {
-    // console.log(`[${new Date().toISOString()}] ${msg}`);
-  }, []);
-
-  // ————— Events —————
-
-  useRTVIClientEvent(
-    RTVIEvent.BotStartedSpeaking,
-    useCallback(() => {
-      // log('[QQQ] Bot started speaking');
-      // mark start, reset
-      startTimeRef.current = performance.now();
-      usingRealVisemesRef.current = false;
-      visemeBufferRef.current = [];
-      clearAllTimeouts();
-      startRandomVisemeLoop();
-    }, [log, clearAllTimeouts, startRandomVisemeLoop])
-  );
-
-  useRTVIClientEvent(
-    RTVIEvent.BotStoppedSpeaking,
-    useCallback(() => {
-      // log('[QQQ] Bot stopped speaking');
-      startTimeRef.current = null;
-      usingRealVisemesRef.current = false;
-      visemeBufferRef.current = [];
-      clearAllTimeouts();
-      stopRandomVisemeLoop();
-      setCurrentViseme(0);
-    }, [log, clearAllTimeouts, stopRandomVisemeLoop])
-  );
-
-  useRTVIClientEvent(
-    RTVIEvent.ServerMessage,
-    useCallback(
-      (data: any) => {
-        if (data.type === 'animation-event') {
-          // - BODY ANIMATION - 
-          const { animation_id } = data.payload;
-          // log(`[QQQ] Animation event: ${animation_id}`);
-          if (animation_id === 'dance') setAnimationTrigger('dance');
-          else if (animation_id === 'wave') setAnimationTrigger('wave');
-          else if (animation_id === 'i_dont_know') setAnimationTrigger('i_dont_know');
-        }
-
-        // — VISEMES —
-        if (data.type === 'visemes-event') {
-          const payload = data.payload as { duration: number; visemes: number[] }[];
-          // log(`[QQQ] Visemes event: ${JSON.stringify(payload)}`);
-          // append to buffer
-          visemeBufferRef.current.push(...payload);
-
-          // once speech has started, always re‑schedule
-          if (startTimeRef.current !== null) {
-            if (!usingRealVisemesRef.current) {
-              usingRealVisemesRef.current = true;
-              // log('[QQQ] Using real visemes');
-              stopRandomVisemeLoop();
-            }
-            clearAllTimeouts();
-            scheduleVisemeBuffer();
-          }
-        }
-      },
-      [log, stopRandomVisemeLoop, clearAllTimeouts, scheduleVisemeBuffer]
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: 100 }}>
+        <Spin size="large" />
+      </div>
     )
-  );
+  }
 
-  // ————— Fetch avatar —————
-  useEffect(() => {
-    axios
-      .get('http://localhost:7860/avatar')
-      .then((resp) => setAvatarUrl(resp.data.avatar_url))
-      .catch((err) => console.error('Failed to fetch avatar:', err));
-  }, []);
-
-  useEffect(() => {
-    if (transportState === 'disconnected') {
-      // log('[QQQ] Disconnected - clearing visemes and animations');
-
-      // Stop animations and viseme loop
-      clearAllTimeouts();
-      stopRandomVisemeLoop();
-
-      // Reset viseme and animation state
-      setCurrentViseme(0);
-      setAnimationTrigger(null);
-    }
-  }, [transportState, log, clearAllTimeouts, stopRandomVisemeLoop]);
-
-
-  // ————— Triggers for body animations —————
-  // const triggerDance = () => setAnimationTrigger('dance');
-  // const triggerIDontKnow = () => setAnimationTrigger('i_dont_know');
-  // const triggerWave = () => setAnimationTrigger('wave');
-
-  if (!avatarUrl) return <div>Loading avatar...</div>;
-
-  return (
-    <div className="bot-container">
-      <div style={{ width: 800, height: 600, position: 'relative' }}>
-        <AvatarRenderer
-          avatarUrl={avatarUrl}
-          bodyAnimation={animationTrigger}
-          onAnimationEnd={() => setAnimationTrigger(null)}
-          cameraType={cameraType}
-          currentViseme={currentViseme}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 20,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 10,
-          }}
-        >
-          <button onClick={() => setCameraType('full_body')}>Full Body</button>
-          <button onClick={() => setCameraType('half_body')}>Half Body</button>
-          <button onClick={() => setCameraType('headshot')}>Headshot</button>
-        </div>
-        {/*
-        <div style={{ position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)' }}>
-          <button onClick={triggerDance}>Dance</button> 
-          <button onClick={triggerIDontKnow}>I don't know</button> 
-          <button onClick={triggerWave}>Wave</button>
-        </div>
-        */}
+  if (error) {
+    return (
+      <div style={{ maxWidth: 600, margin: '40px auto' }}>
+        <Alert type="error" message={error} showIcon />
       </div>
-    </div>
-  );
-}
+    )
+  }
 
-function AppContent() {
+  // at this point sessionId & settings are valid
   return (
-    <div className="app">
-      <div className="status-bar">
-        <StatusDisplay />
-        <ConnectButton />
-      </div>
-
-      <div className="main-content">
-        <BotVideo />
-      </div>
-
-      <DebugDisplay />
-      <RTVIClientAudio />
-    </div>
-  );
-}
-
-function App() {
-  return (
-    <RTVIProvider>
-      <AppContent />
+    <RTVIProvider sessionId={sessionId!} enableCam={settings!.video_flag}>
+      <AvatarInteractionContent
+        cameraType={settings!.camera_settings}
+        videoFlag={settings!.video_flag}
+        subtitlesEnabled={{
+          user: settings!.user_transcript,
+          bot: settings!.bot_transcript,
+        }}
+      />
     </RTVIProvider>
-  );
+  )
 }
-
-export default App;

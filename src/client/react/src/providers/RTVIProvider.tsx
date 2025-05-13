@@ -1,22 +1,35 @@
-import { type PropsWithChildren } from 'react';
-import { RTVIClient } from '@pipecat-ai/client-js';
-import { DailyTransport } from '@pipecat-ai/daily-transport';
-import { RTVIClientProvider } from '@pipecat-ai/client-react';
+// src/providers/RTVIProvider.tsx
+import { PropsWithChildren } from 'react'
+import { RTVIClient } from '@pipecat-ai/client-js'
+import { SmallWebRTCTransport } from '@pipecat-ai/small-webrtc-transport'
+import { RTVIClientProvider } from '@pipecat-ai/client-react'
 
-const transport = new DailyTransport();
+interface RTVIProviderProps {
+  sessionId: string,
+  enableCam: boolean,
+}
 
-const client = new RTVIClient({
-  transport,
-  params: {
-    baseUrl: 'http://localhost:7860',
-    endpoints: {
-      connect: '/connect',
-    },
-  },
-  enableMic: true,
-  enableCam: false,
-});
+export function RTVIProvider({
+  sessionId,
+  enableCam,
+  children
+}: PropsWithChildren<RTVIProviderProps>) {
+  // keep the same transport instance
+  const transport = new SmallWebRTCTransport();
 
-export function RTVIProvider({ children }: PropsWithChildren) {
-  return <RTVIClientProvider client={client}>{children}</RTVIClientProvider>;
+  // recreate client whenever sessionId changes
+  const client = new RTVIClient({
+        transport,
+        params: {
+          // inject sessionId into the offer URL
+          baseUrl: `http://localhost:7860/api/offer?session_id=${encodeURIComponent(
+            sessionId
+          )}`
+        },
+        enableMic: true,
+        enableCam: enableCam,
+        customConnectHandler: () => Promise.resolve()
+      });
+
+  return <RTVIClientProvider client={client} enableCam={enableCam}>{children}</RTVIClientProvider>
 }

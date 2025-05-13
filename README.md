@@ -6,9 +6,8 @@ Just the coolest multimodal avatar interface
 ```
 src/
 ├── server/              # Bot server implementation
-│   ├── bot.py    # bot implementation
-│   ├── runner.py        # Server runner utilities
-│   ├── server.py        # FastAPI server
+│   ├── utils           # Utility functions
+│   ├── main.py        # FastAPI server
 │   └── requirements.txt
 └── client/              # Client implementations
     └── react/           # React client
@@ -35,15 +34,42 @@ The code has a client-server architecture. You find instructions on how to run t
 - [x] incorporating video (with google gemini, but honestly doesn't work very well) (Fabio)
 - [x] Getting visemes more closely aligned with speech (Fabio)
 - [x] allowing opensource models (we have llama3.2 as llm and piper as tts that work decenlty for now) (Fabio)
+- [x] cleaning up the code and making it more modular (Fabio)
+- [x] remove dependency from Daily
+- [x] DO BETTER LIP SYNC (Fabio - it may be further improved, but that's more for the future)
+- [x] Integrate YOLO with onnx to make inference faster (Fabio)
 - [ ] more structured conversation flows (pipecat flows) (Bruce)
+- [ ] Integrate the advanced flows for the KIVA activities (Bruce)
 - [ ] summarizing sessions, saving (we save already the audio, but would be great if we also save transcripts and video). RAG model (Bruce)
-- [ ] cleaning up the code and making it more modular (Fabio)
+- [ ] cleaning animations (Fabio: I have cleaned them a bit but they are still not good if you play them multiple times...)
+- [ ] [BUG+HELP WANTED] there is something off with UserTranscript (it seems that the event is received twice on the client)
+- [ ] Understand how to communicate video-based emotion recognition (+ pose estimation?) to the llm (ethical and technical questions)
+- [ ] speech emotion recognition (ethical and technical questions)
+- [ ] record and add more animations (for expressivity!!!): https://github.com/readyplayerme/animation-library/tree/master/masculine/fbx/idle
+- [ ] handle multi-users:
+    - [ ] speaker verification (multi-user sessions) - we should try with diart
+- [ ] create an error page for the web app
+- [ ] add and structure a bit more avatar creation and voice selection (Fabio)
+- [ ] handle the end of the conversation on the client side
+- [ ] handle conversation memory
+- [ ] add session history page
+- [ ] add the user_id to the history of the session
+- [ ] add senselab analysis afterwards
+- [ ] clean the server main folder (moving models to the assets folder)
+        
 
-- [ ] cleaning animations (they are just not good if you play them multiple times)
-- [ ] understanding emotions, speech emotion detection
-- [ ] speaker verification (multi-user sessions) - is it just about looking for a good model that can do it?
-- [ ] remove dependency from Daily
-- [ ] there is something off with UserTranscript (it seems that the event is received twice on the client)
+########## FUTURE WORK ##########
+- TranscriptionLogger: https://github.com/pipecat-ai/pipecat/blob/09ff836ef6dec7070717a03111dc61f252e93814/examples/foundational/13-whisper-transcription.py
+ - https://github.com/pipecat-ai/pipecat/blob/09ff836ef6dec7070717a03111dc61f252e93814/examples/foundational/20a-persistent-context-openai.py
+ - https://github.com/pipecat-ai/pipecat/blob/09ff836ef6dec7070717a03111dc61f252e93814/examples/foundational/20b-persistent-context-openai-realtime.py
+ - https://github.com/pipecat-ai/pipecat/blob/09ff836ef6dec7070717a03111dc61f252e93814/examples/foundational/22-natural-conversation.py
+
+- ALTERNATIVE SMART TURN DETECTION? 
+    - https://github.com/pipecat-ai/pipecat/blob/09ff836ef6dec7070717a03111dc61f252e93814/examples/foundational/22b-natural-conversation-proposal.py
+    - https://github.com/pipecat-ai/pipecat/blob/09ff836ef6dec7070717a03111dc61f252e93814/examples/foundational/22c-natural-conversation-mixed-llms.py
+- RETRIEVAL AUGMENTED GENERATION
+    # https://github.com/pipecat-ai/pipecat/blob/09ff836ef6dec7070717a03111dc61f252e93814/examples/foundational/33-gemini-rag.py
+- MEMORY (long-term)
 
 ## Notes:
 - https://www.sesame.com/research/crossing_the_uncanny_valley_of_voice#demo

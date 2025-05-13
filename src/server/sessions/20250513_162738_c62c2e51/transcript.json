@@ -1,0 +1,17 @@
+[
+  {
+    "timestamp": "2025-05-13T20:29:13.275+00:00",
+    "role": "assistant",
+    "content": "Hello there! I'm Riverst, here to assist you.\nIs there anything I can help you with today?"
+  },
+  {
+    "timestamp": "2025-05-13T20:29:23.214+00:00",
+    "role": "assistant",
+    "content": "I sure can. Could you please repeat what you would like me to say?"
+  },
+  {
+    "timestamp": "2025-05-13T20:29:31.678+00:00",
+    "role": "assistant",
+    "content": "Can you say that again?\nYou nailed it! Is there anything else I can help you with?"
+  }
+]

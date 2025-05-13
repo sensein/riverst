@@ -1,36 +1,63 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Layout, Spin, Alert, Divider } from 'antd';
+import axios from 'axios';
+import Navbar from '../components/homepage/Navbar';
+import GroupedActivitySection from '../components/homepage/GroupedActivitySection';
+import { Content } from 'antd/es/layout/layout';
 
-const Homepage = () => {
-  const navigate = useNavigate();
+interface Activity {
+  title: string;
+  images: string[];
+  description: string;
+  route: string;
+  disabled?: boolean;
+}
+
+interface ActivityGroup {
+  title: string;
+  activities: Activity[];
+}
+
+const Homepage: React.FC = () => {
+  const [groups, setGroups] = useState<ActivityGroup[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    axios
+      .get<ActivityGroup[]>('http://localhost:7860/activities')
+      .then((response) => {
+        setGroups(response.data);
+        setError(null);
+      })
+      .catch((err) => {
+        console.error(err);
+        setError('Failed to load activities. Please try again later.');
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial' }}>
-      <h1>Activities</h1>
-
-      <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
-        <li>
-          <strong>1.</strong> Basic avatar choice{' '}
-          <button onClick={() => navigate('/avatar-creation')}>Start</button>
-        </li>
-        <li>
-          <strong>2.</strong> Advanced avatar customization{' '}
-          <button onClick={() => navigate('/advanced-avatar-creation')}>Start</button>
-        </li>
-        <li>
-          <strong>3.</strong> Avatar interaction - Child vocabulary training{' '}
-          <button onClick={() => navigate('/avatar-interaction')}>Start</button>
-        </li>
-        <li>
-          <strong>4.</strong> Avatar interaction - Adult training{' '}
-          <button disabled onClick={() => navigate('/avatar-interaction')}>Start</button>
-        </li>
-        <li>
-          <strong>5.</strong> Read a book{' '}
-          <button disabled>Open</button>
-        </li>
-      </ul>
-    </div>
+    <Layout style={{ minHeight: '100vh' }}>
+      <Navbar />
+      <Content style={{ padding: '1% 1%' }}>
+        {loading && <Spin />}
+        {error && <Alert type="error" message={error} showIcon />}
+        {groups && (
+          <div>
+            <div style={{ paddingLeft: 24 }}>
+              <h1 style={{ fontSize: 28, fontWeight: 700 }}>Welcome to <span className='riverst'>Riverst</span>!</h1>
+              <p style={{ fontSize: 20 }}>
+                <span className='riverst'>Riverst</span> is your personalized hub for interactive experiences. <u>Start by selecting one of the available activities below.</u>
+              </p>
+            </div>
+            <GroupedActivitySection groups={groups} />
+          </div>
+        )}
+      </Content>
+    </Layout>
   );
 };
 

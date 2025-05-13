@@ -1,26 +1,26 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import AvatarRenderer from '../components/AvatarRenderer';
+import AvatarRenderer from '../components/avatarInteraction/AvatarRenderer';
 
 const API_URL = 'http://localhost:8000/health';
 
 const avatars = [
   {
     id: 'avatar1',
-    name: 'Ava',
+    name: 'Avatar 1',
     modelUrl: 'https://models.readyplayer.me/67eaadeeffcddc994a40ed15.glb?morphTargets=mouthOpen,Oculus Visemes',
     audioUrl: null,
   },
   {
     id: 'avatar2',
-    name: 'Leo',
+    name: 'Avatar 2',
     modelUrl: 'https://models.readyplayer.me/67f5673ac9f387ddee751927.glb?morphTargets=mouthOpen,Oculus Visemes',
     audioUrl: null,
   },
   {
     id: 'avatar3',
-    name: 'Maya',
+    name: 'Avatar 3',
     modelUrl: 'https://models.readyplayer.me/67f5675a94c0a90f22341c86.glb?morphTargets=mouthOpen,Oculus Visemes',
     audioUrl: null,
   },
@@ -45,7 +45,7 @@ const AvatarCreatorPage = () => {
 
   return (
     <div className="p-6 space-y-6">
-        <h1 className="text-3xl font-bold">Avatar creator</h1>
+        <h1 className="text-3xl font-bold">Avatar selection</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {avatars.map((avatar) => (
             <div key={avatar.id} className="border rounded-lg p-4 shadow">

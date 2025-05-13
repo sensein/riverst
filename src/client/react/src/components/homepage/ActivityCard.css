@@ -1,0 +1,41 @@
+.activity-card {
+transition: transform 0.2s ease;
+}
+
+.activity-card:hover {
+transform: scale(1.02);
+box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+}
+
+.activity-card-disabled {
+pointer-events: none;
+}
+
+.activity-card-body .ant-card-body {
+padding: 16px;
+}
+
+.carousel-container {
+width: 100%;
+display: flex;
+justify-content: center;
+align-items: center;
+}
+
+.carousel-container .ant-carousel {
+width: 280px; /* or any fixed value less than the card width */
+}
+
+.image-container {
+height: 200px;
+display: flex !important; /* Needed because AntD injects slide styles */
+justify-content: center;
+align-items: center;
+background-color: #fff;
+}
+
+.activity-image {
+max-width: 100%;
+max-height: 160px;
+object-fit: contain;
+}

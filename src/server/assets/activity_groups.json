@@ -1,0 +1,60 @@
+[
+  {
+    "title": "Avatar customization",
+    "activities": [
+      {
+        "title": "Select your avatar",
+        "images": ["/figures/select_avatar_man_white.svg", 
+                   "/figures/select_avatar_woman_black.svg",
+                   "/figures/select_avatar_woman_white.svg",
+                   "/figures/select_avatar_man_black.svg"],
+        "description": "Choose who you'll interact with from our library of avatars ready to go.",
+        "route": "/avatar-creation",
+        "disabled": false
+      },
+      {
+        "title": "Create your avatar",
+        "images": ["/figures/create_avatar_black.svg", 
+                   "/figures/create_avatar_white.svg"],
+        "description": "Design the avatar you'll engage with: style, look, and voice are all up to you.",
+        "route": "/advanced-avatar-creation",
+        "disabled": false
+      }
+    ]
+  },
+  {
+    "title": "Playground just for fun",
+    "activities": [
+      {
+        "title": "Free style interaction",
+        "images": ["/figures/avatar_interaction_black.svg", 
+                   "/figures/avatar_interaction_white.svg"],
+        "description": "Let's talk: no script, just connection.",
+        "route": "/avatar-interaction-settings",
+        "disabled": false,
+        "settings_options_filepath": "activities/settings/basic-avatar-interaction.json"
+      }
+    ]
+  },
+  {
+    "title": "Knowledge Integration and Vocabulary Acquisition through AI (KIVA)",
+    "activities": [
+      {
+        "title": "Child vocabulary training",
+        "images": ["/figures/avatar_interaction_black.svg", 
+                   "/figures/avatar_interaction_white.svg"],
+        "description": "Discover new words through fun, guided play with your avatar.",
+        "route": "/avatar-interaction",
+        "disabled": true
+      },
+      {
+        "title": "Listen to an audiobook",
+        "images": ["/figures/audiobook_white.svg", 
+                   "/figures/audiobook_black.svg"],
+        "description": "Follow along with visual cues that support reading, not just listening.",
+        "route": "/read-book",
+        "disabled": true
+      }
+    ]
+  }
+]
