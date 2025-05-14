@@ -6,25 +6,22 @@ import json
 from typing import Dict, Any, Optional
 from pydantic import ValidationError
 
-from ..configs.models import StateConfig
 from ..utils import load_config
+from ..models import FlowConfigurationFile
 
 
-async def get_flow_state() -> Dict[str, Any]:
+
+async def get_flow_state(flow_config: FlowConfigurationFile) -> Dict[str, Any]:
     """
     Get and validate the flow state configuration.
+    
+    Args:
+        flow_config: validated FlowConfigurationFile object.
     
     Returns:
         The validated flow state configuration
     """
-
-    # Load the configuration file (validated structure)
-    config = load_config()
-
-    state = config.get("state_config")
-
-    # Validate state against model
-    StateConfig(**state)
+    state = flow_config.get("state_config")
     
     return state
 

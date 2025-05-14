@@ -11,6 +11,7 @@ from ..models import FlowConfigurationFile, FlowConfig
 
 
 async def get_flow_nodes(
+    flow_config: FlowConfigurationFile,
     module=None,
     overwrite_policy: Union[str, OverwritePolicy] = OverwritePolicy.RAISE,
     initialize_schemas_first: bool = True
@@ -21,6 +22,7 @@ async def get_flow_nodes(
     initializes schemas first by default.
     
     Args:
+        flow_config_path: Path to the flow configuration JSON file.
         module: Module object where to look for schema objects. 
                 Defaults to the calling module.
         overwrite_policy: How to handle conflicts with existing variables
@@ -37,21 +39,17 @@ async def get_flow_nodes(
     if isinstance(overwrite_policy, str):
         overwrite_policy = OverwritePolicy(overwrite_policy.lower())
     
+    
     # Initialize schemas first if requested
     if initialize_schemas_first:
         from ..config.schema_init import initialize_schemas
-        initialize_schemas(module, overwrite_policy)
+        initialize_schemas(flow_config, module, overwrite_policy)
     
     module_globals = get_module_globals(module)
     
-    # load main config file
-    config = load_config()
-    
     # validate flows config 
-    flow_config = FlowConfig(**config.get("flow_config"))
+    nodes = flow_config.get("flow_config").get("nodes")
     
-    nodes = flow_config.get("nodes")
-
     missing_functions = set()
     for node_name, node in nodes.items():
     
@@ -73,12 +71,15 @@ async def get_flow_nodes(
     return nodes
 
 
-async def get_flow_initial_node() -> Optional[str]:
+async def get_flow_initial_node(flow_config_path: str) -> Optional[str]:
     """
     Get the initial node from the flow configuration. Validation is handled by load_config.
+    
+    Args:
+        flow_config_path: Path to the flow configuration JSON file.
     
     Returns:
         The name of the initial node or None if not found.
     """
-    config = load_config()
+    config = load_config(flow_config_path)
     return config.get("initial_node")

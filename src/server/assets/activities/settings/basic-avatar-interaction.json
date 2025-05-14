@@ -16,9 +16,13 @@
       "properties": {
         "advanced_flows": {
           "type": "boolean",
-          "const": false,
           "default": false,
-          "description": "This activity only supports basic flows. Advanced flows are not allowed for the basic avatar interaction activity and must be set to false."
+          "description": "Set to true to enable advanced flows for this activity."
+        },
+        "advanced_flows_config_path": {
+          "type": "string",
+          "description": "Path to the advanced flows configuration file. Required when advanced_flows is set to true.",
+          "examples": ["./src/server/flows/configs/vocab-tutoring.json"]
         },
         "pipeline_modality": {
           "type": "string",
@@ -69,7 +73,7 @@
           "type": "string",
           "maxLength": 500,
           "default": "You are the Riverst avatar, a friendly, helpful robot.",
-          "description": "Text describing the avatar’s personality and role."
+          "description": "Text describing the avatar's personality and role."
         },
         "task_description": {
           "type": "string",
@@ -109,12 +113,12 @@
           "type": "boolean",
           "const": false,
           "default": false,
-          "description": "Enable showing the transcript of the user’s speech. FUTURE WORK: This cannot be implemented yet because some LLM services send transcripts in the wrong order (see Gemini and OpenAI realtime beta)."
+          "description": "Enable showing the transcript of the user's speech. FUTURE WORK: This cannot be implemented yet because some LLM services send transcripts in the wrong order (see Gemini and OpenAI realtime beta)."
         },
         "bot_transcript": {
           "type": "boolean",
           "default": true,
-          "description": "Enable showing the transcript of the avatar’s speech."
+          "description": "Enable showing the transcript of the avatar's speech."
         }
       },
       "required": [
@@ -126,6 +130,18 @@
         "video_flag",
         "user_transcript",
         "bot_transcript"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "advanced_flows": { "enum": [true] }
+            }
+          },
+          "then": {
+            "required": ["advanced_flows_config_path"]
+          }
+        }
       ]
     }
   },

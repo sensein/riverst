@@ -6,6 +6,11 @@ import os
 from enum import Enum
 from typing import Dict, Any, Optional
 from ..models import FlowConfigurationFile
+from ..configs.models import StateConfig
+from ..configs.models import FlowConfig
+from ..configs.models import SchemasConfig
+
+
 
 
 class OverwritePolicy(str, Enum):
@@ -35,15 +40,23 @@ def get_module_globals(module=None) -> Dict[str, Any]:
     return module.__dict__
 
 
-def load_config() -> FlowConfigurationFile:
+def load_config(flow_config_path: str) -> FlowConfigurationFile:
     """
-    Load and validate the flow configuration from a JSON file, set in FLOW_CONFIG_PATH environment variable.
+    Load and validate the flow configuration from a JSON file.
     """
-    json_file_path: str = os.getenv("FLOW_CONFIG_PATH"),
-    with open(json_file_path, 'r') as f:
+    if not os.path.exists(flow_config_path):
+        raise FileNotFoundError(f"Configuration file not found: {flow_config_path}")    
+    
+    with open(flow_config_path, 'r') as f:
         config = json.load(f)
         
-    # validate the config
+    # validate the overall config
     FlowConfigurationFile(**config)
+    
+    # validate the subcomponents
+    SchemasConfig(**config.get("schemas", {}))
+    FlowConfig(**config.get("flow_config", {}))
+    StateConfig(**config.get("state_config", {}))
+    
     
     return config

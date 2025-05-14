@@ -10,10 +10,11 @@ from pipecat_flows import FlowsFunctionSchema
 from ..utils.module_utils import OverwritePolicy, get_module_globals, load_config
 from ..state.handlers import general_handler
 
-from ..models import FlowConfigurationFile, SchemasConfig
+from ..models import FlowConfigurationFile
 
 
 def initialize_schemas(
+    flow_config: FlowConfigurationFile,
     module=None, 
     overwrite_policy: Union[str, OverwritePolicy] = OverwritePolicy.RAISE
 ) -> Dict[str, FlowsFunctionSchema]:
@@ -22,7 +23,7 @@ def initialize_schemas(
     Sets them as global variables in the module, defaults to calling module.
     
     Args:
-        json_file_path: Path to the JSON schema file
+        flow_config: FlowConfigurationFile object containing the configuration data.
         module: Module object where schemas should be added as globals
                 Defaults to the calling module
         overwrite_policy: How to handle conflicts with existing variables:
@@ -43,12 +44,8 @@ def initialize_schemas(
     
     module_globals = get_module_globals(module)
     
-    
-    config = load_config()
-    schema_data = config.get("schemas")
-    
-    # validate schema_data
-    SchemasConfig(**schema_data)
+    schema_data = flow_config.get("schemas")
+
     
     schemas = {}
     for schema_name, config in schema_data.items():
