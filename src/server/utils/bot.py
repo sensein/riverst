@@ -27,9 +27,9 @@ from .utils import save_audio_file
 from .transcript_handler import TranscriptHandler
 from .viseme import VisemeProcessor
 from .bot_component_factory import BotComponentFactory
+from .flow_component_factory import FlowComponentFactory
 
 load_dotenv(override=True)
-
 
 async def run_bot(
     webrtc_connection: Any,
@@ -145,8 +145,6 @@ async def run_bot(
         transcript = TranscriptProcessor()
         transcript_handler = TranscriptHandler(output_file=f"{session_dir}/transcript.json")
 
-        if config["advanced_flows"]:
-            raise NotImplementedError("Advanced flows are not yet implemented.")
 
         if stt is not None and tts is not None:
             pipeline = Pipeline(
@@ -193,6 +191,19 @@ async def run_bot(
             pipeline,
             params=PipelineParams(allow_interruptions=True, observers=[RTVIObserver(rtvi)]),
         )
+        
+        # Initialize flow manager if advanced flows are enabled
+        flow_factory = FlowComponentFactory(
+            llm=llm,
+            context_aggregator=context_aggregator,
+            task=task,
+            advanced_flows=config.get("advanced_flows", False),
+            flow_config_path=config.get("advanced_flows_config_path"),
+            context_strategy=ContextStrategy.RESET_WITH_SUMMARY,
+            summary_prompt="Summarize the key moments of learning, words, and concepts discussed in the tutoring session so far. Keep it concise and focused on vocabulary learning.",
+        )
+        flow_manager = flow_factory.build()
+
 
         # Event handlers for data, transcripts, visemes, and UI events
         @transcript.event_handler("on_transcript_update")
@@ -224,6 +235,9 @@ async def run_bot(
         async def on_client_ready(rtvi):
             await rtvi.set_bot_ready()
             await task.queue_frames([context_aggregator.user().get_context_frame()])
+            
+            if flow_manager:
+                await flow_manager.initialize()
 
         @pipecat_transport.event_handler("on_client_connected")
         async def on_client_connected(_, __):
