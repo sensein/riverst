@@ -1,0 +1,270 @@
+/* Debug panel styling */
+#debugPanel {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+#debugOutput {
+    font-family: monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.log-entry {
+    margin-bottom: 3px;
+}
+
+.log-time {
+    color: #6c757d;
+    font-size: 0.9em;
+}
+
+.log-type {
+    font-weight: bold;
+}
+
+.log-warn {
+    background-color: #fff3cd;
+    padding: 2px 5px;
+    border-radius: 3px;
+}
+
+.log-error {
+    background-color: #f8d7da;
+    padding: 2px 5px;
+    border-radius: 3px;
+}
+
+#toggleDebugBtn {
+    border-color: #6c757d;
+    color: #6c757d;
+}
+
+#toggleDebugBtn:hover {
+    background-color: #6c757d;
+    color: white;
+}/* styles for the updated flow builder interface */
+body {
+    background-color: #f8f9fa;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.container {
+    max-width: 1200px;
+}
+
+/* Accordion styling */
+.accordion-item {
+    margin-bottom: 10px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: #e7f1ff;
+    color: #0d6efd;
+    box-shadow: none;
+}
+
+.accordion-button:focus {
+    box-shadow: none;
+    border-color: rgba(13, 110, 253, 0.25);
+}
+
+/* Card styling */
+.card {
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.node-card, .schema-card {
+    border: 1px solid #dee2e6;
+    margin-bottom: 1rem;
+}
+
+.node-card .card-header, .schema-card .card-header {
+    background-color: #f8f9fa;
+    padding: 0.75rem 1rem;
+}
+
+.node-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Node ordering indicators */
+.node-header.bg-primary {
+    background-color: #0d6efd !important;
+}
+
+.node-header.bg-success {
+    background-color: #198754 !important;
+}
+
+/* Task variables and session info styling */
+.task-var-card, .session-info-card, .checklist-item-card, .info-field-item-card {
+    border: 1px solid #e9ecef;
+    box-shadow: none;
+}
+
+.task-var-card .card-body,
+.session-info-card .card-body,
+.checklist-item-card .card-body,
+.info-field-item-card .card-body {
+    padding: 0.75rem;
+}
+
+/* Form elements styling */
+.form-control, .form-select {
+    border-color: #dee2e6;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+textarea.form-control {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    color: #212529;
+}
+
+/* Tab styling */
+.nav-tabs {
+    border-bottom: 1px solid #dee2e6;
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    color: #6c757d;
+    padding: 0.5rem 1rem;
+    border-bottom: 3px solid transparent;
+    border-radius: 0;
+    margin-right: 0.5rem;
+}
+
+.nav-tabs .nav-link:hover {
+    border-bottom-color: #dee2e6;
+    color: #495057;
+}
+
+.nav-tabs .nav-link.active {
+    color: #0d6efd;
+    background-color: transparent;
+    border-bottom-color: #0d6efd;
+}
+
+.tab-content {
+    padding: 1rem 0;
+}
+
+/* Buttons styling */
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-success {
+    background-color: #198754;
+    border-color: #198754;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-info {
+    background-color: #0dcaf0;
+    border-color: #0dcaf0;
+    color: #000;
+}
+
+.btn-outline-primary {
+    color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-outline-danger {
+    color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* Result container */
+#resultContainer {
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+/* Drag and drop styling */
+.sortable-ghost {
+    opacity: 0.4;
+    background-color: #f0f0f0;
+}
+
+.handle {
+    cursor: move;
+    color: #adb5bd;
+}
+
+.node-card:hover .handle {
+    color: #6c757d;
+}
+
+/* Animation for adding new elements */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.node-card, 
+.task-var-card, 
+.session-info-card,
+.checklist-item-card,
+.info-field-item-card {
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Badge styling */
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .card-body {
+        padding: 0.75rem;
+    }
+    
+    .row {
+        margin-right: -5px;
+        margin-left: -5px;
+    }
+    
+    .col-12, .col-md-6, .col-5, .col-4, .col-3 {
+        padding-right: 5px;
+        padding-left: 5px;
+    }
+}
