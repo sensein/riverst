@@ -15,3 +15,4 @@ deepface
 tf-keras
 senselab[audio]
 optimum[onnxruntime]
+pipecat-ai-flows

@@ -4,7 +4,8 @@ Node configuration models.
 This module defines Pydantic models that represent the structure of 
 node configurations in the flow system. 
 """
-from typing import Dict, List, Optional, Any
+from typing import Dict, Any
+from typing_extensions import TypedDict as _TypedDict
 from pydantic import BaseModel, model_validator
 
 from pipecat_flows import NodeConfig
@@ -24,8 +25,6 @@ class PostAction(BaseModel):
     model_config = {"extra": "allow"} 
 
     
-
-
 class NodesConfig(BaseModel):
     """
     Configuration for the conversation flow.

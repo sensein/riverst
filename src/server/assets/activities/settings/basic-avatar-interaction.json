@@ -1,149 +1,474 @@
 {
-  "title": "Basic Avatar Interaction Configuration",
-  "description": "Schema for configuring a basic avatar interaction activity.",
-  "type": "object",
-  "properties": {
-    "name": {
-      "type": "string",
-      "const": "basic-avatar-interaction"
-    },
-    "description": {
-      "type": "string",
-      "const": "Basic avatar interaction activity."
-    },
-    "options": {
-      "type": "object",
-      "properties": {
-        "advanced_flows": {
-          "type": "boolean",
-          "default": false,
-          "description": "Set to true to enable advanced flows for this activity."
-        },
-        "advanced_flows_config_path": {
-          "type": "string",
-          "description": "Path to the advanced flows configuration file. Required when advanced_flows is set to true.",
-          "examples": ["./src/server/flows/configs/vocab-tutoring.json"]
-        },
-        "pipeline_modality": {
-          "type": "string",
-          "enum": ["classic", "e2e"],
-          "default": "classic",
-          "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline."
-        },
-        "llm_type": {
-          "type": "string",
-          "enum": ["openai", "openai_realtime_beta", "gemini", "llama3.2"],
-          "default": "openai",
-          "description": "The LLM service to use."
-        },
-        "stt_type": {
-          "type": "string",
-          "enum": ["whisper", "openai"],
-          "default": "whisper",
-          "description": "The STT service to use."
-        },
-        "tts_type": {
-          "type": "string",
-          "enum": ["openai", "piper"],
-          "default": "openai",
-          "description": "The TTS service to use."
-        },
-        "body_animations": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": ["wave", "dance", "i_dont_know"]
+"avatar_configuration":
+  {
+    "title": "Basic Avatar Interaction Configuration",
+    "description": "Schema for configuring a basic avatar interaction activity.",
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "const": "basic-avatar-interaction"
+      },
+      "description": {
+        "type": "string",
+        "const": "Basic avatar interaction activity."
+      },
+      "options": {
+        "type": "object",
+        "properties": {
+          "advanced_flows": {
+            "type": "boolean",
+            "default": false,
+            "description": "Set to true to enable advanced flows for this activity."
           },
-          "default": ["wave", "dance", "i_dont_know"],
-          "description": "List of body animations that the avatar can perform."
+          "advanced_flows_config_path": {
+            "type": "string",
+            "description": "Path to the advanced flows configuration file. Required when advanced_flows is set to true.",
+            "examples": ["./src/server/assets/activities/settings/basic-avatar-interaction.json"]
+          },
+          "pipeline_modality": {
+            "type": "string",
+            "enum": ["classic", "e2e"],
+            "default": "classic",
+            "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline."
+          },
+          "llm_type": {
+            "type": "string",
+            "enum": ["openai", "openai_realtime_beta", "gemini", "llama3.2"],
+            "default": "openai",
+            "description": "The LLM service to use."
+          },
+          "stt_type": {
+            "type": "string",
+            "enum": ["whisper", "openai"],
+            "default": "whisper",
+            "description": "The STT service to use."
+          },
+          "tts_type": {
+            "type": "string",
+            "enum": ["openai", "piper"],
+            "default": "openai",
+            "description": "The TTS service to use."
+          },
+          "body_animations": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["wave", "dance", "i_dont_know"]
+            },
+            "default": ["wave", "dance", "i_dont_know"],
+            "description": "List of body animations that the avatar can perform."
+          },
+          "camera_settings": {
+            "type": "string",
+            "enum": ["half_body", "headshot", "full_body"],
+            "default": "half_body",
+            "description": "Select the camera framing used for the avatar during the interaction."
+          },
+          "avatar_system_prompt": {
+            "type": "string",
+            "maxLength": 500,
+            "default": "You are an interactive robot. Keep your responses brief (one or two sentences at most). Your output will be converted to audio so don't include special characters in your answers. Respond to what the user said in a creative and helpful way. Start the conversation by introducing yourself.",
+            "description": "Instructions defining how the avatar should behave during the interaction."
+          },
+          "avatar_personality_description": {
+            "type": "string",
+            "maxLength": 500,
+            "default": "You are the Riverst avatar, a friendly, helpful robot.",
+            "description": "Text describing the avatar's personality and role."
+          },
+          "task_description": {
+            "type": "string",
+            "maxLength": 500,
+            "default": "Demonstrate how you can interact with the user in a short conversation. Assist the user with their requests.",
+            "description": "Free-text description of the task or goal of the interaction."
+          },
+          "user_description": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "Optional free-text field to describe the user."
+          },
+          "video_flag": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable or disable video processing during the session."
+          },
+          "video_out_width": {
+            "type": "integer",
+            "const": 640,
+            "default": 640,
+            "description": "Width of the video output in pixels."
+          },
+          "video_out_height": {
+            "type": "integer",
+            "const": 320,
+            "default": 320,
+            "description": "Height of the video output in pixels."
+          },
+          "video_out_framerate": {
+            "type": "integer",
+            "const": 30,
+            "default": 30,
+            "description": "Framerate of the video output in frames per second."
+          },
+          "user_transcript": {
+            "type": "boolean",
+            "const": false,
+            "default": false,
+            "description": "Enable showing the transcript of the user's speech. FUTURE WORK: This cannot be implemented yet because some LLM services send transcripts in the wrong order (see Gemini and OpenAI realtime beta)."
+          },
+          "bot_transcript": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable showing the transcript of the avatar's speech."
+          }
         },
-        "camera_settings": {
-          "type": "string",
-          "enum": ["half_body", "headshot", "full_body"],
-          "default": "half_body",
-          "description": "Select the camera framing used for the avatar during the interaction."
+        "required": [
+          "advanced_flows",
+          "camera_settings",
+          "task_description",
+          "avatar_personality_description",
+          "avatar_system_prompt",
+          "video_flag",
+          "user_transcript",
+          "bot_transcript"
+        ],
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "advanced_flows": { "enum": [true] }
+              }
+            },
+            "then": {
+              "required": ["advanced_flows_config_path"]
+            }
+          }
+        ]
+      }
+    },
+    "required": ["name", "description", "options"]
+  },
+  "flows_configuration": {
+  "name": "vocab-tutoring",
+  "description": "A flow for an AI to help children learn vocabulary words from a book they are reading.",
+
+  "state_config": {
+      "stages": {
+        "warm_up": {
+          "checklist": {
+            "friendly_greeting_done": false,
+            "asked_about_audiobook": false,
+            "followed_up_appropriately": false
+          },
+          "checklist_incomplete_message": "Please complete the following warm-up items: {}.",
+          "checklist_complete_message": "Great job completing the warm-up stage. Now let's move on to the first vocabulary word.",
+          "next_stage": "word1"
         },
-        "avatar_system_prompt": {
-          "type": "string",
-          "maxLength": 500,
-          "default": "You are an interactive robot. Keep your responses brief (one or two sentences at most). Your output will be converted to audio so don't include special characters in your answers. Respond to what the user said in a creative and helpful way. Start the conversation by introducing yourself.",
-          "description": "Instructions defining how the avatar should behave during the interaction."
+        "word1": {
+          "checklist": {
+            "selected_unknown_word": false,
+            "defined_simply": false,
+            "asked_book_context_understanding": false,
+            "asked_broader_context_understanding": false,
+            "asked_for_new_sentence": false
+          },
+          "checklist_incomplete_message": "Please complete the following vocabulary items: {}.",
+          "checklist_complete_message": "Great job teaching the first vocabulary word. Now let's move on to the second vocabulary word.",
+          "next_stage": "word2"
         },
-        "avatar_personality_description": {
-          "type": "string",
-          "maxLength": 500,
-          "default": "You are the Riverst avatar, a friendly, helpful robot.",
-          "description": "Text describing the avatar's personality and role."
+        "word2": {
+          "checklist": {
+            "selected_unknown_word": false,
+            "defined_simply": false,
+            "asked_book_context_understanding": false,
+            "asked_broader_context_understanding": false,
+            "asked_for_new_sentence": false
+          },
+          "checklist_incomplete_message": "Please complete the following vocabulary items: {}.",
+          "checklist_complete_message": "Great job teaching the second vocabulary word. Now let's review both vocabulary words to reinforce the learning.",
+          "next_stage": "word1_review"
         },
-        "task_description": {
-          "type": "string",
-          "maxLength": 500,
-          "default": "Demonstrate how you can interact with the user in a short conversation. Assist the user with their requests.",
-          "description": "Free-text description of the task or goal of the interaction."
+        "word1_review": {
+          "checklist": {
+            "asked_for_definition": false,
+            "asked_for_sentence": false,
+            "provided_formal_definition": false
+          },
+          "checklist_incomplete_message": "Please complete the following review items: {}.",
+          "checklist_complete_message": "Great job reviewing the first vocabulary word. Now let's review the second vocabulary word.",
+          "next_stage": "word2_review"
         },
-        "user_description": {
-          "type": "string",
-          "maxLength": 500,
-          "description": "Optional free-text field to describe the user."
+        "word2_review": {
+          "checklist": {
+            "asked_for_definition": false,
+            "asked_for_sentence": false,
+            "provided_formal_definition": false
+          },
+          "checklist_incomplete_message": "Please complete the following review items: {}.",
+          "checklist_complete_message": "Great job reviewing both vocabulary words. Now let's wrap up the session.",
+          "next_stage": "closing"
         },
-        "video_flag": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable or disable video processing during the session."
-        },
-        "video_out_width": {
-          "type": "integer",
-          "const": 640,
-          "default": 640,
-          "description": "Width of the video output in pixels."
-        },
-        "video_out_height": {
-          "type": "integer",
-          "const": 320,
-          "default": 320,
-          "description": "Height of the video output in pixels."
-        },
-        "video_out_framerate": {
-          "type": "integer",
-          "const": 30,
-          "default": 30,
-          "description": "Framerate of the video output in frames per second."
-        },
-        "user_transcript": {
-          "type": "boolean",
-          "const": false,
-          "default": false,
-          "description": "Enable showing the transcript of the user's speech. FUTURE WORK: This cannot be implemented yet because some LLM services send transcripts in the wrong order (see Gemini and OpenAI realtime beta)."
-        },
-        "bot_transcript": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable showing the transcript of the avatar's speech."
+        "closing": {
+          "checklist": {
+            "praised_child": false,
+            "encouraged_continued_reading": false,
+            "suggested_word_usage": false,
+            "summarized_learning": false
+          },
+          "checklist_incomplete_message": "Please complete the following closing items: {}.",
+          "checklist_complete_message": "Great job wrapping up the session. You're all set for the next reading!",
+          "next_stage": "end"
         }
       },
-      "required": [
-        "advanced_flows",
-        "camera_settings",
-        "task_description",
-        "avatar_personality_description",
-        "avatar_system_prompt",
-        "video_flag",
-        "user_transcript",
-        "bot_transcript"
-      ],
-      "allOf": [
-        {
-          "if": {
-            "properties": {
-              "advanced_flows": { "enum": [true] }
-            }
-          },
-          "then": {
-            "required": ["advanced_flows_config_path"]
+      "info": {
+        "has_listened_to_book": false,
+        "vocab_words_known": [],
+        "vocab_words_taught": []
+      },
+      "task_variables": {
+        "vocab_words": [
+          "accomplish", "anxious", "approve", "arrange", "bizarre",
+          "brief", "cautious", "cherish", "classify", "conclude",
+          "dependable", "describe", "disaster", "distant", "distract",
+          "elaborate", "emerge", "estimate", "familiar", "fragile"
+        ],
+        "reading_context": ""
+      }
+    },
+
+    "node_config":{
+    "initial_node": "warm_up",
+    "nodes": {
+      "warm_up": {
+        "role_messages": [
+          {
+            "role": "system",
+            "content": "You are a supportive and engaging tutor conducting a one-on-one remote session with a 3rd or 4th grader. You provide scaffolded instructional support. Use animations when appropriate, such as congratulating a user, but only one at a time, these are available tools to you. Do not mention anything relating to checking about whether we are ready to move on to the next section or anything related. Keep your responses very brief. DO NOT USE EMOJIS OR SPECIAL CHARACTERS AT ALL IN YOUR RESPONSES, otherwise you will be fired! Allow the child to respond, keep the things you say very short and simple. Talk naturally and conversationally, as if you are a real person on a video call, not a robot trained to perfection. You need to steer the conversation, covering all required elements, getting sidetracked is fine but every statement needs to progress the conversation."
           }
-        }
-      ]
+        ],
+        "task_messages": [
+          {
+            "role": "system",
+            "content": "Have a friendly conversation with the child start the session, as you would to a child you are seeing again after a week. You know they are listening to Matilda on their audiobook, ask if they had a chance to listen this week. If they have, ask one intelligent and accessible follow-up questions about the story/literary themes. If they haven't, encourage them to start soon, and ask what time in the day would be best for them to listen. This should feel like a natural conversation, not a checklist of questions. Let the conversation flow, but make sure you cover these important points before moving to vocabulary instruction. Call the check_warm_up_progress/warm_up_schema function when you want to know whether you've covered all required elements and are ready to move on to teaching vocabulary words, DO NOT MENTION IN THE CHAT THAT YOU ARE CHECKING ANYTHING OR YOU WILL BE FIRED."
+          }
+        ],
+        "functions": ["warm_up_schema"]
+      },
+      "word1": {
+        "task_messages": [
+          {
+            "role": "system",
+            "content": "You are now guiding the child through learning the first vocabulary word. Ensure the following steps are completed, but importantly, maintain the conversation flow and be a natural part of the discussion: From this list (Extraordinary, Inquisitive), find one word the child doesn't know. Don't say you have a list. Start with the first word and ask: \"Do you know what [word] means?\" If they correctly explain it, acknowledge their understanding and try the next word. If they can't explain it or are incorrect, select that word for the following steps. DO NOT REPEAT THE FOLLOWING STEPS, just make sure you cover them in a natural way, or you will be fired. First, Define the vocab word in simple, child-friendly terms. Then, Ask the child for understanding within the context of the reading. For example, you may ask if they can think of something marvelous in Matilda? Wait for their response and follow up appropriately. After, Ask for understanding/definition in broader context or general usage, such as \"What is marvelous in your own life? Wait for their response and follow up appropriately. Finally, Ask the child to use the word in a totally new sentence and provide specific feedback and advice, if necessary. Keep the conversation as if you were speaking to a child, without emojis or robotic language, or you will be fired. Only call the check_vocabulary_progress/vocabulary_instruction_schema function when you've completed all required teaching elements for this word and are ready to move to the second word"
+          }
+        ],
+        "functions": ["vocabulary_instruction_schema"]
+      },
+      "word2": {
+        "task_messages": [
+          {
+            "role": "system",
+            "content": "Tell the child that we're now going to learn some new vocabulary. You are now guiding the child through learning the second vocabulary word. Ensure the following steps are completed, but importantly, maintain the conversation flow and be a natural part of the discussion: From this list (Mysterious, Evaluate, marvelous), find one word the child doesn't know. Don't say you have a list. Start with the first word and ask: \"Do you know what [word] means?\" If they correctly explain it, acknowledge their understanding and try the next word. If they can't explain it or are incorrect, select that word for the following steps. DO NOT REPEAT THE FOLLOWING STEPS, just make sure you cover them in a natural way, or you will be fired. First, Define the vocab word in simple, child-friendly terms. Then, Ask the child for understanding within the context of the reading. For example, you may ask if they can think of something marvelous in Matilda? Wait for their response and follow up appropriately. After, Ask for understanding/definition in broader context or general usage, such as \"What is marvelous in your own life? Wait for their response and follow up appropriately. Finally, Ask the child to use the word in a totally new sentence and provide specific feedback and advice, if necessary. Keep the conversation as if you were speaking to a child, without emojis or robotic language, or you will be fired. Only call the check_vocabulary_progress/vocabulary_instruction_schema function when you've completed all required teaching elements for this word and are ready to move to the review phase."
+          }
+        ],
+        "functions": ["vocabulary_instruction_schema"]
+      },
+      "word1_review": {
+        "task_messages": [
+          {
+            "role": "system",
+            "content": "Now review and recap the first vocab word. 1. Ask the child to define the word again in their own words. 2. Ask them to use the word in a new sentence without any help or prompting. 3. Provide the formal definition one more time. Make this feel like a natural conversation while ensuring you cover all these elements for both words. Call the check_review_progress function after finishing the review of each word."
+          }
+        ],
+        "functions": ["review_schema"]
+      },
+      "word2_review": {
+        "task_messages": [
+          {
+            "role": "system",
+            "content": "Now review and recap the second vocab word. 1. Ask the child to define the word again in their own words. 2. Ask them to use the word in a new sentence without any help or prompting. 3. Provide the formal definition one more time. Make this feel like a natural conversation while ensuring you cover all these elements for both words. Call the check_review_progress function after finishing the review of each word."
+          }
+        ],
+        "functions": ["review_schema"]
+      },
+      "closing": {
+        "task_messages": [
+          {
+            "role": "system",
+            "content": "Close the session by: 1. Praising the child for their hard work learning the new vocabulary words. 2. Encouraging them to continue listening to their audiobook. 3. Suggesting they try to notice these new words in their reading or use them in conversations. 4. Briefly summarizing what they learned today. Keep this friendly and encouraging! Only call the check_closing_progress function when you've covered all the closing elements and are ready to end the session completely."
+          }
+        ],
+        "functions": ["closing_schema"]
+      },
+      "end": {
+        "task_messages": [
+          {
+            "role": "system",
+            "content": "The session is now complete. Say goodbye to the child in a friendly and encouraging way."
+          }
+        ],
+        "post_actions": [
+          {
+            "type": "end_conversation"
+          }
+        ]
+      }
     }
   },
-  "required": ["name", "description", "options"]
+  "schemas": {
+      "warm_up_schema": {
+        "name": "check_warm_up_progress",
+        "description": "Check if all required warm-up elements have been covered",
+        "properties": {
+          "friendly_greeting_done": {
+            "type": "boolean",
+            "description": "Whether the model engaged in friendly conversation to start"
+          },
+          "asked_about_audiobook": {
+            "type": "boolean",
+            "description": "Whether the model asked the child about the audiobook"
+          },
+          "followed_up_appropriately": {
+            "type": "boolean",
+            "description": "Whether the model asked appropriate follow-up questions based on child's response"
+          },
+          "has_listened_to_book": {
+            "type": "boolean",
+            "description": "Whether the child has listened to their audiobook (for state checking)"
+          }
+        },
+        "required": [
+          "friendly_greeting_done",
+          "asked_about_audiobook",
+          "followed_up_appropriately",
+          "has_listened_to_book"
+        ],
+        "transition_callback": "general_transition_callback"
+      },
+      "vocabulary_instruction_schema": {
+        "name": "check_vocabulary_progress",
+        "description": "Check progress through vocabulary instruction for both words",
+        "properties": {
+          "word": {
+            "type": "string",
+            "description": "The current vocabulary word being taught"
+          },
+          "selected_unknown_word": {
+            "type": "boolean",
+            "description": "Whether the model successfully selected a vocabulary word the child does not know, as verifed by the child."
+          },
+          "vocab_words_known": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of vocab words the model asked about and child already knew and could provide accurate descriptions of."
+          },
+          "defined_simply": {
+            "type": "boolean",
+            "description": "Whether the model defined the word in simple terms."
+          },
+          "asked_book_context_understanding": {
+            "type": "boolean",
+            "description": "Whether the model asked for understanding within the context of the book"
+          },
+          "asked_broader_context_understanding": {
+            "type": "boolean",
+            "description": "Whether the model asked for understanding in broader context or general usage"
+          },
+          "asked_for_new_sentence": {
+            "type": "boolean",
+            "description": "Whether the model asked the child to use the word in a totally new sentence"
+          }
+        },
+        "required": [
+          "word",
+          "selected_unknown_word",
+          "defined_simply",
+          "asked_book_context_understanding",
+          "asked_broader_context_understanding",
+          "asked_for_new_sentence"
+        ],
+        "transition_callback": "general_transition_callback"
+      },
+      "word1_review_schema": {
+        "name": "check_review_progress",
+        "description": "Check progress through review and recap of both words",
+        "properties": {
+          "asked_for_definition": {
+            "type": "boolean",
+            "description": "Whether the model asked the child to define the word again"
+          },
+          "asked_for_sentence": {
+            "type": "boolean",
+            "description": "Whether the model asked for a new sentence without prompting"
+          },
+          "provided_formal_definition": {
+            "type": "boolean",
+            "description": "Whether the model provided the formal definition again"
+          }
+        },
+        "required": [
+          "asked_for_definition",
+          "asked_for_sentence",
+          "provided_formal_definition"
+        ],
+        "transition_callback": "general_transition_callback"
+      },
+      "word2_review_schema": {
+        "name": "check_review_progress",
+        "description": "Check progress through review and recap of both words",
+        "properties": {
+          "asked_for_definition": {
+            "type": "boolean",
+            "description": "Whether the model asked the child to define the word again"
+          },
+          "asked_for_sentence": {
+            "type": "boolean",
+            "description": "Whether the model asked for a new sentence without prompting"
+          },
+          "provided_formal_definition": {
+            "type": "boolean",
+            "description": "Whether the model provided the formal definition again"
+          }
+        },
+        "required": [
+          "asked_for_definition",
+          "asked_for_sentence",
+          "provided_formal_definition"
+        ],
+        "transition_callback": "general_transition_callback"
+      },
+      "closing_schema": {
+        "name": "check_closing_progress",
+        "description": "Check completion of closing elements",
+        "properties": {
+          "praised_child": {
+            "type": "boolean",
+            "description": "Whether the model praised the child for their work"
+          },
+          "encouraged_continued_reading": {
+            "type": "boolean",
+            "description": "Whether the model encouraged continued listening to the audiobook"
+          },
+          "suggested_word_usage": {
+            "type": "boolean",
+            "description": "Whether the model suggested noticing or using the words"
+          },
+          "summarized_learning": {
+            "type": "boolean",
+            "description": "Whether the model summarized what was learned"
+          }
+        },
+        "required": [
+          "praised_child",
+          "encouraged_continued_reading",
+          "suggested_word_usage",
+          "summarized_learning"
+        ],
+        "transition_to": "end"
+      }
+    }
+  }
+
 }
