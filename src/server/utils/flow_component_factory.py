@@ -1,12 +1,12 @@
 import os
 import json
-from typing import Dict, Any, Optional
+from typing import Any, Optional
 
 from loguru import logger
 from pipecat.pipeline.task import PipelineTask
 from pipecat_flows import FlowManager, ContextStrategy, ContextStrategyConfig
 
-from ..flows import get_flow_nodes, get_flow_initial_node, get_flow_state, load_config
+from .flows import get_flow_nodes, get_flow_initial_node, get_flow_state, load_config
 
 
 class FlowComponentFactory:
