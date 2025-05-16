@@ -31,6 +31,7 @@ from .flow_component_factory import FlowComponentFactory
 
 load_dotenv(override=True)
 
+
 async def run_bot(
     webrtc_connection: Any,
     config: dict,
@@ -145,6 +146,8 @@ async def run_bot(
         transcript = TranscriptProcessor()
         transcript_handler = TranscriptHandler(output_file=f"{session_dir}/transcript.json")
 
+        if config["advanced_flows"]:
+            raise NotImplementedError("Advanced flows are not yet implemented.")
 
         if stt is not None and tts is not None:
             pipeline = Pipeline(
@@ -192,6 +195,7 @@ async def run_bot(
             params=PipelineParams(allow_interruptions=True, observers=[RTVIObserver(rtvi)]),
         )
         
+        
         # Initialize flow manager if advanced flows are enabled
         flow_factory = FlowComponentFactory(
             llm=llm,
@@ -203,7 +207,6 @@ async def run_bot(
             summary_prompt="Summarize the key moments of learning, words, and concepts discussed in the tutoring session so far. Keep it concise and focused on vocabulary learning.",
         )
         flow_manager = flow_factory.build()
-
 
         # Event handlers for data, transcripts, visemes, and UI events
         @transcript.event_handler("on_transcript_update")
