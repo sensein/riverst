@@ -63,7 +63,7 @@ export default function AvatarInteractionSettings() {
   }
 
   return (
-    <div style={{ maxWidth: 600, margin: '0 auto', padding: 20 }}>
+    <div>
       <SettingsForm schema={schema} onSubmit={onSubmit} />
     </div>
   )

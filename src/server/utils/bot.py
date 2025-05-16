@@ -57,9 +57,9 @@ async def run_bot(
         factory = BotComponentFactory(
             modality=config["pipeline_modality"],
             llm_type=config["llm_type"],
-            stt_type=config["stt_type"],
-            tts_type=config["tts_type"],
-            tts_params={"client_session": session} if config["tts_type"] == "piper" else None,
+            stt_type=config["stt_type"] if "stt_type" in config else None,
+            tts_type=config["tts_type"] if "tts_type" in config else None,
+            tts_params={"client_session": session} if "tts_type" in config and config["tts_type"] == "piper" else None,
             task_description=config["task_description"],
             user_description=config.get("user_description"),
             avatar_personality_description=config["avatar_personality_description"],
@@ -149,8 +149,7 @@ async def run_bot(
             raise NotImplementedError("Advanced flows are not yet implemented.")
 
         if stt is not None and tts is not None:
-            pipeline = Pipeline(
-                [
+            steps = [
                     pipecat_transport.input(),
                     rtvi,
                     stt,
@@ -161,23 +160,21 @@ async def run_bot(
                     viseme_audiobuffer,
                     VideoProcessor(
                         transport_params.video_out_width, transport_params.video_out_height
-                    ),
+                    ) if config.get("video_flag", False) else None,
                     pipecat_transport.output(),
                     audiobuffer,
                     transcript.assistant(),
                     user_idle,
                     context_aggregator.assistant(),
                 ]
-            )
         else:
-            pipeline = Pipeline(
-                [
+            steps = [
                     pipecat_transport.input(),
                     rtvi,
                     context_aggregator.user(),
                     VideoProcessor(
                         transport_params.video_out_width, transport_params.video_out_height
-                    ),
+                    ) if config.get("video_flag", False) else None,
                     llm,  # LLM
                     transcript.user(),
                     viseme_audiobuffer,
@@ -187,7 +184,8 @@ async def run_bot(
                     user_idle,
                     context_aggregator.assistant(),
                 ]
-            )
+
+        pipeline = Pipeline([p for p in steps if p is not None])
 
         task = PipelineTask(
             pipeline,

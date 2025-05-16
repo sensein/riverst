@@ -10,7 +10,6 @@ const { TextArea } = Input;
 
 const SettingsForm = ({ schema, onSubmit }) => {
   const transportState = useRTVIClientTransportState();
-
   const [form] = Form.useForm();
   const [isValid, setIsValid] = useState(false);
 
@@ -27,9 +26,21 @@ const SettingsForm = ({ schema, onSubmit }) => {
     return acc;
   }, {});
 
+  const pipelineModality = Form.useWatch(['options', 'pipeline_modality'], form) || 'classic';
+
+  // Clear fields when pipeline_modality changes
   useEffect(() => {
-    form.setFieldsValue({ options: initialValues });
-  }, [form, initialValues]);
+    if (!form) return;
+
+    const currentValues = form.getFieldValue('options') || {};
+    const updates = { ...currentValues };
+
+    updates.stt_type = undefined;
+    updates.tts_type = undefined;
+    updates.llm_type = undefined;
+
+    form.setFieldsValue({ options: updates });
+  }, [pipelineModality]);
 
   const validateSchema = async () => {
     const values = await form.getFieldsValue(true);
@@ -51,6 +62,18 @@ const SettingsForm = ({ schema, onSubmit }) => {
   const renderFormItem = (key, config) => {
     if (config.const !== undefined) return null;
 
+    // Conditional logic
+    if (key === 'user_transcript' && pipelineModality !== 'classic') return null;
+    if (['stt_type', 'tts_type'].includes(key) && pipelineModality !== 'classic') return null;
+
+    if (key === 'llm_type') {
+      const filteredEnums =
+        pipelineModality === 'classic'
+          ? ['openai', 'llama3.2']
+          : ['openai_realtime_beta', 'gemini'];
+      config.enum = filteredEnums;
+    }
+
     const rules = [];
     if (requiredFields.includes(key)) {
       rules.push({ required: true, message: `${key} is required` });
@@ -59,10 +82,8 @@ const SettingsForm = ({ schema, onSubmit }) => {
       rules.push({ max: config.maxLength });
     }
 
-    const label = 
-      (config.title || key.replace(/_/g, ' ')).toUpperCase();
+    const label = (config.title || key.replace(/_/g, ' ')).toUpperCase();
     const namePath = ['options', key];
-
     const labelWithTooltip = renderLabel(label, config.description);
 
     if (config.type === 'array' && config.items?.enum) {
@@ -134,6 +155,7 @@ const SettingsForm = ({ schema, onSubmit }) => {
       <Form
         form={form}
         layout="vertical"
+        initialValues={{ options: initialValues }}
         onFinish={({ options }) => onSubmit(options)}
         onFieldsChange={validateSchema}
       >

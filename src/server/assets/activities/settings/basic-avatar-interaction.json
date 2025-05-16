@@ -23,25 +23,21 @@
         "pipeline_modality": {
           "type": "string",
           "enum": ["classic", "e2e"],
-          "default": "classic",
           "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline."
         },
         "llm_type": {
           "type": "string",
           "enum": ["openai", "openai_realtime_beta", "gemini", "llama3.2"],
-          "default": "openai",
           "description": "The LLM service to use."
         },
         "stt_type": {
           "type": "string",
           "enum": ["whisper", "openai"],
-          "default": "whisper",
           "description": "The STT service to use."
         },
         "tts_type": {
           "type": "string",
           "enum": ["openai", "piper"],
-          "default": "openai",
           "description": "The TTS service to use."
         },
         "body_animations": {
@@ -84,7 +80,7 @@
         },
         "video_flag": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "description": "Enable or disable video processing during the session."
         },
         "video_out_width": {
@@ -107,13 +103,12 @@
         },
         "user_transcript": {
           "type": "boolean",
-          "const": false,
           "default": false,
-          "description": "Enable showing the transcript of the user’s speech. FUTURE WORK: This cannot be implemented yet because some LLM services send transcripts in the wrong order (see Gemini and OpenAI realtime beta)."
+          "description": "Enable showing the transcript of the user’s speech. This only works with the classic pipeline modality."
         },
         "bot_transcript": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "description": "Enable showing the transcript of the avatar’s speech."
         }
       },
