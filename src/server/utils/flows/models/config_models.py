@@ -4,13 +4,12 @@ Complete flow configuration models.
 This module defines Pydantic models that represent the full structure of
 the configuration files used in the flow system.
 """
-from typing import Any
-from pydantic import BaseModel, model_validator
+from typing import Any, Dict
+from pydantic import BaseModel, model_validator, Field
 
-from .schema_models import SchemasConfig
+# Import required models
 from .node_models import NodesConfig
 from .state_models import StateConfig
-
 
 
 class FlowConfigurationFile(BaseModel):
@@ -18,13 +17,12 @@ class FlowConfigurationFile(BaseModel):
     Complete configuration for a flow.
     
     This model represents the entire structure of a flow configuration file,
-    including metadata, state configuration, flow configuration, and schemas.
+    including metadata, state configuration, and flow configuration.
     """
     name: str
     description: str
     state_config: StateConfig
-    nodes_config: NodesConfig
-    schemas: SchemasConfig
+    flow_config: NodesConfig  # Updated from node_config to flow_config to match JSON structure
     
     def __getitem__(self, key: str) -> Any:
         """Allow dictionary-like access to attributes."""
@@ -53,29 +51,50 @@ class FlowConfigurationFile(BaseModel):
     def validate_flow_structure(self):
         """
         Validates that the flow structure is consistent.
-        
-        Checks:
-        1. All functions referenced in nodes exist in schemas
-        2. All stage names in state_config match node names in node_config
         """
         # Access values via self attributes
-        node_config = self.nodes_config
-        schemas = self.schemas
+        flow_config = self.flow_config
         state_config = self.state_config
-
-        
-        # Check that all function references exist
-        for node_name, node in node_config.nodes.items():
-            if node["functions"]:
-                for func_name in node["functions"]:
-                    if str(func_name) not in schemas:
-                        raise ValueError(f"Node '{node_name}' references non-existent function '{func_name}'")
         
         # Check that all stage names match node names
         stage_names = set(state_config.stages.keys())
-        node_names = set(node_config.nodes.keys())
+        node_names = set(flow_config.nodes.keys())
+        
         missing_stages = stage_names - node_names
         if missing_stages:
             raise ValueError(f"The following stages in state_config do not have matching nodes: {missing_stages}")
+        
+        # Check that an 'end' node exists
+        if 'end' not in flow_config.nodes:
+            raise ValueError("Configuration must include an 'end' node")
             
+        # Check that all checklist items for each stage have corresponding parameters in function
+        for stage_name, stage in state_config.stages.items():
+            if stage_name == 'end':
+                continue  # Skip checks for end node
+                
+            node = flow_config.nodes.get(stage_name)
+            if not node or not hasattr(node, 'functions') or not node.functions:
+                continue
+                
+            checklist_keys = set(stage.checklist.keys())
+            
+            # Check each function
+            for func in node.functions:
+                if not hasattr(func, 'function') or not hasattr(func.function, 'parameters'):
+                    continue
+                    
+                params = func.function.parameters
+                properties = params.get('properties', {})
+                
+                # Check that all checklist items have corresponding parameters
+                property_keys = set(properties.keys())
+                missing_checklist_params = checklist_keys - property_keys
+                
+                if missing_checklist_params:
+                    raise ValueError(
+                        f"Node '{stage_name}' checklist items {missing_checklist_params} "
+                        f"do not have corresponding function parameters"
+                    )
+        
         return self

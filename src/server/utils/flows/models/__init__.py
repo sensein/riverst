@@ -4,17 +4,20 @@ Flow configuration models package.
 This package contains Pydantic models that define the structure and validation
 rules for flow configuration files.
 """
-from .schema_models import SchemaProperty, FunctionSchema, SchemasConfig
+# Import pipecat_flows dependencies first to ensure they're available
+from pipecat_flows import FlowManager, NodeConfig
+
+# Import models in dependency order
 from .node_models import Message, PostAction, NodesConfig
 from .state_models import StageModel, StateConfig
+# Import the complete config model last to avoid circular dependencies
 from .config_models import FlowConfigurationFile
 
+# Ensure all models are fully rebuilt after all imports
+NodesConfig.model_rebuild()
+FlowConfigurationFile.model_rebuild()
+
 __all__ = [
-    # Schema models
-    'SchemaProperty',
-    'FunctionSchema',
-    'SchemasConfig',
-    
     # Flow models
     'Message',
     'PostAction',

@@ -204,7 +204,6 @@ async def get_activity_settings(settings_path: str) -> JSONResponse:
     try:
         with file_path.open("r", encoding="utf-8") as f:
             config = json.load(f)
-            config = config.get("avatar_configuration", {}) # updated to reflect new config structure
 
         has_openai = os.getenv("OPENAI_API_KEY") is not None
         has_google = os.getenv("GOOGLE_API_KEY") is not None

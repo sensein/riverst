@@ -1,24 +1,29 @@
 {
-  "title": "Basic Avatar Interaction Configuration",
-  "description": "Schema for configuring a basic avatar interaction activity.",
+  "title": "Vocab Tutoring",
+  "description": "Schema for configuring a Vocab tutoring activity.",
   "type": "object",
   "properties": {
     "name": {
       "type": "string",
-      "const": "basic-avatar-interaction"
+      "const": "vocab-tutoring"
     },
     "description": {
       "type": "string",
-      "const": "Basic avatar interaction activity."
+      "const": "Vocab Tutoring"
     },
     "options": {
       "type": "object",
       "properties": {
         "advanced_flows": {
           "type": "boolean",
-          "const": false,
-          "default": false,
-          "description": "This activity only supports basic flows. Advanced flows are not allowed for the basic avatar interaction activity and must be set to false."
+          "const": true,
+          "default": true,
+          "description": "This activity requires advanced flows for structured KIVA interactions."
+        },
+        "advanced_flows_config_path": {
+          "type": "string",
+          "default": "./assets/activities/flows/vocab-tutoring.json",
+          "description": "Path to the advanced flows configuration file."
         },
         "pipeline_modality": {
           "type": "string",
@@ -50,7 +55,7 @@
             "type": "string",
             "enum": ["wave", "dance", "i_dont_know"]
           },
-          "default": ["wave", "dance", "i_dont_know"],
+          "default": [],
           "description": "List of body animations that the avatar can perform."
         },
         "camera_settings": {
@@ -59,24 +64,6 @@
           "default": "half_body",
           "description": "Select the camera framing used for the avatar during the interaction."
         },
-        "avatar_system_prompt": {
-          "type": "string",
-          "maxLength": 500,
-          "default": "You are an interactive robot. Keep your responses brief (one or two sentences at most). Your output will be converted to audio so don't include special characters in your answers. Respond to what the user said in a creative and helpful way. Start the conversation by introducing yourself.",
-          "description": "Instructions defining how the avatar should behave during the interaction."
-        },
-        "avatar_personality_description": {
-          "type": "string",
-          "maxLength": 500,
-          "default": "You are the Riverst avatar, a friendly, helpful robot.",
-          "description": "Text describing the avatar’s personality and role."
-        },
-        "task_description": {
-          "type": "string",
-          "maxLength": 500,
-          "default": "Demonstrate how you can interact with the user in a short conversation. Assist the user with their requests.",
-          "description": "Free-text description of the task or goal of the interaction."
-        },
         "user_description": {
           "type": "string",
           "maxLength": 500,
@@ -84,7 +71,7 @@
         },
         "video_flag": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "description": "Enable or disable video processing during the session."
         },
         "video_out_width": {
@@ -109,23 +96,33 @@
           "type": "boolean",
           "const": false,
           "default": false,
-          "description": "Enable showing the transcript of the user’s speech. FUTURE WORK: This cannot be implemented yet because some LLM services send transcripts in the wrong order (see Gemini and OpenAI realtime beta)."
+          "description": "Enable showing the transcript of the user's speech. FUTURE WORK: This cannot be implemented yet because some LLM services send transcripts in the wrong order (see Gemini and OpenAI realtime beta)."
         },
         "bot_transcript": {
           "type": "boolean",
           "default": true,
-          "description": "Enable showing the transcript of the avatar’s speech."
+          "description": "Enable showing the transcript of the avatar's speech."
         }
       },
       "required": [
         "advanced_flows",
+        "advanced_flows_config_path",
         "camera_settings",
-        "task_description",
-        "avatar_personality_description",
-        "avatar_system_prompt",
         "video_flag",
         "user_transcript",
         "bot_transcript"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "advanced_flows": { "enum": [true] }
+            }
+          },
+          "then": {
+            "required": ["advanced_flows_config_path"]
+          }
+        }
       ]
     }
   },

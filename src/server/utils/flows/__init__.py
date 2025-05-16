@@ -2,17 +2,13 @@
 Tools for managing flow configurations and state. Creates dynamic nodes to use in pipecat flows, which check whether tasks have been completed before moving to the next stage.
 
 Key functions:
-- load_config: Loads primary JSON file and handles all validation, returns the loaded flow configuration 
-- get_flow_nodes: Loads node configurations and automatically initializes schemas from flow configuration
-- get_flow_initial_node: Gets the initial node from flow configuration
-- get_flow_state: Loads flow state configuration from flow configuration
+- load_config: Loads primary JSON file and handles all validation, returns a tple of flow and state
 
 Configuration File:
 There is one primary configuration file that defines the flow. It contains three main sections:
 
-1. Schemas: Function schemas that define the available functions in your flow, they are called in the Flow Config
-2. Node Config: Node definitions and transition rules between conversation states
-3. State Config: Definition of state variables and validation rules
+2. Flow Config: Node definitions and transition functions between conversation states
+3. State Config: Checklist items and information to be collected during the flow, as well as variables to be passed between nodes
 
 Example structure of a config file:
 {
@@ -20,19 +16,18 @@ Example structure of a config file:
     
     "description": "Example flow description",
     
-    "schemas": {
-        "schema_name": {
-            "name": "function_name",
-            "description": "Function description",
-            "parameters": { ... }
-        }
-    },
-    "node_config": {
+    "flow_config": {
         "initial_node": "start_node",
         "nodes": {
             "node_name": {
-                "functions": ["function1", "function2"],
-                "next_node": "next_node_name"
+                "functions": [
+                    {
+                        "name": "function_name",
+                        "args": { "arg1": "value1", "arg2": "value2" },
+                        "transition_callback": "callback_function_name",
+                        "handler": "handler_function_name"
+                    }
+                ]
             }
         }
     },
@@ -41,7 +36,8 @@ Example structure of a config file:
             "stage_name": {
                 "checklist": { "field1": false, "field2": false },
                 "checklist_incomplete_message": "Missing information: {0}",
-                "checklist_complete_message": "All information collected."
+                "checklist_complete_message": "All information collected.",
+                "next_stage": "next_stage_name"
             }
         },
         "info": { ... },
@@ -49,14 +45,9 @@ Example structure of a config file:
     }
 }
 """
-from .nodes.loaders import get_flow_nodes, get_flow_initial_node
-from .state.loaders import get_flow_state
-from .utils.module_utils import OverwritePolicy, load_config
+
+from .loaders import load_config
 
 __all__ = [
-    'get_flow_nodes',
-    'get_flow_initial_node',
-    'get_flow_state',
-    'OverwritePolicy',
     'load_config',
 ]

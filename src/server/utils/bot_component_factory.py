@@ -42,6 +42,8 @@ class BotComponentFactory:
     stt_params: Optional[Dict[str, Any]] = None
     tts_type: Optional[TTSType] = None
     tts_params: Optional[Dict[str, Any]] = None
+    advanced_flows: bool = False
+    flow_params: Optional[Dict[str, Any]] = None
 
     task_description: str = ""
     user_description: Optional[str] = None

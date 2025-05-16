@@ -27,9 +27,14 @@ def update_info_fields(args: FlowArgs, flow_manager: FlowManager) -> None:
     flow_manager.state["info"].update({field: args[field] for field in args if field in flow_manager.state["info"]})
 
 
-def create_next_node(flow_manager: FlowManager) -> Tuple[str ,NodeConfig]:
+def create_next_node(flow_manager: FlowManager) -> Tuple[str , NodeConfig]:
     """
-    Create the configuration for the next node based on current stage.
+    Create the configuration for the next node based on current stage. 
+    
+    This is actually rather sneaky because 
+    we are technically initializing the flow manager with static transitions, but actually we are using callbacks
+    and dynamic transitions, mimicing static transitions mostly. This is only because the static transitions don't 
+    quite have all the functionality we need.
     
     Args:
         flow_manager: Flow manager instance
@@ -93,3 +98,5 @@ async def general_transition_callback(args: Dict, result: FlowResult, flow_manag
     if result.get("status") == "success":
         next_stage, node = create_next_node(flow_manager)
         await flow_manager.set_node(next_stage, node)
+        
+    

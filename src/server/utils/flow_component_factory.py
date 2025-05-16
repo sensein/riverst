@@ -6,7 +6,7 @@ from loguru import logger
 from pipecat.pipeline.task import PipelineTask
 from pipecat_flows import FlowManager, ContextStrategy, ContextStrategyConfig
 
-from .flows import get_flow_nodes, get_flow_initial_node, get_flow_state, load_config
+from .flows import load_config
 
 
 class FlowComponentFactory:
@@ -63,7 +63,9 @@ class FlowComponentFactory:
             return None
             
         try:
-            # Create flow manager with context strategy
+            
+            flow_config, state = load_config(self.flow_config_path)
+
             flow_manager = FlowManager(
                 llm=self.llm,
                 context_aggregator=self.context_aggregator,
@@ -71,17 +73,13 @@ class FlowComponentFactory:
                     strategy=self.context_strategy,
                     summary_prompt=self.summary_prompt,
                 ),
-                task=self.task
+                task=self.task,
+                flow_config=flow_config
             )
-            
-            # Load configuration and set up flow components
-            flows_config = load_config(self.flow_config_path)
-            flow_manager.nodes = get_flow_nodes(flows_config)
-            flow_manager.initial_node = get_flow_initial_node(flows_config)
-            flow_manager.state = get_flow_state(flows_config)
+            flow_manager.state = state
             
             self.flow_manager = flow_manager
-            logger.info("Flow manager successfully initialized")
+            logger.info("Flow manager successfully built")
             return flow_manager
             
         except FileNotFoundError as e:

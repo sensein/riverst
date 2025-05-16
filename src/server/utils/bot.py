@@ -52,6 +52,8 @@ async def run_bot(
     """
     print("Config:", config)
     print("Session dir:", session_dir)
+    
+    logger.info("Starting bot with config: {}", config)
 
     async with aiohttp.ClientSession() as session:
         # Instantiate the bot components using factory pattern
@@ -61,10 +63,10 @@ async def run_bot(
             stt_type=config["stt_type"],
             tts_type=config["tts_type"],
             tts_params={"client_session": session} if config["tts_type"] == "piper" else None,
-            task_description=config["task_description"],
+            task_description=config.get("task_description", ""),
             user_description=config.get("user_description"),
-            avatar_personality_description=config["avatar_personality_description"],
-            avatar_system_prompt=config["avatar_system_prompt"],
+            avatar_personality_description=config.get("avatar_personality_description", ""),
+            avatar_system_prompt=config.get("avatar_system_prompt", ""),
             body_animations=config["body_animations"],
         )
 
@@ -146,9 +148,6 @@ async def run_bot(
         transcript = TranscriptProcessor()
         transcript_handler = TranscriptHandler(output_file=f"{session_dir}/transcript.json")
 
-        if config["advanced_flows"]:
-            raise NotImplementedError("Advanced flows are not yet implemented.")
-
         if stt is not None and tts is not None:
             pipeline = Pipeline(
                 [
@@ -196,14 +195,13 @@ async def run_bot(
         )
         
         
-        # Initialize flow manager if advanced flows are enabled
+        # Will initialize flow manager if advanced flows are enabled
         flow_factory = FlowComponentFactory(
             llm=llm,
             context_aggregator=context_aggregator,
             task=task,
             advanced_flows=config.get("advanced_flows", False),
             flow_config_path=config.get("advanced_flows_config_path"),
-            context_strategy=ContextStrategy.RESET_WITH_SUMMARY,
             summary_prompt="Summarize the key moments of learning, words, and concepts discussed in the tutoring session so far. Keep it concise and focused on vocabulary learning.",
         )
         flow_manager = flow_factory.build()
@@ -237,7 +235,7 @@ async def run_bot(
         @rtvi.event_handler("on_client_ready")
         async def on_client_ready(rtvi):
             await rtvi.set_bot_ready()
-            await task.queue_frames([context_aggregator.user().get_context_frame()])
+            #await task.queue_frames([context_aggregator.user().get_context_frame()])
             
             if flow_manager:
                 await flow_manager.initialize()
