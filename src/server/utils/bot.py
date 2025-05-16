@@ -235,10 +235,12 @@ async def run_bot(
         @rtvi.event_handler("on_client_ready")
         async def on_client_ready(rtvi):
             await rtvi.set_bot_ready()
-            #await task.queue_frames([context_aggregator.user().get_context_frame()])
             
             if flow_manager:
                 await flow_manager.initialize()
+            else:
+                await task.queue_frames([context_aggregator.user().get_context_frame()])
+
 
         @pipecat_transport.event_handler("on_client_connected")
         async def on_client_connected(_, __):
