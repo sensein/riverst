@@ -7,6 +7,8 @@ import aiofiles
 from typing import Any
 import torch
 from torch import device as TorchDevice
+import struct
+import math
 
 
 def tensor_to_serializable(obj: Any) -> Any:
@@ -32,29 +34,41 @@ async def save_audio_file(
     audio: bytes,
     filename: str,
     sample_rate: int,
-    num_channels: int
+    num_channels: int,
+    silence_threshold: float = 100.0  # RMS threshold for silence detection
 ) -> None:
-    """Asynchronously save raw audio bytes to a WAV file without blocking the event loop.
+    """Asynchronously save raw audio bytes to a WAV file, checking for silence.
 
     This function:
-      1. Ensures the target directory exists.
-      2. Encodes the raw PCM bytes into WAV format in a background thread.
-      3. Writes the resulting WAV data to disk asynchronously.
+      1. Checks for empty audio data
+      2. Checks for silent audio (below RMS threshold)
+      3. Ensures target directory exists
+      4. Encodes bytes to WAV format in background thread
+      5. Writes to disk asynchronously
 
     Args:
-        audio: Raw PCM audio data as bytes.
-        filename: Full path (including filename) where the WAV file will be saved.
-        sample_rate: Sampling rate of the audio (in Hz).
-        num_channels: Number of audio channels (e.g., 1 for mono, 2 for stereo).
+        audio: Raw PCM audio data as bytes
+        filename: Full path for output WAV file
+        sample_rate: Sampling rate in Hz
+        num_channels: Number of audio channels
+        silence_threshold: Maximum RMS value considered silent
 
     Raises:
-        OSError: If directory creation or file writing fails.
+        ValueError: If audio is empty or silent
+        OSError: If directory creation or file writing fails
     """
-    # Ensure the output directory exists
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    def _is_silent(audio_bytes: bytes, threshold: float) -> bool:
+        """Check if audio is silent by calculating RMS amplitude."""
+        # Convert bytes to 16-bit samples
+        samples = struct.unpack(f'<{len(audio_bytes)//2}h', audio_bytes)
+        
+        # Calculate RMS (root mean square) amplitude
+        sum_squares = sum(s**2 for s in samples)
+        rms = math.sqrt(sum_squares / len(samples)) if samples else 0        
+        return rms < threshold
 
-    def _encode_wav() -> bytes:
-        """Blocking helper to encode raw bytes into WAV format."""
+    def _encode_wav(audio: bytes, num_channels: int, sample_rate: int) -> bytes:
+        """Encode raw PCM bytes to WAV format."""
         with io.BytesIO() as buffer:
             with wave.open(buffer, "wb") as wf:
                 wf.setsampwidth(2)
@@ -63,13 +77,28 @@ async def save_audio_file(
                 wf.writeframes(audio)
             return buffer.getvalue()
 
-    # Encode WAV in a thread to avoid blocking the event loop
-    loop = asyncio.get_event_loop()
-    wav_bytes = await loop.run_in_executor(None, _encode_wav)
+    # Check for empty audio
+    if not audio:
+        print("Cannot save empty audio.")
+        return False
 
-    # Write to disk asynchronously
+    # Check for silence in background thread
+    loop = asyncio.get_event_loop()
+    is_silent = await loop.run_in_executor(None, _is_silent, audio, silence_threshold)
+    
+    if is_silent:
+        print(f"Audio is silent (RMS < {silence_threshold})")
+        return False
+
+    # Ensure output directory exists
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+
+    # Encode and save
+    wav_bytes = await loop.run_in_executor(None, _encode_wav, audio, num_channels, sample_rate)
     async with aiofiles.open(filename, "wb") as f:
         await f.write(wav_bytes)
+    return True
+    
 
 def get_best_device() -> TorchDevice:
     """Returns the "best" available torch device according to the following strategy:

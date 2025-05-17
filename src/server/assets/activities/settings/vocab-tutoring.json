@@ -1,35 +1,42 @@
 {
-  "title": "Basic Avatar Interaction Configuration",
-  "description": "Schema for configuring a basic avatar interaction activity.",
+  "title": "Vocabulary Tutoring",
+  "description": "Schema for configuring KIVA's vocabulary tutoring activity.",
   "type": "object",
   "properties": {
     "name": {
       "type": "string",
-      "const": "basic-avatar-interaction"
+      "const": "vocab-tutoring"
     },
     "description": {
       "type": "string",
-      "const": "Basic avatar interaction activity."
+      "const": "Vocabulary tutoring activity with KIVA."
     },
     "options": {
       "type": "object",
       "properties": {
         "advanced_flows": {
           "type": "boolean",
-          "const": false,
-          "default": false,
-          "description": "This activity only supports basic flows. Advanced flows are not allowed for the basic avatar interaction activity and must be set to false."
+          "const": true,
+          "default": true,
+          "description": "This activity requires advanced flows."
+        },
+        "advanced_flows_config_path": {
+          "type": "string",
+          "const": "./assets/activities/flows/vocab-tutoring.json",
+          "default": "./assets/activities/flows/vocab-tutoring.json",
+          "description": "Path to the advanced flows configuration file."
         },
         "pipeline_modality": {
           "type": "string",
           "enum": ["classic", "e2e"],
-          "default": "e2e",
-          "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline."
+          "default": "classic",
+          "const": "classic",
+          "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline. Pipecat-flows doesn't support e2e mode yet."
         },
         "llm_type": {
           "type": "string",
-          "enum": ["openai", "openai_realtime_beta", "gemini", "llama3.2"],
-          "default": "openai_realtime_beta",
+          "enum": ["openai", "llama3.2"],
+          "default": "openai",
           "description": "The LLM service to use."
         },
         "stt_type": {
@@ -59,27 +66,10 @@
           "default": "half_body",
           "description": "Select the camera framing used for the avatar during the interaction."
         },
-        "avatar_system_prompt": {
-          "type": "string",
-          "maxLength": 500,
-          "default": "You are an interactive robot. Keep your responses brief (one or two sentences at most). Your output will be converted to audio so don't include special characters in your answers. Respond to what the user said in a creative and helpful way. Start the conversation by introducing yourself.",
-          "description": "Instructions defining how the avatar should behave during the interaction."
-        },
-        "avatar_personality_description": {
-          "type": "string",
-          "maxLength": 500,
-          "default": "You are the Riverst avatar, a friendly, helpful robot.",
-          "description": "Text describing the avatar’s personality and role."
-        },
-        "task_description": {
-          "type": "string",
-          "maxLength": 500,
-          "default": "Demonstrate how you can interact with the user in a short conversation. Assist the user with their requests.",
-          "description": "Free-text description of the task or goal of the interaction."
-        },
         "user_description": {
           "type": "string",
           "maxLength": 500,
+          "default": "A 3rd or 4th grader.",
           "description": "Optional free-text field to describe the user."
         },
         "video_flag": {
@@ -118,6 +108,7 @@
       },
       "required": [
         "advanced_flows",
+        "advanced_flows_config_path",
         "camera_settings",
         "task_description",
         "avatar_personality_description",

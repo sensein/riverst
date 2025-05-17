@@ -74,6 +74,7 @@ class TranscriptHandler:
 
             if not updated:
                 data = {
+                    "index": len(self.messages),
                     "timestamp": msg.timestamp if msg.timestamp else None,
                     "role": msg.role,
                     "content": msg.content,
@@ -83,24 +84,9 @@ class TranscriptHandler:
 
         await self.save_messages()
 
-    async def attach_audio_to_last_message(self, role: str, 
-                                           audio_file: str):
-        """Attach an audio file path to the most recent message of the given role that lacks one."""
-        print("attach_audio_to_last_message: ", role, audio_file)
-        for msg in reversed(self.messages):
-            if msg["role"] == role and "audio_file" not in msg:
-                msg["audio_file"] = audio_file
-                logger.debug(f"Attached audio {audio_file} to {role} message: {msg.get('content')}")
-                await self.save_messages()
-                return
-
-        # No suitable message found; append a new one with only audio and role
-        new_msg = {"role": role, "audio_file": audio_file}
-        self.messages.append(new_msg)
-        logger.debug(f"Appended new audio-only message: {new_msg}")
-        await self.save_messages()
-        # asyncio.create_task(self.process_audio_background(audio_file))
-
+    '''
+    # TODO: future work is to integrate senselab analysis of the audio and transcript
+    # (once the session is over)
     async def process_audio_background(self, filepath: str):
         try:
             print("Processing audio in background: ", filepath)
@@ -135,3 +121,4 @@ class TranscriptHandler:
 
         except Exception as e:
             logger.error(f"Error in background audio processing for {filepath}: {e}")
+    '''

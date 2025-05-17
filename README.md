@@ -38,9 +38,11 @@ The code has a client-server architecture. You find instructions on how to run t
 - [x] remove dependency from Daily
 - [x] DO BETTER LIP SYNC (Fabio - it may be further improved, but that's more for the future)
 - [x] Integrate YOLO with onnx to make inference faster (Fabio)
-- [ ] more structured conversation flows (pipecat flows) (Bruce)
-- [ ] Integrate the advanced flows for the KIVA activities (Bruce)
-- [ ] summarizing sessions, saving (we save already the audio, but would be great if we also save transcripts and video). RAG model (Bruce)
+- [x] more structured conversation flows (pipecat flows) (Bruce)
+- [x] Integrate the advanced flows for the KIVA activities (Bruce)
+- [x] Saving the transcript and the audio clips (Fabio)
+- [ ] Enabling recovering the session from the transcript (Bruce)
+- [ ] Saving the video (Bruce)
 - [ ] cleaning animations (Fabio: I have cleaned them a bit but they are still not good if you play them multiple times...)
 - [ ] [BUG+HELP WANTED] there is something off with UserTranscript (it seems that the event is received twice on the client)
 - [ ] Understand how to communicate video-based emotion recognition (+ pose estimation?) to the llm (ethical and technical questions)
@@ -56,6 +58,8 @@ The code has a client-server architecture. You find instructions on how to run t
 - [ ] add the user_id to the history of the session
 - [ ] add senselab analysis afterwards
 - [ ] clean the server main folder (moving models to the assets folder)
+- [ ] improve the UI and UX for building a flow!!
+- [ ] multilanguage (or at least non english) experiences
         
 
 ########## FUTURE WORK ##########

@@ -35,10 +35,6 @@ const SettingsForm = ({ schema, onSubmit }) => {
     const currentValues = form.getFieldValue('options') || {};
     const updates = { ...currentValues };
 
-    updates.stt_type = undefined;
-    updates.tts_type = undefined;
-    updates.llm_type = undefined;
-
     form.setFieldsValue({ options: updates });
   }, [pipelineModality]);
 

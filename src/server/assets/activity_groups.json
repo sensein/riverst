@@ -44,8 +44,9 @@
         "images": ["/figures/avatar_interaction_black.svg", 
                    "/figures/avatar_interaction_white.svg"],
         "description": "Discover new words through fun, guided play with your avatar.",
-        "route": "/avatar-interaction",
-        "disabled": true
+        "route": "/avatar-interaction-settings",
+        "disabled": false,
+        "settings_options_filepath": "activities/settings/vocab-tutoring.json"
       },
       {
         "title": "Listen to an audiobook",

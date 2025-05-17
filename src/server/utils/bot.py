@@ -27,9 +27,10 @@ from .utils import save_audio_file
 from .transcript_handler import TranscriptHandler
 from .viseme import VisemeProcessor
 from .bot_component_factory import BotComponentFactory
+from .flow_component_factory import FlowComponentFactory
 
 load_dotenv(override=True)
-
+index = 0
 
 async def run_bot(
     webrtc_connection: Any,
@@ -49,8 +50,8 @@ async def run_bot(
         audio_sample_rate (int): Sample rate in Hz. Default is 24000.
         audio_bit_depth (int): Bit depth for audio. Default is 2.
     """
-    print("Config:", config)
-    print("Session dir:", session_dir)
+    logger.info("Starting bot with config: {}", config)
+    logger.info("Session directory: {}", session_dir)
 
     async with aiohttp.ClientSession() as session:
         # Instantiate the bot components using factory pattern
@@ -60,10 +61,10 @@ async def run_bot(
             stt_type=config["stt_type"] if "stt_type" in config else None,
             tts_type=config["tts_type"] if "tts_type" in config else None,
             tts_params={"client_session": session} if "tts_type" in config and config["tts_type"] == "piper" else None,
-            task_description=config["task_description"],
-            user_description=config.get("user_description"),
-            avatar_personality_description=config["avatar_personality_description"],
-            avatar_system_prompt=config["avatar_system_prompt"],
+            task_description=config.get("task_description", ""),
+            user_description=config.get("user_description", ""),
+            avatar_personality_description=config.get("avatar_personality_description", ""),
+            avatar_system_prompt=config.get("avatar_system_prompt", ""),
             body_animations=config["body_animations"],
         )
 
@@ -120,13 +121,13 @@ async def run_bot(
             """
             print(f"User idle handler triggered (retry_count={retry_count}).")
             if retry_count < 2:
-                message = "The user has been quiet. Politely follow up on the same topic."
+                message = "The user has been quiet. Politely follow up on the same topic to keep the conversation going."
             elif retry_count < 4:
                 message = "The user is still inactive. Ask if they'd like to continue our conversation."
             elif retry_count < 6:
                 message = "Still no response from the user. Wait patiently and let them know you're available if needed."
             elif retry_count < 10:
-                message = "No user input detected for a while. Consider ending the session politely if it continues."
+                message = "No user input detected for a while. Consider ending the session politely if it continues. "
             else:
                 # Final attempt: End the session
                 print("User has been idle for a while. Actually ending the conversation.")
@@ -135,18 +136,17 @@ async def run_bot(
                 return False  # Stop monitoring
 
             context.add_message({
-                "role": "system",
-                "content": message
+                "role": "assistant",
+                "content": message,
             })
             await task.queue_frame(context_aggregator.assistant().get_context_frame())
             return True
 
-        user_idle = UserIdleProcessor(callback=handle_user_idle, timeout=15)
+        # user_idle = UserIdleProcessor(callback=handle_user_idle, timeout=15)
+        # TODO: fix the user_idle processor
+        # I commented it out for now because it seems to prompt the assistant with random messages
         transcript = TranscriptProcessor()
         transcript_handler = TranscriptHandler(output_file=f"{session_dir}/transcript.json")
-
-        if config["advanced_flows"]:
-            raise NotImplementedError("Advanced flows are not yet implemented.")
 
         if stt is not None and tts is not None:
             steps = [
@@ -164,7 +164,7 @@ async def run_bot(
                     pipecat_transport.output(),
                     audiobuffer,
                     transcript.assistant(),
-                    user_idle,
+                    # user_idle,
                     context_aggregator.assistant(),
                 ]
         else:
@@ -181,7 +181,7 @@ async def run_bot(
                     pipecat_transport.output(),
                     audiobuffer,
                     transcript.assistant(),
-                    user_idle,
+                    # user_idle,
                     context_aggregator.assistant(),
                 ]
 
@@ -192,6 +192,21 @@ async def run_bot(
             params=PipelineParams(allow_interruptions=True, observers=[RTVIObserver(rtvi)]),
         )
 
+        flow_manager = None
+        if "advanced_flows" in config and config["advanced_flows"]:
+            # Will initialize flow manager if advanced flows are enabled
+            flow_factory = FlowComponentFactory(
+                llm=llm,
+                context_aggregator=context_aggregator,
+                task=task,
+                advanced_flows=config.get("advanced_flows", False),
+                user_description=config.get("user_description", ""),
+                flow_config_path=config.get("advanced_flows_config_path"),
+                summary_prompt="Summarize the key moments of learning, words, and concepts discussed in the tutoring session so far. Keep it concise and focused on vocabulary learning.",
+            )
+            flow_manager = flow_factory.build()
+
+
         # Event handlers for data, transcripts, visemes, and UI events
         @transcript.event_handler("on_transcript_update")
         async def on_transcript_update(processor, frame):
@@ -199,13 +214,19 @@ async def run_bot(
 
         @audiobuffer.event_handler("on_user_turn_audio_data")
         async def on_user_audio(_, audio, sr, ch):
-            path = f"{session_dir}/{datetime.datetime.now():%Y%m%d_%H%M%S_%f}_USER.wav"
-            await save_audio_file(audio, path, sr, ch)
+            global index
+            path = f"{session_dir}/{index:06}__{datetime.datetime.now():%Y%m%d_%H%M%S_%f}_USER.wav"
+            success = await save_audio_file(audio, path, sr, ch)
+            if success:
+                index += 1
 
         @audiobuffer.event_handler("on_bot_turn_audio_data")
         async def on_bot_audio(_, audio, sr, ch):
-            path = f"{session_dir}/{datetime.datetime.now():%Y%m%d_%H%M%S_%f}_AGENT.wav"
-            await save_audio_file(audio, path, sr, ch)
+            global index
+            path = f"{session_dir}/{index:06}__{datetime.datetime.now():%Y%m%d_%H%M%S_%f}_AGENT.wav"
+            success = await save_audio_file(audio, path, sr, ch)
+            if success:
+                index += 1
 
         @audiobuffer.event_handler("on_audio_data")
         async def on_audio_data(_, audio, sr, ch):
@@ -221,7 +242,10 @@ async def run_bot(
         @rtvi.event_handler("on_client_ready")
         async def on_client_ready(rtvi):
             await rtvi.set_bot_ready()
-            await task.queue_frames([context_aggregator.user().get_context_frame()])
+            if flow_manager:
+                await flow_manager.initialize()
+            else:
+                await task.queue_frames([context_aggregator.user().get_context_frame()])
 
         @pipecat_transport.event_handler("on_client_connected")
         async def on_client_connected(_, __):

@@ -37,7 +37,7 @@ export default function BotVideo({
         onAvatarMounted?.()
       })
       .catch(err => console.error('Failed to fetch avatar:', err))
-  }, [onAvatarMounted])
+  }, [])
 
   useRTVIClientEvent(
     RTVIEvent.TrackStarted,
