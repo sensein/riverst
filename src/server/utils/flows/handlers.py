@@ -100,3 +100,32 @@ async def general_transition_callback(args: Dict, result: FlowResult, flow_manag
         await flow_manager.set_node(next_stage, node)
         
     
+    
+async def get_task_variable_handler(args: FlowArgs, flow_manager: FlowManager) -> Dict[str, Any]:
+    """
+    Handler to retrieve a task variable from the flow state.
+    
+    Args:
+        args: Flow arguments, should include 'variable_name'
+        flow_manager: Flow manager instance
+        
+    Returns:
+        Flow result with the requested variable value
+    """
+    variable_name = args.get('variable_name')
+    if not variable_name:
+        return {
+            "status": "error",
+            "message": "No variable name provided"
+        }
+    
+    if variable_name not in flow_manager.state["task_variables"]:
+        return {
+            "status": "error",
+            "error": f"Variable '{variable_name}' not found in task variables"
+        }
+    
+    return {
+        "status": "success",
+        "data": flow_manager.state["task_variables"].get(variable_name)
+    }

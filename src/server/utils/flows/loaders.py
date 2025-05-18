@@ -6,8 +6,7 @@ from pydantic import ValidationError
 from pipecat_flows import NodeConfig, FlowConfig
 
 from .models.config_models import FlowConfigurationFile
-from .handlers import general_transition_callback
-from .handlers import general_handler
+from .handlers import general_transition_callback, get_task_variable_handler, general_handler
 
 
 def load_config(flow_config_path: str) -> Tuple[FlowConfig, Dict[str, Any]]:
@@ -83,6 +82,8 @@ def get_flow_config(config: FlowConfigurationFile) -> FlowConfig:
                     func_def['function']['transition_callback'] = general_transition_callback
                 if func_def.get('function', {}).get('handler') == 'general_handler':
                     func_def['function']['handler'] = general_handler
+                elif func_def.get('function', {}).get('handler') == 'get_task_variable_handler':
+                    func_def['function']['handler'] = get_task_variable_handler
         
         # Store the processed node
         flow_config_dict['nodes'][node_id] = NodeConfig(**node_dict)
