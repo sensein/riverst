@@ -25,6 +25,11 @@
           "default": "./assets/activities/flows/vocab-tutoring.json",
           "description": "Path to the advanced flows configuration file."
         },
+        "session_variables_path": {
+          "type": "string",
+          "default": "./assets/activities/session_variables/vocab-tutoring.json",
+          "description": "Path to the session variables file for the activity, containing book context etc."
+        },
         "pipeline_modality": {
           "type": "string",
           "enum": ["classic", "e2e"],

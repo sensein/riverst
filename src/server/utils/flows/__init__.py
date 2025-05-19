@@ -2,13 +2,21 @@
 Tools for managing flow configurations and state. Creates dynamic nodes to use in pipecat flows, which check whether tasks have been completed before moving to the next stage.
 
 Key functions:
-- load_config: Loads primary JSON file and handles all validation, returns a tple of flow and state
+- load_config: Loads primary JSON file and handles all validation, returns a tuple of flow and state
+- load_session_variables: Loads task variables from a JSON file (ex: data regarding book for reading session)
 
-Configuration File:
-There is one primary configuration file that defines the flow. It contains three main sections:
+Task Configuration File:
+This is the primary configuration file that defines the flow, which exists across sessions. It contains two main sections:
 
-2. Flow Config: Node definitions and transition functions between conversation states
-3. State Config: Checklist items and information to be collected during the flow, as well as variables to be passed between nodes
+1. Flow Config: Node definitions and transition functions between conversation states
+2. State Config: Checklist items and information to be collected during the flow, placed in flow_manager state
+
+Session Configuration File:
+The session configuration file contains task variables that are used in the flow for a particular session. This file is loaded separately.
+
+1. Session Variables: Task variables that are used in the flow for a particular session
+    - example: reading context, user information, etc. 
+
 
 Example structure of a config file:
 {
@@ -40,14 +48,15 @@ Example structure of a config file:
                 "next_stage": "next_stage_name"
             }
         },
-        "info": { ... },
-        "task_variables": { ... }
+        "info": { ... }
+        "session_variables" : { This is defined from the session variables file }
     }
 }
 """
 
-from .loaders import load_config
+from .loaders import load_config, load_session_variables
 
 __all__ = [
     'load_config',
+    'load_session_variables'
 ]

@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify, send_file
 import json
 import os
+import traceback
 from datetime import datetime
 
 app = Flask(__name__)
@@ -12,6 +13,9 @@ def index():
 @app.route('/generate_json', methods=['POST'])
 def generate_json():
     try:
+        # Debug incoming data
+        print("Received data:", json.dumps(request.json, indent=2))
+        
         data = request.json
         
         # Check if we're saving to an existing file
@@ -39,6 +43,7 @@ def generate_json():
         nodes = data.get("nodes", [])
         for i, node in enumerate(nodes):
             node_name = node.get("node_name", "")
+            print(f"Processing node {i+1}: {node_name}")
             
             # Create node entry
             node_data = {
@@ -68,7 +73,10 @@ def generate_json():
             
             # Add functions for session variables
             node_functions = node.get("functions", [])
+            print(f"Node {node_name} has {len(node_functions)} functions")
+            
             for func in node_functions:
+                print(f"Processing function: {func}")
                 func_name = func.get("name", "")
                 variable = func.get("variable", "")
                 description = func.get("description", f"Get the {variable} for the session")
@@ -95,6 +103,8 @@ def generate_json():
                         }
                     }
                     node_data["functions"].append(func_data)
+                else:
+                    print(f"Warning: Skipping function with missing name or variable: {func}")
                 
             # Add role_message to the initial node only
             if i == 0 and data.get("role_message"):
@@ -188,6 +198,7 @@ def generate_json():
                         "content": "The session is now complete. Say goodbye in a friendly and encouraging way."
                     }
                 ],
+                "functions": [],
                 "post_actions": [
                     {
                         "type": "end_conversation"
@@ -208,15 +219,21 @@ def generate_json():
         os.makedirs(os.path.join("static", "output"), exist_ok=True)
         
         # Save the JSON file
-        with open(os.path.join("static", "output", filename), 'w') as f:
+        file_path = os.path.join("static", "output", filename)
+        with open(file_path, 'w') as f:
             json.dump(flow_data, f, indent=2)
         
+        print(f"JSON file generated successfully: {file_path}")
         return jsonify({"success": True, "filename": filename})
     
     except Exception as e:
-        import traceback
-        print("Error generating JSON:", traceback.format_exc())
-        return jsonify({"success": False, "error": str(e)})
+        error_detail = traceback.format_exc()
+        print("Error generating JSON:", error_detail)
+        return jsonify({
+            "success": False, 
+            "error": str(e),
+            "detail": error_detail
+        })
 
 @app.route('/download/<filename>', methods=['GET'])
 def download(filename):

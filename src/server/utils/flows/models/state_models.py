@@ -61,7 +61,7 @@ class StateConfig(BaseModel):
     """
     stages: Dict[str, StageModel]
     info: Dict[str, Any]
-    task_variables: Dict[str, Any]
+    session_variables: Dict[str, Any]
     
     @model_validator(mode='after')
     def validate_field_uniqueness(self):
@@ -77,7 +77,7 @@ class StateConfig(BaseModel):
             checklist_fields.update(stage.checklist.keys())
             
         info_fields = set(self.info.keys())
-        task_variable_fields = set(self.task_variables.keys())
+        task_variable_fields = set(self.session_variables.keys())
         
         # Check for overlaps
         info_checklist_overlap = checklist_fields.intersection(info_fields)
@@ -86,11 +86,11 @@ class StateConfig(BaseModel):
             
         task_checklist_overlap = checklist_fields.intersection(task_variable_fields)
         if task_checklist_overlap:
-            raise ValueError(f"Fields {task_checklist_overlap} appear in both checklist and task_variables")
+            raise ValueError(f"Fields {task_checklist_overlap} appear in both checklist and session_variables")
             
         info_task_overlap = info_fields.intersection(task_variable_fields)
         if info_task_overlap:
-            raise ValueError(f"Fields {info_task_overlap} appear in both info and task_variables")
+            raise ValueError(f"Fields {info_task_overlap} appear in both info and session_variables")
         
         # Validate stage connections
         stage_names = set(self.stages.keys())

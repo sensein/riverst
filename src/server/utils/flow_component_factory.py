@@ -6,7 +6,7 @@ from loguru import logger
 from pipecat.pipeline.task import PipelineTask
 from pipecat_flows import FlowManager, ContextStrategy, ContextStrategyConfig
 
-from .flows import load_config
+from .flows import load_config, load_session_variables
 
 
 class FlowComponentFactory:
@@ -21,8 +21,9 @@ class FlowComponentFactory:
         llm: Any,
         context_aggregator: Any,
         task: PipelineTask,
+        flow_config_path: str,
         advanced_flows: bool = False,
-        flow_config_path: Optional[str] = None,
+        session_variables_path: Optional[str] = None,
         context_strategy: ContextStrategy = ContextStrategy.RESET_WITH_SUMMARY,
         summary_prompt: str = "Summarize the key moments of learning, words, and concepts discussed in the tutoring session so far. Keep it concise and focused on vocabulary learning.",
     ):
@@ -45,6 +46,7 @@ class FlowComponentFactory:
         self.context_strategy = context_strategy
         self.summary_prompt = summary_prompt
         self.flow_manager = None
+        self.session_variables_path = session_variables_path
 
     def build(self) -> Optional[FlowManager]:
         """Build and configure the flow manager.
@@ -61,7 +63,9 @@ class FlowComponentFactory:
         if not self.flow_config_path:
             logger.error("Flow config path not provided but advanced_flows is enabled")
             return None
-            
+        
+        if not self.session_variables_path:
+            logger.warning("Session variables path not provided, using default empty session variables")            
         try:
             
             flow_config, state = load_config(self.flow_config_path)
@@ -76,7 +80,12 @@ class FlowComponentFactory:
                 task=self.task,
                 flow_config=flow_config
             )
+            
             flow_manager.state = state
+            session_variables = load_session_variables(self.session_variables_path)
+            if session_variables:
+                flow_manager.state["session_variables"] = session_variables
+            
             
             self.flow_manager = flow_manager
             logger.info("Flow manager successfully built")

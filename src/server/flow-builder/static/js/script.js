@@ -855,9 +855,51 @@ document.addEventListener('DOMContentLoaded', function () {
         addNode();
     }
 
+    // Add this to your script.js to debug data collection
+    function debugFormData() {
+        // Get form data
+        const data = collectFormData();
+        console.log("=== FORM DATA DEBUG ===");
+        console.log("Form data:", data);
+
+        // Check if nodes have functions
+        if (data.nodes && data.nodes.length > 0) {
+            console.log(`Found ${data.nodes.length} nodes`);
+
+            data.nodes.forEach((node, i) => {
+                console.log(`Node ${i + 1}: ${node.node_name}`);
+
+                if (node.functions && node.functions.length > 0) {
+                    console.log(`  Has ${node.functions.length} functions:`);
+                    node.functions.forEach((func, j) => {
+                        console.log(`  Function ${j + 1}:`);
+                        console.log(`    Name: ${func.name}`);
+                        console.log(`    Variable: ${func.variable}`);
+                        console.log(`    Description: ${func.description}`);
+                        console.log(`    Handler: ${func.handler}`);
+                    });
+                } else {
+                    console.log("  No functions defined");
+                }
+            });
+        }
+
+        // Check session variables
+        console.log("Session variables:", data.session_variables);
+
+        // Check task variables
+        console.log("Task variables:", data.task_variables);
+
+        console.log("=== END FORM DATA DEBUG ===");
+
+        return data;
+    }
+
+    // Modify the generateJson function to debug data before sending
     function generateJson() {
         try {
-            const data = collectFormData();
+            // Debug data collection first
+            const data = debugFormData();
 
             // Basic validation
             if (!data.name) {
@@ -869,6 +911,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 alert('At least one node is required!');
                 return;
             }
+
+            // Show sending notification
+            const resultContainer = document.getElementById('resultContainer');
+            resultContainer.style.display = 'block';
+            resultContainer.innerHTML = `
+            <div class="alert alert-info">
+                <h4>Generating JSON...</h4>
+                <p>Please wait while the server processes your request.</p>
+            </div>
+        `;
 
             // Send data to server
             fetch('/generate_json', {
@@ -884,22 +936,47 @@ document.addEventListener('DOMContentLoaded', function () {
                         const resultContainer = document.getElementById('resultContainer');
                         const downloadLink = document.getElementById('downloadLink');
 
-                        resultContainer.style.display = 'block';
-                        downloadLink.href = `/download/${data.filename}`;
+                        resultContainer.innerHTML = `
+                    <div class="alert alert-success">
+                        <h4>JSON File Generated!</h4>
+                        <p>Your conversation flow has been created successfully.</p>
+                        <a id="downloadLink" href="/download/${data.filename}" class="btn btn-primary">Download JSON File</a>
+                    </div>
+                `;
 
                         // Scroll to result container
                         resultContainer.scrollIntoView({ behavior: 'smooth' });
                     } else {
-                        alert('Error generating JSON: ' + data.error);
+                        console.error("Error from server:", data);
+                        let errorMessage = data.error || "Unknown error";
+                        let errorDetail = data.detail || "";
+
+                        if (errorDetail) {
+                            console.error("Error details:", errorDetail);
+                        }
+
+                        resultContainer.innerHTML = `
+                    <div class="alert alert-danger">
+                        <h4>Error Generating JSON</h4>
+                        <p>${errorMessage}</p>
+                        <p class="small">Check browser console (F12) for more details.</p>
+                    </div>
+                `;
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred while generating the JSON file.');
+                    console.error('Fetch error:', error);
+                    resultContainer.innerHTML = `
+                <div class="alert alert-danger">
+                    <h4>Network Error</h4>
+                    <p>Could not connect to server: ${error.message}</p>
+                </div>
+            `;
                 });
 
         } catch (error) {
             alert('Error collecting form data: ' + error.message);
+            console.error('Form data error:', error);
         }
     }
 
