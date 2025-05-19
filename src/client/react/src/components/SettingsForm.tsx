@@ -35,6 +35,21 @@ const SettingsForm = ({ schema, onSubmit }) => {
     const currentValues = form.getFieldValue('options') || {};
     const updates = { ...currentValues };
 
+    // Reset incompatible fields when switching modality
+    if (pipelineModality === 'classic') {
+      if (!['openai', 'llama3.2'].includes(updates.llm_type)) {
+        updates.llm_type = 'openai'; // default to a valid option
+        updates.stt_type = 'openai'; // default to a valid option
+        updates.tts_type = 'openai'; // default to a valid option
+      }
+    } else if (pipelineModality === 'e2e') {
+      if (!['openai_realtime_beta', 'gemini'].includes(updates.llm_type)) {
+        updates.llm_type = 'openai_realtime_beta';
+        updates.stt_type = undefined;
+        updates.tts_type = undefined;
+      }
+    }
+
     form.setFieldsValue({ options: updates });
   }, [pipelineModality]);
 
@@ -59,7 +74,7 @@ const SettingsForm = ({ schema, onSubmit }) => {
     if (config.const !== undefined) return null;
 
     // Conditional logic
-    if (key === 'user_transcript' && pipelineModality !== 'classic') return null;
+    // if (key === 'user_transcript' && pipelineModality !== 'classic') return null;
     if (['stt_type', 'tts_type'].includes(key) && pipelineModality !== 'classic') return null;
 
     if (key === 'llm_type') {
@@ -81,6 +96,25 @@ const SettingsForm = ({ schema, onSubmit }) => {
     const label = (config.title || key.replace(/_/g, ' ')).toUpperCase();
     const namePath = ['options', key];
     const labelWithTooltip = renderLabel(label, config.description);
+
+    if (config.type === 'array' && config.items?.enum) {
+      if (config.minItems) {
+        rules.push({
+          validator: (_, value) => {
+            if (Array.isArray(value) && value.length < config.minItems) {
+              return Promise.reject(new Error(`Please select at least ${config.minItems} item(s).`));
+            }
+            return Promise.resolve();
+          },
+        });
+      }
+
+      return (
+        <Form.Item key={key} name={namePath} label={labelWithTooltip} rules={rules}>
+          <Checkbox.Group options={config.items.enum} />
+        </Form.Item>
+      );
+    }
 
     if (config.type === 'array' && config.items?.enum) {
       return (

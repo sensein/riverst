@@ -128,13 +128,17 @@ import React, {
   
     // auto‑connect when ready
     useEffect(() => {
-        if (
-            interactionPhase === 'ready' &&
-                (transportState === 'disconnected')
-            ) {
-            client.connect()   // no await
+        const connectIfReady = () => {
+            if (
+                interactionPhase === 'ready' &&
+                    (transportState === 'disconnected')
+                ) {
+                  client.connect()
+            }
         }
+        connectIfReady()
     }, [interactionPhase, transportState, client])
+    
   
     // event handlers
     useRTVIClientEvent(RTVIEvent.BotStartedSpeaking, () => {

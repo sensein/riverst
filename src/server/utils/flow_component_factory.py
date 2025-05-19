@@ -89,9 +89,7 @@ class FlowComponentFactory:
                             'role': 'system',
                             'content': f"User description: {self.user_description}"
                         })
-                    
-            print("Flow config:", flow_config)
-            
+                                
             flow_manager = FlowManager(
                 llm=self.llm,
                 context_aggregator=self.context_aggregator,

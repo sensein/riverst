@@ -66,6 +66,8 @@ async def run_bot(
             avatar_personality_description=config.get("avatar_personality_description", ""),
             avatar_system_prompt=config.get("avatar_system_prompt", ""),
             body_animations=config["body_animations"],
+            languages=config["languages"] if "languages" in config else None,
+            avatar=config["avatar"]
         )
 
         stt, llm, tts, tools, instruction, context, context_aggregator = await factory.build()

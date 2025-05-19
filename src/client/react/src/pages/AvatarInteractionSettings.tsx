@@ -24,18 +24,55 @@ export default function AvatarInteractionSettings() {
       .catch(err => console.error('Failed to load schema:', err))
   }, [settingsUrl])
 
+
   const onSubmit = async (values: any) => {
     try {
-      // send the full settings payload to your server to get a session_id
-      const res = await axios.post('http://localhost:7860/api/session', values)
-      const sessionId: string = res.data.session_id
+      // 1. Get avatar object from localStorage or server
+      let avatar: any = null;
+      const stored = localStorage.getItem('selectedAvatar');
 
-      // navigate to the interaction page, passing the same values along
-      navigate(`/avatar-interaction/${sessionId}`, { state: values })
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (parsed && parsed.modelUrl) {
+            avatar = parsed;
+          }
+        } catch (err) {
+          console.error('Failed to parse avatar from localStorage:', err);
+        }
+      }
+
+      if (!avatar) {
+        try {
+          const response = await axios.get('http://localhost:7860/avatars');
+          const avatars = response.data;
+          if (avatars.length > 0) {
+            avatar = avatars[0];
+            localStorage.setItem('selectedAvatar', JSON.stringify(avatar));
+          } else {
+            console.warn('No avatars returned from server.');
+          }
+        } catch (err) {
+          console.error('Failed to fetch avatars:', err);
+        }
+      }
+
+      // 2. Compose full payload
+      const fullPayload = {
+        ...values,
+        avatar,
+      };
+
+      // 3. Create session
+      const res = await axios.post('http://localhost:7860/api/session', fullPayload);
+      const sessionId: string = res.data.session_id;
+
+      // 4. Navigate with fullPayload
+      navigate(`/avatar-interaction/${sessionId}`, { state: fullPayload });
     } catch (err) {
-      console.error('Failed to create session:', err)
+      console.error('Failed to create session:', err);
     }
-  }
+  };
 
   if (!settingsUrl) {
     return (

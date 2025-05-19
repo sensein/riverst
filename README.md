@@ -60,6 +60,8 @@ The code has a client-server architecture. You find instructions on how to run t
 - [ ] clean the server main folder (moving models to the assets folder)
 - [ ] improve the UI and UX for building a flow!!
 - [ ] multilanguage (or at least non english) experiences
+- [ ] add a language identification tool
+- [ ] make sure the llm calls only existings tools (especially helpful with llama3.2)
         
 
 ########## FUTURE WORK ##########
