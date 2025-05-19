@@ -20,8 +20,19 @@ def generate_json():
         
         # Check if we're saving to an existing file
         original_filename = data.get("filename", "")
-
-        # Format the received data into the correct JSON structure
+        
+        # Extract file name without extension
+        if original_filename and original_filename.endswith('.json'):
+            base_name = original_filename[:-5]
+        else:
+            # Generate new filename with timestamp
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            base_name = f"flow_{timestamp}"
+        
+        # Create the session variables content
+        session_variables = data.get("session_variables", {})
+        
+        # Format the flow data, excluding session_variables
         flow_data = {
             "name": data.get("name", ""),
             "description": data.get("description", ""),
@@ -29,8 +40,8 @@ def generate_json():
             "state_config": {
                 "stages": {},
                 "info": data.get("info", {}),
-                "task_variables": data.get("task_variables", {}),
-                "session_variables": data.get("session_variables", {})
+                "task_variables": data.get("task_variables", {})
+                # Session variables will be referenced, not embedded
             },
             
             "flow_config": {
@@ -198,7 +209,6 @@ def generate_json():
                         "content": "The session is now complete. Say goodbye in a friendly and encouraging way."
                     }
                 ],
-                "functions": [],
                 "post_actions": [
                     {
                         "type": "end_conversation"
@@ -206,25 +216,31 @@ def generate_json():
                 ]
             }
         
-        # Determine filename
-        if original_filename and original_filename.endswith('.json'):
-            # Use the original filename
-            filename = original_filename
-        else:
-            # Generate new filename with timestamp
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"flow_{timestamp}.json"
+        # Add the reference to session variables file
+        flow_data["state_config"]["session_variables_file"] = f"session_variables/{base_name}.json"
         
-        # Ensure output directory exists
-        os.makedirs(os.path.join("static", "output"), exist_ok=True)
+        # Create necessary directories
+        os.makedirs(os.path.join("static", "output", "flows"), exist_ok=True)
+        os.makedirs(os.path.join("static", "output", "session_variables"), exist_ok=True)
         
-        # Save the JSON file
-        file_path = os.path.join("static", "output", filename)
-        with open(file_path, 'w') as f:
+        # Save the flow JSON file
+        flow_filename = f"{base_name}.json"
+        flow_path = os.path.join("static", "output", "flows", flow_filename)
+        
+        with open(flow_path, 'w') as f:
             json.dump(flow_data, f, indent=2)
         
-        print(f"JSON file generated successfully: {file_path}")
-        return jsonify({"success": True, "filename": filename})
+        # Save the session variables to a separate file
+        session_var_path = os.path.join("static", "output", "session_variables", flow_filename)
+        with open(session_var_path, 'w') as f:
+            json.dump(session_variables, f, indent=2)
+        
+        print(f"JSON files generated successfully: \n - Flow: {flow_path}\n - Session Variables: {session_var_path}")
+        return jsonify({
+            "success": True, 
+            "filename": f"flows/{flow_filename}",
+            "session_variables_file": f"session_variables/{flow_filename}"
+        })
     
     except Exception as e:
         error_detail = traceback.format_exc()
@@ -235,8 +251,9 @@ def generate_json():
             "detail": error_detail
         })
 
-@app.route('/download/<filename>', methods=['GET'])
+@app.route('/download/<path:filename>', methods=['GET'])
 def download(filename):
+    # Handle the new file structure with subdirectories
     return send_file(os.path.join("static", "output", filename), as_attachment=True)
 
 if __name__ == '__main__':

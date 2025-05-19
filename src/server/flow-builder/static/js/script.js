@@ -895,11 +895,10 @@ document.addEventListener('DOMContentLoaded', function () {
         return data;
     }
 
-    // Modify the generateJson function to debug data before sending
     function generateJson() {
         try {
             // Debug data collection first
-            const data = debugFormData();
+            const data = debugFormData ? debugFormData() : collectFormData();
 
             // Basic validation
             if (!data.name) {
@@ -934,13 +933,19 @@ document.addEventListener('DOMContentLoaded', function () {
                 .then(data => {
                     if (data.success) {
                         const resultContainer = document.getElementById('resultContainer');
-                        const downloadLink = document.getElementById('downloadLink');
 
                         resultContainer.innerHTML = `
                     <div class="alert alert-success">
-                        <h4>JSON File Generated!</h4>
-                        <p>Your conversation flow has been created successfully.</p>
-                        <a id="downloadLink" href="/download/${data.filename}" class="btn btn-primary">Download JSON File</a>
+                        <h4>JSON Files Generated!</h4>
+                        <p>Your conversation flow has been split into two files:</p>
+                        <div class="d-flex flex-column gap-2 mt-3">
+                            <a href="/download/${data.filename}" class="btn btn-primary">
+                                <i class="bi bi-download"></i> Download Flow File
+                            </a>
+                            <a href="/download/${data.session_variables_file}" class="btn btn-info">
+                                <i class="bi bi-download"></i> Download Session Variables
+                            </a>
+                        </div>
                     </div>
                 `;
 
