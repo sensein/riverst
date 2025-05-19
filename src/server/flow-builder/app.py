@@ -17,94 +17,25 @@ def generate_json():
         # Check if we're saving to an existing file
         original_filename = data.get("filename", "")
 
-        # Add default avatar configuration for the activity
-        # Format the received data into the new JSON structure with avatar_configuration and flows_configuration
+        # Format the received data into the correct JSON structure
         flow_data = {
-            "avatar_configuration": {
-                "title": "Basic Avatar Interaction Configuration",
-                "description": "Schema for configuring a basic avatar interaction activity.",
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "const": "basic-avatar-interaction"
-                    },
-                    "description": {
-                        "type": "string",
-                        "const": "Basic avatar interaction activity."
-                    },
-                    "options": {
-                        "type": "object",
-                        "properties": {
-                            "advanced_flows": {
-                                "type": "boolean",
-                                "default": true,
-                                "description": "Set to true to enable advanced flows for this activity."
-                            },
-                            "advanced_flows_config_path": {
-                                "type": "string",
-                                "description": "Path to the advanced flows configuration file.",
-                                "examples": ["./src/server/assets/activities/settings/vocab-avatar.json"]
-                            },
-                            "pipeline_modality": {
-                                "type": "string",
-                                "enum": ["classic", "e2e"],
-                                "default": "classic",
-                                "description": "The modality of the pipeline."
-                            },
-                            "camera_settings": {
-                                "type": "string",
-                                "enum": ["half_body", "headshot", "full_body"],
-                                "default": "half_body",
-                                "description": "Camera framing for the avatar."
-                            },
-                            "avatar_system_prompt": {
-                                "type": "string",
-                                "maxLength": 500,
-                                "default": "You are an interactive robot. Keep your responses brief.",
-                                "description": "Instructions for the avatar's behavior."
-                            },
-                            "avatar_personality_description": {
-                                "type": "string",
-                                "maxLength": 500,
-                                "default": "You are the Riverst avatar, a friendly, helpful robot.",
-                                "description": "Avatar's personality description."
-                            },
-                            "task_description": {
-                                "type": "string",
-                                "maxLength": 500,
-                                "default": "Demonstrate how you can interact with the user.",
-                                "description": "Description of the task or goal."
-                            }
-                        },
-                        "required": [
-                            "advanced_flows",
-                            "advanced_flows_config_path"
-                        ]
-                    }
-                },
-                "required": ["name", "description", "options"]
+            "name": data.get("name", ""),
+            "description": data.get("description", ""),
+            
+            "state_config": {
+                "stages": {},
+                "info": data.get("info", {}),
+                "task_variables": data.get("task_variables", {}),
+                "session_variables": data.get("session_variables", {})
             },
-            "flows_configuration": {
-                "name": data.get("name", ""),
-                "description": data.get("description", ""),
-                
-                "state_config": {
-                    "stages": {},
-                    "info": data.get("info", {}),
-                    "task_variables": data.get("task_variables", {})
-                },
-                
-                "node_config": {
-                    "initial_node": data.get("nodes", [])[0]["node_name"] if data.get("nodes") else "",
-                    "nodes": {}
-                },
-                
-                "schemas": {}
+            
+            "flow_config": {
+                "initial_node": data.get("nodes", [])[0]["node_name"] if data.get("nodes") else "",
+                "nodes": {}
             }
         }
         
-        # Process nodes for node_config and stages
+        # Process nodes for flow_config and stages
         nodes = data.get("nodes", [])
         for i, node in enumerate(nodes):
             node_name = node.get("node_name", "")
@@ -117,8 +48,53 @@ def generate_json():
                         "content": node.get("task_message", "")
                     }
                 ],
-                "functions": [f"{node_name}_schema"],
+                "functions": []
             }
+            
+            # Add the node schema function reference
+            node_data["functions"].append({
+                "type": "function",
+                "function": {
+                    "name": f"check_{node_name}_progress",
+                    "description": node.get("schema_description", f"Check progress for {node_name} stage"),
+                    "parameters": {
+                        "type": "object",
+                        "properties": {},
+                        "required": []
+                    },
+                    "transition_callback": "general_transition_callback"
+                }
+            })
+            
+            # Add functions for session variables
+            node_functions = node.get("functions", [])
+            for func in node_functions:
+                func_name = func.get("name", "")
+                variable = func.get("variable", "")
+                description = func.get("description", f"Get the {variable} for the session")
+                handler = func.get("handler", "get_session_variable_handler")
+                
+                if func_name and variable:
+                    func_data = {
+                        "type": "function",
+                        "function": {
+                            "name": func_name,
+                            "description": description,
+                            "parameters": {
+                                "type": "object",
+                                "properties": {
+                                    "variable_name": {
+                                        "type": "string",
+                                        "description": "The name of the session variable to retrieve",
+                                        "enum": [variable]
+                                    }
+                                },
+                                "required": ["variable_name"]
+                            },
+                            "handler": handler
+                        }
+                    }
+                    node_data["functions"].append(func_data)
                 
             # Add role_message to the initial node only
             if i == 0 and data.get("role_message"):
@@ -133,7 +109,7 @@ def generate_json():
             if i == len(nodes) - 1:
                 node_data["post_actions"] = [{"type": "end_conversation"}]
                 
-            flow_data["flows_configuration"]["node_config"]["nodes"][node_name] = node_data
+            flow_data["flow_config"]["nodes"][node_name] = node_data
             
             # Create stage entry with checklist
             checklist = {}
@@ -147,22 +123,16 @@ def generate_json():
                 "checklist_complete_message": node.get("checklist_complete_message", "Great job! Moving on to the next stage.")
             }
             
-            # Add next_stage if not the last node (now in state_config stages)
+            # Add next_stage if not the last node
             if i < len(nodes) - 1:
                 stage_data["next_stage"] = nodes[i + 1]["node_name"]
             else:
                 stage_data["next_stage"] = "end"
                 
-            flow_data["flows_configuration"]["state_config"]["stages"][node_name] = stage_data
+            flow_data["state_config"]["stages"][node_name] = stage_data
             
-            # Create schema for the node
-            schema = {
-                "name": f"check_{node_name}_progress",
-                "description": node.get("schema_description", f"Check progress for {node_name} stage"),
-                "properties": {},
-                "required": [],
-                "transition_callback": "general_transition_callback"
-            }
+            # Add properties to the schema for this node
+            schema = node_data["functions"][0]["function"]["parameters"]
             
             # Add checklist items to properties
             for checklist_item in node.get("checklist_items", []):
@@ -208,12 +178,10 @@ def generate_json():
                 if 'current_word_number' not in schema["required"]:
                     schema["required"].append("current_word_number")
             
-            # Add schema to schemas section
-            flow_data["flows_configuration"]["schemas"][f"{node_name}_schema"] = schema
         
         # Add end node if needed
         if nodes:
-            flow_data["flows_configuration"]["node_config"]["nodes"]["end"] = {
+            flow_data["flow_config"]["nodes"]["end"] = {
                 "task_messages": [
                     {
                         "role": "system",
