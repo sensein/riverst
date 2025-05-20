@@ -62,6 +62,7 @@ class FlowComponentFactory:
             return None
 
         logger.info(f"Initializing flow manager with config path: {self.flow_config_path}")
+        logger.info(f"Session variables path: {self.session_variables_path}")
 
         if not self.flow_config_path:
             logger.error("Flow config path not provided but advanced_flows is enabled")

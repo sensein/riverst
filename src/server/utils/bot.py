@@ -202,6 +202,7 @@ async def run_bot(
             task=task,
             advanced_flows=config.get("advanced_flows", False),
             flow_config_path=config.get("advanced_flows_config_path"),
+            session_variables_path=config.get("session_variables_path"),
             summary_prompt="Summarize the key moments of learning, words, and concepts discussed in the tutoring session so far. Keep it concise and focused on vocabulary learning.",
         )
         flow_manager = flow_factory.build()

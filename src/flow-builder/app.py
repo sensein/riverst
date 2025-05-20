@@ -117,7 +117,6 @@ def generate_json():
                             },
                             "handler": handler
                         }
-                    }
                     node_data["functions"].append(func_data)
                 else:
                     print(f"Warning: Skipping function with missing name or variable: {func}")

@@ -41,7 +41,6 @@ def load_config(flow_config_path: str, session_variables_path: Optional[str]) ->
             raise ValueError("State configuration is missing in the flow configuration file.")
         config_data['state_config']['session_variables'] = session_variables
 
-
     # Validate the complete configuration
     config_data = FlowConfigurationFile(**config_data)
     
