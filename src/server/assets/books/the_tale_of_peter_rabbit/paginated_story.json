@@ -1,5 +1,7 @@
 {
   "reading_context": {
+    "indexable_by" : "pages",
+    "current_index": 1,
     "book_title": "The Tale of Peter Rabbit",
     "book_author": "Beatrix Potter",
     "pages": [

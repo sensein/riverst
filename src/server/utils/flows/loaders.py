@@ -9,7 +9,7 @@ from .models.config_models import FlowConfigurationFile
 from .handlers import general_transition_callback, get_session_variable_handler, general_handler
 
 
-def load_config(flow_config_path: str) -> Tuple[FlowConfig, Dict[str, Any]]:
+def load_config(flow_config_path: str, session_variables_path: Optional[str]) -> Tuple[FlowConfig, Dict[str, Any]]:
     """
     Loads and validates a flow configuration from a JSON file.
     
@@ -34,7 +34,13 @@ def load_config(flow_config_path: str) -> Tuple[FlowConfig, Dict[str, Any]]:
     
     with open(flow_config_path, 'r') as f:
         config_data = json.load(f)
+    session_variables = load_session_variables(session_variables_path)
     
+    if session_variables:
+        if config_data.get('state_config') is None:
+            raise ValueError("State configuration is missing in the flow configuration file.")
+        config_data['state_config']['session_variables'] = session_variables
+
 
     # Validate the complete configuration
     config_data = FlowConfigurationFile(**config_data)
@@ -42,7 +48,6 @@ def load_config(flow_config_path: str) -> Tuple[FlowConfig, Dict[str, Any]]:
     # Extract state and flow configurations
     state = get_flow_state(config_data)
     flow_config = get_flow_config(config_data)
-    
     
     return flow_config, state
 

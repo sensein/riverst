@@ -6,11 +6,7 @@ from loguru import logger
 from pipecat.pipeline.task import PipelineTask
 from pipecat_flows import FlowManager, ContextStrategy, ContextStrategyConfig
 
-<<<<<<< HEAD
-from .flows import load_config, load_session_variables
-=======
 from .flows import load_config
->>>>>>> main
 
 
 class FlowComponentFactory:
@@ -25,15 +21,10 @@ class FlowComponentFactory:
         llm: Any,
         context_aggregator: Any,
         task: PipelineTask,
-<<<<<<< HEAD
-        flow_config_path: str,
-        advanced_flows: bool = False,
-        session_variables_path: Optional[str] = None,
-=======
         advanced_flows: bool = False,
         flow_config_path: Optional[str] = None,
+        session_variables_path: Optional[str] = None,
         user_description: Optional[str] = None,
->>>>>>> main
         context_strategy: ContextStrategy = ContextStrategy.RESET_WITH_SUMMARY,
         summary_prompt: str = "Summarize the key moments of learning, words, and concepts discussed in the tutoring session so far. Keep it concise and focused on vocabulary learning.",
     ):
@@ -45,6 +36,7 @@ class FlowComponentFactory:
             task: The pipeline task
             advanced_flows: Whether to use advanced flows
             flow_config_path: Path to the flow configuration file
+            session_variables_path: Path to the session variables file
             context_strategy: Strategy for managing context
             summary_prompt: Prompt for summarizing conversation
         """
@@ -53,17 +45,11 @@ class FlowComponentFactory:
         self.task = task
         self.advanced_flows = advanced_flows
         self.flow_config_path = flow_config_path
-<<<<<<< HEAD
-        self.context_strategy = context_strategy
-        self.summary_prompt = summary_prompt
-        self.flow_manager = None
         self.session_variables_path = session_variables_path
-=======
         self.user_description = user_description
         self.context_strategy = context_strategy
         self.summary_prompt = summary_prompt
         self.flow_manager = None
->>>>>>> main
 
     def build(self) -> Optional[FlowManager]:
         """Build and configure the flow manager.
@@ -76,28 +62,14 @@ class FlowComponentFactory:
             return None
 
         logger.info(f"Initializing flow manager with config path: {self.flow_config_path}")
-<<<<<<< HEAD
-        
+
         if not self.flow_config_path:
             logger.error("Flow config path not provided but advanced_flows is enabled")
             return None
-        
-        if not self.session_variables_path:
-            logger.warning("Session variables path not provided, using default empty session variables")            
+
         try:
+            flow_config, state = load_config(self.flow_config_path, self.session_variables_path)
             
-            flow_config, state = load_config(self.flow_config_path)
-
-=======
-
-        if not self.flow_config_path:
-            logger.error("Flow config path not provided but advanced_flows is enabled")
-            return None
-
-        try:
-
-            flow_config, state = load_config(self.flow_config_path)
-
             if self.user_description:
                 for _, node_data in flow_config.get('nodes', {}).items():
                     if 'role_messages' not in node_data:
@@ -120,7 +92,6 @@ class FlowComponentFactory:
                             'content': f"User description: {self.user_description}"
                         })
                                 
->>>>>>> main
             flow_manager = FlowManager(
                 llm=self.llm,
                 context_aggregator=self.context_aggregator,
@@ -131,26 +102,14 @@ class FlowComponentFactory:
                 task=self.task,
                 flow_config=flow_config
             )
-<<<<<<< HEAD
-            
+                
             flow_manager.state = state
-            session_variables = load_session_variables(self.session_variables_path)
-            if session_variables:
-                flow_manager.state["session_variables"] = session_variables
-            
+
             
             self.flow_manager = flow_manager
             logger.info("Flow manager successfully built")
             return flow_manager
             
-=======
-            flow_manager.state = state
-
-            self.flow_manager = flow_manager
-            logger.info("Flow manager successfully built")
-            return flow_manager
-
->>>>>>> main
         except FileNotFoundError as e:
             logger.error(f"Flow configuration file not found: {e}")
             return None
@@ -160,11 +119,8 @@ class FlowComponentFactory:
         except Exception as e:
             logger.error(f"Error initializing flow manager: {e}")
             return None
-<<<<<<< HEAD
-    
-=======
-
->>>>>>> main
+        
+        
     async def initialize(self) -> bool:
         """Initialize the flow manager asynchronously.
         
@@ -174,11 +130,6 @@ class FlowComponentFactory:
         if not self.flow_manager:
             logger.warning("Flow manager not built, cannot initialize")
             return False
-<<<<<<< HEAD
-            
-=======
-
->>>>>>> main
         try:
             await self.flow_manager.initialize()
             logger.info("Flow manager successfully initialized")

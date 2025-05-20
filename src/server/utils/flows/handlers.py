@@ -104,13 +104,19 @@ async def get_session_variable_handler(args: FlowArgs, flow_manager: FlowManager
     """
     Handler to retrieve a task variable from the flow state.
     
+    If the variable is indexable (based on the 'indexable_by' field in the variable data), it will check if an index is provided. 
+    If one is not provided, it will check if one is stored in the state. 
+    If it is not available in the state, it will return an error message asking to run again with a valid index.
+    
     Args:
-        args: Flow arguments, should include 'variable_name'
+        args: Flow arguments, should include 'variable_name', optionally 'current_index'
         flow_manager: Flow manager instance
         
     Returns:
         Flow result with the requested variable value
     """
+    index_error_message = "Variable '{variable_name}' is indexable by {index_field} (valid indices: {options}). Please ask the user for a proper index in very natural language given the context, then call this function again with 'current_index' set to their response. If there was an error in how they responded, please try to correct the user in a very natural way."
+    
     variable_name = args.get('variable_name')
     if not variable_name:
         return {
@@ -118,15 +124,61 @@ async def get_session_variable_handler(args: FlowArgs, flow_manager: FlowManager
             "message": "No variable name provided"
         }
     
-    if variable_name not in flow_manager.state["session_variables"]:
+    # Get the variable data
+    data = flow_manager.state["session_variables"].get(variable_name)
+    if data is None:
         return {
             "status": "error",
-            "error": f"Variable '{variable_name}' not found in task variables"
+            "message": f"Variable '{variable_name}' not found"
         }
     
+    # Check if this is an indexable variable
+    index_field = data.get("indexable_by", None)
+    if index_field:
+        # Get available options for better context
+        item_count = len(data.get(index_field, []))
+        options = f"0-{item_count-1}" if item_count > 0 else "none available"
+        
+        # Case 1: Index is provided in the current function call
+        if args.get("current_index") is not None:
+            try:
+                index = int(args.get("current_index")) # type: ignore
+                if index < 0 or index >= item_count:
+                    raise ValueError("Index out of range") # will be caught below
+                
+                # Valid index - update the state
+                flow_manager.state["session_variables"][variable_name]["current_index"] = index
+            except ValueError:
+                # Not a valid number
+                return {
+                    "status": "error",
+                    "message": index_error_message.format(
+                        variable_name=variable_name,
+                        index_field=index_field,
+                        options=options
+                    )
+                }
+
+        # Case 2: Try to get index from previously stored state
+        else:
+            stored_index = data.get("current_index", None)
+            if stored_index is None:
+                # We need an index but don't have one
+                return {
+                    "status": "error",
+                    "message": index_error_message.format(
+                        variable_name=variable_name,
+                        index_field=index_field,
+                        options=options
+                    )
+                }
+            index = int(stored_index)
+            
+        data = data.get(index_field)[index]
+
     return {
         "status": "success",
-        "data": flow_manager.state["session_variables"].get(variable_name)
+        "data": data
     }
     
 async def get_session_info_handler(args: FlowArgs, flow_manager: FlowManager) -> Dict[str, Any]:
@@ -141,6 +193,7 @@ async def get_session_info_handler(args: FlowArgs, flow_manager: FlowManager) ->
         Flow result with the requested variable value
     """
     variable_name = args.get('variable_name')
+    
     if not variable_name:
         return {
             "status": "error",
@@ -151,7 +204,7 @@ async def get_session_info_handler(args: FlowArgs, flow_manager: FlowManager) ->
         return {
             "status": "error",
             "error": f"Variable '{variable_name}' not found in session info"
-        }
+        }        
     
     return {
         "status": "success",

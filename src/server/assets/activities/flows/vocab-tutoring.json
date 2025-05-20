@@ -149,6 +149,10 @@
                     "enum": [
                       "reading_context"
                     ]
+                  },
+                  "current_index": {
+                    "type": "integer",
+                    "description": "The current index of the reading context"
                   }
                 },
                 "required": [
@@ -234,6 +238,10 @@
                     "enum": [
                       "reading_context"
                     ]
+                  },
+                  "current_index": {
+                    "type": "integer",
+                    "description": "The current index of the reading context"
                   }
                 },
                 "required": [
@@ -342,6 +350,10 @@
                     "enum": [
                       "reading_context"
                     ]
+                  },
+                  "current_index": {
+                    "type": "integer",
+                    "description": "The current index of the reading context"
                   }
                 },
                 "required": [
@@ -428,6 +440,10 @@
                     "enum": [
                       "reading_context"
                     ]
+                  },
+                  "current_index": {
+                    "type": "integer",
+                    "description": "The current index of the reading context"
                   }
                 },
                 "required": [
@@ -491,6 +507,10 @@
                     "enum": [
                       "reading_context"
                     ]
+                  },
+                  "current_index": {
+                    "type": "integer",
+                    "description": "The current index of the reading context"
                   }
                 },
                 "required": [
@@ -559,6 +579,10 @@
                     "enum": [
                       "reading_context"
                     ]
+                  },
+                  "current_index": {
+                    "type": "integer",
+                    "description": "The current index of the reading context"
                   }
                 },
                 "required": [

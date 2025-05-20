@@ -106,7 +106,12 @@ def generate_json():
                                         "type": "string",
                                         "description": "The name of the session variable to retrieve",
                                         "enum": [variable]
+                                    },
+                                    "current_index": {
+                                        "type": "integer",
+                                        "description": "The current index of the reading context"
                                     }
+                                },
                                 },
                                 "required": ["variable_name"]
                             },
