@@ -162,7 +162,7 @@ class BotComponentFactory:
                 llm = OLLamaLLMService(model=self.llm_type)
 
             if self.tts_type == "openai":
-                voice = "nova" if 'gender' in self.avatar and self.avatar['gender'] == 'female' else "onyx"
+                voice = "nova" if 'gender' in self.avatar and self.avatar['gender'] == 'female' else "ash"
                 tts = OpenAITTSService(
                     voice=voice,
                     model=(self.tts_params or {}).get("model", "gpt-4o-mini-tts")
@@ -177,21 +177,21 @@ class BotComponentFactory:
 
         elif self.modality == "e2e":
             if self.llm_type == "openai_realtime_beta":
+                voice = "nova" if 'gender' in self.avatar and self.avatar['gender'] == 'female' else "ash"
+                print("Using OpenAI Realtime Beta LLM Service with voice:", voice)
                 props = SessionProperties(
                     input_audio_transcription=InputAudioTranscription(),
                     turn_detection=SemanticTurnDetection(),
                     input_audio_noise_reduction=InputAudioNoiseReduction(type="near_field"),
                     instructions=instruction,
+                    voice = voice
                 )
-                voice = "nova" if 'gender' in self.avatar and self.avatar['gender'] == 'female' else "ash"
-                print("Using OpenAI Realtime Beta LLM Service with voice:", voice)
                 llm = OpenAIRealtimeBetaLLMService(
                     api_key=os.getenv("OPENAI_API_KEY"),
                     model=(self.llm_params or {}).get("model", "gpt-4o-realtime-preview-2024-12-17"),
                     session_properties=props,
                     start_audio_paused=False,
                     send_transcription_frames=True,
-                    voice = voice
                 )
             elif self.llm_type == "gemini":
                 llm = GeminiMultimodalLiveLLMService(

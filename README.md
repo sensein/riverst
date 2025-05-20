@@ -62,7 +62,7 @@ The code has a client-server architecture. You find instructions on how to run t
 - [ ] multilanguage (or at least non english) experiences
 - [ ] add a language identification tool
 - [ ] make sure the llm calls only existings tools (especially helpful with llama3.2)
-        
+- [ ] transcription problem!!
 
 ########## FUTURE WORK ##########
 - TranscriptionLogger: https://github.com/pipecat-ai/pipecat/blob/09ff836ef6dec7070717a03111dc61f252e93814/examples/foundational/13-whisper-transcription.py
