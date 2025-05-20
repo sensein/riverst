@@ -30,7 +30,7 @@ from .bot_component_factory import BotComponentFactory
 from .flow_component_factory import FlowComponentFactory
 
 load_dotenv(override=True)
-
+index = 0
 
 async def run_bot(
     webrtc_connection: Any,
@@ -50,24 +50,24 @@ async def run_bot(
         audio_sample_rate (int): Sample rate in Hz. Default is 24000.
         audio_bit_depth (int): Bit depth for audio. Default is 2.
     """
-    print("Config:", config)
-    print("Session dir:", session_dir)
-    
     logger.info("Starting bot with config: {}", config)
+    logger.info("Session directory: {}", session_dir)
 
     async with aiohttp.ClientSession() as session:
         # Instantiate the bot components using factory pattern
         factory = BotComponentFactory(
             modality=config["pipeline_modality"],
             llm_type=config["llm_type"],
-            stt_type=config["stt_type"],
-            tts_type=config["tts_type"],
-            tts_params={"client_session": session} if config["tts_type"] == "piper" else None,
+            stt_type=config["stt_type"] if "stt_type" in config else None,
+            tts_type=config["tts_type"] if "tts_type" in config else None,
+            tts_params={"client_session": session} if "tts_type" in config and config["tts_type"] == "piper" else None,
             task_description=config.get("task_description", ""),
-            user_description=config.get("user_description"),
+            user_description=config.get("user_description", ""),
             avatar_personality_description=config.get("avatar_personality_description", ""),
             avatar_system_prompt=config.get("avatar_system_prompt", ""),
             body_animations=config["body_animations"],
+            languages=config["languages"] if "languages" in config else None,
+            avatar=config["avatar"]
         )
 
         stt, llm, tts, tools, instruction, context, context_aggregator = await factory.build()
@@ -123,13 +123,13 @@ async def run_bot(
             """
             print(f"User idle handler triggered (retry_count={retry_count}).")
             if retry_count < 2:
-                message = "The user has been quiet. Politely follow up on the same topic."
+                message = "The user has been quiet. Politely follow up on the same topic to keep the conversation going."
             elif retry_count < 4:
                 message = "The user is still inactive. Ask if they'd like to continue our conversation."
             elif retry_count < 6:
                 message = "Still no response from the user. Wait patiently and let them know you're available if needed."
             elif retry_count < 10:
-                message = "No user input detected for a while. Consider ending the session politely if it continues."
+                message = "No user input detected for a while. Consider ending the session politely if it continues. "
             else:
                 # Final attempt: End the session
                 print("User has been idle for a while. Actually ending the conversation.")
@@ -138,19 +138,20 @@ async def run_bot(
                 return False  # Stop monitoring
 
             context.add_message({
-                "role": "system",
-                "content": message
+                "role": "assistant",
+                "content": message,
             })
             await task.queue_frame(context_aggregator.assistant().get_context_frame())
             return True
 
-        user_idle = UserIdleProcessor(callback=handle_user_idle, timeout=15)
+        # user_idle = UserIdleProcessor(callback=handle_user_idle, timeout=15)
+        # TODO: fix the user_idle processor
+        # I commented it out for now because it seems to prompt the assistant with random messages
         transcript = TranscriptProcessor()
         transcript_handler = TranscriptHandler(output_file=f"{session_dir}/transcript.json")
 
         if stt is not None and tts is not None:
-            pipeline = Pipeline(
-                [
+            steps = [
                     pipecat_transport.input(),
                     rtvi,
                     stt,
@@ -161,33 +162,32 @@ async def run_bot(
                     viseme_audiobuffer,
                     VideoProcessor(
                         transport_params.video_out_width, transport_params.video_out_height
-                    ),
+                    ) if config.get("video_flag", False) else None,
                     pipecat_transport.output(),
                     audiobuffer,
                     transcript.assistant(),
-                    user_idle,
+                    # user_idle,
                     context_aggregator.assistant(),
                 ]
-            )
         else:
-            pipeline = Pipeline(
-                [
+            steps = [
                     pipecat_transport.input(),
                     rtvi,
                     context_aggregator.user(),
                     VideoProcessor(
                         transport_params.video_out_width, transport_params.video_out_height
-                    ),
+                    ) if config.get("video_flag", False) else None,
                     llm,  # LLM
                     transcript.user(),
                     viseme_audiobuffer,
                     pipecat_transport.output(),
                     audiobuffer,
                     transcript.assistant(),
-                    user_idle,
+                    # user_idle,
                     context_aggregator.assistant(),
                 ]
-            )
+
+        pipeline = Pipeline([p for p in steps if p is not None])
 
         task = PipelineTask(
             pipeline,
@@ -213,13 +213,19 @@ async def run_bot(
 
         @audiobuffer.event_handler("on_user_turn_audio_data")
         async def on_user_audio(_, audio, sr, ch):
-            path = f"{session_dir}/{datetime.datetime.now():%Y%m%d_%H%M%S_%f}_USER.wav"
-            await save_audio_file(audio, path, sr, ch)
+            global index
+            path = f"{session_dir}/{index:06}__{datetime.datetime.now():%Y%m%d_%H%M%S_%f}_USER.wav"
+            success = await save_audio_file(audio, path, sr, ch)
+            if success:
+                index += 1
 
         @audiobuffer.event_handler("on_bot_turn_audio_data")
         async def on_bot_audio(_, audio, sr, ch):
-            path = f"{session_dir}/{datetime.datetime.now():%Y%m%d_%H%M%S_%f}_AGENT.wav"
-            await save_audio_file(audio, path, sr, ch)
+            global index
+            path = f"{session_dir}/{index:06}__{datetime.datetime.now():%Y%m%d_%H%M%S_%f}_AGENT.wav"
+            success = await save_audio_file(audio, path, sr, ch)
+            if success:
+                index += 1
 
         @audiobuffer.event_handler("on_audio_data")
         async def on_audio_data(_, audio, sr, ch):

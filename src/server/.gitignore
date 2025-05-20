@@ -9,7 +9,7 @@ __pycache__/
 *.onnx.json
 
 # Audio and session data
-recordings/
+sessions/
 *.wav
 
 # Logs

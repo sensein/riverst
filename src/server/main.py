@@ -40,9 +40,6 @@ pcs_map: Dict[str, SmallWebRTCConnection] = {}
 # ICE servers for WebRTC connection
 ice_servers = ["stun:stun.l.google.com:19302"]
 
-# Default avatar URL
-stored_avatar_url: str = 'https://models.readyplayer.me/67eaadeeffcddc994a40ed15.glb?morphTargets=mouthOpen,Oculus Visemes'
-
 # Mount the default frontend
 app.mount("/prebuilt", SmallWebRTCPrebuiltUI)
 
@@ -140,33 +137,17 @@ async def health_check() -> JSONResponse:
     """
     return JSONResponse({"status": "ok"})
 
-
-@app.post("/avatar")
-async def save_avatar(request: Request) -> JSONResponse:
-    """Saves avatar URL from client.
-
-    Args:
-        request (Request): Incoming request with avatar_url.
-
-    Returns:
-        JSONResponse: Status and stored URL.
-    """
-    data = await request.json()
-    global stored_avatar_url
-    stored_avatar_url = data.get("avatar_url")
-    logger.info(f"Avatar URL saved: {stored_avatar_url}")
-    return JSONResponse({"status": "ok", "stored_avatar_url": stored_avatar_url})
-
-
-@app.get("/avatar")
-async def get_avatar() -> JSONResponse:
-    """Returns the currently stored avatar URL.
-
-    Returns:
-        JSONResponse: Avatar URL.
-    """
-    return JSONResponse({"avatar_url": stored_avatar_url or None})
-
+@app.get("/avatars")
+async def get_avatars() -> JSONResponse:
+    """Returns a list of available avatars."""
+    file_path = Path(__file__).parent / "assets" / "avatars.json"
+    try:
+        with file_path.open("r", encoding="utf-8") as f:
+            avatars = json.load(f)
+        return JSONResponse(content=avatars)
+    except Exception as e:
+        logger.error(f"Error loading avatars: {e}")
+        return JSONResponse(status_code=500, content={"error": "Unable to load avatars"})
 
 @app.get("/activities")
 async def get_activities() -> JSONResponse:

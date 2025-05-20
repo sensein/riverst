@@ -176,7 +176,7 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
       ? '001'
       : String(Math.floor(Math.random() * MAX_IDLE_ANIMATIONS) + 1).padStart(3, '0');
     const idleUrl = `/animations/idle/F_Standing_Idle_${idleNumber}.glb`;
-    console.log('Loading idle animation:', idleNumber);
+    // console.log('Loading idle animation:', idleNumber);
 
     new GLTFLoader().load(idleUrl, (gltf) => {
       if (!mixerRef.current) return;
@@ -202,11 +202,11 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
     if (isLoaded && !isBodyPlaying.current) {
       if (interactionState !== null) {
         // Force interaction idle
-        console.log('[AvatarRenderer] Triggering idle 001 for interaction');
+        // console.log('[AvatarRenderer] Triggering idle 001 for interaction');
         loadIdleAnimation(1);
       } else {
         // Play random idle only when not interacting
-        console.log('[AvatarRenderer] Triggering random idle');
+        // console.log('[AvatarRenderer] Triggering random idle');
         loadIdleAnimation();
       }
     }
@@ -228,7 +228,6 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
         animationUrl = '/animations/i_dont_know/M_Standing_Expressions_005.glb';
         break;
       case 'idle':
-        console.log("Loading idle animation!!!!!!!");
         loadIdleAnimation(1);
         return;
       default:
@@ -301,7 +300,7 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
       loadIdleAnimation();
 
       if (onAnimationEnd) {
-        console.log('[AvatarRenderer] Animation ended — resetting trigger');
+        // console.log('[AvatarRenderer] Animation ended — resetting trigger');
         onAnimationEnd();
       }
     }

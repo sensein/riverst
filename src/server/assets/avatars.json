@@ -1,0 +1,12 @@
+[
+  {
+    "id": 1,
+    "modelUrl": "https://models.readyplayer.me/67eaadeeffcddc994a40ed15.glb?morphTargets=mouthOpen,Oculus Visemes",
+    "gender": "female"
+  },
+  {
+    "id": 2,
+    "modelUrl": "https://models.readyplayer.me/682b8f3c8a243067ea6996a0.glb?morphTargets=mouthOpen,Oculus Visemes",
+    "gender": "male"
+  }
+]

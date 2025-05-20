@@ -10,7 +10,8 @@ interface AdvancedAvatarCreatorProps {
 const AdvancedAvatarCreator: React.FC<AdvancedAvatarCreatorProps> = ({ onAvatarCreated, AdvancedAvatarCreatorUrl }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  const defaultAdvancedAvatarCreatorUrl = 'https://interactive-avatar.readyplayer.me';
+  const defaultAdvancedAvatarCreatorUrl = 'https://interactive-avatar-tijf7k.readyplayer.me';
+  //const defaultAdvancedAvatarCreatorUrl = 'https://create.readyplayer.me/avatar';
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -54,8 +55,8 @@ const AdvancedAvatarCreator: React.FC<AdvancedAvatarCreatorProps> = ({ onAvatarC
   return (
     <iframe
       ref={iframeRef}
-      src={`${AdvancedAvatarCreatorUrl || defaultAdvancedAvatarCreatorUrl}?frameApi&clearCache&quickStart=false&t=${Date.now()}`}
-      allow="camera *; microphone *"
+      src={`${AdvancedAvatarCreatorUrl || defaultAdvancedAvatarCreatorUrl}?lang=en&frameApi&clearCache&quickStart=false&t=${Date.now()}`}
+      allow="camera *;"
       style={{ width: '100%', height: '100%', border: 'none' }}
     />
   );

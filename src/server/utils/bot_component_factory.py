@@ -50,6 +50,8 @@ class BotComponentFactory:
     avatar_personality_description: str = ""
     avatar_system_prompt: str = ""
     body_animations: Optional[List[str]] = None
+    languages: Optional[List[str]] = None
+    avatar: Dict[str, Any] = None
 
     def __post_init__(self):
         if self.llm_type not in ALLOWED_LLM[self.modality]:
@@ -93,6 +95,18 @@ class BotComponentFactory:
         animation_instruction = self.build_animation_instruction()
         if animation_instruction:
             instruction += f"\nAnimation instructions: {animation_instruction}\n"
+        if self.languages:
+            print(f"Supported languages: {self.languages}")
+            instruction += (
+                f"You are restricted to understanding and responding in the following languages only: "
+                f"{', '.join(self.languages)}. Do NOT respond in any language outside if {', '.join(self.languages)}. "
+                f"If that language is among {', '.join(self.languages)}, reply in the same language used by the user in the last interaction.\n"
+                f"If the lanugage is NOT among {', '.join(self.languages)}, reply in one and only one of these languages ({', '.join(self.languages)}) with a message indicating "
+                f"that you do not understand or speak that language and pretend you do not understand the user.\n"
+                f"For instance, if the user speaks in Spanish and you only understand English, "
+                f"reply in English with a message indicating that you do not understand or speak that language and pretend you do not understand the user.\n"
+            )
+            #TODO: we may improve this by adding a language detection tool!!
         instruction += f"Avatar description: {self.avatar_personality_description}\n"
         instruction += f"Task description: {self.task_description}\n"
         if self.user_description:
@@ -150,23 +164,29 @@ class BotComponentFactory:
                 llm = OLLamaLLMService(model=self.llm_type)
 
             if self.tts_type == "openai":
+                voice = "nova" if 'gender' in self.avatar and self.avatar['gender'] == 'female' else "ash"
                 tts = OpenAITTSService(
-                    voice=(self.tts_params or {}).get("voice", "nova"), # TODO: add more voices
+                    voice=voice,
                     model=(self.tts_params or {}).get("model", "gpt-4o-mini-tts")
                 )
             elif self.tts_type == "piper":
+                # this assumes that 5001 offers female and 5002 offers male
+                base_url = "http://localhost:5001/" if 'gender' in self.avatar and self.avatar['gender'] == 'female' else "http://localhost:5002/"
                 tts = PiperTTSService(
-                    base_url=(self.tts_params or {}).get("base_url", "http://localhost:5001/"),
+                    base_url=base_url,
                     aiohttp_session=(self.tts_params or {})["client_session"]
                 )
 
         elif self.modality == "e2e":
             if self.llm_type == "openai_realtime_beta":
+                voice = "nova" if 'gender' in self.avatar and self.avatar['gender'] == 'female' else "ash"
+                print("Using OpenAI Realtime Beta LLM Service with voice:", voice)
                 props = SessionProperties(
                     input_audio_transcription=InputAudioTranscription(),
                     turn_detection=SemanticTurnDetection(),
                     input_audio_noise_reduction=InputAudioNoiseReduction(type="near_field"),
                     instructions=instruction,
+                    voice = voice
                 )
                 llm = OpenAIRealtimeBetaLLMService(
                     api_key=os.getenv("OPENAI_API_KEY"),
@@ -175,11 +195,10 @@ class BotComponentFactory:
                     start_audio_paused=False,
                     send_transcription_frames=True,
                 )
-                # TODO: add more voices
             elif self.llm_type == "gemini":
                 llm = GeminiMultimodalLiveLLMService(
                     api_key=os.getenv("GOOGLE_API_KEY"),
-                    voice_id=(self.llm_params or {}).get("voice_id", "Aoede"), # TODO: add more voices
+                    voice_id= "Aoede" if 'gender' in self.avatar and self.avatar['gender'] == 'female' else "Charon",
                     transcribe_user_audio=True,
                     transcribe_model_audio=True,
                     system_instruction=instruction,

@@ -10,7 +10,6 @@ const { TextArea } = Input;
 
 const SettingsForm = ({ schema, onSubmit }) => {
   const transportState = useRTVIClientTransportState();
-
   const [form] = Form.useForm();
   const [isValid, setIsValid] = useState(false);
 
@@ -27,9 +26,32 @@ const SettingsForm = ({ schema, onSubmit }) => {
     return acc;
   }, {});
 
+  const pipelineModality = Form.useWatch(['options', 'pipeline_modality'], form) || 'classic';
+
+  // Clear fields when pipeline_modality changes
   useEffect(() => {
-    form.setFieldsValue({ options: initialValues });
-  }, [form, initialValues]);
+    if (!form) return;
+
+    const currentValues = form.getFieldValue('options') || {};
+    const updates = { ...currentValues };
+
+    // Reset incompatible fields when switching modality
+    if (pipelineModality === 'classic') {
+      if (!['openai', 'llama3.2'].includes(updates.llm_type)) {
+        updates.llm_type = 'openai'; // default to a valid option
+        updates.stt_type = 'openai'; // default to a valid option
+        updates.tts_type = 'openai'; // default to a valid option
+      }
+    } else if (pipelineModality === 'e2e') {
+      if (!['openai_realtime_beta', 'gemini'].includes(updates.llm_type)) {
+        updates.llm_type = 'openai_realtime_beta';
+        updates.stt_type = undefined;
+        updates.tts_type = undefined;
+      }
+    }
+
+    form.setFieldsValue({ options: updates });
+  }, [pipelineModality]);
 
   const validateSchema = async () => {
     const values = await form.getFieldsValue(true);
@@ -51,6 +73,18 @@ const SettingsForm = ({ schema, onSubmit }) => {
   const renderFormItem = (key, config) => {
     if (config.const !== undefined) return null;
 
+    // Conditional logic
+    // if (key === 'user_transcript' && pipelineModality !== 'classic') return null;
+    if (['stt_type', 'tts_type'].includes(key) && pipelineModality !== 'classic') return null;
+
+    if (key === 'llm_type') {
+      const filteredEnums =
+        pipelineModality === 'classic'
+          ? ['openai', 'llama3.2']
+          : ['openai_realtime_beta', 'gemini'];
+      config.enum = filteredEnums;
+    }
+
     const rules = [];
     if (requiredFields.includes(key)) {
       rules.push({ required: true, message: `${key} is required` });
@@ -59,11 +93,28 @@ const SettingsForm = ({ schema, onSubmit }) => {
       rules.push({ max: config.maxLength });
     }
 
-    const label = 
-      (config.title || key.replace(/_/g, ' ')).toUpperCase();
+    const label = (config.title || key.replace(/_/g, ' ')).toUpperCase();
     const namePath = ['options', key];
-
     const labelWithTooltip = renderLabel(label, config.description);
+
+    if (config.type === 'array' && config.items?.enum) {
+      if (config.minItems) {
+        rules.push({
+          validator: (_, value) => {
+            if (Array.isArray(value) && value.length < config.minItems) {
+              return Promise.reject(new Error(`Please select at least ${config.minItems} item(s).`));
+            }
+            return Promise.resolve();
+          },
+        });
+      }
+
+      return (
+        <Form.Item key={key} name={namePath} label={labelWithTooltip} rules={rules}>
+          <Checkbox.Group options={config.items.enum} />
+        </Form.Item>
+      );
+    }
 
     if (config.type === 'array' && config.items?.enum) {
       return (
@@ -134,6 +185,7 @@ const SettingsForm = ({ schema, onSubmit }) => {
       <Form
         form={form}
         layout="vertical"
+        initialValues={{ options: initialValues }}
         onFinish={({ options }) => onSubmit(options)}
         onFieldsChange={validateSchema}
       >
