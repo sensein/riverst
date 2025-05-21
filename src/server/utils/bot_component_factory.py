@@ -16,6 +16,7 @@ from pipecat.adapters.schemas.tools_schema import ToolsSchema
 from pipecat.adapters.schemas.function_schema import FunctionSchema
 from pipecat.processors.aggregators.openai_llm_context import OpenAILLMContext
 from pipecat.transports.base_transport import TransportParams
+import json
 
 ModalityType = Literal["classic", "e2e"]
 LLMType = Literal["openai", "openai_realtime_beta", "gemini", "llama3.2"]
@@ -35,6 +36,7 @@ VALID_ANIMATIONS = [
 
 @dataclass
 class BotComponentFactory:
+    session_dir: str
     modality: ModalityType
     llm_type: LLMType
     llm_params: Optional[Dict[str, Any]] = None
@@ -162,14 +164,14 @@ class BotComponentFactory:
                 llm = OLLamaLLMService(model=self.llm_type)
 
             if self.tts_type == "openai":
-                voice = "nova" if 'gender' in self.avatar and self.avatar['gender'] == 'female' else "ash"
+                voice = "alloy" if 'gender' in self.avatar and self.avatar['gender'] == 'feminine' else "ash"
                 tts = OpenAITTSService(
                     voice=voice,
                     model=(self.tts_params or {}).get("model", "gpt-4o-mini-tts")
                 )
             elif self.tts_type == "piper":
                 # this assumes that 5001 offers female and 5002 offers male
-                base_url = "http://localhost:5001/" if 'gender' in self.avatar and self.avatar['gender'] == 'female' else "http://localhost:5002/"
+                base_url = "http://localhost:5001/" if 'gender' in self.avatar and self.avatar['gender'] == 'feminine' else "http://localhost:5002/"
                 tts = PiperTTSService(
                     base_url=base_url,
                     aiohttp_session=(self.tts_params or {})["client_session"]
@@ -177,8 +179,8 @@ class BotComponentFactory:
 
         elif self.modality == "e2e":
             if self.llm_type == "openai_realtime_beta":
-                voice = "nova" if 'gender' in self.avatar and self.avatar['gender'] == 'female' else "ash"
-                print("Using OpenAI Realtime Beta LLM Service with voice:", voice)
+                voice = "alloy" if 'gender' in self.avatar and self.avatar['gender'] == 'feminine' else "ash"
+                print("Using OpenAI Realtime Beta LLM Service with voice:", voice, "avatar: ", self.avatar)
                 props = SessionProperties(
                     input_audio_transcription=InputAudioTranscription(),
                     turn_detection=SemanticTurnDetection(),
@@ -196,14 +198,38 @@ class BotComponentFactory:
             elif self.llm_type == "gemini":
                 llm = GeminiMultimodalLiveLLMService(
                     api_key=os.getenv("GOOGLE_API_KEY"),
-                    voice_id= "Aoede" if 'gender' in self.avatar and self.avatar['gender'] == 'female' else "Charon",
+                    voice_id= "Aoede" if 'gender' in self.avatar and self.avatar['gender'] == 'feminine' else "Charon",
                     transcribe_user_audio=True,
                     transcribe_model_audio=True,
                     system_instruction=instruction,
                     tools=tools,
                 )
 
-        messages = [{"role": "system", "content": instruction}]
+
+        transcript_path = os.path.join(self.session_dir, "transcript.json")
+        if os.path.exists(transcript_path):
+            print("Loading transcript.json from:", transcript_path)
+            try:
+                with open(transcript_path, "r", encoding="utf-8") as f:
+                    transcript_data = json.load(f)
+                    messages = [{"role": "system", "content": instruction}]
+                    for message in transcript_data:
+                        messages.append({
+                            "role": message["role"] if message["role"] == "user" else "model",
+                            "content": message["content"],
+                        })
+                    messages.append({
+                        "role": "system",
+                        "content": "Please continue the conversation from where you left. There has been an interruption. Maybe make a summary of the conversation so far before continuing.",
+                    })
+            except Exception as e:
+                print(f"Failed to load transcript.json: {e}")
+                raise ValueError("Failed to load transcript.json")
+        else:
+            print("No transcript.json found. Starting a new conversation.")
+            messages = [{"role": "system", "content": instruction}]
+
+        print("Messages:", messages)
         context = OpenAILLMContext(messages=messages, tools=tools)
         context_aggregator = llm.create_context_aggregator(context=context)
 

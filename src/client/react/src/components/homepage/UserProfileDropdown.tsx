@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { Dropdown, Avatar, Modal, Input } from 'antd';
 import { UserOutlined, SettingOutlined, HistoryOutlined, EditOutlined } from '@ant-design/icons';
 import { getUserId, setUserId as persistUserId } from '../../utils/userId';
-
+import { useNavigate } from 'react-router-dom';
 const UserProfileDropdown: React.FC = () => {
   const [userId, setUserIdState] = useState<string>(getUserId());
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [newUserId, setNewUserId] = useState(userId);
+  const navigate = useNavigate();
 
   const handleOk = () => {
     persistUserId(newUserId);
@@ -31,7 +32,11 @@ const UserProfileDropdown: React.FC = () => {
       key: 'history',
       label: 'History',
       icon: <HistoryOutlined />,
-      disabled: true
+      disabled: false,
+      onClick: () => {
+        // Handle history action here
+        navigate('/sessions');
+      }
     },
     {
       key: 'settings',

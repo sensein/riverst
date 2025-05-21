@@ -122,6 +122,7 @@ class FlowComponentFactory:
         Returns:
             bool: True if initialization was successful, False otherwise
         """
+        print("[AAA] Initializing flow manager")
         if not self.flow_manager:
             logger.warning("Flow manager not built, cannot initialize")
             return False

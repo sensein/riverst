@@ -10,11 +10,13 @@ const AdvancedAvatarCreatorPage = () => {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleAvatarCreated = async (url: string) => {
+  const handleAvatarCreated = async (url: string, gender: string) => {
     console.log("Avatar URL:", url);
+    console.log("Avatar gender:", gender);
     setAvatarUrl(url);
     localStorage.setItem('selectedAvatar', JSON.stringify({ 
       'modelUrl': url,
+      'gender': gender
      }));
      // TODO: is it possible to get the avatar gender from the url?
     console.log("localStorage:", localStorage.getItem('selectedAvatar'));

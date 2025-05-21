@@ -4,7 +4,7 @@ from typing import Any
 
 from dotenv import load_dotenv
 from loguru import logger
-
+import os
 from pipecat.audio.vad.silero import SileroVADAnalyzer
 from pipecat.audio.filters.noisereduce_filter import NoisereduceFilter
 from pipecat.pipeline.pipeline import Pipeline
@@ -22,15 +22,16 @@ from pipecat.transports.base_transport import TransportParams
 from pipecat.transports.network.small_webrtc import SmallWebRTCTransport
 from pipecat.frames.frames import EndFrame
 
+import asyncio
 from .video_processor import VideoProcessor
 from .utils import save_audio_file
 from .transcript_handler import TranscriptHandler
+from .audio_analyzer import AudioAnalyzer
 from .viseme import VisemeProcessor
 from .bot_component_factory import BotComponentFactory
 from .flow_component_factory import FlowComponentFactory
 
 load_dotenv(override=True)
-index = 0
 
 async def run_bot(
     webrtc_connection: Any,
@@ -56,6 +57,7 @@ async def run_bot(
     async with aiohttp.ClientSession() as session:
         # Instantiate the bot components using factory pattern
         factory = BotComponentFactory(
+            session_dir=session_dir,
             modality=config["pipeline_modality"],
             llm_type=config["llm_type"],
             stt_type=config["stt_type"] if "stt_type" in config else None,
@@ -148,7 +150,7 @@ async def run_bot(
         # TODO: fix the user_idle processor
         # I commented it out for now because it seems to prompt the assistant with random messages
         transcript = TranscriptProcessor()
-        transcript_handler = TranscriptHandler(output_file=f"{session_dir}/transcript.json")
+        transcript_handler = TranscriptHandler(output_file=os.path.join(session_dir, "transcript.json"))
 
         if stt is not None and tts is not None:
             steps = [
@@ -216,23 +218,21 @@ async def run_bot(
 
         @audiobuffer.event_handler("on_user_turn_audio_data")
         async def on_user_audio(_, audio, sr, ch):
-            global index
-            path = f"{session_dir}/{index:06}__{datetime.datetime.now():%Y%m%d_%H%M%S_%f}_USER.wav"
-            success = await save_audio_file(audio, path, sr, ch)
-            if success:
-                index += 1
+            audios_dir = os.path.join(session_dir, "audios")
+            os.makedirs(audios_dir, exist_ok=True)
+            path = f"{audios_dir}/{datetime.datetime.now():%Y%m%d_%H%M%S_%f}_USER.wav"
+            await save_audio_file(audio, path, sr, ch)
 
         @audiobuffer.event_handler("on_bot_turn_audio_data")
         async def on_bot_audio(_, audio, sr, ch):
-            global index
-            path = f"{session_dir}/{index:06}__{datetime.datetime.now():%Y%m%d_%H%M%S_%f}_AGENT.wav"
-            success = await save_audio_file(audio, path, sr, ch)
-            if success:
-                index += 1
+            audios_dir = os.path.join(session_dir, "audios")
+            os.makedirs(audios_dir, exist_ok=True)
+            path = f"{audios_dir}/{datetime.datetime.now():%Y%m%d_%H%M%S_%f}_AGENT.wav"
+            await save_audio_file(audio, path, sr, ch)
 
         @audiobuffer.event_handler("on_audio_data")
         async def on_audio_data(_, audio, sr, ch):
-            await save_audio_file(audio, f"{session_dir}/session.wav", sr, ch)
+            await save_audio_file(audio, os.path.join(session_dir, "session.wav"), sr, ch)
 
         @viseme_audiobuffer.event_handler("on_track_audio_data")
         async def on_track_audio_data(_, user_audio, bot_audio, sr, ch):
@@ -243,6 +243,7 @@ async def run_bot(
 
         @rtvi.event_handler("on_client_ready")
         async def on_client_ready(rtvi):
+            print("[AAA] on_client_ready: ", flow_manager)
             await rtvi.set_bot_ready()
             if flow_manager:
                 await flow_manager.initialize()
@@ -251,19 +252,32 @@ async def run_bot(
 
         @pipecat_transport.event_handler("on_client_connected")
         async def on_client_connected(_, __):
+            print("[AAA] on_client_connected")
             await viseme_audiobuffer.start_recording()
             await audiobuffer.start_recording()
 
         @pipecat_transport.event_handler("on_client_disconnected")
         async def on_client_disconnected(_, __):
-            await viseme_audiobuffer.stop_recording()
-            await audiobuffer.stop_recording()
+            print("[AAA] on_client_disconnected")
 
         @pipecat_transport.event_handler("on_client_closed")
         async def on_client_closed(_, __):
+            print("[AAA] on_client_closed")
             await viseme_audiobuffer.stop_recording()
             await audiobuffer.stop_recording()
             await task.cancel()
+
+            async def trigger_analysis_on_audios(audios_dir: str):
+                # Trigger analysis on all files in audios_dir without waiting for them
+                for filename in os.listdir(audios_dir):
+                    if filename.endswith(".wav"):
+                        filepath = os.path.join(audios_dir, filename)
+                        # asyncio.create_task(AudioAnalyzer.analyze_audio(filepath))
+                        await AudioAnalyzer.analyze_audio(filepath)
+
+            audios_dir = f"{session_dir}/audios"
+            if os.path.exists(audios_dir):
+                asyncio.create_task(trigger_analysis_on_audios(audios_dir))
 
         runner = PipelineRunner(handle_sigint=False)
         await runner.run(task)
