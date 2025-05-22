@@ -12,3 +12,35 @@
 - https://github.com/maxrmorrison/promonet
 - https://github.com/interactiveaudiolab/ppgs
 - https://gooey.ai/
+
+- For Apple Silicon or Mac, PyTorch with MPS is currently the fastest and most reliable option for real-time inference.
+- ONNX Runtime is only advantageous on CPU or with CUDA (NVIDIA GPU).
+- There is no practical way to combine ONNX optimizations with PyTorch MPS, nor to use ONNX Runtime with MPS for this use case.
+
+## Code:
+
+- optimum-cli export onnx --model bookbot/wav2vec2-ljspeech-gruut onnx-wav2vec2/
+
+- 
+
+from optimum.onnxruntime import ORTModelForCTC
+import onnxruntime as ort
+from transformers import AutoProcessor, pipeline as transformers_pipeline
+import numpy as np
+import time
+import torch
+
+processor = AutoProcessor.from_pretrained("bookbot/wav2vec2-ljspeech-gruut")
+model = ORTModelForCTC.from_pretrained(
+    "onnx-wav2vec2/",
+    file_name="model.onnx"
+)
+
+model.main_input_name = "input_values" # Patch for pipeline compatibility
+asr_pipeline = transformers_pipeline(
+    "automatic-speech-recognition",
+    model=model,
+    tokenizer=processor.tokenizer,
+    feature_extractor=processor.feature_extractor,
+)
+asr_pipeline(dummy_audio, return_timestamps="char")
