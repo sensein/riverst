@@ -46,13 +46,12 @@ The code has a client-server architecture. You find instructions on how to run t
 - [x] add and structure a bit more avatar creation and voice selection (Fabio)
 - [x] add short term memory (in case of refrash) (Fabio)
 - [x] add session history page (Fabio)
-- [ ] Enabling recovering the session from the transcript (Bruce)
-- [ ] Saving the video (Bruce)
+- [ ] KIVA vocabulary activity (Bruce)
 - [ ] cleaning animations!!!!!!! (Fabio: "I have cleaned them a bit but they are still not good if you play them multiple times..." - for lip sync, the best would be to make the model onnx format)
 
 
 
-
+- [ ] Saving the video (Bruce)
 - [ ] [BUG+HELP WANTED] there is something off with UserTranscript (it seems that the event is received twice on the client)
 - [ ] Understand how to communicate video-based emotion recognition (+ pose estimation?) to the llm (ethical and technical questions)
 - [ ] speech emotion recognition (ethical and technical questions)
