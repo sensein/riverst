@@ -15,8 +15,7 @@ class VisemeProcessor:
         Args:
             model_name (str): Hugging Face model identifier for phonetic ASR.
 
-        # TODO: can i use onnx model for viseme detection in the pipeline?
-        https://github.com/huggingface/optimum/issues/2250
+        # TODO: find a faster way to obtain the phonemes
         """
         self.model_name = model_name
         self.phoneme_viseme_map = self._load_viseme_map()

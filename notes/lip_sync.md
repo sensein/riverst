@@ -12,6 +12,7 @@
 - https://github.com/maxrmorrison/promonet
 - https://github.com/interactiveaudiolab/ppgs
 - https://gooey.ai/
+- https://github.com/huggingface/optimum/issues/2250 (related issue i opened on optimum)
 
 - For Apple Silicon or Mac, PyTorch with MPS is currently the fastest and most reliable option for real-time inference.
 - ONNX Runtime is only advantageous on CPU or with CUDA (NVIDIA GPU).
