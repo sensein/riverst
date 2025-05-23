@@ -3,13 +3,8 @@ from typing import List, Optional
 import os
 import json
 import aiofiles
-import asyncio
 from pipecat.processors.transcript_processor import TranscriptProcessor
 from pipecat.frames.frames import TranscriptionUpdateFrame
-from senselab.audio.data_structures import Audio
-from senselab.audio.tasks.features_extraction.api import extract_features_from_audios
-from senselab.audio.tasks.preprocessing import downmix_audios_to_mono, resample_audios
-from .utils import tensor_to_serializable
 
 class TranscriptHandler:
     """Handles real-time transcript processing and output.
@@ -30,7 +25,18 @@ class TranscriptHandler:
         Args:
             output_file: Path to output file. If None, outputs to log only.
         """
-        self.messages: List[dict] = []
+        try:
+            if os.path.exists(output_file):
+                with open(output_file, "r", encoding="utf-8") as f:
+                    self.messages: List[dict] = json.load(f)
+            else:
+                self.messages: List[dict] = []
+        except Exception as e:
+            logger.error(f"Error reading transcript file: {e}")
+            raise ValueError(
+                f"Error reading transcript file: {e}. Please check the file format."
+            )
+
         self.output_file: Optional[str] = output_file
 
         logger.debug(
@@ -83,42 +89,3 @@ class TranscriptHandler:
                 logger.info(f"Transcript: {data}")
 
         await self.save_messages()
-
-    '''
-    # TODO: future work is to integrate senselab analysis of the audio and transcript
-    # (once the session is over)
-    async def process_audio_background(self, filepath: str):
-        try:
-            print("Processing audio in background: ", filepath)
-
-            loop = asyncio.get_running_loop()
-
-            def run_all_blocking_operations():
-                audio = Audio(filepath=filepath)
-                audio = downmix_audios_to_mono([audio])[0]
-                audios = resample_audios([audio], 16000)
-
-                acoustic_feats = extract_features_from_audios(
-                    audios=audios,
-                    opensmile=True,
-                    parselmouth=True,
-                    torchaudio=False,
-                    torchaudio_squim=False
-                )
-
-                return {
-                    "features": acoustic_feats[0],
-                }
-
-            result = await loop.run_in_executor(None, run_all_blocking_operations)
-
-            for msg in reversed(self.messages):
-                if msg.get("audio_file") == filepath:
-                    msg["features"] = tensor_to_serializable(result["features"])
-                    logger.debug(f"Attached audio processing results to message: {msg}")
-                    await self.save_messages()
-                    break
-
-        except Exception as e:
-            logger.error(f"Error in background audio processing for {filepath}: {e}")
-    '''

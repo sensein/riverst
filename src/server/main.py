@@ -19,11 +19,16 @@ from loguru import logger
 from utils.bot import run_bot
 from pipecat_ai_small_webrtc_prebuilt.frontend import SmallWebRTCPrebuiltUI
 from pipecat.transports.network.webrtc_connection import SmallWebRTCConnection
+from fastapi.staticfiles import StaticFiles
 
 # Load environment variables
 load_dotenv(override=True)
 
 app = FastAPI()
+
+BASE_SESSION_DIR = Path(__file__).parent
+
+app.mount("/sessions", StaticFiles(directory=BASE_SESSION_DIR / "sessions"), name="sessions")
 
 # Enable CORS for all origins
 app.add_middleware(
@@ -61,7 +66,7 @@ async def create_session(config: dict = Body(...)) -> JSONResponse:
         JSONResponse: Contains the newly generated session ID.
     """
     session_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + str(uuid.uuid4())[:8]
-    session_dir = Path("sessions") / session_id
+    session_dir = BASE_SESSION_DIR / Path("sessions") / session_id
     session_dir.mkdir(parents=True, exist_ok=True)
 
     config_path = session_dir / "config.json"
@@ -91,8 +96,8 @@ async def offer(
     data = await request.json()
     pc_id: Optional[str] = data.get("pc_id")
 
-    session_dir = Path("sessions") / session_id
-    config_path = session_dir / "config.json"
+    session_dir = (BASE_SESSION_DIR / Path("sessions") / session_id).resolve()
+    config_path = Path(os.path.join(session_dir, "config.json"))
 
     try:
         with config_path.open("r", encoding="utf-8") as f:
@@ -140,7 +145,7 @@ async def health_check() -> JSONResponse:
 @app.get("/avatars")
 async def get_avatars() -> JSONResponse:
     """Returns a list of available avatars."""
-    file_path = Path(__file__).parent / "assets" / "avatars.json"
+    file_path = BASE_SESSION_DIR / "assets" / "avatars.json"
     try:
         with file_path.open("r", encoding="utf-8") as f:
             avatars = json.load(f)
@@ -156,7 +161,7 @@ async def get_activities() -> JSONResponse:
     Returns:
         JSONResponse: Activity group definitions.
     """
-    file_path = Path(__file__).parent / "assets" / "activity_groups.json"
+    file_path = BASE_SESSION_DIR / "assets" / "activity_groups.json"
     try:
         with file_path.open("r", encoding="utf-8") as f:
             data = json.load(f)
@@ -176,7 +181,7 @@ async def get_activity_settings(settings_path: str) -> JSONResponse:
     Returns:
         JSONResponse: Filtered JSON configuration.
     """
-    file_path = Path(__file__).parent / "assets" / "activities" / "settings" / settings_path
+    file_path = BASE_SESSION_DIR / "assets" / "activities" / "settings" / settings_path
 
     if not file_path.is_file():
         logger.error(f"Settings file not found: {file_path}")
@@ -223,6 +228,41 @@ async def get_activity_settings(settings_path: str) -> JSONResponse:
     except Exception as e:
         logger.error(f"Error reading or processing settings file: {e}")
         return JSONResponse(status_code=500, content={"error": "Unable to load settings"})
+
+
+@app.get("/api/sessions")
+async def list_sessions() -> JSONResponse:
+    session_root = BASE_SESSION_DIR / "sessions"
+    if not session_root.is_dir():
+        return JSONResponse(content=[], status_code=200)
+    session_ids = [p.name for p in session_root.iterdir() if p.is_dir()]
+    return JSONResponse(content=session_ids)
+
+@app.get("/api/session/{session_id}")
+async def get_session_data(session_id: str) -> JSONResponse:
+    session_dir = BASE_SESSION_DIR / "sessions" / session_id
+    audio_dir = session_dir / "audios"
+    json_dir = session_dir / "json"
+
+    if not (audio_dir.is_dir() and json_dir.is_dir()):
+        return JSONResponse(content={"error": "Session not found"}, status_code=404)
+    
+    results = []
+    # List all json files in the json dir
+    for json_file in sorted(json_dir.glob("*.json")):
+        base_name = json_file.stem
+        wav_file = audio_dir / (base_name + ".wav")
+        if not wav_file.exists():
+            continue
+        try:
+            with open(json_file, "r") as f:
+                data = json.load(f)
+        except Exception as e:
+            continue  # skip unreadable files
+        # Return audio file as relative path (or signed URL if preferred)
+        data["audio_file"] = f"/sessions/{session_id}/audios/{base_name}.wav"
+        results.append(data)
+    return JSONResponse(content=results)
 
 
 @asynccontextmanager

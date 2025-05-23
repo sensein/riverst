@@ -30,7 +30,7 @@ export function RTVIProvider({
         },
         enableMic: true,
         enableCam: enableCam,
-        timeout: 5000,
+        timeout: 10000,
         customConnectHandler: () => Promise.resolve(),
         callbacks: {
           onError: (error) => {

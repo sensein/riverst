@@ -41,28 +41,30 @@ The code has a client-server architecture. You find instructions on how to run t
 - [x] more structured conversation flows (pipecat flows) (Bruce)
 - [x] Integrate the advanced flows for the KIVA activities (Bruce)
 - [x] Saving the transcript and the audio clips (Fabio)
-- [ ] Enabling recovering the session from the transcript (Bruce)
+- [x] add senselab analysis afterwards (Fabio)
+- [x] create an error page for the web app (Fabio)
+- [x] add and structure a bit more avatar creation and voice selection (Fabio)
+- [x] add short term memory (in case of refrash) (Fabio)
+- [x] add session history page (Fabio)
+- [ ] KIVA vocabulary activity (Bruce)
+- [ ] cleaning animations!!!!!!! (Fabio: "I have cleaned them a bit but they are still not good if you play them multiple times..." - for lip sync, the best would be to make the model onnx format)
+
+
+
 - [ ] Saving the video (Bruce)
-- [ ] cleaning animations (Fabio: I have cleaned them a bit but they are still not good if you play them multiple times...)
 - [ ] [BUG+HELP WANTED] there is something off with UserTranscript (it seems that the event is received twice on the client)
 - [ ] Understand how to communicate video-based emotion recognition (+ pose estimation?) to the llm (ethical and technical questions)
 - [ ] speech emotion recognition (ethical and technical questions)
 - [ ] record and add more animations (for expressivity!!!): https://github.com/readyplayerme/animation-library/tree/master/masculine/fbx/idle
 - [ ] handle multi-users:
     - [ ] speaker verification (multi-user sessions) - we should try with diart
-- [ ] create an error page for the web app
-- [ ] add and structure a bit more avatar creation and voice selection (Fabio)
 - [ ] handle the end of the conversation on the client side
-- [ ] handle conversation memory
-- [ ] add session history page
+- [ ] handle long-term memory
 - [ ] add the user_id to the history of the session
-- [ ] add senselab analysis afterwards
-- [ ] clean the server main folder (moving models to the assets folder)
 - [ ] improve the UI and UX for building a flow!!
 - [ ] multilanguage (or at least non english) experiences
 - [ ] add a language identification tool
 - [ ] make sure the llm calls only existings tools (especially helpful with llama3.2)
-- [ ] transcription problem!!
 
 ########## FUTURE WORK ##########
 - TranscriptionLogger: https://github.com/pipecat-ai/pipecat/blob/09ff836ef6dec7070717a03111dc61f252e93814/examples/foundational/13-whisper-transcription.py

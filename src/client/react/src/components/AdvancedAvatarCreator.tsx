@@ -3,18 +3,20 @@
 import React, { useEffect, useRef } from 'react';
 
 interface AdvancedAvatarCreatorProps {
-  onAvatarCreated: (avatarUrl: string) => void;
+  onAvatarCreated: (avatarUrl: string, gender: string) => void;
   AdvancedAvatarCreatorUrl?: string;
 }
 
-const AdvancedAvatarCreator: React.FC<AdvancedAvatarCreatorProps> = ({ onAvatarCreated, AdvancedAvatarCreatorUrl }) => {
+const AdvancedAvatarCreator: React.FC<AdvancedAvatarCreatorProps> = ({
+  onAvatarCreated,
+  AdvancedAvatarCreatorUrl,
+}) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  const defaultAdvancedAvatarCreatorUrl = 'https://interactive-avatar-tijf7k.readyplayer.me';
-  //const defaultAdvancedAvatarCreatorUrl = 'https://create.readyplayer.me/avatar';
+  const defaultAdvancedAvatarCreatorUrl = 'https://create.readyplayer.me/avatar';
 
   useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
+    const handleMessage = async (event: MessageEvent) => {
       const origin = new URL(AdvancedAvatarCreatorUrl || defaultAdvancedAvatarCreatorUrl).origin;
 
       // Ensure the message comes from the correct origin
@@ -24,9 +26,30 @@ const AdvancedAvatarCreator: React.FC<AdvancedAvatarCreatorProps> = ({ onAvatarC
 
       // Check if the message contains the avatar URL
       if (typeof event.data === 'string' && event.data.startsWith('https://models.readyplayer.me/')) {
-        // Modify the URL to include morph targets
-        const modifiedUrl = `${event.data}?morphTargets=mouthOpen,Oculus Visemes`;
-        onAvatarCreated(modifiedUrl);
+        const avatarUrl = event.data;
+        const modifiedUrl = `${avatarUrl}?morphTargets=mouthOpen,Oculus Visemes`;
+
+        // Extract avatar ID from the URL
+        const avatarIdMatch = avatarUrl.match(/\/([^/]+)\.glb$/);
+        const avatarId = avatarIdMatch ? avatarIdMatch[1] : null;
+
+        let gender = null;
+
+        if (avatarId) {
+          try {
+            const response = await fetch(`https://models.readyplayer.me/${avatarId}.json`);
+            if (response.ok) {
+              const metadata = await response.json();
+              gender = metadata.outfitGender || null;
+            } else {
+              console.error('Failed to fetch metadata:', response.statusText);
+            }
+          } catch (error) {
+            console.error('Error fetching metadata:', error);
+          }
+        }
+
+        onAvatarCreated(modifiedUrl, gender);
       } else if (json?.eventName === 'v1.frame.ready') {
         // Subscribe to events
         iframeRef.current?.contentWindow?.postMessage(
