@@ -3,6 +3,8 @@ Handlers for flow state management and transitions.
 """
 from typing import Dict, Any, Tuple
 from pipecat_flows import FlowArgs, FlowResult, FlowManager, NodeConfig
+from loguru import logger
+from pprint import pformat
 
 
 def update_checklist_fields(args: FlowArgs, checklist: Dict[str, bool]) -> None:    
@@ -13,7 +15,9 @@ def update_checklist_fields(args: FlowArgs, checklist: Dict[str, bool]) -> None:
         args: Flow arguments containing field values
         checklist: Checklist dictionary to update
     """    
+    logger.info("Checklist before updating:\n{}", pformat(checklist))
     checklist.update({field: True for field in args if args[field] and field in checklist})
+    logger.info("Checklist after updating:\n{}", pformat(checklist))
 
 
 def update_info_fields(args: FlowArgs, flow_manager: FlowManager) -> None:
@@ -24,7 +28,10 @@ def update_info_fields(args: FlowArgs, flow_manager: FlowManager) -> None:
         args: Flow arguments containing field values
         flow_manager: Flow manager instance
     """
+    logger.info("Info before updating:\n{}", pformat(flow_manager.state["info"]))
     flow_manager.state["info"].update({field: args[field] for field in args if field in flow_manager.state["info"]})
+    logger.info("Info after updating:\n{}", pformat(flow_manager.state["info"]))
+
 
 
 def create_next_node(flow_manager: FlowManager) -> Tuple[str , NodeConfig]:
@@ -100,16 +107,20 @@ async def general_transition_callback(args: Dict, result: FlowResult, flow_manag
         await flow_manager.set_node(next_stage, node)
     
     
+
+
 async def get_session_variable_handler(args: FlowArgs, flow_manager: FlowManager) -> Dict[str, Any]:
     """
-    Handler to retrieve a task variable from the flow state.
+    Handler to retrieve task variables from the flow state.
     
-    If the variable is indexable (based on the 'indexable_by' field in the variable data), it will check if an index is provided. 
-    If one is not provided, it will check if one is stored in the state. 
-    If it is not available in the state, it will return an error message asking to run again with a valid index.
+    For simple variables: returns the variable directly
+    For indexable variables: root[root["indexable_by"]][index][field] (if field specified)
     
     Args:
-        args: Flow arguments, should include 'variable_name', optionally 'current_index'
+        args: Flow arguments:
+            - variable_name (required): Name of the session variable
+            - current_index (optional): Index for indexable variables
+            - field (optional): Field name to extract from indexed item
         flow_manager: Flow manager instance
         
     Returns:
@@ -125,60 +136,85 @@ async def get_session_variable_handler(args: FlowArgs, flow_manager: FlowManager
         }
     
     # Get the variable data
-    data = flow_manager.state["session_variables"].get(variable_name)
-    if data is None:
+    root_data = flow_manager.state["session_variables"].get(variable_name)
+    if root_data is None:
         return {
             "status": "error",
             "message": f"Variable '{variable_name}' not found"
         }
     
     # Check if this is an indexable variable
-    index_field = data.get("indexable_by", None)
-    if index_field:
-        # Get available options for better context
-        item_count = len(data.get(index_field, []))
-        options = f"0-{item_count-1}" if item_count > 0 else "none available"
-        
-        # Case 1: Index is provided in the current function call
-        if args.get("current_index") is not None:
-            try:
-                index = int(args.get("current_index")) # type: ignore
-                if index < 0 or index >= item_count:
-                    raise ValueError("Index out of range") # will be caught below
-                
-                # Valid index - update the state
-                flow_manager.state["session_variables"][variable_name]["current_index"] = index
-            except ValueError:
-                # Not a valid number
-                return {
-                    "status": "error",
-                    "message": index_error_message.format(
-                        variable_name=variable_name,
-                        index_field=index_field,
-                        options=options
-                    )
-                }
-
-        # Case 2: Try to get index from previously stored state
-        else:
-            stored_index = data.get("current_index", None)
-            if stored_index is None:
-                # We need an index but don't have one
-                return {
-                    "status": "error",
-                    "message": index_error_message.format(
-                        variable_name=variable_name,
-                        index_field=index_field,
-                        options=options
-                    )
-                }
-            index = int(stored_index)
+    index_field = root_data.get("indexable_by", None)
+    
+    if not index_field:
+        # Simple variable - return as is
+        return {
+            "status": "success",
+            "data": root_data
+        }
+    
+    # Indexable variable - handle index logic
+    indexable_items = root_data.get(index_field, [])
+    item_count = len(indexable_items)
+    options = f"0-{item_count-1}" if item_count > 0 else "none available"
+    
+    # Determine the index to use
+    index = None
+    
+    # Case 1: Index is provided in the current function call
+    if args.get("current_index") is not None:
+        try:
+            index = int(args.get("current_index"))
+            if index < 0 or index >= item_count:
+                raise ValueError("Index out of range")
             
-        data = data.get(index_field)[index]
-
+            # Valid index - update the state
+            flow_manager.state["session_variables"][variable_name]["current_index"] = index
+        except ValueError:
+            return {
+                "status": "error",
+                "message": index_error_message.format(
+                    variable_name=variable_name,
+                    index_field=index_field,
+                    options=options
+                )
+            }
+    
+    # Case 2: Try to get index from previously stored state
+    else:
+        stored_index = root_data.get("current_index", None)
+        if stored_index is None:
+            return {
+                "status": "error",
+                "message": index_error_message.format(
+                    variable_name=variable_name,
+                    index_field=index_field,
+                    options=options
+                )
+            }
+        index = int(stored_index)
+    
+    # Get the indexed item: root[root["indexable_by"]][index]
+    indexed_data = indexable_items[index]
+    
+    # If field is specified, extract it: root[root["indexable_by"]][index][field]
+    field = args.get("field")
+    if field:
+        if not isinstance(indexed_data, dict) or field not in indexed_data:
+            available_fields = list(indexed_data.keys()) if isinstance(indexed_data, dict) else []
+            return {
+                "status": "error",
+                "message": f"Field '{field}' not found in indexed data. Available fields: {available_fields}"
+            }
+        return {
+            "status": "success",
+            "data": indexed_data[field]
+        }
+    
+    # No field specified - return the entire indexed item
     return {
         "status": "success",
-        "data": data
+        "data": indexed_data
     }
     
 async def get_session_info_handler(args: FlowArgs, flow_manager: FlowManager) -> Dict[str, Any]:

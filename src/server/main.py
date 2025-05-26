@@ -153,6 +153,40 @@ async def get_avatars() -> JSONResponse:
     except Exception as e:
         logger.error(f"Error loading avatars: {e}")
         return JSONResponse(status_code=500, content={"error": "Unable to load avatars"})
+        
+@app.get("/books")
+async def get_books() -> JSONResponse:
+    """Returns a list of available books for vocabulary tutoring."""
+    books_dir = BASE_SESSION_DIR / "assets" / "books"
+    if not books_dir.is_dir():
+        logger.error("Books directory not found")
+        return JSONResponse(status_code=404, content={"error": "Books directory not found"})
+    
+    try:
+        books = []
+        for book_dir in books_dir.iterdir():
+            if book_dir.is_dir() and (book_dir / "paginated_story.json").exists():
+                book_name = book_dir.name
+                path = f"./assets/books/{book_name}/paginated_story.json"
+                
+                # Try to read the book title from the JSON file
+                try:
+                    with (book_dir / "paginated_story.json").open("r", encoding="utf-8") as f:
+                        book_data = json.load(f)
+                        title = book_data.get("reading_context", {}).get("book_title", book_name)
+                except:
+                    title = book_name.replace("_", " ").title()
+                
+                books.append({
+                    "id": book_name,
+                    "title": title,
+                    "path": path
+                })
+        
+        return JSONResponse(content=books)
+    except Exception as e:
+        logger.error(f"Error loading books: {e}")
+        return JSONResponse(status_code=500, content={"error": "Unable to load books"})
 
 @app.get("/activities")
 async def get_activities() -> JSONResponse:

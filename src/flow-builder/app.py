@@ -23,6 +23,9 @@ def generate_json():
         
         # Extract file name without extension
         if original_filename and original_filename.endswith('.json'):
+            # If it's a path with directory components, extract just the filename
+            if '/' in original_filename:
+                original_filename = original_filename.split('/')[-1]
             base_name = original_filename[:-5]
         else:
             # Generate new filename with timestamp
@@ -32,7 +35,7 @@ def generate_json():
         # Create the session variables content
         session_variables = data.get("session_variables", {})
         
-        # Format the flow data, excluding session_variables
+        # Format the flow data - NO task_variables
         flow_data = {
             "name": data.get("name", ""),
             "description": data.get("description", ""),
@@ -40,8 +43,7 @@ def generate_json():
             "state_config": {
                 "stages": {},
                 "info": data.get("info", {}),
-                "task_variables": data.get("task_variables", {})
-                # Session variables will be referenced, not embedded
+                "session_variables": session_variables  # Keep session variables in config
             },
             
             "flow_config": {
@@ -72,13 +74,13 @@ def generate_json():
                 "type": "function",
                 "function": {
                     "name": f"check_{node_name}_progress",
-                    "description": node.get("schema_description", f"Check progress for {node_name} stage"),
+                    "description": node.get("schema_description", "Check progress of checklist items, and update relevant info variables"),
                     "parameters": {
                         "type": "object",
                         "properties": {},
                         "required": []
                     },
-                    "transition_callback": "general_transition_callback"
+                    "transition_callback": "general_transition_callback"  # Use transition_callback instead of handler
                 }
             })
             
@@ -94,29 +96,51 @@ def generate_json():
                 handler = func.get("handler", "get_session_variable_handler")
                 
                 if func_name and variable:
+                    # Check if this is a variable that matches an info field
+                    is_info_field = variable in data.get("info", {})
+                    
+                    # Create parameters object
+                    if handler == "get_info_variable_handler":
+                        parameters = {
+                            "type": "object",
+                            "properties": {
+                                "variable_name": {
+                                    "type": "string",
+                                    "description": "The name of the info variable to retrieve",
+                                    "enum": [variable]
+                                }
+                            },
+                            "required": ["variable_name"]
+                        }
+                    else:
+                        parameters = {
+                            "type": "object",
+                            "properties": {
+                                "variable_name": {
+                                    "type": "string",
+                                    "description": "The name of the session variable to retrieve",
+                                    "enum": [variable]
+                                }
+                            },
+                            "required": ["variable_name"]
+                        }
+                        
+                        # Add current_index parameter for get_session_variable functions only
+                        if handler == "get_session_variable_handler":
+                            parameters["properties"]["current_index"] = {
+                                "type": "integer",
+                                "description": f"The current index of the reading context"
+                            }
+                    
                     func_data = {
                         "type": "function",
                         "function": {
                             "name": func_name,
                             "description": description,
-                            "parameters": {
-                                "type": "object",
-                                "properties": {
-                                    "variable_name": {
-                                        "type": "string",
-                                        "description": "The name of the session variable to retrieve",
-                                        "enum": [variable]
-                                    },
-                                    "current_index": {
-                                        "type": "integer",
-                                        "description": "The current index of the reading context"
-                                    }
-                                },
-                                },
-                                "required": ["variable_name"]
-                            },
-                            "handler": handler
+                            "parameters": parameters,
+                            "handler": handler  # handler at same level as parameters
                         }
+                    }
                     node_data["functions"].append(func_data)
                 else:
                     print(f"Warning: Skipping function with missing name or variable: {func}")
@@ -130,9 +154,16 @@ def generate_json():
                     }
                 ]
             
-            # Create post_actions for the last node
-            if i == len(nodes) - 1:
-                node_data["post_actions"] = [{"type": "end_conversation"}]
+            # Add pre-actions if specified
+            if "pre_action" in node and node["pre_action"].get("text"):
+                node_data["pre_actions"] = [
+                    {
+                        "type": "tts_say",
+                        "text": node["pre_action"]["text"]
+                    }
+                ]
+            
+            # No post_actions for regular nodes or closing node
                 
             flow_data["flow_config"]["nodes"][node_name] = node_data
             
@@ -191,17 +222,7 @@ def generate_json():
                     
                     schema["required"].append(info_field)
             
-            # Special case for review_schema: add current_word_number if node name contains 'review'
-            if 'review' in node_name.lower():
-                if 'current_word_number' not in schema["properties"]:
-                    schema["properties"]["current_word_number"] = {
-                        "type": "integer",
-                        "enum": [1, 2],
-                        "description": "Which vocabulary word is currently being reviewed (1 or 2)"
-                    }
-                
-                if 'current_word_number' not in schema["required"]:
-                    schema["required"].append("current_word_number")
+            # Remove special case for current_word_number in review nodes
             
         
         # Add end node if needed
@@ -213,15 +234,13 @@ def generate_json():
                         "content": "The session is now complete. Say goodbye in a friendly and encouraging way."
                     }
                 ],
+                "functions": [],  # Empty functions array for end node
                 "post_actions": [
                     {
                         "type": "end_conversation"
                     }
                 ]
             }
-        
-        # Add the reference to session variables file
-        flow_data["state_config"]["session_variables_file"] = f"session_variables/{base_name}.json"
         
         # Create necessary directories
         os.makedirs(os.path.join("static", "output", "flows"), exist_ok=True)
@@ -234,16 +253,11 @@ def generate_json():
         with open(flow_path, 'w') as f:
             json.dump(flow_data, f, indent=2)
         
-        # Save the session variables to a separate file
-        session_var_path = os.path.join("static", "output", "session_variables", flow_filename)
-        with open(session_var_path, 'w') as f:
-            json.dump(session_variables, f, indent=2)
-        
-        print(f"JSON files generated successfully: \n - Flow: {flow_path}\n - Session Variables: {session_var_path}")
+        # Always return just the main flow file
+        print(f"JSON file generated successfully: {flow_path}")
         return jsonify({
             "success": True, 
-            "filename": f"flows/{flow_filename}",
-            "session_variables_file": f"session_variables/{flow_filename}"
+            "filename": f"flows/{flow_filename}"
         })
     
     except Exception as e:
@@ -261,4 +275,4 @@ def download(filename):
     return send_file(os.path.join("static", "output", filename), as_attachment=True)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5000)

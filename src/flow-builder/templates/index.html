@@ -137,7 +137,9 @@
                 <input type="file" id="fileInput" accept=".json" style="display: none;">
                 <input type="hidden" id="currentFilename" value="">
             </div>
-            <button type="button" class="btn btn-success" id="generateBtn">Generate JSON File</button>
+            <div>
+                <button type="button" class="btn btn-success" id="generateBtn">Save Flow</button>
+            </div>
         </div>
 
         <div id="resultContainer" class="mb-5" style="display: none;">
@@ -148,23 +150,6 @@
             </div>
         </div>
 
-        <!-- Debug Panel (Hidden by default) -->
-        <div id="debugPanel" class="mb-5 card" style="display: none;">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Debug Information</h5>
-                <button type="button" class="btn btn-sm btn-outline-secondary" id="closeDebugBtn">
-                    <i class="bi bi-x-lg"></i> Close
-                </button>
-            </div>
-            <div class="card-body">
-                <pre id="debugOutput" class="bg-light p-3 rounded" style="max-height: 300px; overflow-y: auto;"></pre>
-            </div>
-            <div class="card-footer">
-                <button type="button" class="btn btn-sm btn-outline-danger" id="clearDebugBtn">
-                    <i class="bi bi-trash"></i> Clear Log
-                </button>
-            </div>
-        </div>
     </div>
 
     <!-- Task Variable Template -->
@@ -303,9 +288,15 @@
                             <div class="functions-container">
                                 <!-- Functions will be added here -->
                             </div>
-                            <button type="button" class="btn btn-sm btn-outline-primary mt-2 add-function-btn">
-                                <i class="bi bi-plus-circle"></i> Add Function
-                            </button>
+                            <div class="dropdown">
+                                <button type="button" class="btn btn-sm btn-outline-primary mt-2 add-function-btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-plus-circle"></i> Add Function
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item add-session-function" href="#">Get Session Variable</a></li>
+                                    <li><a class="dropdown-item add-info-function" href="#">Get Session Info</a></li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
 
@@ -326,7 +317,24 @@
                 <div class="mb-3">
                     <label class="form-label">Description of transition function in order to move on</label>
                     <input type="text" class="form-control schema-description"
-                        placeholder="e.g., Check if all required warm-up elements have been covered">
+                        placeholder="Check progress of checklist items, and update relevant info variables">
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex align-items-center">
+                        <small class="text-muted me-2">Pre-action:</small>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input pre-action-toggle" type="checkbox" role="switch">
+                            <label class="form-check-label pre-action-toggle-label">Add TTS pre-action</label>
+                        </div>
+                    </div>
+                    <div class="pre-action-container mt-2" style="display: none;">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">TTS Text</span>
+                            <input type="text" class="form-control pre-action-text" placeholder="Hold on a moment...">
+                        </div>
+                        <small class="text-muted">This will be spoken before LLM processing</small>
+                    </div>
                 </div>
             </div>
         </div>

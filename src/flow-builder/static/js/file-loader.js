@@ -1,5 +1,9 @@
 // file-loader.js - Handles loading and parsing configuration files
-window.loadConfigFromFile = function(file) {
+
+// Store file handles for saving back to the same file
+window.currentFileHandle = null;
+
+window.loadConfigFromFile = async function(file) {
     console.log("Starting to load file:", file.name);
     
     // Show a loading message to the user
@@ -12,84 +16,117 @@ window.loadConfigFromFile = function(file) {
         </div>
     `;
     
-    const reader = new FileReader();
-    
-    reader.onload = function(e) {
-        try {
-            console.log("File content loaded, parsing JSON");
-            let config = JSON.parse(e.target.result);
-            console.log("JSON parsed successfully", config);
-            
-            // Show full config in debug output
-            console.log("Full config:", config);
-            
-            // Basic validation for the structure
-            if (!config.name || (!config.flow_config && !config.flows_configuration)) {
-                throw new Error("Invalid configuration structure. File must contain name and flow_config sections.");
+    // Check if the file comes from a file handle (from showOpenFilePicker)
+    try {
+        if (file.handle) {
+            // Verify we have read permission
+            const options = { mode: 'read' };
+            if ((await file.handle.queryPermission(options)) !== 'granted') {
+                if ((await file.handle.requestPermission(options)) !== 'granted') {
+                    throw new Error("Permission to read the file was denied");
+                }
             }
             
-            // Normalize to use flow_config for simplicity
-            if (config.flows_configuration) {
-                console.log("Converting from flows_configuration to flow_config format");
-                config = {
-                    name: config.flows_configuration.name,
-                    description: config.flows_configuration.description,
-                    state_config: config.flows_configuration.state_config,
-                    flow_config: config.flows_configuration.node_config
-                };
+            window.currentFileHandle = file.handle;
+            console.log("Stored file handle for direct saving");
+        } else {
+            window.currentFileHandle = null;
+        }
+        
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            try {
+                console.log("File content loaded, parsing JSON");
+                let config = JSON.parse(e.target.result);
+                console.log("JSON parsed successfully", config);
+                
+                // Show full config in debug output
+                console.log("Full config:", config);
+                
+                // Basic validation for the structure
+                if (!config.name || (!config.flow_config && !config.flows_configuration)) {
+                    throw new Error("Invalid configuration structure. File must contain name and flow_config sections.");
+                }
+                
+                // Normalize to use flow_config for simplicity
+                if (config.flows_configuration) {
+                    console.log("Converting from flows_configuration to flow_config format");
+                    config = {
+                        name: config.flows_configuration.name,
+                        description: config.flows_configuration.description,
+                        state_config: config.flows_configuration.state_config,
+                        flow_config: config.flows_configuration.node_config
+                    };
+                }
+                
+                // Start loading the configuration
+                loadBasicInfo(config);
+                loadTaskVariables(config);
+                loadNodes(config);
+                
+                // Update UI
+                updateOrderAndDropdowns();
+                updateAllSessionVariableDropdowns();
+                
+                // Show success message
+                resultContainer.innerHTML = `
+                    <div class="alert alert-success">
+                        <h4>Configuration Loaded!</h4>
+                        <p>File "${file.name}" loaded successfully.</p>
+                    </div>
+                `;
+                
+                // Hide success message after 3 seconds
+                setTimeout(() => {
+                    resultContainer.style.display = 'none';
+                }, 3000);
+                
+            } catch (error) {
+                console.error("Error parsing file:", error);
+                resultContainer.innerHTML = `
+                    <div class="alert alert-danger">
+                        <h4>Error Loading Configuration</h4>
+                        <p>${error.message}</p>
+                        <p class="small">The file may not be a valid JSON flow configuration. Check browser console (F12) for details.</p>
+                    </div>
+                `;
             }
-            
-            // Start loading the configuration
-            loadBasicInfo(config);
-            loadTaskVariables(config);
-            loadNodes(config);
-            
-            // Update UI
-            updateOrderAndDropdowns();
-            updateAllSessionVariableDropdowns();
-            
-            // Show success message
-            resultContainer.innerHTML = `
-                <div class="alert alert-success">
-                    <h4>Configuration Loaded!</h4>
-                    <p>File "${file.name}" loaded successfully.</p>
-                </div>
-            `;
-            
-            // Hide success message after 3 seconds
-            setTimeout(() => {
-                resultContainer.style.display = 'none';
-            }, 3000);
-            
-        } catch (error) {
-            console.error("Error loading file:", error);
+        };
+        
+        reader.onerror = function(e) {
+            console.error("FileReader error:", e);
             resultContainer.innerHTML = `
                 <div class="alert alert-danger">
-                    <h4>Error Loading Configuration</h4>
-                    <p>${error.message}</p>
-                    <p class="small">Check browser console (F12) for more details.</p>
+                    <h4>Error Reading File</h4>
+                    <p>There was a problem reading the file. Please try again or try a different file.</p>
                 </div>
             `;
-        }
-    };
-    
-    reader.onerror = function(e) {
-        console.error("FileReader error:", e);
+        };
+        
+        // Read the file content
+        reader.readAsText(file);
+        
+    } catch (error) {
+        console.error("Error accessing file:", error);
         resultContainer.innerHTML = `
             <div class="alert alert-danger">
-                <h4>Error Reading File</h4>
-                <p>There was a problem reading the file. Please try again.</p>
+                <h4>Error Accessing File</h4>
+                <p>${error.message || "There was a problem accessing the file. Please try again or use a different browser."}</p>
             </div>
         `;
-    };
-    
-    reader.readAsText(file);
+    }
 };
 
 // Helper functions for loading
 function loadBasicInfo(config) {
-    // Store the name
-    document.getElementById('currentFilename').value = config.name + ".json";
+    // Store the original filename if we're loading an existing file
+    const fileInput = document.getElementById('fileInput');
+    if (fileInput && fileInput.files && fileInput.files[0]) {
+        document.getElementById('currentFilename').value = fileInput.files[0].name;
+    } else if (config.name) {
+        document.getElementById('currentFilename').value = config.name + ".json";
+    }
     
     // Reset form
     document.getElementById('nodesContainer').innerHTML = '';
@@ -111,11 +148,12 @@ function loadBasicInfo(config) {
 }
 
 function loadTaskVariables(config) {
+    // We don't use task_variables anymore, but handle them if present in older files
     const taskVars = config.state_config?.task_variables || {};
     const sessionVars = config.state_config?.session_variables || {};
     const infoFields = config.state_config?.info || {};
     
-    // Load task variables
+    // Load task variables (for backward compatibility)
     for (const [name, value] of Object.entries(taskVars)) {
         const container = document.getElementById('taskVariablesContainer');
         const varEl = document.getElementById('taskVarTemplate').content.cloneNode(true);
@@ -367,6 +405,22 @@ function createNodeFromConfig(nodeName, node, stage, config) {
         nodeEl.querySelector('.node-task-message').value = taskMessages[0].content || "";
     }
     
+    // Handle pre-actions if present
+    if (node.pre_actions && node.pre_actions.length > 0) {
+        const preAction = node.pre_actions[0];
+        if (preAction.type === 'tts_say' && preAction.text) {
+            const preActionToggle = nodeEl.querySelector('.pre-action-toggle');
+            const preActionContainer = nodeEl.querySelector('.pre-action-container');
+            const preActionText = nodeEl.querySelector('.pre-action-text');
+            
+            if (preActionToggle && preActionContainer && preActionText) {
+                preActionToggle.checked = true;
+                preActionContainer.style.display = 'block';
+                preActionText.value = preAction.text;
+            }
+        }
+    }
+    
     // Find schema description
     let schemaDesc = "";
     // Look through functions for the one with the transition_callback
@@ -478,11 +532,22 @@ function createNodeFromConfig(nodeName, node, stage, config) {
         }
     });
     
-    // Set up add function button if present
-    const addFunctionBtn = nodeEl.querySelector('.add-function-btn');
-    if (addFunctionBtn) {
-        addFunctionBtn.addEventListener('click', function() {
+    // Set up dropdown function buttons
+    // Dropdown buttons are set up via the event listeners in the template
+    // No need to add additional buttons here
+    const addSessionFunctionBtn = nodeEl.querySelector('.add-session-function');
+    if (addSessionFunctionBtn) {
+        addSessionFunctionBtn.addEventListener('click', function(e) {
+            e.preventDefault();
             addNodeFunction(this.closest('.node-card'));
+        });
+    }
+    
+    const addInfoFunctionBtn = nodeEl.querySelector('.add-info-function');
+    if (addInfoFunctionBtn) {
+        addInfoFunctionBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            addNodeFunction(this.closest('.node-card'), "", "", true);
         });
     }
     
@@ -543,7 +608,8 @@ function loadNodeFunctions(nodeEl, nodeName, node) {
         if (funcData.function && funcData.function.transition_callback === "general_transition_callback") return;
         
         if (funcData.function && (funcData.function.handler === "get_task_variable_handler" || 
-                                 funcData.function.handler === "get_session_variable_handler")) {
+                                 funcData.function.handler === "get_session_variable_handler" ||
+                                 funcData.function.handler === "get_info_variable_handler")) {
             // Extract variable name
             const varEnum = funcData.function.parameters?.properties?.variable_name?.enum;
             if (!varEnum || varEnum.length === 0) return;
@@ -553,8 +619,18 @@ function loadNodeFunctions(nodeEl, nodeName, node) {
             const funcDescription = funcData.function.description || `Get the ${varName} for the session`;
             const handlerType = funcData.function.handler;
             
-            // Add function to node
-            addNodeFunction(nodeEl, funcName, varName, funcDescription, handlerType);
+            // Add function to node - make sure we're passing parameters that match what addNodeFunction expects
+            const funcElement = addNodeFunction(nodeEl, varName, funcDescription);
+            
+            // For info variables, update the dropdown class if needed
+            if (handlerType === "get_info_variable_handler") {
+                const select = funcElement.querySelector('.session-variable-select');
+                if (select) {
+                    select.classList.add('info-variable-select');
+                    // Refresh the dropdown with info variables
+                    updateSessionVariableDropdown(select);
+                }
+            }
         }
     });
 }

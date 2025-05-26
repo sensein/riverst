@@ -32,7 +32,7 @@ flow-builder/
 │   │
 │   └── output/            # Output directory for generated files
 │       ├── flows/         # JSON flow configuration files
-│       └── session_variables/ # Session variables JSON files
+│       └── session_variables/ # Session variables JSON files (optional)
 │
 └── README.md              # Application documentation
 ```
@@ -69,14 +69,15 @@ flow-builder/
 
 ## Split File Architecture
 
-The application now uses a split file architecture:
+The application uses a split file architecture where session variables can be embedded in the main flow configuration file.
 
-### Advantages of the split file architecture:
-- We want to clearly separate flow logic, whcih should persist for a given task, and session variables which can be updated for each new session.
+### Advantages of the architecture:
+- Clear separation of flow logic, which should persist for a given task, from session variables
+- Session variables are embedded in the main configuration by default
+- Option to save session variables separately if needed
 
 ### Runtime Access:
-At runtime, the AI system uses the separated files. The flow configuration defines the structure and behavior, while the session variables file contains the actual content and data to be accessed during the conversation.
-
+At runtime, the AI system uses the configuration file with embedded session variables. The flow configuration defines the structure and behavior, while the session variables contain the actual content and data to be accessed during the conversation.
 
 ## Usage Guide
 
@@ -85,9 +86,9 @@ At runtime, the AI system uses the separated files. The flow configuration defin
 - Define the system role message for the entire conversation
 
 ### Session Variables
-- **Session Variables:** These are variables that can be retrieved by handler functions
-  - Add variables with their data types and structures
-  - The actual content will be stored in separate files
+- **Session Variables:** These are variables that can be retrieved by handler functions during the conversation
+  - Add variables with their data types and values
+  - The content is embedded in the main configuration file
 - **Session Info:** Add state fields that will be updated during the conversation
 
 ### Nodes Configuration
@@ -112,33 +113,40 @@ At runtime, the AI system uses the separated files. The flow configuration defin
 - Define messages for completed/incomplete checklists
 
 ### File Management
-- **Load Config:** Upload an existing JSON configuration file for editing
-- **Generate JSON Files:** Creates two separate JSON files:
-  - Flow configuration file in `flows/[name].json`
-  - Session variables data in `session_variables/[name].json`
-- When editing an existing file, changes will be saved back to the same filenames
-- New files get a timestamp-based filename
+- **Open File:** Open an existing JSON configuration file for editing
+  - Uses File System Access API in supporting browsers for direct file access
+- **Generate JSON:** Creates and saves the flow configuration file
+  - In browsers with File System Access API, saves directly back to the opened file
+  - In other browsers, provides download links for the generated files
+- **Keyboard Shortcut:** Use Ctrl+S (or Cmd+S on Mac) to quickly save changes
+- When editing an existing file, changes will be saved back to the same file
+- New files get a timestamp-based filename by default
 
 ## Key Features
 
-1. **Split File Architecture:**
-   - Flow configuration and session variables stored in separate files
-   - Better organization and data separation
+1. **Direct File Saving:**
+   - Instant saving back to the original file in supported browsers
+   - No need to download and replace files manually
+   - Keyboard shortcut (Ctrl+S/Cmd+S) for quick saving
 
-2. **Node Sequencing:**
+2. **Integrated Session Variables:**
+   - Session variables embedded directly in the flow configuration
+   - Better integration and simpler file management
+
+3. **Node Sequencing:**
    - Visual ordering of nodes with drag-and-drop functionality
    - Initial node highlighted in blue, final node in green
 
-3. **Session Variable Support:**
+4. **Session Variable Support:**
    - Define session variables that can be accessed via handler functions
-   - Store actual content in separate files for better management
+   - Store content directly in the configuration for easier management
 
-4. **Function Configuration:**
+5. **Function Configuration:**
    - Add `get_session_variable_handler` functions to nodes
    - Retrieve specific session variables during the conversation
-   - Automatically generate properly formatted function JSON
+   - Handler field at the same level as other function properties
 
-5. **Checklist Management:**
+6. **Checklist Management:**
    - Define items that must be completed before advancing
    - Custom messages for complete/incomplete states
 
@@ -148,13 +156,13 @@ Functions exist in two formats: Handlers and Transitions.
 
 ### Transition Functions
 - Generated automatically
-- Use the `transition_callback` field
+- Use the `handler` field with value `general_transition_callback`
 - Used to check if requirements are met to progress to the next node
 - Automatically created for each node based on checklist items
 
 ### Handler Functions
 - Allow the AI to access state information such as session variables
-- Use the `handler` field
+- Use the `handler` field with appropriate handler names
 - Added through the Functions tab in node configuration
 - Enable retrieval of session variables during conversation
 
@@ -208,32 +216,31 @@ Here is an example of a generated handler function:
   },
   "flow_config": {
     "initial_node": "warm_up",
-    "nodes": { ... }
+    "nodes": { 
+      "warm_up": {
+        "task_messages": [ ... ],
+        "functions": [
+          {
+            "type": "function",
+            "function": {
+              "name": "check_warm_up_progress",
+              "description": "Check progress for warm_up stage",
+              "parameters": { ... },
+              "handler": "general_transition_callback"
+            }
+          }
+        ]
+      },
+      "end": {
+        "task_messages": [ ... ],
+        "functions": []
+      }
+    }
   }
 }
 ```
 
-### Session Variables Content (session_variables/[name].json)
-
-```json
-{
-  "vocab_words": [
-    "accomplish",
-    "anxious",
-    "approve",
-    "arrange",
-    "bizarre",
-    "brief",
-    "cautious",
-    "cherish"
-  ],
-  "reading_context": {
-    "book_title": "The Tale of Peter Rabbit",
-    "book_author": "Beatrix Potter",
-    "book_text": "Once upon a time there were four little Rabbits..."
-  }
-}
-```
+Note: Session variables are embedded in the main configuration file by default. The handler field is now at the same level as name, description, and parameters within the function object.
 
 ## Troubleshooting
 

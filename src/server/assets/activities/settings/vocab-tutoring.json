@@ -27,8 +27,10 @@
         },
         "session_variables_path": {
           "type": "string",
+          "title": "Books",
+          "dynamicEnum": "books",
           "default": "./assets/books/the_tale_of_peter_rabbit/paginated_story.json",
-          "description": "Path to the session variables file for the activity, containing book context etc."
+          "description": "Select the book to use for vocabulary tutoring."
         },
         "pipeline_modality": {
           "type": "string",

@@ -4,52 +4,12 @@ const originalConsoleLog = console.log;
 const originalConsoleWarn = console.warn;
 const originalConsoleError = console.error;
 
-// Setup debug panel
-function setupDebugPanel() {
-    const debugPanel = document.getElementById('debugPanel');
-    const closeDebugBtn = document.getElementById('closeDebugBtn');
-    const clearDebugBtn = document.getElementById('clearDebugBtn');
-
-    // Add toggle debug button next to reset
-    const resetBtn = document.getElementById('resetBtn');
-    const toggleDebugBtn = document.createElement('button');
-    toggleDebugBtn.type = 'button';
-    toggleDebugBtn.id = 'toggleDebugBtn';
-    toggleDebugBtn.className = 'btn btn-outline-secondary me-2';
-    toggleDebugBtn.innerHTML = '<i class="bi bi-bug"></i> Debug';
-    resetBtn.parentNode.insertBefore(toggleDebugBtn, resetBtn);
-
-    // Events
-    toggleDebugBtn.addEventListener('click', function () {
-        debugPanel.style.display = debugPanel.style.display === 'none' ? 'block' : 'none';
-    });
-
-    closeDebugBtn.addEventListener('click', function () {
-        debugPanel.style.display = 'none';
-    });
-
-    clearDebugBtn.addEventListener('click', function () {
-        document.getElementById('debugOutput').textContent = '';
-    });
-
-    // Override console methods
-    console.log = function () {
-        addToDebugOutput('log', arguments);
-        originalConsoleLog.apply(console, arguments);
-    };
-
-    console.warn = function () {
-        addToDebugOutput('warn', arguments);
-        originalConsoleWarn.apply(console, arguments);
-    };
-
-    console.error = function () {
-        addToDebugOutput('error', arguments);
-        originalConsoleError.apply(console, arguments);
-
-        // Show debug panel on errors
-        debugPanel.style.display = 'block';
-    };
+// Setup console logging without debug panel
+function setupConsoleLogging() {
+    // Keep original console methods
+    console.log = originalConsoleLog;
+    console.warn = originalConsoleWarn;
+    console.error = originalConsoleError;
 }
 
 function addToDebugOutput(type, args) {
@@ -94,8 +54,19 @@ function addToDebugOutput(type, args) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    // Set up debug panel
-    setupDebugPanel();
+    // Set up console logging
+    setupConsoleLogging();
+    
+    // Add keyboard shortcut for saving (Ctrl+S or Cmd+S)
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault(); // Prevent the browser's save dialog
+            const generateBtn = document.getElementById('generateBtn');
+            if (generateBtn) {
+                generateBtn.click();
+            }
+        }
+    });
 
     // Helper function to create a DOM element from a template
     function createFromTemplate(templateId) {
@@ -351,12 +322,16 @@ document.addEventListener('DOMContentLoaded', function () {
             this.closest('.info-field-item-card').remove();
         });
 
+        // Automatically create a function to get this info field
+        const description = `Get the ${fieldName} info variable`;
+        addNodeFunction(nodeCard, fieldName, description, true);
+        
         container.appendChild(fieldElement);
     }
 
     // ============== Node Functions Management ==============
     // Updated function for adding functions to a node
-    function addNodeFunction(nodeCard, sessionVar = "", description = "") {
+    function addNodeFunction(nodeCard, sessionVar = "", description = "", isInfoVariable = false) {
         const container = nodeCard.querySelector('.functions-container');
 
         // Create element from template
@@ -367,13 +342,20 @@ document.addEventListener('DOMContentLoaded', function () {
             functionElement.querySelector('.function-description').value = description;
         }
 
-        // Update session variable dropdown
-        updateSessionVariableDropdown(functionElement.querySelector('.session-variable-select'));
+        // Get the dropdown
+        const varSelect = functionElement.querySelector('.session-variable-select');
+        
+        // Mark as info variable if needed
+        if (isInfoVariable || (sessionVar && Array.from(document.querySelectorAll('.session-info-name')).map(input => input.value).includes(sessionVar))) {
+            varSelect.classList.add('info-variable-select');
+        }
+
+        // Update variable dropdown
+        updateSessionVariableDropdown(varSelect);
 
         // Set selected variable if provided
         if (sessionVar) {
-            const select = functionElement.querySelector('.session-variable-select');
-            select.value = sessionVar;
+            varSelect.value = sessionVar;
         }
 
         // Set up remove button
@@ -382,13 +364,15 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         // Add auto-generate description listener
-        const varSelect = functionElement.querySelector('.session-variable-select');
         varSelect.addEventListener('change', function () {
             const descInput = this.closest('.function-item-card').querySelector('.function-description');
             const varName = this.value;
+            const isInfo = this.classList.contains('info-variable-select');
 
             if (!descInput.value && varName) {
-                descInput.value = `Get the ${varName} for the session`;
+                descInput.value = isInfo 
+                    ? `Get the ${varName} info variable` 
+                    : `Get the ${varName} for the session`;
             }
         });
 
@@ -401,26 +385,37 @@ document.addEventListener('DOMContentLoaded', function () {
     function updateSessionVariableDropdown(select) {
         // Get all session variables
         const sessionVars = [];
-
-        // Get from task variables that are marked as session
-        document.querySelectorAll('.task-var-name[data-var-type="session"]').forEach(input => {
-            const name = input.value.trim();
-            if (name) sessionVars.push(name);
-        });
-
-        // If no explicitly marked session variables, get all task variables as fallback
-        if (sessionVars.length === 0) {
-            document.querySelectorAll('.task-var-name').forEach(input => {
+        
+        // Get info variables if this select has the info-variable-select class
+        const isInfoSelect = select.classList.contains('info-variable-select');
+        
+        if (isInfoSelect) {
+            // Get info variables
+            document.querySelectorAll('.session-info-name').forEach(input => {
                 const name = input.value.trim();
                 if (name) sessionVars.push(name);
             });
+        } else {
+            // Get from task variables that are marked as session
+            document.querySelectorAll('.task-var-name[data-var-type="session"]').forEach(input => {
+                const name = input.value.trim();
+                if (name) sessionVars.push(name);
+            });
+
+            // If no explicitly marked session variables, get all task variables as fallback
+            if (sessionVars.length === 0) {
+                document.querySelectorAll('.task-var-name').forEach(input => {
+                    const name = input.value.trim();
+                    if (name) sessionVars.push(name);
+                });
+            }
         }
 
         // Save current selection
         const currentValue = select.value;
 
         // Clear current options
-        select.innerHTML = '<option value="">Select session variable...</option>';
+        select.innerHTML = '<option value="">Select a value...</option>';
 
         // Add options for each session variable
         sessionVars.forEach(name => {
@@ -456,7 +451,8 @@ document.addEventListener('DOMContentLoaded', function () {
             // Skip the check_progress function which is automatically added
             if (funcData.function && funcData.function.transition_callback === "general_transition_callback") return;
 
-            if (funcData.function && funcData.function.handler === "get_session_variable_handler") {
+            if (funcData.function && (funcData.function.handler === "get_session_variable_handler" ||
+                funcData.function.handler === "get_info_variable_handler")) {
                 // Extract variable name
                 const varEnum = funcData.function.parameters?.properties?.variable_name?.enum;
                 if (!varEnum || varEnum.length === 0) return;
@@ -491,6 +487,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
         nodeNameInput.value = nodeName;
         nodeNameDisplay.textContent = nodeName;
+        
+        // Set up pre-action toggle
+        const preActionToggle = nodeElement.querySelector('.pre-action-toggle');
+        const preActionContainer = nodeElement.querySelector('.pre-action-container');
+        
+        preActionToggle.addEventListener('change', function() {
+            preActionContainer.style.display = this.checked ? 'block' : 'none';
+        });
 
         // Set default messages
         const incompleteMessage = nodeElement.querySelector('.node-incomplete-message');
@@ -557,11 +561,20 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
 
-        // Set up add function button if present
-        const addFunctionBtn = nodeElement.querySelector('.add-function-btn');
-        if (addFunctionBtn) {
-            addFunctionBtn.addEventListener('click', function () {
+        // Set up dropdown function buttons
+        const addSessionFunctionBtn = nodeElement.querySelector('.add-session-function');
+        if (addSessionFunctionBtn) {
+            addSessionFunctionBtn.addEventListener('click', function(e) {
+                e.preventDefault();
                 addNodeFunction(this.closest('.node-card'));
+            });
+        }
+        
+        const addInfoFunctionBtn = nodeElement.querySelector('.add-info-function');
+        if (addInfoFunctionBtn) {
+            addInfoFunctionBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                addNodeFunction(this.closest('.node-card'), "", "", true);
             });
         }
 
@@ -635,15 +648,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const description = cleanString(document.getElementById('flowDescription').value);
         const roleMessage = cleanString(document.getElementById('roleMessage').value);
 
-        // Collect task variables and session variables
-        const taskVariables = {};
+        // Collect session variables (no task_variables)
         const sessionVariables = {};
 
         document.querySelectorAll('.task-var-card').forEach(card => {
             const varName = cleanString(card.querySelector('.task-var-name').value);
             if (!varName) return;
 
-            const isSessionVar = card.querySelector('.task-var-name').dataset.varType === 'session';
             const varType = card.querySelector('.task-var-type').value;
             const valueInput = card.querySelector('.task-var-value');
 
@@ -675,12 +686,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     break;
             }
 
-            // Add to appropriate variable object
-            if (isSessionVar) {
-                sessionVariables[varName] = value;
-            } else {
-                taskVariables[varName] = value;
-            }
+            // Add to session variables
+            sessionVariables[varName] = value;
         });
 
         // Collect session info
@@ -764,26 +771,41 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (sessionVar) {
                     const funcName = `get_${sessionVar}`;
 
+                    // Check if this is an info field by checking if it exists in the info fields list
+                    const infoFields = Array.from(document.querySelectorAll('.session-info-name')).map(input => input.value);
+                    const useInfoHandler = infoFields.includes(sessionVar);
+                    
                     functions.push({
                         name: funcName,
                         variable: sessionVar,
                         description: description || `Get the ${sessionVar} for the session`,
-                        handler: "get_session_variable_handler"
+                        handler: useInfoHandler ? "get_info_variable_handler" : "get_session_variable_handler"
                     });
                 }
             });
 
+            // Check if pre-action is enabled
+            const preActionToggle = nodeCard.querySelector('.pre-action-toggle');
+            const preActionText = nodeCard.querySelector('.pre-action-text');
+            
             // Create node object
             const nodeData = {
                 node_name: nodeName,
                 task_message: taskMessage,
-                schema_description: schemaDescription || `Check progress for ${nodeName} stage`,
+                schema_description: schemaDescription || `Check progress of checklist items, and update relevant info variables`,
                 checklist_items: checklistItems,
                 checklist_descriptions: checklistDescriptions,
                 info_fields: infoFields,
                 checklist_incomplete_message: incompleteMessage || `Please complete the following ${nodeName} items: {}`,
                 checklist_complete_message: completeMessage || `Great job! Moving on to the next stage.`
             };
+            
+            // Add pre-action if toggled on
+            if (preActionToggle && preActionToggle.checked && preActionText && preActionText.value.trim()) {
+                nodeData.pre_action = {
+                    text: cleanString(preActionText.value)
+                };
+            }
 
             // Add functions if there are any
             if (functions.length > 0) {
@@ -793,13 +815,12 @@ document.addEventListener('DOMContentLoaded', function () {
             nodes.push(nodeData);
         });
 
-        // Return the complete data structure
+        // Return the complete data structure - no task_variables
         return {
             filename: currentFilename,
             name,
             description,
             role_message: roleMessage,
-            task_variables: taskVariables,
             session_variables: sessionVariables,
             info: info,
             info_types: infoTypes,
@@ -832,6 +853,54 @@ document.addEventListener('DOMContentLoaded', function () {
                 loadConfigFromFile(file);
             }
         });
+        
+        // Add open file button that uses the File System Access API
+        const openFileBtn = document.createElement('button');
+        openFileBtn.type = 'button';
+        openFileBtn.id = 'openFileBtn';
+        openFileBtn.className = 'btn btn-outline-primary me-2';
+        openFileBtn.innerHTML = '<i class="bi bi-folder2-open"></i> Open File';
+        fileInput.parentNode.insertBefore(openFileBtn, fileInput.nextSibling);
+        
+        // Hide the file input since we're using the open file button
+        fileInput.style.display = 'none';
+        
+        // Open file handler with File System Access API
+        openFileBtn.addEventListener('click', async function() {
+            try {
+                // Check if the File System Access API is supported
+                if ('showOpenFilePicker' in window) {
+                    const options = {
+                        types: [
+                            {
+                                description: 'JSON Files',
+                                accept: {
+                                    'application/json': ['.json']
+                                }
+                            }
+                        ],
+                        excludeAcceptAllOption: false,
+                        multiple: false
+                    };
+                    
+                    // Show file picker
+                    const [fileHandle] = await window.showOpenFilePicker(options);
+                    const file = await fileHandle.getFile();
+                    
+                    // Add the handle to the file object for later use
+                    file.handle = fileHandle;
+                    
+                    // Load the file
+                    await loadConfigFromFile(file);
+                } else {
+                    // Fallback for browsers that don't support the File System Access API
+                    fileInput.click();
+                }
+            } catch (error) {
+                console.error("Error opening file:", error);
+                // The user cancelled the file picker, do nothing
+            }
+        });
     }
 
     function resetForm() {
@@ -855,58 +924,23 @@ document.addEventListener('DOMContentLoaded', function () {
         addNode();
     }
 
-    // Add this to your script.js to debug data collection
-    function debugFormData() {
-        // Get form data
-        const data = collectFormData();
-        console.log("=== FORM DATA DEBUG ===");
-        console.log("Form data:", data);
-
-        // Check if nodes have functions
-        if (data.nodes && data.nodes.length > 0) {
-            console.log(`Found ${data.nodes.length} nodes`);
-
-            data.nodes.forEach((node, i) => {
-                console.log(`Node ${i + 1}: ${node.node_name}`);
-
-                if (node.functions && node.functions.length > 0) {
-                    console.log(`  Has ${node.functions.length} functions:`);
-                    node.functions.forEach((func, j) => {
-                        console.log(`  Function ${j + 1}:`);
-                        console.log(`    Name: ${func.name}`);
-                        console.log(`    Variable: ${func.variable}`);
-                        console.log(`    Description: ${func.description}`);
-                        console.log(`    Handler: ${func.handler}`);
-                    });
-                } else {
-                    console.log("  No functions defined");
-                }
-            });
-        }
-
-        // Check session variables
-        console.log("Session variables:", data.session_variables);
-
-        // Check task variables
-        console.log("Task variables:", data.task_variables);
-
-        console.log("=== END FORM DATA DEBUG ===");
-
-        return data;
+    // Collect form data without debugging
+    function collectFormDataForGeneration() {
+        return collectFormData();
     }
 
-    function generateJson() {
+    async function generateJson() {
         try {
-            // Debug data collection first
-            const data = debugFormData ? debugFormData() : collectFormData();
+            // Get form data
+            const formData = collectFormDataForGeneration();
 
             // Basic validation
-            if (!data.name) {
+            if (!formData.name) {
                 alert('Flow name is required!');
                 return;
             }
 
-            if (data.nodes.length === 0) {
+            if (formData.nodes.length === 0) {
                 alert('At least one node is required!');
                 return;
             }
@@ -917,71 +951,188 @@ document.addEventListener('DOMContentLoaded', function () {
             resultContainer.innerHTML = `
             <div class="alert alert-info">
                 <h4>Generating JSON...</h4>
-                <p>Please wait while the server processes your request.</p>
+                <p>Please wait while we process your configuration.</p>
             </div>
         `;
 
-            // Send data to server
-            fetch('/generate_json', {
+            // Always try to save directly if we have a file handle
+            if (window.currentFileHandle && 'showSaveFilePicker' in window) {
+                try {
+                    // Check if we have write permission
+                    const options = {
+                        mode: 'readwrite'
+                    };
+                    
+                    // Request permission if needed
+                    if ((await window.currentFileHandle.queryPermission(options)) !== 'granted') {
+                        if ((await window.currentFileHandle.requestPermission(options)) !== 'granted') {
+                            throw new Error("Permission to write to the file was denied");
+                        }
+                    }
+                    
+                    // Send data to server to generate the JSON structure
+                    const response = await fetch('/generate_json', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData)
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        // Fetch the generated file content from the server
+                        const flowFileResponse = await fetch(`/download/${data.filename}`);
+                        const flowContent = await flowFileResponse.text();
+                        
+                        try {
+                            // Create a writable stream and write to the file
+                            const writable = await window.currentFileHandle.createWritable();
+                            await writable.write(flowContent);
+                            await writable.close();
+                            
+                            // Show success message
+                            resultContainer.innerHTML = `
+                            <div class="alert alert-success">
+                                <h4>Configuration Saved!</h4>
+                                <p>Your conversation flow has been saved successfully to the original file.</p>
+                            </div>`;
+                            
+                            // Hide success message after 3 seconds
+                            setTimeout(() => {
+                                resultContainer.style.display = 'none';
+                            }, 3000);
+                        } catch (error) {
+                            console.error("Error writing to original file:", error);
+                            resultContainer.innerHTML = `
+                            <div class="alert alert-danger">
+                                <h4>Error Saving File</h4>
+                                <p>${error.message || "There was a problem writing to the original file."}</p>
+                            </div>`;
+                            throw error; // Rethrow to trigger the fallback methods
+                        }
+                        
+                        return;
+                    }
+                } catch (error) {
+                    console.error("Error saving directly to file:", error);
+                    alert("Error saving to the original file. Please use the File System Access API to save to a specific location.");
+                }
+            } else {
+                // If we don't have a file handle, prompt to save with File System Access API
+                try {
+                    if ('showSaveFilePicker' in window) {
+                        const options = {
+                            types: [
+                                {
+                                    description: 'JSON Files',
+                                    accept: {
+                                        'application/json': ['.json']
+                                    }
+                                }
+                            ],
+                            suggestedName: formData.name + '.json'
+                        };
+                        
+                        const fileHandle = await window.showSaveFilePicker(options);
+                        window.currentFileHandle = fileHandle;
+                        
+                        // Send data to server to generate the JSON structure
+                        const response = await fetch('/generate_json', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(formData)
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            // Fetch the generated file content from the server
+                            const flowFileResponse = await fetch(`/download/${data.filename}`);
+                            const flowContent = await flowFileResponse.text();
+                            
+                            try {
+                            // Create a writable stream and write to the file
+                            const writable = await fileHandle.createWritable();
+                            await writable.write(flowContent);
+                            await writable.close();
+                            
+                            // Show success message
+                            resultContainer.innerHTML = `
+                            <div class="alert alert-success">
+                                <h4>Configuration Saved!</h4>
+                                <p>Your conversation flow has been saved successfully.</p>
+                            </div>`;
+                            
+                            // Hide success message after 3 seconds
+                            setTimeout(() => {
+                                resultContainer.style.display = 'none';
+                            }, 3000);
+                        } catch (error) {
+                            console.error("Error writing to file:", error);
+                            resultContainer.innerHTML = `
+                            <div class="alert alert-danger">
+                                <h4>Error Saving File</h4>
+                                <p>${error.message || "There was a problem writing to the file."}</p>
+                            </div>`;
+                        }
+                            
+                            return;
+                        }
+                    } else {
+                        throw new Error("File System Access API not supported by your browser.");
+                    }
+                } catch (error) {
+                    console.error("Error saving file with picker:", error);
+                    // Fall back to the server-side method if File System Access API fails
+                }
+            }
+            
+            // If both direct save methods failed, offer download option
+            const response = await fetch('/generate_json', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(data)
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const resultContainer = document.getElementById('resultContainer');
-
-                        resultContainer.innerHTML = `
-                    <div class="alert alert-success">
-                        <h4>JSON Files Generated!</h4>
-                        <p>Your conversation flow has been split into two files:</p>
-                        <div class="d-flex flex-column gap-2 mt-3">
-                            <a href="/download/${data.filename}" class="btn btn-primary">
-                                <i class="bi bi-download"></i> Download Flow File
-                            </a>
-                            <a href="/download/${data.session_variables_file}" class="btn btn-info">
-                                <i class="bi bi-download"></i> Download Session Variables
-                            </a>
-                        </div>
-                    </div>
-                `;
-
-                        // Scroll to result container
-                        resultContainer.scrollIntoView({ behavior: 'smooth' });
-                    } else {
-                        console.error("Error from server:", data);
-                        let errorMessage = data.error || "Unknown error";
-                        let errorDetail = data.detail || "";
-
-                        if (errorDetail) {
-                            console.error("Error details:", errorDetail);
-                        }
-
-                        resultContainer.innerHTML = `
-                    <div class="alert alert-danger">
-                        <h4>Error Generating JSON</h4>
-                        <p>${errorMessage}</p>
-                        <p class="small">Check browser console (F12) for more details.</p>
-                    </div>
-                `;
-                    }
-                })
-                .catch(error => {
-                    console.error('Fetch error:', error);
-                    resultContainer.innerHTML = `
+                body: JSON.stringify(formData)
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Create download link
+                const downloadUrl = `/download/${data.filename}`;
+                resultContainer.innerHTML = `
+                <div class="alert alert-warning">
+                    <h4>File System Access Failed</h4>
+                    <p>Your browser couldn't save the file directly, but you can download it instead:</p>
+                    <a href="${downloadUrl}" class="btn btn-primary" download>Download JSON File</a>
+                </div>`;
+            } else {
+                resultContainer.innerHTML = `
                 <div class="alert alert-danger">
-                    <h4>Network Error</h4>
-                    <p>Could not connect to server: ${error.message}</p>
-                </div>
-            `;
-                });
+                    <h4>Error Saving File</h4>
+                    <p>There was a problem generating your file. Please try again or use a different browser.</p>
+                </div>`;
+            }
 
+            // Scroll to result container
+            resultContainer.scrollIntoView({ behavior: 'smooth' });
         } catch (error) {
-            alert('Error collecting form data: ' + error.message);
-            console.error('Form data error:', error);
+            console.error("Error generating JSON:", error);
+            
+            const resultContainer = document.getElementById('resultContainer');
+            resultContainer.style.display = 'block';
+            resultContainer.innerHTML = `
+            <div class="alert alert-danger">
+                <h4>Error Generating JSON</h4>
+                <p>${error.message || "Unknown error"}</p>
+            </div>`;
+            
+            resultContainer.scrollIntoView({ behavior: 'smooth' });
         }
     }
 

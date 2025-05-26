@@ -243,7 +243,6 @@ async def run_bot(
         async def on_client_ready(rtvi):
             print("[AAA] on_client_ready: ", flow_manager)
             await rtvi.set_bot_ready()
-            print("/n/n/n/n/n/n/n/nClient is ready/n/n/n/n/n/n/n")
             if flow_manager:
                 await flow_manager.initialize()
             else:

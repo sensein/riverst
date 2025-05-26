@@ -4,6 +4,7 @@ import { InfoCircleOutlined, CloseOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import validator from '@rjsf/validator-ajv8';
 import { useRTVIClientTransportState } from '@pipecat-ai/client-react';
+import axios from 'axios';
 
 const { Title, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -12,6 +13,9 @@ const SettingsForm = ({ schema, onSubmit }) => {
   const transportState = useRTVIClientTransportState();
   const [form] = Form.useForm();
   const [isValid, setIsValid] = useState(false);
+  const [dynamicEnums, setDynamicEnums] = useState({
+    books: []
+  });
 
   const options = schema?.properties?.options?.properties || {};
   const requiredFields = schema?.properties?.options?.required || [];
@@ -124,7 +128,23 @@ const SettingsForm = ({ schema, onSubmit }) => {
       );
     }
 
-    if (config.enum && config.type !== 'array') {
+    if ((config.enum || config.dynamicEnum) && config.type !== 'array') {
+      // Handle dynamic enums (e.g., books dropdown)
+      if (config.dynamicEnum === 'books') {
+        return (
+          <Form.Item key={key} name={namePath} label={labelWithTooltip} rules={rules}>
+            <Select>
+              {dynamicEnums.books.map((book) => (
+                <Select.Option key={book.id} value={book.path}>
+                  {book.title}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+        );
+      }
+      
+      // Regular static enums
       return (
         <Form.Item key={key} name={namePath} label={labelWithTooltip} rules={rules}>
           <Select>
@@ -163,7 +183,21 @@ const SettingsForm = ({ schema, onSubmit }) => {
     }
   };
 
+  // Fetch dynamic enums (books list)
   useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        const response = await axios.get('http://localhost:7860/books');
+        setDynamicEnums(prev => ({
+          ...prev,
+          books: response.data
+        }));
+      } catch (error) {
+        console.error('Failed to fetch books:', error);
+      }
+    };
+    
+    fetchBooks();
     validateSchema();
   }, []);
 
