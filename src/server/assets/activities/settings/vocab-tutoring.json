@@ -37,6 +37,7 @@
           "type": "string",
           "enum": ["classic", "e2e"],
           "default": "classic",
+          "const": "classic",
           "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline."
         },
         "llm_type": {
@@ -63,7 +64,7 @@
             "type": "string",
             "enum": ["wave", "dance", "i_dont_know"]
           },
-          "default": [],
+          "default": ["wave", "dance", "i_dont_know"],
           "description": "List of body animations that the avatar can perform."
         },
         "camera_settings": {
@@ -75,6 +76,7 @@
         "user_description": {
           "type": "string",
           "maxLength": 500,
+          "default": "The user is a 4-grade student. They want to learn vocabulary words from a book.",
           "description": "Optional free-text field to describe the user."
         },
         "video_flag": {
@@ -102,8 +104,7 @@
         },
         "user_transcript": {
           "type": "boolean",
-          "const": false,
-          "default": false,
+          "default": true,
           "description": "Enable showing the transcript of the user's speech. FUTURE WORK: This cannot be implemented yet because some LLM services send transcripts in the wrong order (see Gemini and OpenAI realtime beta)."
         },
         "bot_transcript": {
