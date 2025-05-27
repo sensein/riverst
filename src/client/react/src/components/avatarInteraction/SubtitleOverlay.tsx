@@ -26,7 +26,7 @@ export default function SubtitleOverlay({ subtitles }: SubtitleOverlayProps) {
             color: speaker === 'user' ? '#000' : '#fff',
             padding: '16px 32px',
             borderRadius: 12,
-            fontSize: 40,
+            fontSize: 20,
             fontFamily: 'Roboto Medium, Roboto, sans-serif',
             fontWeight: 500,
             maxWidth: '90vw',
