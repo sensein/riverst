@@ -47,7 +47,7 @@
         "stt_type": {
           "type": "string",
           "enum": ["whisper", "openai"],
-          "default": "whisper",
+          "default": "openai",
           "description": "The STT service to use."
         },
         "tts_type": {

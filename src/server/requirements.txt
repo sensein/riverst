@@ -16,3 +16,9 @@ tf-keras
 senselab[audio]
 optimum[onnxruntime]
 pipecat-ai-flows
+uvicorn
+fastapi
+dotenv
+loguru
+aiohttp
+pipecat

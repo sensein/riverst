@@ -11,9 +11,9 @@
         },
         "checklist_incomplete_message": "Please complete the following warm-up items: {}.",
         "checklist_complete_message": "Great job completing the warm-up stage. Now let's move on to the first vocabulary word.",
-        "next_stage": "vocab"
+        "next_stage": "word1"
       },
-      "vocab": {
+      "word1": {
         "checklist": {
           "selected_unknown_word": false,
           "defined_simply": false,
@@ -23,16 +23,38 @@
         },
         "checklist_incomplete_message": "You made an error with and did not accomplish the following things, please read the task instructions thoroughly and the conversation thus far, and naturally fix this: {}.",
         "checklist_complete_message": "Great job teaching the first vocabulary word. Now let's move on to the second vocabulary word.",
-        "next_stage": "review"
+        "next_stage": "word2"
       },
-      "review": {
+      "word2": {
+        "checklist": {
+          "selected_unknown_word": false,
+          "defined_simply": false,
+          "asked_book_context_understanding": false,
+          "asked_broader_context_understanding": false,
+          "asked_for_new_sentence": false
+        },
+        "checklist_incomplete_message": "Please complete the following vocabulary items: {}.",
+        "checklist_complete_message": "Great job teaching the second vocabulary word. Now let's review both vocabulary words to reinforce the learning.",
+        "next_stage": "word1_review"
+      },
+      "word1_review": {
         "checklist": {
           "asked_for_definition": false,
           "asked_for_sentence": false,
           "provided_formal_definition": false
         },
         "checklist_incomplete_message": "Please complete the following review items: {}.",
-        "checklist_complete_message": "Great job reviewing the vocab words. Now let's start to wrap up",
+        "checklist_complete_message": "Great job reviewing the first vocabulary word. Now let's review the second vocabulary word.",
+        "next_stage": "word2_review"
+      },
+      "word2_review": {
+        "checklist": {
+          "asked_for_definition": false,
+          "asked_for_sentence": false,
+          "provided_formal_definition": false
+        },
+        "checklist_incomplete_message": "Please complete the following review items: {}.",
+        "checklist_complete_message": "Great job reviewing both vocabulary words. Now let's wrap up the session.",
         "next_stage": "closing"
       },
       "closing": {
@@ -167,7 +189,7 @@
         "task_messages": [
           {
             "role": "system",
-            "content": "TOOLS:\nYou may silently call the check_warm_up_progress() function only after all warm-up conversation steps have been completed and you are ready to begin vocabulary instruction. Do not mention that you are doing this.\nSilently call the get_reading_context function to get the content of the book is. Do not mention that you are doing this, and only use the details as they naturally relate to the conversation.\n\nPROCEDURE:\nBegin with a friendly, natural greeting as if you're reconnecting with a child after a week apart. Keep the tone warm and familiar. Ask briefly about their week.\nSilently call the get_reading_context to get the current context, then ask the child if they had a chance to listen to their audiobook this week based on the information you get from calling that function.\nIf they have listened, ask one thoughtful and age-appropriate follow-up question about the story or a literary theme from the book. Wait for their replies, follow-up appropriately, but keep it very brief.\nIf they have not listened, gently encourage them to start soon, and ask what time of day might be best for them to listen.\n\nDo not teach vocab in this section, call check_warm_up_progress silently to proceed to the vocabulary phase after all steps are complete, but do not mention you are using that function, simply call it and don't mention it at all!"
+            "content": "TOOLS:\nYou may silently call the check_warm_up_progress() function only after all warm-up conversation steps have been completed and you are ready to begin vocabulary instruction. Do not mention that you are doing this.\nSilently call the get_reading_context function to get the content of the book is. Do not mention that you are doing this, and only use the details as they naturally relate to the conversation.\n\nPROCEDURE:\nBegin with a friendly, natural greeting as if you're reconnecting with a child after a week apart. Keep the tone warm and familiar. Ask briefly about their week.\nSilently call the get_reading_context to get the current context, then ask the child if they had a chance to listen to their audiobook this week based on the information you get from calling that function.\nIf they have listened, ask one thoughtful and age-appropriate follow-up question about the story or a literary theme from the book. Wait for their replies, follow-up appropriately, but keep it very brief.\nIf they have not listened, gently encourage them to start soon, and ask what time of day might be best for them to listen.\n\nDo not teach vocab in this section, call check_warm_up_progress silently to proceed to the vocabulary phase after all steps are complete, but do not mention you are using that function!"
           }
         ],
         "functions": [
@@ -242,18 +264,18 @@
           }
         ]
       },
-      "vocab": {
+      "word1": {
         "task_messages": [
           {
             "role": "system",
-            "content": "TOOLS:\nYou may silently use the get_reading_context() function to retrieve the text and associated vocabulary words. Do not mention the function or its contents. Use details from the reading only as they naturally fit into the conversation.\n\nYou may silently call the check_vocabulary_progress() function only after completing all teaching steps for the current word. Do not mention that you are doing this.\n\nPROCEDURE:\nBegin by silently calling get_reading_context() to retrieve the current vocabulary list and text.\n\nStart with the first vocabulary word. Ask the child:\n\n\u201cDo you know what [word] means?\u201d\n\nBased on their response:\n\nIf they say yes but don\u2019t explain, ask:\n\n\u201cCan you tell me what it means?\u201d\n\nIf they give a correct explanation, acknowledge it and move to the next word. This is very important!!\n\nIf they don\u2019t know the word or explain it incorrectly, then and only then, continue teaching the word through natural conversation.\n\nTEACHING STEPS (only if the child does not know the word):\nIn a warm and conversational way (without listing steps), guide the child through the following:\n\nDefine the word using simple, child-friendly language.\n\nConnect it to the story:\nAsk the child to relate the word to the current reading, but do not give the answer away first (e.g.,\njust ask \u201cCan you think of something in the story that was [word]?\u201d)\nProvide feedback as needed.\n\nConnect it to their life:\nAsk the child to relate the word to their own experience (e.g.,\n\n\u201cWhat\u2019s something [word] in your own life?\u201d)\nGive clear feedback.\n\nPractice using the word:\nAsk the child to make up a new sentence using the word.\nOffer support and correction as needed.\n\nOnce you have taught two vocab words that the student didn't know, silently call check_vocabulary_progress() to move on. Do not keep going with words, and do not mention you are calling it!"
+            "content": "TOOLS:\nYou may silently use the get_reading_context() function to retrieve the text and associated vocabulary words. Do not mention the function or its contents. Use details from the reading only as they naturally fit into the conversation.\n\nYou may silently call the check_vocabulary_progress() function only after completing all teaching steps for the current word. Do not mention that you are doing this.\n\nPROCEDURE:\nBegin by silently calling get_reading_context() to retrieve the current vocabulary list and text.\n\nStart with the first vocabulary word. Ask the child:\n\n\u201cDo you know what [word] means?\u201d\n\nBased on their response:\n\nIf they say yes but don\u2019t explain, ask:\n\n\u201cCan you tell me what it means?\u201d\n\nIf they give a correct explanation, acknowledge it warmly and move on to the next word.\n\nIf they don\u2019t know the word or explain it incorrectly, then and only then, continue teaching the word through natural conversation.\n\nTEACHING STEPS (only if the child does not know the word):\nIn a warm and conversational way (without listing steps), guide the child through the following:\n\nDefine the word using simple, child-friendly language.\n\nConnect it to the story:\nAsk the child to relate the word to the current reading (e.g.,\n\n\u201cCan you think of something in the story that was [word]?\u201d)\nProvide feedback as needed.\n\nConnect it to their life:\nAsk the child to relate the word to their own experience (e.g.,\n\n\u201cWhat\u2019s something [word] in your own life?\u201d)\nGive clear feedback.\n\nPractice using the word:\nAsk the child to make up a new sentence using the word.\nOffer support and correction as needed.\n\nOnce all of the above has been completed for a word, silently call check_vocabulary_progress() to move on."
           }
         ],
         "functions": [
           {
             "type": "function",
             "function": {
-              "name": "check_vocab_progress",
+              "name": "check_word1_progress",
               "description": "Check progress through vocabulary instruction for both words",
               "parameters": {
                 "type": "object",
@@ -342,43 +364,96 @@
           }
         ]
       },
-      "review": {
+      "word2": {
         "task_messages": [
           {
             "role": "system",
-            "content": "Now review and recap vocab words that we covered. Silently call the vocab_words_taught function to get the words that were taught, but do not mention out loud the results. \nFor each word, 1. Ask the child to define the word again in their own words. 2. Ask them to use the word in a new sentence without any help 3. Provide the formal definition one more time. Make this feel like a natural conversation while ensuring you cover all these elements for both words. Call the check_review_progress function after finishing the review of each word."
+            "content": "TOOLS:\nYou may silently use the get_reading_context() function to retrieve the text and associated vocabulary words. Use details from the reading only as they naturally fit into the conversation.\nYou may silently call the check_vocabulary_progress() function only after completing all teaching steps for the current word. \nget_vocab_words_known to get the vocab words the child already knows\nget_vocab_words_taught to get the vocab words the child already was taught\n\nFor all functions, Do not mention that you are calling them and do not mention their contents unless it fits naturally into the conversation.\n\n\n\nPROCEDURE:\nBegin by silently calling get_reading_context() to retrieve the current vocabulary list and text.\nSilently call the get_vocab_words_taught and get_vocab_words_known function so that we don't ask about a word we already covered.\n\nStart with the first vocabulary word. Ask the child:\n\n\u201cDo you know what [word] means?\u201d\n\nBased on their response:\n\nIf they say yes but don\u2019t explain, ask:\n\n\u201cCan you tell me what it means?\u201d\n\nIf they give a correct explanation, acknowledge it warmly and move on to the next word.\n\nIf they don\u2019t know the word or explain it incorrectly, then and only then, continue teaching the word through natural conversation.\n\nTEACHING STEPS (only if the child does not know the word):\nIn a warm and conversational way (without listing steps), guide the child through the following:\n\nDefine the word using simple, child-friendly language.\n\nConnect it to the story:\nAsk the child to relate the word to the current reading (e.g.,\n\n\u201cCan you think of something in the story that was [word]?\u201d)\nProvide feedback as needed.\n\nConnect it to their life:\nAsk the child to relate the word to their own experience (e.g.,\n\n\u201cWhat\u2019s something [word] in your own life?\u201d)\nGive clear feedback.\n\nPractice using the word:\nAsk the child to make up a new sentence using the word.\nOffer support and correction as needed.\n\nOnce all of the above has been completed for a word, silently call check_vocabulary_progress() to move on."
           }
         ],
         "functions": [
           {
             "type": "function",
             "function": {
-              "name": "check_review_progress",
-              "description": "Check progress through review and recap of both words",
+              "name": "check_word2_progress",
+              "description": "Check progress through vocabulary instruction for both words",
               "parameters": {
                 "type": "object",
                 "properties": {
-                  "asked_for_definition": {
+                  "selected_unknown_word": {
                     "type": "boolean",
-                    "description": "Whether the model asked the child to define the word again"
+                    "description": "Whether the model successfully selected a vocabulary word the child does not know, as verifed by the child."
                   },
-                  "asked_for_sentence": {
+                  "defined_simply": {
                     "type": "boolean",
-                    "description": "Whether the model asked for a new sentence without prompting"
+                    "description": "Whether the model defined the word in simple terms."
                   },
-                  "provided_formal_definition": {
+                  "asked_book_context_understanding": {
                     "type": "boolean",
-                    "description": "Whether the model provided the formal definition again"
+                    "description": "Whether the model asked for understanding within the context of the book"
+                  },
+                  "asked_broader_context_understanding": {
+                    "type": "boolean",
+                    "description": "Whether the model asked for understanding in broader context or general usage"
+                  },
+                  "asked_for_new_sentence": {
+                    "type": "boolean",
+                    "description": "Whether the model asked the child to use the word in a totally new sentence"
+                  },
+                  "vocab_words_known": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "List of vocab words the model asked about and child already knew and could provide accurate descriptions of."
+                  },
+                  "vocab_words_taught": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Info field for vocab_words_taught"
                   }
                 },
                 "required": [
-                  "asked_for_definition",
-                  "asked_for_sentence",
-                  "provided_formal_definition"
+                  "selected_unknown_word",
+                  "defined_simply",
+                  "asked_book_context_understanding",
+                  "asked_broader_context_understanding",
+                  "asked_for_new_sentence",
+                  "vocab_words_known",
+                  "vocab_words_taught"
                 ]
               },
               "transition_callback": "general_transition_callback",
               "handler": "general_handler"
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_reading_context",
+              "description": "Get the reading context for the vocabulary words",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "variable_name": {
+                    "type": "string",
+                    "description": "The name of the session variable to retrieve",
+                    "enum": [
+                      "reading_context"
+                    ]
+                  },
+                  "current_index": {
+                    "type": "integer",
+                    "description": "The current index of the reading context"
+                  }
+                },
+                "required": [
+                  "variable_name"
+                ]
+              },
+              "handler": "get_session_variable_handler"
             }
           },
           {
@@ -417,6 +492,194 @@
                     "description": "The name of the info variable to retrieve",
                     "enum": [
                       "vocab_words_known"
+                    ]
+                  }
+                },
+                "required": [
+                  "variable_name"
+                ]
+              },
+              "handler": "get_info_variable_handler"
+            }
+          }
+        ],
+        "pre_actions": [
+          {
+            "type": "tts_say",
+            "text": "Okay great, so let's move on to the next word now."
+          }
+        ]
+      },
+      "word1_review": {
+        "task_messages": [
+          {
+            "role": "system",
+            "content": "Now review and recap the first vocab word. 1. Ask the child to define the word again in their own words. 2. Ask them to use the word in a new sentence without any help or prompting. 3. Provide the formal definition one more time. Make this feel like a natural conversation while ensuring you cover all these elements for both words. Call the check_review_progress function after finishing the review of each word."
+          }
+        ],
+        "functions": [
+          {
+            "type": "function",
+            "function": {
+              "name": "check_word1_review_progress",
+              "description": "Check progress through review and recap of both words",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "asked_for_definition": {
+                    "type": "boolean",
+                    "description": "Whether the model asked the child to define the word again"
+                  },
+                  "asked_for_sentence": {
+                    "type": "boolean",
+                    "description": "Whether the model asked for a new sentence without prompting"
+                  },
+                  "provided_formal_definition": {
+                    "type": "boolean",
+                    "description": "Whether the model provided the formal definition again"
+                  }
+                },
+                "required": [
+                  "asked_for_definition",
+                  "asked_for_sentence",
+                  "provided_formal_definition"
+                ]
+              },
+              "transition_callback": "general_transition_callback",
+              "handler": "general_handler"
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_reading_context",
+              "description": "Get the reading context for the vocabulary words",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "variable_name": {
+                    "type": "string",
+                    "description": "The name of the session variable to retrieve",
+                    "enum": [
+                      "reading_context"
+                    ]
+                  },
+                  "current_index": {
+                    "type": "integer",
+                    "description": "The current index of the reading context"
+                  }
+                },
+                "required": [
+                  "variable_name"
+                ]
+              },
+              "handler": "get_session_variable_handler"
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_vocab_words_taught",
+              "description": "Get the vocab_words_taught info variable",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "variable_name": {
+                    "type": "string",
+                    "description": "The name of the info variable to retrieve",
+                    "enum": [
+                      "vocab_words_taught"
+                    ]
+                  }
+                },
+                "required": [
+                  "variable_name"
+                ]
+              },
+              "handler": "get_info_variable_handler"
+            }
+          }
+        ]
+      },
+      "word2_review": {
+        "task_messages": [
+          {
+            "role": "system",
+            "content": "Now review and recap the second vocab word. 1. Ask the child to define the word again in their own words. 2. Ask them to use the word in a new sentence without any help or prompting. 3. Provide the formal definition one more time. Make this feel like a natural conversation while ensuring you cover all these elements for both words. Call the check_review_progress function after finishing the review of each word."
+          }
+        ],
+        "functions": [
+          {
+            "type": "function",
+            "function": {
+              "name": "check_word2_review_progress",
+              "description": "Check progress through review and recap of both words",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "asked_for_definition": {
+                    "type": "boolean",
+                    "description": "Whether the model asked the child to define the word again"
+                  },
+                  "asked_for_sentence": {
+                    "type": "boolean",
+                    "description": "Whether the model asked for a new sentence without prompting"
+                  },
+                  "provided_formal_definition": {
+                    "type": "boolean",
+                    "description": "Whether the model provided the formal definition again"
+                  }
+                },
+                "required": [
+                  "asked_for_definition",
+                  "asked_for_sentence",
+                  "provided_formal_definition"
+                ]
+              },
+              "transition_callback": "general_transition_callback",
+              "handler": "general_handler"
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_reading_context",
+              "description": "Get the reading context for the vocabulary words",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "variable_name": {
+                    "type": "string",
+                    "description": "The name of the session variable to retrieve",
+                    "enum": [
+                      "reading_context"
+                    ]
+                  },
+                  "current_index": {
+                    "type": "integer",
+                    "description": "The current index of the reading context"
+                  }
+                },
+                "required": [
+                  "variable_name"
+                ]
+              },
+              "handler": "get_session_variable_handler"
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_vocab_words_taught",
+              "description": "Get the vocab_words_taught info variable",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "variable_name": {
+                    "type": "string",
+                    "description": "The name of the info variable to retrieve",
+                    "enum": [
+                      "vocab_words_taught"
                     ]
                   }
                 },

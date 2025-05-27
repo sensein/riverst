@@ -53,13 +53,39 @@ def create_next_node(flow_manager: FlowManager) -> Tuple[str , NodeConfig]:
     if not stage:
         raise ValueError("Current stage is not set in flow manager.")
     
-    next_stage = flow_manager.state[stage]["next_stage"]
+    next_stage = flow_manager.state["stages"][stage]["next_stage"]
     if not next_stage or type(next_stage) is not str:
         raise ValueError(f"Next stage '{next_stage}' is not a valid string.")
     node = flow_manager.nodes.get(next_stage)
     if not node:
         raise ValueError(f"Node '{next_stage}' not found in flow manager nodes.")
     return next_stage, node
+
+
+def create_current_node(flow_manager: FlowManager, message: str) -> NodeConfig:
+    """
+    Create the configuration for the current node based on the current stage.
+    
+    Args:
+        flow_manager: Flow manager instance
+        checklist: Checklist dictionary for the current stage
+        
+    Returns:
+        Current node configuration
+    """    
+    stage = flow_manager.current_node
+    if not stage:
+        raise ValueError("Current stage is not set in flow manager.")
+    
+    node = flow_manager.nodes.get(stage)
+    if not node:
+        raise ValueError(f"Node '{stage}' not found in flow manager nodes.")
+    
+    node["task_messages"][0]["content"] += f"\n\n{message}"
+    node["pre_actions"] = []
+    
+    return node
+
 
 
 async def general_handler(args: FlowArgs, flow_manager: FlowManager) -> Dict[str, Any]:
@@ -73,6 +99,7 @@ async def general_handler(args: FlowArgs, flow_manager: FlowManager) -> Dict[str
     Returns:
         Flow result with status and message
     """
+    logger.info("GENERAL_DEBUG: general_handler called with args: {}", args)
     update_info_fields(args, flow_manager)
     stage = flow_manager.current_node
     checklist = flow_manager.state["stages"][stage]["checklist"]
@@ -103,8 +130,14 @@ async def general_transition_callback(args: Dict, result: FlowResult, flow_manag
         flow_manager: Flow manager instance
     """
     if result.get("status") == "success":
-        next_stage, node = create_next_node(flow_manager)
-        await flow_manager.set_node(next_stage, node)
+        try:
+            next_stage, node = create_next_node(flow_manager)
+            await flow_manager.set_node(next_stage, node)
+        except Exception as e:
+            import traceback
+    else:
+        message = result.get("message", "Please ensure you have completed all required checklist items.")
+        await flow_manager.set_node(flow_manager.current_node, create_current_node(flow_manager, message))
     
     
 
@@ -197,27 +230,21 @@ async def get_session_variable_handler(args: FlowArgs, flow_manager: FlowManager
     # Get the indexed item: root[root["indexable_by"]][index]
     indexed_data = indexable_items[index]
     
-    # If field is specified, extract it: root[root["indexable_by"]][index][field]
-    field = args.get("field")
-    if field:
-        if not isinstance(indexed_data, dict) or field not in indexed_data:
-            available_fields = list(indexed_data.keys()) if isinstance(indexed_data, dict) else []
-            return {
-                "status": "error",
-                "message": f"Field '{field}' not found in indexed data. Available fields: {available_fields}"
-            }
-        return {
-            "status": "success",
-            "data": indexed_data[field]
-        }
     
-    # No field specified - return the entire indexed item
+    data = {
+        k: v for k, v in root_data.items() if k != "indexable_by" and k != index_field
+    }
+    if flow_manager.current_node == "warm_up":
+        indexed_data.pop("vocab_words", None)
+    data[f"current_{index_field}"] = indexed_data
+    
+    
     return {
         "status": "success",
-        "data": indexed_data
+        "data": data
     }
     
-async def get_session_info_handler(args: FlowArgs, flow_manager: FlowManager) -> Dict[str, Any]:
+async def get_info_variable_handler(args: FlowArgs, flow_manager: FlowManager) -> Dict[str, Any]:
     """
     Handler to retrieve a task variable from the flow state.
     
