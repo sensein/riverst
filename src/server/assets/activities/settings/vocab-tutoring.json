@@ -23,6 +23,7 @@
         "advanced_flows_config_path": {
           "type": "string",
           "default": "./assets/activities/flows/vocab-tutoring.json",
+          "const": "./assets/activities/flows/vocab-tutoring.json",
           "description": "Path to the advanced flows configuration file."
         },
         "session_variables_path": {
