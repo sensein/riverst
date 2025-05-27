@@ -115,7 +115,7 @@ def get_flow_config(config: FlowConfigurationFile) -> FlowConfig:
                     func_def['function']['handler'] = general_handler
                 elif func_def.get('function', {}).get('handler') == 'get_session_variable_handler':
                     func_def['function']['handler'] = get_session_variable_handler
-                elif func_df.get('function', {}).get('handler') == 'get_info_variable_handler':
+                elif func_def.get('function', {}).get('handler') == 'get_info_variable_handler':
                     func_def['function']['handler'] = get_info_variable_handler
         
         # Store the processed node
