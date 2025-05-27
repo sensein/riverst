@@ -80,9 +80,9 @@ class Node(BaseModel):
     @classmethod
     def validate_functions(cls, functions, info):
         """Validates the functions list."""
-        # For nodes other than 'end', ensure there is exactly one function
-        if info.data.get('name') != 'end' and len(functions) != 1:
-            raise ValueError(f"Node functions list must have exactly one element, found {len(functions)}")
+        # For nodes other than 'end', ensure there is at least one function (for transition)
+        if info.data.get('name') != 'end' and len(functions) < 1:
+            raise ValueError(f"Node functions list must have at least one element, found {len(functions)}")
         
         return functions
 
@@ -125,10 +125,9 @@ class NodesConfig(BaseModel):
             if 'task_messages' not in node_dict or not node_dict['task_messages']:
                 raise ValueError(f"Node '{node_id}' must have task_messages")
                 
-            # For non-end nodes, check functions
-            if node_id != 'end':
-                if 'functions' not in node_dict or not isinstance(node_dict['functions'], list):
-                    raise ValueError(f"Node '{node_id}' must have a functions list")
+            # Check functions exist and are a list
+            if 'functions' not in node_dict or not isinstance(node_dict['functions'], list):
+                raise ValueError(f"Node '{node_id}' must have a functions list")
     
         return self
     

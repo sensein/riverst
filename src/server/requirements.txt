@@ -16,3 +16,5 @@ tf-keras
 senselab[audio]
 optimum[onnxruntime]
 pipecat-ai-flows
+loguru
+aiohttp

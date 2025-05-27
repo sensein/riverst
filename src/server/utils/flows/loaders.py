@@ -1,16 +1,15 @@
 import os
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Optional
 import json
 from pydantic import ValidationError
 
 from pipecat_flows import NodeConfig, FlowConfig
 
 from .models.config_models import FlowConfigurationFile
-from .handlers import general_transition_callback
-from .handlers import general_handler
+from .handlers import general_transition_callback, get_session_variable_handler, general_handler, get_info_variable_handler
 
 
-def load_config(flow_config_path: str) -> Tuple[FlowConfig, Dict[str, Any]]:
+def load_config(flow_config_path: str, session_variables_path: Optional[str]) -> Tuple[FlowConfig, Dict[str, Any]]:
     """
     Loads and validates a flow configuration from a JSON file.
     
@@ -35,7 +34,12 @@ def load_config(flow_config_path: str) -> Tuple[FlowConfig, Dict[str, Any]]:
     
     with open(flow_config_path, 'r') as f:
         config_data = json.load(f)
+    session_variables = load_session_variables(session_variables_path)
     
+    if session_variables:
+        if config_data.get('state_config') is None:
+            raise ValueError("State configuration is missing in the flow configuration file.")
+        config_data['state_config']['session_variables'] = session_variables
 
     # Validate the complete configuration
     config_data = FlowConfigurationFile(**config_data)
@@ -44,10 +48,36 @@ def load_config(flow_config_path: str) -> Tuple[FlowConfig, Dict[str, Any]]:
     state = get_flow_state(config_data)
     flow_config = get_flow_config(config_data)
     
-
-    
     return flow_config, state
 
+
+def load_session_variables(session_variables_path: Optional[str]) -> Optional[Dict[str, Any]]:
+    """
+    Loads session variables from a JSON file.
+    
+    This function reads the JSON file containing session variables and returns them as a dictionary.
+    
+    Args:
+        session_variables_path: Path to the JSON file containing session variables
+        
+    Returns:
+        Dict[str, Any]: A dictionary containing the session variables, or an empty dictionary if the path is None
+        
+    Raises:
+        FileNotFoundError: If the specified file doesn't exist
+        JSONDecodeError: If the file contains invalid JSON
+    """
+    if not session_variables_path:
+        return {}
+    
+    if not os.path.exists(session_variables_path):
+        raise FileNotFoundError(f"Session variables file not found: {session_variables_path}")
+    
+    with open(session_variables_path, 'r') as f:
+        session_variables = json.load(f)
+    
+    return session_variables
+    
 
 
 def get_flow_config(config: FlowConfigurationFile) -> FlowConfig:
@@ -83,6 +113,10 @@ def get_flow_config(config: FlowConfigurationFile) -> FlowConfig:
                     func_def['function']['transition_callback'] = general_transition_callback
                 if func_def.get('function', {}).get('handler') == 'general_handler':
                     func_def['function']['handler'] = general_handler
+                elif func_def.get('function', {}).get('handler') == 'get_session_variable_handler':
+                    func_def['function']['handler'] = get_session_variable_handler
+                elif func_def.get('function', {}).get('handler') == 'get_info_variable_handler':
+                    func_def['function']['handler'] = get_info_variable_handler
         
         # Store the processed node
         flow_config_dict['nodes'][node_id] = NodeConfig(**node_dict)
@@ -112,7 +146,10 @@ def get_flow_state(config: FlowConfigurationFile) -> Dict[str, Any]:
     state_dict = {
         'stages': {k: v.model_dump() if hasattr(v, 'model_dump') else v for k, v in state_config.stages.items()},
         'info': state_config.info,
-        'task_variables': state_config.task_variables
+        'session_variables': state_config.session_variables
     }
     
     return state_dict
+
+
+

@@ -1,7 +1,9 @@
-// Create a completely new script file with just the essential loading functionality
-// This will be included alongside the main script.js
+// file-loader.js - Handles loading and parsing configuration files
 
-window.loadConfigFromFile = function(file) {
+// Store file handles for saving back to the same file
+window.currentFileHandle = null;
+
+window.loadConfigFromFile = async function(file) {
     console.log("Starting to load file:", file.name);
     
     // Show a loading message to the user
@@ -14,117 +16,117 @@ window.loadConfigFromFile = function(file) {
         </div>
     `;
     
-    const reader = new FileReader();
-    
-    reader.onload = function(e) {
-        try {
-            console.log("File content loaded, parsing JSON");
-            const config = JSON.parse(e.target.result);
-            console.log("JSON parsed successfully", config);
-            
-            // Show full config in debug output
-            console.log("Full config:", config);
-            
-            // Basic validation for the new structure with flow_config
-            if (!config.flow_config) {
-                // Check if it's the old format
-                if (config.name && config.flow_config && config.state_config && config.schemas) {
-                    console.log("Detected old format configuration, converting to new format");
-                    // Convert old format to new format structure
-                    config = {
-                        avatar_configuration: {
-                            title: "Basic Avatar Interaction Configuration",
-                            description: "Schema for configuring a basic avatar interaction activity.",
-                            type: "object",
-                            properties: {
-                                name: {
-                                    type: "string",
-                                },
-                                description: {
-                                    type: "string",
-                                },
-                                options: {
-                                    type: "object",
-                                    properties: {
-                                        advanced_flows: {
-                                            type: "boolean",
-                                            default: true
-                                        },
-                                        advanced_flows_config_path: {
-                                            type: "string"
-                                        }
-                                    },
-                                    required: ["advanced_flows", "advanced_flows_config_path"]
-                                }
-                            },
-                            required: ["name", "description", "options"]
-                        },
-                        flow_config: {
-                            name: config.name,
-                            description: config.description,
-                            state_config: config.state_config,
-                            node_config: config.flow_config,
-                            schemas: config.schemas
-                        }
-                    };
-                } else {
-                    throw new Error("Invalid configuration structure. File must contain flow_config section.");
+    // Check if the file comes from a file handle (from showOpenFilePicker)
+    try {
+        if (file.handle) {
+            // Verify we have read permission
+            const options = { mode: 'read' };
+            if ((await file.handle.queryPermission(options)) !== 'granted') {
+                if ((await file.handle.requestPermission(options)) !== 'granted') {
+                    throw new Error("Permission to read the file was denied");
                 }
             }
             
-            // Start loading the configuration
-            loadBasicInfo(config);
-            loadTaskVariables(config);
-            loadNodes(config);
-            
-            // Update UI
-            updateOrderAndDropdowns();
-            
-            // Show success message
-            resultContainer.innerHTML = `
-                <div class="alert alert-success">
-                    <h4>Configuration Loaded!</h4>
-                    <p>File "${file.name}" loaded successfully.</p>
-                </div>
-            `;
-            
-            // Hide success message after 3 seconds
-            setTimeout(() => {
-                resultContainer.style.display = 'none';
-            }, 3000);
-            
-        } catch (error) {
-            console.error("Error loading file:", error);
+            window.currentFileHandle = file.handle;
+            console.log("Stored file handle for direct saving");
+        } else {
+            window.currentFileHandle = null;
+        }
+        
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            try {
+                console.log("File content loaded, parsing JSON");
+                let config = JSON.parse(e.target.result);
+                console.log("JSON parsed successfully", config);
+                
+                // Show full config in debug output
+                console.log("Full config:", config);
+                
+                // Basic validation for the structure
+                if (!config.name || (!config.flow_config && !config.flows_configuration)) {
+                    throw new Error("Invalid configuration structure. File must contain name and flow_config sections.");
+                }
+                
+                // Normalize to use flow_config for simplicity
+                if (config.flows_configuration) {
+                    console.log("Converting from flows_configuration to flow_config format");
+                    config = {
+                        name: config.flows_configuration.name,
+                        description: config.flows_configuration.description,
+                        state_config: config.flows_configuration.state_config,
+                        flow_config: config.flows_configuration.node_config
+                    };
+                }
+                
+                // Start loading the configuration
+                loadBasicInfo(config);
+                loadTaskVariables(config);
+                loadNodes(config);
+                
+                // Update UI
+                updateOrderAndDropdowns();
+                updateAllSessionVariableDropdowns();
+                
+                // Show success message
+                resultContainer.innerHTML = `
+                    <div class="alert alert-success">
+                        <h4>Configuration Loaded!</h4>
+                        <p>File "${file.name}" loaded successfully.</p>
+                    </div>
+                `;
+                
+                // Hide success message after 3 seconds
+                setTimeout(() => {
+                    resultContainer.style.display = 'none';
+                }, 3000);
+                
+            } catch (error) {
+                console.error("Error parsing file:", error);
+                resultContainer.innerHTML = `
+                    <div class="alert alert-danger">
+                        <h4>Error Loading Configuration</h4>
+                        <p>${error.message}</p>
+                        <p class="small">The file may not be a valid JSON flow configuration. Check browser console (F12) for details.</p>
+                    </div>
+                `;
+            }
+        };
+        
+        reader.onerror = function(e) {
+            console.error("FileReader error:", e);
             resultContainer.innerHTML = `
                 <div class="alert alert-danger">
-                    <h4>Error Loading Configuration</h4>
-                    <p>${error.message}</p>
-                    <p class="small">Check browser console (F12) for more details.</p>
+                    <h4>Error Reading File</h4>
+                    <p>There was a problem reading the file. Please try again or try a different file.</p>
                 </div>
             `;
-        }
-    };
-    
-    reader.onerror = function(e) {
-        console.error("FileReader error:", e);
+        };
+        
+        // Read the file content
+        reader.readAsText(file);
+        
+    } catch (error) {
+        console.error("Error accessing file:", error);
         resultContainer.innerHTML = `
             <div class="alert alert-danger">
-                <h4>Error Reading File</h4>
-                <p>There was a problem reading the file. Please try again.</p>
+                <h4>Error Accessing File</h4>
+                <p>${error.message || "There was a problem accessing the file. Please try again or use a different browser."}</p>
             </div>
         `;
-    };
-    
-    reader.readAsText(file);
+    }
 };
 
 // Helper functions for loading
 function loadBasicInfo(config) {
-    // Extract flow_config
-    const flowsConfig = config.flow_config;
-    
-    // Store the name
-    document.getElementById('currentFilename').value = flowsConfig.name + ".json";
+    // Store the original filename if we're loading an existing file
+    const fileInput = document.getElementById('fileInput');
+    if (fileInput && fileInput.files && fileInput.files[0]) {
+        document.getElementById('currentFilename').value = fileInput.files[0].name;
+    } else if (config.name) {
+        document.getElementById('currentFilename').value = config.name + ".json";
+    }
     
     // Reset form
     document.getElementById('nodesContainer').innerHTML = '';
@@ -132,12 +134,12 @@ function loadBasicInfo(config) {
     document.getElementById('sessionInfoContainer').innerHTML = '';
     
     // Load basic info
-    document.getElementById('flowName').value = flowsConfig.name || "";
-    document.getElementById('flowDescription').value = flowsConfig.description || "";
+    document.getElementById('flowName').value = config.name || "";
+    document.getElementById('flowDescription').value = config.description || "";
     
     // Load role message
-    const initialNodeName = flowsConfig.node_config?.initial_node || "";
-    const initialNode = flowsConfig.node_config?.nodes?.[initialNodeName] || {};
+    const initialNodeName = config.flow_config?.initial_node || "";
+    const initialNode = config.flow_config?.nodes?.[initialNodeName] || {};
     const roleMessages = initialNode.role_messages || [];
     
     if (roleMessages.length > 0) {
@@ -146,13 +148,12 @@ function loadBasicInfo(config) {
 }
 
 function loadTaskVariables(config) {
-    // Extract flow_config
-    const flowsConfig = config.flow_config;
+    // We don't use task_variables anymore, but handle them if present in older files
+    const taskVars = config.state_config?.task_variables || {};
+    const sessionVars = config.state_config?.session_variables || {};
+    const infoFields = config.state_config?.info || {};
     
-    const taskVars = flowsConfig.state_config?.task_variables || {};
-    const infoFields = flowsConfig.state_config?.info || {};
-    
-    // Load task variables
+    // Load task variables (for backward compatibility)
     for (const [name, value] of Object.entries(taskVars)) {
         const container = document.getElementById('taskVariablesContainer');
         const varEl = document.getElementById('taskVarTemplate').content.cloneNode(true);
@@ -194,6 +195,66 @@ function loadTaskVariables(config) {
         // Add event listeners
         varEl.querySelector('.remove-task-var-btn').addEventListener('click', function() {
             this.closest('.task-var-card').remove();
+            updateAllSessionVariableDropdowns();
+        });
+        
+        // Add input event listener to update function dropdowns
+        varEl.querySelector('.task-var-name').addEventListener('input', function() {
+            updateAllSessionVariableDropdowns();
+        });
+        
+        container.appendChild(varEl);
+    }
+    
+    // Also load session variables
+    for (const [name, value] of Object.entries(sessionVars)) {
+        const container = document.getElementById('taskVariablesContainer');
+        const varEl = document.getElementById('taskVarTemplate').content.cloneNode(true);
+        
+        // Set name
+        varEl.querySelector('.task-var-name').value = name;
+        varEl.querySelector('.task-var-name').dataset.varType = 'session';
+        
+        // Set type and value
+        const typeSelect = varEl.querySelector('.task-var-type');
+        const valueContainer = varEl.querySelector('.task-var-value-container');
+        
+        // Determine type
+        let type = 'string';
+        if (typeof value === 'boolean') type = 'boolean';
+        else if (typeof value === 'number') type = 'number';
+        else if (Array.isArray(value)) {
+            if (value.length > 0 && typeof value[0] === 'number') type = 'number_array';
+            else type = 'array';
+        }
+        else if (typeof value === 'object' && value !== null) type = 'object';
+        
+        typeSelect.value = type;
+        
+        // Set value container
+        if (type === 'boolean') {
+            valueContainer.innerHTML = `
+                <div class="form-check">
+                    <input class="form-check-input task-var-value" type="checkbox" ${value ? 'checked' : ''}>
+                    <label class="form-check-label">True</label>
+                </div>`;
+        } else if (type === 'array' || type === 'number_array') {
+            valueContainer.innerHTML = `<input type="text" class="form-control form-control-sm task-var-value" value="${value.join(', ')}">`;
+        } else if (type === 'object') {
+            valueContainer.innerHTML = `<textarea class="form-control form-control-sm task-var-value" rows="2">${JSON.stringify(value, null, 2)}</textarea>`;
+        } else {
+            valueContainer.innerHTML = `<input type="${type === 'number' ? 'number' : 'text'}" class="form-control form-control-sm task-var-value" value="${value}">`;
+        }
+        
+        // Add event listeners
+        varEl.querySelector('.remove-task-var-btn').addEventListener('click', function() {
+            this.closest('.task-var-card').remove();
+            updateAllSessionVariableDropdowns();
+        });
+        
+        // Add input event listener to update function dropdowns
+        varEl.querySelector('.task-var-name').addEventListener('input', function() {
+            updateAllSessionVariableDropdowns();
         });
         
         container.appendChild(varEl);
@@ -218,13 +279,22 @@ function loadTaskVariables(config) {
         
         infoEl.querySelector('.session-info-type').value = type;
         
-        // Find description in schemas
+        // Find description in function parameters
         let description = `Info field for ${name}`;
-        for (const schemaId in flowsConfig.schemas) {
-            const schema = flowsConfig.schemas[schemaId];
-            if (schema.properties && schema.properties[name]) {
-                description = schema.properties[name].description || description;
-                break;
+        
+        // Look through all nodes for functions that might have this parameter
+        for (const nodeName in config.flow_config.nodes) {
+            const node = config.flow_config.nodes[nodeName];
+            if (!node.functions) continue;
+            
+            for (const funcData of node.functions) {
+                if (!funcData.function || !funcData.function.parameters) continue;
+                
+                const props = funcData.function.parameters.properties || {};
+                if (props[name] && props[name].description) {
+                    description = props[name].description;
+                    break;
+                }
             }
         }
         
@@ -234,20 +304,24 @@ function loadTaskVariables(config) {
         infoEl.querySelector('.remove-session-info-btn').addEventListener('click', function() {
             if (confirm('Remove this info field?')) {
                 this.closest('.session-info-card').remove();
+                updateAllSessionVariableDropdowns();
             }
+        });
+        
+        // Add input event listener to update function dropdowns
+        infoEl.querySelector('.session-info-name').addEventListener('input', function() {
+            updateAllSessionVariableDropdowns();
         });
         
         container.appendChild(infoEl);
     }
 }
+            
 
 function loadNodes(config) {
-    // Extract flow_config
-    const flowsConfig = config.flow_config;
-    
-    const nodes = flowsConfig.node_config?.nodes || {};
-    const stages = flowsConfig.state_config?.stages || {};
-    const initialNodeName = flowsConfig.node_config?.initial_node || "";
+    const nodes = config.flow_config?.nodes || {};
+    const stages = config.state_config?.stages || {};
+    const initialNodeName = config.flow_config?.initial_node || "";
     
     // Create stage mapping
     const stageMapping = {};
@@ -273,10 +347,10 @@ function loadNodes(config) {
     console.log("Stage mapping:", stageMapping);
     
     // Build sequence
-    const sequence = [];
+    let sequence = [];
     let currentNode = initialNodeName;
     
-    // In the new structure, next_stage is in the stage data, not in node
+    // In the original structure, next_stage is in the stage data
     // Start by adding initial node
     if (currentNode) {
         sequence.push(currentNode);
@@ -296,11 +370,9 @@ function loadNodes(config) {
         if (sequence.length > 20) break;
     }
     
-    // If sequence is empty, use all non-end nodes
-    if (sequence.length === 0) {
-        for (const nodeName in nodes) {
-            if (nodeName !== 'end') sequence.push(nodeName);
-        }
+    // If sequence is empty or incomplete, use all non-end nodes
+    if (sequence.length === 0 || sequence.length < Object.keys(nodes).filter(n => n !== 'end').length) {
+        sequence = Object.keys(nodes).filter(n => n !== 'end');
     }
     
     console.log("Node sequence:", sequence);
@@ -313,7 +385,7 @@ function loadNodes(config) {
         
         console.log(`Processing node: ${nodeName}, stage: ${stageName}`);
         
-        createNodeFromConfig(nodeName, node, stage, flowsConfig);
+        createNodeFromConfig(nodeName, node, stage, config);
     }
 }
 
@@ -333,14 +405,31 @@ function createNodeFromConfig(nodeName, node, stage, config) {
         nodeEl.querySelector('.node-task-message').value = taskMessages[0].content || "";
     }
     
-    // Find schema description
-    let schemaDesc = "";
-    for (const schemaId in config.schemas) {
-        if (schemaId.includes(nodeName) || nodeName.includes(schemaId.replace('_schema', ''))) {
-            schemaDesc = config.schemas[schemaId].description || "";
-            break;
+    // Handle pre-actions if present
+    if (node.pre_actions && node.pre_actions.length > 0) {
+        const preAction = node.pre_actions[0];
+        if (preAction.type === 'tts_say' && preAction.text) {
+            const preActionText = nodeEl.querySelector('.pre-action-text');
+            
+            if (preActionText) {
+                preActionText.value = preAction.text;
+            }
         }
     }
+    
+    // Find schema description
+    let schemaDesc = "";
+    // Look through functions for the one with the transition_callback
+    if (node.functions) {
+        for (const funcData of node.functions) {
+            if (funcData.function && funcData.function.transition_callback === "general_transition_callback" && 
+                funcData.function.handler === "general_handler") {
+                schemaDesc = funcData.function.description || "";
+                break;
+            }
+        }
+    }
+    
     nodeEl.querySelector('.schema-description').value = schemaDesc;
     
     // Set messages
@@ -351,16 +440,19 @@ function createNodeFromConfig(nodeName, node, stage, config) {
     const checklistContainer = nodeEl.querySelector('.checklist-container');
     checklistContainer.innerHTML = ''; // Clear defaults
     
-    // Get schema for descriptions
-    let schema = null;
-    for (const schemaId in config.schemas) {
-        if (schemaId.includes(nodeName) || nodeName.includes(schemaId.replace('_schema', ''))) {
-            schema = config.schemas[schemaId];
-            break;
+    // Get checklist items and descriptions from the function with transition_callback
+    let properties = {};
+    
+    if (node.functions) {
+        for (const funcData of node.functions) {
+            if (funcData.function && funcData.function.transition_callback === "general_transition_callback" && 
+                funcData.function.handler === "general_handler") {
+                properties = funcData.function.parameters?.properties || {};
+                break;
+            }
         }
     }
     
-    const properties = schema?.properties || {};
     const checklist = stage.checklist || {};
     
     for (const itemName in checklist) {
@@ -395,6 +487,9 @@ function createNodeFromConfig(nodeName, node, stage, config) {
         });
         checklistContainer.appendChild(itemEl);
     });
+    
+    // Load functions for this node
+    loadNodeFunctions(nodeEl, nodeName, node);
     
     // Set up tabs
     nodeEl.querySelectorAll('[data-bs-toggle="tab"]').forEach(button => {
@@ -435,31 +530,59 @@ function createNodeFromConfig(nodeName, node, stage, config) {
         }
     });
     
+    // Set up dropdown function buttons
+    // Dropdown buttons are set up via the event listeners in the template
+    // No need to add additional buttons here
+    const addSessionFunctionBtn = nodeEl.querySelector('.add-session-function');
+    if (addSessionFunctionBtn) {
+        addSessionFunctionBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            addNodeFunction(this.closest('.node-card'));
+        });
+    }
+    
+    const addInfoFunctionBtn = nodeEl.querySelector('.add-info-function');
+    if (addInfoFunctionBtn) {
+        addInfoFunctionBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            addNodeFunction(this.closest('.node-card'), "", "", true);
+        });
+    }
+    
     // Add info fields
     const infoFieldsContainer = nodeEl.querySelector('.info-fields-container');
     
-    // Find info fields for this node from schema
-    if (schema && schema.properties) {
-        for (const propName in schema.properties) {
-            // Check if it's a state info field
-            if (config.state_config?.info && propName in config.state_config.info) {
-                const type = schema.properties[propName].type || 'boolean';
-                
-                // Skip special fields
-                if (propName === 'current_word_number') continue;
-                
-                const fieldEl = document.getElementById('infoFieldItemTemplate').content.cloneNode(true);
-                
-                // Set field name and type
-                fieldEl.querySelector('.info-field-name').textContent = propName;
-                fieldEl.querySelector('.info-field-type').textContent = type;
-                
-                // Set up remove button
-                fieldEl.querySelector('.remove-info-field-btn').addEventListener('click', function() {
-                    this.closest('.info-field-item-card').remove();
-                });
-                
-                infoFieldsContainer.appendChild(fieldEl);
+    // Find info fields for this node from function parameters
+    let infoFieldsAdded = new Set();
+    
+    if (node.functions) {
+        for (const funcData of node.functions) {
+            if (!funcData.function || !funcData.function.parameters) continue;
+            
+            const props = funcData.function.parameters.properties || {};
+            
+            for (const propName in props) {
+                // Check if it's a state info field and not already added
+                if (config.state_config?.info && propName in config.state_config.info && !infoFieldsAdded.has(propName)) {
+                    const type = props[propName].type || 'boolean';
+                    
+                    // Skip special fields
+                    if (propName === 'current_word_number') continue;
+                    
+                    const fieldEl = document.getElementById('infoFieldItemTemplate').content.cloneNode(true);
+                    
+                    // Set field name and type
+                    fieldEl.querySelector('.info-field-name').textContent = propName;
+                    fieldEl.querySelector('.info-field-type').textContent = type;
+                    
+                    // Set up remove button
+                    fieldEl.querySelector('.remove-info-field-btn').addEventListener('click', function() {
+                        this.closest('.info-field-item-card').remove();
+                    });
+                    
+                    infoFieldsContainer.appendChild(fieldEl);
+                    infoFieldsAdded.add(propName);
+                }
             }
         }
     }
@@ -467,6 +590,51 @@ function createNodeFromConfig(nodeName, node, stage, config) {
     container.appendChild(nodeEl);
 }
 
+// Helper function to load functions for a node
+function loadNodeFunctions(nodeEl, nodeName, node) {
+    const functionsContainer = nodeEl.querySelector('.functions-container');
+    if (!functionsContainer) return;
+    
+    functionsContainer.innerHTML = ''; // Clear container
+    
+    // Get node functions from config
+    const nodeFunctions = node.functions || [];
+    
+    // Process each function in the node
+    nodeFunctions.forEach(funcData => {
+        // Skip the check_progress function which is automatically added
+        if (funcData.function && funcData.function.transition_callback === "general_transition_callback" && 
+            funcData.function.handler === "general_handler") return;
+        
+        if (funcData.function && (funcData.function.handler === "get_task_variable_handler" || 
+                                 funcData.function.handler === "get_session_variable_handler" ||
+                                 funcData.function.handler === "get_info_variable_handler")) {
+            // Extract variable name
+            const varEnum = funcData.function.parameters?.properties?.variable_name?.enum;
+            if (!varEnum || varEnum.length === 0) return;
+            
+            const varName = varEnum[0];
+            const funcName = funcData.function.name;
+            const funcDescription = funcData.function.description || `Get the ${varName} for the session`;
+            const handlerType = funcData.function.handler;
+            
+            // Add function to node - make sure we're passing parameters that match what addNodeFunction expects
+            const funcElement = addNodeFunction(nodeEl, varName, funcDescription);
+            
+            // For info variables, update the dropdown class if needed
+            if (handlerType === "get_info_variable_handler") {
+                const select = funcElement.querySelector('.session-variable-select');
+                if (select) {
+                    select.classList.add('info-variable-select');
+                    // Refresh the dropdown with info variables
+                    updateSessionVariableDropdown(select);
+                }
+            }
+        }
+    });
+}
+
+// Update node order and dropdowns
 function updateOrderAndDropdowns() {
     // Update node order highlighting
     const nodes = document.querySelectorAll('.node-card');
@@ -554,3 +722,6 @@ function updateOrderAndDropdowns() {
         }
     });
 }
+
+// Make functions globally available
+window.updateOrderAndDropdowns = updateOrderAndDropdowns;

@@ -1,5 +1,7 @@
 import datetime
 import aiohttp
+import json
+import traceback
 from typing import Any
 
 from dotenv import load_dotenv
@@ -103,6 +105,22 @@ async def run_bot(
         rtvi = RTVIProcessor(config=RTVIConfig(config=[]))
         viseme_processor = VisemeProcessor()
 
+        # Debug wrapper for function calls
+        def function_call_debug_wrapper(fn):
+            async def wrapper(function_name, tool_call_id, args, llm, context, result_callback):
+                logger.info("FUNCTION_DEBUG: Function '{}' called with args: {}", function_name, json.dumps(args))
+                try:
+                    result = await fn(function_name, tool_call_id, args, llm, context, result_callback)
+                    logger.info("FUNCTION_DEBUG: Function '{}' completed successfully with result: {}", 
+                               function_name, json.dumps(result) if result else "None")
+                    return result
+                except Exception as e:
+                    logger.error("FUNCTION_DEBUG: Error in function '{}': {}", function_name, str(e))
+                    logger.error("FUNCTION_DEBUG: {}", traceback.format_exc())
+                    # Forward the exception
+                    raise
+            return wrapper
+        
         # Define animation trigger function callable by LLM
         async def handle_animation(function_name, tool_call_id, args, llm, context, result_callback):
             animation_id = args.get("animation_id")
@@ -111,7 +129,9 @@ async def run_bot(
                 await rtvi.push_frame(frame)
             await result_callback({"status": "animation_triggered"})
 
-        llm.register_function("trigger_animation", handle_animation)
+        # Register wrapped functions
+        llm.register_function("trigger_animation", function_call_debug_wrapper(handle_animation))
+        
 
         async def handle_user_idle(_: UserIdleProcessor, retry_count: int) -> bool:
             """Handle user inactivity by escalating reminders and ending the session if needed.
@@ -195,21 +215,20 @@ async def run_bot(
             pipeline,
             params=PipelineParams(allow_interruptions=True, observers=[RTVIObserver(rtvi)]),
         )
-
-        flow_manager = None
-        if "advanced_flows" in config and config["advanced_flows"]:
-            # Will initialize flow manager if advanced flows are enabled
-            flow_factory = FlowComponentFactory(
-                llm=llm,
-                context_aggregator=context_aggregator,
-                task=task,
-                advanced_flows=config.get("advanced_flows", False),
-                user_description=config.get("user_description", ""),
-                flow_config_path=config.get("advanced_flows_config_path"),
-                summary_prompt="Summarize the key moments of learning, words, and concepts discussed in the tutoring session so far. Keep it concise and focused on vocabulary learning.",
-            )
-            flow_manager = flow_factory.build()
-
+        
+        
+        # Will initialize flow manager if advanced flows are enabled
+        flow_factory = FlowComponentFactory(
+            llm=llm,
+            context_aggregator=context_aggregator,
+            task=task,
+            tts = tts,
+            advanced_flows=config.get("advanced_flows", False),
+            flow_config_path=config.get("advanced_flows_config_path"),
+            session_variables_path=config.get("session_variables_path"),
+            summary_prompt="Summarize the key moments of learning, words, and concepts discussed in the tutoring session so far. Keep it concise and focused on vocabulary learning.",
+        )
+        flow_manager = flow_factory.build()
 
         # Event handlers for data, transcripts, visemes, and UI events
         @transcript.event_handler("on_transcript_update")
@@ -243,26 +262,24 @@ async def run_bot(
 
         @rtvi.event_handler("on_client_ready")
         async def on_client_ready(rtvi):
-            print("[AAA] on_client_ready: ", flow_manager)
             await rtvi.set_bot_ready()
             if flow_manager:
                 await flow_manager.initialize()
             else:
                 await task.queue_frames([context_aggregator.user().get_context_frame()])
 
+
         @pipecat_transport.event_handler("on_client_connected")
         async def on_client_connected(_, __):
-            print("[AAA] on_client_connected")
             await viseme_audiobuffer.start_recording()
             await audiobuffer.start_recording()
 
         @pipecat_transport.event_handler("on_client_disconnected")
         async def on_client_disconnected(_, __):
-            print("[AAA] on_client_disconnected")
+            logger.info("Client disconnected")
 
         @pipecat_transport.event_handler("on_client_closed")
         async def on_client_closed(_, __):
-            print("[AAA] on_client_closed")
             await viseme_audiobuffer.stop_recording()
             await audiobuffer.stop_recording()
             await task.cancel()

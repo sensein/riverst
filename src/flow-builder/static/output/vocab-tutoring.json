@@ -1,0 +1,625 @@
+{
+  "name": "vocab-tutoring",
+  "description": "A flow for an AI to help children learn vocabulary words from a book they are reading.",
+  "state_config": {
+    "stages": {
+      "warm_up": {
+        "checklist": {
+          "friendly_greeting_done": false,
+          "asked_about_audiobook": false,
+          "followed_up_appropriately": false
+        },
+        "checklist_incomplete_message": "Please complete the following warm-up items: {}.",
+        "checklist_complete_message": "Great job completing the warm-up stage. Now let's move on to the first vocabulary word.",
+        "next_stage": "word3"
+      },
+      "word3": {
+        "checklist": {
+          "selected_unknown_word": false,
+          "defined_simply": false,
+          "asked_book_context_understanding": false,
+          "asked_broader_context_understanding": false,
+          "asked_for_new_sentence": false
+        },
+        "checklist_incomplete_message": "Please complete the following vocabulary items: {}.",
+        "checklist_complete_message": "Great job teaching the first vocabulary word. Now let's move on to the second vocabulary word.",
+        "next_stage": "word2"
+      },
+      "word2": {
+        "checklist": {
+          "selected_unknown_word": false,
+          "defined_simply": false,
+          "asked_book_context_understanding": false,
+          "asked_broader_context_understanding": false,
+          "asked_for_new_sentence": false
+        },
+        "checklist_incomplete_message": "Please complete the following vocabulary items: {}.",
+        "checklist_complete_message": "Great job teaching the second vocabulary word. Now let's review both vocabulary words to reinforce the learning.",
+        "next_stage": "word1_review"
+      },
+      "word1_review": {
+        "checklist": {
+          "asked_for_definition": false,
+          "asked_for_sentence": false,
+          "provided_formal_definition": false
+        },
+        "checklist_incomplete_message": "Please complete the following review items: {}.",
+        "checklist_complete_message": "Great job reviewing the first vocabulary word. Now let's review the second vocabulary word.",
+        "next_stage": "word2_review"
+      },
+      "word2_review": {
+        "checklist": {
+          "asked_for_definition": false,
+          "asked_for_sentence": false,
+          "provided_formal_definition": false
+        },
+        "checklist_incomplete_message": "Please complete the following review items: {}.",
+        "checklist_complete_message": "Great job reviewing both vocabulary words. Now let's wrap up the session.",
+        "next_stage": "closing"
+      },
+      "closing": {
+        "checklist": {
+          "praised_child": false,
+          "encouraged_continued_reading": false,
+          "suggested_word_usage": false,
+          "summarized_learning": false
+        },
+        "checklist_incomplete_message": "Please complete the following closing items: {}.",
+        "checklist_complete_message": "Great job wrapping up the session. You're all set for the next reading!",
+        "next_stage": "end"
+      }
+    },
+    "info": {
+      "has_listened_to_book": false,
+      "vocab_words_known": [],
+      "vocab_words_taught": []
+    },
+    "task_variables": {},
+    "session_variables": {
+      "vocab_words": [
+        "accomplish",
+        "anxious",
+        "approve",
+        "arrange",
+        "bizarre",
+        "brief",
+        "cautious",
+        "cherish",
+        "classify",
+        "conclude",
+        "dependable",
+        "describe",
+        "disaster",
+        "distant",
+        "distract",
+        "elaborate",
+        "emerge",
+        "estimate",
+        "familiar",
+        "fragile"
+      ],
+      "reading_context": {
+        "book_title": "The Tale of Peter Rabbit",
+        "book_author": "Beatrix Potter",
+        "book_text": "Once upon a time there were four little Rabbits, and their names were\u2014 Flopsy, Mopsy, Cotton-tail, and Peter.\n\nThey lived with their Mother in a sand-bank, underneath the root of a very big fir tree.\n\n\"Now, my dears,\" said old Mrs. Rabbit one morning, \"you may go into the fields or down the lane, but don't go into Mr. McGregor's garden: your Father had an accident there; he was put in a pie by Mrs. McGregor.\"\n\n\"Now run along, and don't get into mischief. I am going out.\"\n\nThen old Mrs. Rabbit took a basket and her umbrella, and went through the wood to the baker's. She bought a loaf of brown bread and five currant buns.\n\nFlopsy, Mopsy, and Cotton-tail, who were good little bunnies, went down the lane to gather blackberries;\n\nBut Peter, who was very naughty, ran straight away to Mr. McGregor's garden, and squeezed under the gate!\n\nFirst he ate some lettuces and some French beans; and then he ate some radishes;\n\nAnd then, feeling rather sick, he went to look for some parsley.\n\nBut round the end of a cucumber frame, whom should he meet but Mr. McGregor!\n\nMr. McGregor was on his hands and knees planting out young cabbages, but he jumped up and ran after Peter, waving a rake and calling out, \"Stop thief!\"\n\nPeter was most dreadfully frightened; he rushed all over the garden, for he had forgotten the way back to the gate.\n\nHe lost one of his shoes among the cabbages, and the other shoe amongst the potatoes.\n\nAfter losing them, he ran on four legs and went faster, so that he might have got away altogether if he had not, unfortunately, run into a gooseberry net, and got caught by the large buttons on his jacket. It was a blue jacket with brass buttons, quite new.\n\nPeter gave himself up for lost, and shed big tears; but his sobs were overheard by some friendly sparrows, who flew to him in great excitement, and implored him to exert himself.\n\nMr. McGregor came up with a sieve, which he intended to pop upon the top of Peter; but Peter wriggled out just in time, leaving his jacket behind him, and rushed into the tool-shed, and jumped into a can. It would have been a beautiful thing to hide in, if it had not had so much water in it.\n\nMr. McGregor was quite sure that Peter was somewhere in the tool-shed, perhaps hidden underneath a flower-pot. He began to turn them over carefully, looking under each.\n\nPresently Peter sneezed\u2014\"Kerchoo!\" Mr. McGregor was after him in no time,\n\nAnd tried to put his foot upon Peter, who jumped out of a window, upsetting three plants. The window was too small for Mr. McGregor, and he was tired of running after Peter. He went back to his work.\n\nPeter sat down to rest; he was out of breath and trembling with fright, and he had not the least idea which way to go. Also he was very damp with sitting in that can.\n\nAfter a time he began to wander about, going lippity\u2014lippity\u2014not very fast, and looking all around.\n\nHe found a door in a wall; but it was locked, and there was no room for a fat little rabbit to squeeze underneath.\n\nAn old mouse was running in and out over the stone doorstep, carrying peas and beans to her family in the wood. Peter asked her the way to the gate, but she had such a large pea in her mouth that she could not answer. She only shook her head at him. Peter began to cry.\n\nThen he tried to find his way straight across the garden, but he became more and more puzzled. Presently, he came to a pond where Mr. McGregor filled his water-cans. A white cat was staring at some goldfish. She sat very, very still, but now and then the tip of her tail twitched as if it were alive. Peter thought it best to go away without speaking to her; he had heard about cats from his cousin, little Benjamin Bunny.\n\nHe went back towards the tool-shed, but suddenly, quite close to him, he heard the noise of a hoe\u2014scr-r-ritch, scratch, scratch, scritch. Peter scuttered underneath the bushes.\n\nBut presently, as nothing happened, he came out, and climbed upon a wheelbarrow, and peeped over.\n\nThe first thing he saw was Mr. McGregor hoeing onions. His back was turned towards Peter, and beyond him was the gate!\n\nPeter got down very quietly off the wheelbarrow and started running as fast as he could go, along a straight walk behind some black-currant bushes.\n\nMr. McGregor caught sight of him at the corner, but Peter did not care. He slipped underneath the gate, and was safe at last in the wood outside the garden.\n\nMr. McGregor hung up the little jacket and the shoes for a scarecrow to frighten the blackbirds.\n\nPeter never stopped running or looked behind him till he got home to the big fir tree.\n\nHe was so tired that he flopped down upon the nice soft sand on the floor of the rabbit-hole and shut his eyes. His mother was busy cooking; she wondered what he had done with his clothes.\n\nIt was the second little jacket and pair of shoes that Peter had lost in a fortnight!\n\nI am sorry to say that Peter was not very well during the evening.\n\nHis mother put him to bed, and made some chamomile tea; and she gave a dose of it to Peter!\n\n\"One table-spoonful to be taken at bedtime.\"\n\nBut Flopsy, Mopsy, and Cotton-tail had bread and milk and blackberries for supper."
+      }
+    }
+  },
+  "flow_config": {
+    "initial_node": "warm_up",
+    "nodes": {
+      "warm_up": {
+        "task_messages": [
+          {
+            "role": "system",
+            "content": "Have a friendly conversation with the child start the session, as you would to a child you are seeing again after a week. They should be listening to their audiobook, ask if they had a chance to listen this week. If they have, ask one intelligent and accessible follow-up questions about the story/literary themes. If they haven't, encourage them to start soon, and ask what time in the day would be best for them to listen. This should feel like a natural conversation, not a checklist of questions. Let the conversation flow, but make sure you cover these important points before moving to vocabulary instruction. Call the check_warm_up_progress when you want to know whether you've covered all required elements and are ready to move on to teaching vocabulary words, DO NOT MENTION IN THE CHAT THAT YOU ARE CHECKING ANYTHING OR YOU WILL BE FIRED.."
+          }
+        ],
+        "functions": [
+          {
+            "type": "function",
+            "function": {
+              "name": "check_warm_up_progress",
+              "description": "Check if all required warm-up elements have been covered",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "friendly_greeting_done": {
+                    "type": "boolean",
+                    "description": "Whether the model engaged in friendly conversation to start"
+                  },
+                  "asked_about_audiobook": {
+                    "type": "boolean",
+                    "description": "Whether the model asked the child about the audiobook"
+                  },
+                  "followed_up_appropriately": {
+                    "type": "boolean",
+                    "description": "Whether the model asked appropriate follow-up questions based on child's response"
+                  },
+                  "has_listened_to_book": {
+                    "type": "boolean",
+                    "description": "Whether the child has listened to their audiobook (for state checking)"
+                  }
+                },
+                "required": [
+                  "friendly_greeting_done",
+                  "asked_about_audiobook",
+                  "followed_up_appropriately",
+                  "has_listened_to_book"
+                ]
+              },
+              "transition_callback": "general_transition_callback"
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_reading_context",
+              "description": "Get the reading context for the vocabulary words",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "variable_name": {
+                    "type": "string",
+                    "description": "The name of the session variable to retrieve",
+                    "enum": [
+                      "reading_context"
+                    ]
+                  }
+                },
+                "required": [
+                  "variable_name"
+                ]
+              },
+              "handler": "get_session_variable_handler"
+            }
+          }
+        ],
+        "role_messages": [
+          {
+            "role": "system",
+            "content": "You are a supportive and engaging tutor conducting a one-on-one remote session with a 3rd or 4th grader. You provide scaffolded instructional support. Use animations when appropriate, such as congratulating a user, but only one at a time, these are available tools to you. Do not mention anything relating to checking about whether we are ready to move on to the next section or anything related. Keep your responses very brief. DO NOT USE EMOJIS OR SPECIAL CHARACTERS AT ALL IN YOUR RESPONSES, otherwise you will be fired! Allow the child to respond, keep the things you say very short and simple. Talk naturally and conversationally, as if you are a real person on a video call, not a robot trained to perfection. You need to steer the conversation, covering all required elements, getting sidetracked is fine but every statement needs to progress the conversation."
+          }
+        ]
+      },
+      "word3": {
+        "task_messages": [
+          {
+            "role": "system",
+            "content": "You are now guiding the child through learning the first vocabulary word. Ensure the following steps are completed, but importantly, maintain the conversation flow and be a natural part of the discussion: From the vocab list (you can use SILENTLY use get_vocab_words function), find one word the child doesn't know. Don't say you have a list. Start with the first word and ask: 'Do you know what [word] means?' If they correctly explain it, acknowledge their understanding and try the next word. If they can't explain it or are incorrect, select that word for the following steps. DO NOT REPEAT THE FOLLOWING STEPS, just make sure you cover them in a natural way, or you will be fired. First, Define the vocab word in simple, child-friendly terms. Then, Ask the child for understanding within the context of the reading. For example, you may ask if they can think of something marvelous in Matilda? Wait for their response and follow up appropriately. After, Ask for understanding/definition in broader context or general usage, such as 'What is marvelous in your own life? Wait for their response and follow up appropriately. Finally, Ask the child to use the word in a totally new sentence and provide specific feedback and advice, if necessary. Keep the conversation as if you were speaking to a child, without emojis or robotic language, or you will be fired. Only call the check_vocabulary_progress function when you've completed all required teaching elements for this word and are ready to move to the second word"
+          }
+        ],
+        "functions": [
+          {
+            "type": "function",
+            "function": {
+              "name": "check_word3_progress",
+              "description": "Check progress through vocabulary instruction for both words",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "selected_unknown_word": {
+                    "type": "boolean",
+                    "description": "Whether the model successfully selected a vocabulary word the child does not know, as verifed by the child."
+                  },
+                  "defined_simply": {
+                    "type": "boolean",
+                    "description": "Whether the model defined the word in simple terms."
+                  },
+                  "asked_book_context_understanding": {
+                    "type": "boolean",
+                    "description": "Whether the model asked for understanding within the context of the book"
+                  },
+                  "asked_broader_context_understanding": {
+                    "type": "boolean",
+                    "description": "Whether the model asked for understanding in broader context or general usage"
+                  },
+                  "asked_for_new_sentence": {
+                    "type": "boolean",
+                    "description": "Whether the model asked the child to use the word in a totally new sentence"
+                  },
+                  "vocab_words_known": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "List of vocab words the model asked about and child already knew and could provide accurate descriptions of."
+                  }
+                },
+                "required": [
+                  "selected_unknown_word",
+                  "defined_simply",
+                  "asked_book_context_understanding",
+                  "asked_broader_context_understanding",
+                  "asked_for_new_sentence",
+                  "vocab_words_known"
+                ]
+              },
+              "transition_callback": "general_transition_callback"
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_reading_context",
+              "description": "Get the reading context for the vocabulary words",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "variable_name": {
+                    "type": "string",
+                    "description": "The name of the session variable to retrieve",
+                    "enum": [
+                      "reading_context"
+                    ]
+                  }
+                },
+                "required": [
+                  "variable_name"
+                ]
+              },
+              "handler": "get_session_variable_handler"
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_vocab_words",
+              "description": "Get the list of vocabulary words for the session",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "variable_name": {
+                    "type": "string",
+                    "description": "The name of the session variable to retrieve",
+                    "enum": [
+                      "vocab_words"
+                    ]
+                  }
+                },
+                "required": [
+                  "variable_name"
+                ]
+              },
+              "handler": "get_session_variable_handler"
+            }
+          }
+        ]
+      },
+      "word2": {
+        "task_messages": [
+          {
+            "role": "system",
+            "content": "Tell the child that we're now going to learn some new vocabulary. You are now guiding the child through learning the second vocabulary word. Ensure the following steps are completed, but importantly, maintain the conversation flow and be a natural part of the discussion: From the vocab list (you can again SILENTLY use get_vocab_words function) find one word the child doesn't know. Don't say you have a list. Start with the first word and ask: 'Do you know what [word] means?' If they correctly explain it, acknowledge their understanding and try the next word. If they can't explain it or are incorrect, select that word for the following steps. DO NOT REPEAT THE FOLLOWING STEPS, just make sure you cover them in a natural way, or you will be fired. First, Define the vocab word in simple, child-friendly terms. Then, Ask the child for understanding within the context of the reading. For example, you may ask if they can think of something marvelous in Matilda? Wait for their response and follow up appropriately. After, Ask for understanding/definition in broader context or general usage, such as 'What is marvelous in your own life?' Wait for their response and follow up appropriately. Finally, Ask the child to use the word in a totally new sentence and provide specific feedback and advice, if necessary. Keep the conversation as if you were speaking to a child, without emojis or robotic language, or you will be fired. Only call the check_vocabulary_progress/vocabulary_instruction_schema function when you've completed all required teaching elements for this word and are ready to move to the review phase."
+          }
+        ],
+        "functions": [
+          {
+            "type": "function",
+            "function": {
+              "name": "check_word2_progress",
+              "description": "Check progress through vocabulary instruction for both words",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "selected_unknown_word": {
+                    "type": "boolean",
+                    "description": "Whether the model successfully selected a vocabulary word the child does not know, as verifed by the child."
+                  },
+                  "defined_simply": {
+                    "type": "boolean",
+                    "description": "Whether the model defined the word in simple terms."
+                  },
+                  "asked_book_context_understanding": {
+                    "type": "boolean",
+                    "description": "Whether the model asked for understanding within the context of the book"
+                  },
+                  "asked_broader_context_understanding": {
+                    "type": "boolean",
+                    "description": "Whether the model asked for understanding in broader context or general usage"
+                  },
+                  "asked_for_new_sentence": {
+                    "type": "boolean",
+                    "description": "Whether the model asked the child to use the word in a totally new sentence"
+                  },
+                  "vocab_words_known": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "List of vocab words the model asked about and child already knew and could provide accurate descriptions of."
+                  }
+                },
+                "required": [
+                  "selected_unknown_word",
+                  "defined_simply",
+                  "asked_book_context_understanding",
+                  "asked_broader_context_understanding",
+                  "asked_for_new_sentence",
+                  "vocab_words_known"
+                ]
+              },
+              "transition_callback": "general_transition_callback"
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_reading_context",
+              "description": "Get the reading context for the vocabulary words",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "variable_name": {
+                    "type": "string",
+                    "description": "The name of the session variable to retrieve",
+                    "enum": [
+                      "reading_context"
+                    ]
+                  }
+                },
+                "required": [
+                  "variable_name"
+                ]
+              },
+              "handler": "get_session_variable_handler"
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_vocab_words",
+              "description": "Get the list of vocabulary words for the session",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "variable_name": {
+                    "type": "string",
+                    "description": "The name of the session variable to retrieve",
+                    "enum": [
+                      "vocab_words"
+                    ]
+                  }
+                },
+                "required": [
+                  "variable_name"
+                ]
+              },
+              "handler": "get_session_variable_handler"
+            }
+          }
+        ]
+      },
+      "word1_review": {
+        "task_messages": [
+          {
+            "role": "system",
+            "content": "Now review and recap the first vocab word. 1. Ask the child to define the word again in their own words. 2. Ask them to use the word in a new sentence without any help or prompting. 3. Provide the formal definition one more time. Make this feel like a natural conversation while ensuring you cover all these elements for both words. Call the check_review_progress function after finishing the review of each word."
+          }
+        ],
+        "functions": [
+          {
+            "type": "function",
+            "function": {
+              "name": "check_word1_review_progress",
+              "description": "Check progress through review and recap of both words",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "asked_for_definition": {
+                    "type": "boolean",
+                    "description": "Whether the model asked the child to define the word again"
+                  },
+                  "asked_for_sentence": {
+                    "type": "boolean",
+                    "description": "Whether the model asked for a new sentence without prompting"
+                  },
+                  "provided_formal_definition": {
+                    "type": "boolean",
+                    "description": "Whether the model provided the formal definition again"
+                  },
+                  "current_word_number": {
+                    "type": "integer",
+                    "enum": [
+                      1,
+                      2
+                    ],
+                    "description": "Which vocabulary word is currently being reviewed (1 or 2)"
+                  }
+                },
+                "required": [
+                  "asked_for_definition",
+                  "asked_for_sentence",
+                  "provided_formal_definition",
+                  "current_word_number"
+                ]
+              },
+              "transition_callback": "general_transition_callback"
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_reading_context",
+              "description": "Get the reading context for the vocabulary words",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "variable_name": {
+                    "type": "string",
+                    "description": "The name of the session variable to retrieve",
+                    "enum": [
+                      "reading_context"
+                    ]
+                  }
+                },
+                "required": [
+                  "variable_name"
+                ]
+              },
+              "handler": "get_session_variable_handler"
+            }
+          }
+        ]
+      },
+      "word2_review": {
+        "task_messages": [
+          {
+            "role": "system",
+            "content": "Now review and recap the second vocab word. 1. Ask the child to define the word again in their own words. 2. Ask them to use the word in a new sentence without any help or prompting. 3. Provide the formal definition one more time. Make this feel like a natural conversation while ensuring you cover all these elements for both words. Call the check_review_progress function after finishing the review of each word."
+          }
+        ],
+        "functions": [
+          {
+            "type": "function",
+            "function": {
+              "name": "check_word2_review_progress",
+              "description": "Check progress through review and recap of both words",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "asked_for_definition": {
+                    "type": "boolean",
+                    "description": "Whether the model asked the child to define the word again"
+                  },
+                  "asked_for_sentence": {
+                    "type": "boolean",
+                    "description": "Whether the model asked for a new sentence without prompting"
+                  },
+                  "provided_formal_definition": {
+                    "type": "boolean",
+                    "description": "Whether the model provided the formal definition again"
+                  },
+                  "current_word_number": {
+                    "type": "integer",
+                    "enum": [
+                      1,
+                      2
+                    ],
+                    "description": "Which vocabulary word is currently being reviewed (1 or 2)"
+                  }
+                },
+                "required": [
+                  "asked_for_definition",
+                  "asked_for_sentence",
+                  "provided_formal_definition",
+                  "current_word_number"
+                ]
+              },
+              "transition_callback": "general_transition_callback"
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_reading_context",
+              "description": "Get the reading context for the vocabulary words",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "variable_name": {
+                    "type": "string",
+                    "description": "The name of the session variable to retrieve",
+                    "enum": [
+                      "reading_context"
+                    ]
+                  }
+                },
+                "required": [
+                  "variable_name"
+                ]
+              },
+              "handler": "get_session_variable_handler"
+            }
+          }
+        ]
+      },
+      "closing": {
+        "task_messages": [
+          {
+            "role": "system",
+            "content": "Close the session by: 1. Praising the child for their hard work learning the new vocabulary words. 2. Encouraging them to continue listening to their audiobook. 3. Suggesting they try to notice these new words in their reading or use them in conversations. 4. Briefly summarizing what they learned today. Keep this friendly and encouraging! Only call the check_closing_progress function when you've covered all the closing elements and are ready to end the session completely."
+          }
+        ],
+        "functions": [
+          {
+            "type": "function",
+            "function": {
+              "name": "check_closing_progress",
+              "description": "Check completion of closing elements",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "praised_child": {
+                    "type": "boolean",
+                    "description": "Whether the model praised the child for their work"
+                  },
+                  "encouraged_continued_reading": {
+                    "type": "boolean",
+                    "description": "Whether the model encouraged continued listening to the audiobook"
+                  },
+                  "suggested_word_usage": {
+                    "type": "boolean",
+                    "description": "Whether the model suggested noticing or using the words"
+                  },
+                  "summarized_learning": {
+                    "type": "boolean",
+                    "description": "Whether the model summarized what was learned"
+                  }
+                },
+                "required": [
+                  "praised_child",
+                  "encouraged_continued_reading",
+                  "suggested_word_usage",
+                  "summarized_learning"
+                ]
+              },
+              "transition_callback": "general_transition_callback"
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_reading_context",
+              "description": "Get the reading context for the vocabulary words",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "variable_name": {
+                    "type": "string",
+                    "description": "The name of the session variable to retrieve",
+                    "enum": [
+                      "reading_context"
+                    ]
+                  }
+                },
+                "required": [
+                  "variable_name"
+                ]
+              },
+              "handler": "get_session_variable_handler"
+            }
+          }
+        ],
+        "post_actions": [
+          {
+            "type": "end_conversation"
+          }
+        ]
+      },
+      "end": {
+        "task_messages": [
+          {
+            "role": "system",
+            "content": "The session is now complete. Say goodbye in a friendly and encouraging way."
+          }
+        ],
+        "post_actions": [
+          {
+            "type": "end_conversation"
+          }
+        ]
+      }
+    }
+  }
+}

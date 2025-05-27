@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify, send_file
 import json
 import os
+import traceback
 from datetime import datetime
 
 app = Flask(__name__)
@@ -12,100 +13,50 @@ def index():
 @app.route('/generate_json', methods=['POST'])
 def generate_json():
     try:
+        # Debug incoming data
+        print("Received data:", json.dumps(request.json, indent=2))
+        
         data = request.json
         
         # Check if we're saving to an existing file
         original_filename = data.get("filename", "")
-
-        # Add default avatar configuration for the activity
-        # Format the received data into the new JSON structure with avatar_configuration and flow_config
+        
+        # Extract file name without extension
+        if original_filename and original_filename.endswith('.json'):
+            # If it's a path with directory components, extract just the filename
+            if '/' in original_filename:
+                original_filename = original_filename.split('/')[-1]
+            base_name = original_filename[:-5]
+        else:
+            # Generate new filename with timestamp
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            base_name = f"flow_{timestamp}"
+        
+        # Create the session variables content
+        session_variables = data.get("session_variables", {})
+        
+        # Format the flow data - NO task_variables
         flow_data = {
-            "avatar_configuration": {
-                "title": "Basic Avatar Interaction Configuration",
-                "description": "Schema for configuring a basic avatar interaction activity.",
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                    },
-                    "description": {
-                        "type": "string",
-                    },
-                    "options": {
-                        "type": "object",
-                        "properties": {
-                            "advanced_flows": {
-                                "type": "boolean",
-                                "default": True,
-                                "description": "Set to true to enable advanced flows for this activity."
-                            },
-                            "advanced_flows_config_path": {
-                                "type": "string",
-                                "description": "Path to the advanced flows configuration file.",
-                                "examples": ["./src/server/assets/activities/settings/vocab-avatar.json"]
-                            },
-                            "pipeline_modality": {
-                                "type": "string",
-                                "enum": ["classic", "e2e"],
-                                "default": "classic",
-                                "description": "The modality of the pipeline."
-                            },
-                            "camera_settings": {
-                                "type": "string",
-                                "enum": ["half_body", "headshot", "full_body"],
-                                "default": "half_body",
-                                "description": "Camera framing for the avatar."
-                            },
-                            "avatar_system_prompt": {
-                                "type": "string",
-                                "maxLength": 500,
-                                "default": "You are an interactive robot. Keep your responses brief.",
-                                "description": "Instructions for the avatar's behavior."
-                            },
-                            "avatar_personality_description": {
-                                "type": "string",
-                                "maxLength": 500,
-                                "default": "You are the Riverst avatar, a friendly, helpful robot.",
-                                "description": "Avatar's personality description."
-                            },
-                            "task_description": {
-                                "type": "string",
-                                "maxLength": 500,
-                                "default": "Demonstrate how you can interact with the user.",
-                                "description": "Description of the task or goal."
-                            }
-                        },
-                        "required": [
-                            "advanced_flows",
-                            "advanced_flows_config_path"
-                        ]
-                    }
-                },
-                "required": ["name", "description", "options"]
+            "name": data.get("name", ""),
+            "description": data.get("description", ""),
+            
+            "state_config": {
+                "stages": {},
+                "info": data.get("info", {}),
+                "session_variables": session_variables  # Keep session variables in config
             },
+            
             "flow_config": {
-                "name": data.get("name", ""),
-                "description": data.get("description", ""),
-                
-                "state_config": {
-                    "stages": {},
-                    "info": data.get("info", {}),
-                    "task_variables": data.get("task_variables", {})
-                },
-                
-                "node_config": {
-                    "initial_node": data.get("nodes", [])[0]["node_name"] if data.get("nodes") else "",
-                    "nodes": {}
-                },
-                
-                "schemas": {}
+                "initial_node": data.get("nodes", [])[0]["node_name"] if data.get("nodes") else "",
+                "nodes": {}
             }
         }
         
-        # Process nodes for node_config and stages
+        # Process nodes for flow_config and stages
         nodes = data.get("nodes", [])
         for i, node in enumerate(nodes):
             node_name = node.get("node_name", "")
+            print(f"Processing node {i+1}: {node_name}")
             
             # Create node entry
             node_data = {
@@ -115,8 +66,85 @@ def generate_json():
                         "content": node.get("task_message", "")
                     }
                 ],
-                "functions": [f"{node_name}_schema"],
+                "functions": []
             }
+            
+            # Add the node schema function reference
+            node_data["functions"].append({
+                "type": "function",
+                "function": {
+                    "name": f"check_{node_name}_progress",
+                    "description": node.get("schema_description", "Check progress of checklist items, and update relevant info variables"),
+                    "parameters": {
+                        "type": "object",
+                        "properties": {},
+                        "required": []
+                    },
+                    "transition_callback": "general_transition_callback",  # Use transition_callback 
+                    "handler": "general_handler"
+                }
+            })
+            
+            # Add functions for session variables
+            node_functions = node.get("functions", [])
+            print(f"Node {node_name} has {len(node_functions)} functions")
+            
+            for func in node_functions:
+                print(f"Processing function: {func}")
+                func_name = func.get("name", "")
+                variable = func.get("variable", "")
+                description = func.get("description", f"Get the {variable} for the session")
+                handler = func.get("handler", "get_session_variable_handler")
+                
+                if func_name and variable:
+                    # Check if this is a variable that matches an info field
+                    is_info_field = variable in data.get("info", {})
+                    
+                    # Create parameters object
+                    if handler == "get_info_variable_handler":
+                        parameters = {
+                            "type": "object",
+                            "properties": {
+                                "variable_name": {
+                                    "type": "string",
+                                    "description": "The name of the info variable to retrieve",
+                                    "enum": [variable]
+                                }
+                            },
+                            "required": ["variable_name"]
+                        }
+                    else:
+                        parameters = {
+                            "type": "object",
+                            "properties": {
+                                "variable_name": {
+                                    "type": "string",
+                                    "description": "The name of the session variable to retrieve",
+                                    "enum": [variable]
+                                }
+                            },
+                            "required": ["variable_name"]
+                        }
+                        
+                        # Add current_index parameter for get_session_variable functions only
+                        if handler == "get_session_variable_handler":
+                            parameters["properties"]["current_index"] = {
+                                "type": "integer",
+                                "description": f"The current index of the reading context"
+                            }
+                    
+                    func_data = {
+                        "type": "function",
+                        "function": {
+                            "name": func_name,
+                            "description": description,
+                            "parameters": parameters,
+                            "handler": handler  # handler at same level as parameters
+                        }
+                    }
+                    node_data["functions"].append(func_data)
+                else:
+                    print(f"Warning: Skipping function with missing name or variable: {func}")
                 
             # Add role_message to the initial node only
             if i == 0 and data.get("role_message"):
@@ -127,11 +155,13 @@ def generate_json():
                     }
                 ]
             
-            # Create post_actions for the last node
-            if i == len(nodes) - 1:
-                node_data["post_actions"] = [{"type": "end_conversation"}]
+            # Add pre-actions if specified
+            if "pre_actions" in node:
+                node_data["pre_actions"] = node["pre_actions"]
+            
+            # No post_actions for regular nodes or closing node
                 
-            flow_data["flow_config"]["node_config"]["nodes"][node_name] = node_data
+            flow_data["flow_config"]["nodes"][node_name] = node_data
             
             # Create stage entry with checklist
             checklist = {}
@@ -145,22 +175,16 @@ def generate_json():
                 "checklist_complete_message": node.get("checklist_complete_message", "Great job! Moving on to the next stage.")
             }
             
-            # Add next_stage if not the last node (now in state_config stages)
+            # Add next_stage if not the last node
             if i < len(nodes) - 1:
                 stage_data["next_stage"] = nodes[i + 1]["node_name"]
             else:
                 stage_data["next_stage"] = "end"
                 
-            flow_data["flow_config"]["state_config"]["stages"][node_name] = stage_data
+            flow_data["state_config"]["stages"][node_name] = stage_data
             
-            # Create schema for the node
-            schema = {
-                "name": f"check_{node_name}_progress",
-                "description": node.get("schema_description", f"Check progress for {node_name} stage"),
-                "properties": {},
-                "required": [],
-                "transition_callback": "general_transition_callback"
-            }
+            # Add properties to the schema for this node
+            schema = node_data["functions"][0]["function"]["parameters"]
             
             # Add checklist items to properties
             for checklist_item in node.get("checklist_items", []):
@@ -194,30 +218,19 @@ def generate_json():
                     
                     schema["required"].append(info_field)
             
-            # Special case for review_schema: add current_word_number if node name contains 'review'
-            if 'review' in node_name.lower():
-                if 'current_word_number' not in schema["properties"]:
-                    schema["properties"]["current_word_number"] = {
-                        "type": "integer",
-                        "enum": [1, 2],
-                        "description": "Which vocabulary word is currently being reviewed (1 or 2)"
-                    }
-                
-                if 'current_word_number' not in schema["required"]:
-                    schema["required"].append("current_word_number")
+            # Remove special case for current_word_number in review nodes
             
-            # Add schema to schemas section
-            flow_data["flow_config"]["schemas"][f"{node_name}_schema"] = schema
         
         # Add end node if needed
         if nodes:
-            flow_data["flow_config"]["node_config"]["nodes"]["end"] = {
+            flow_data["flow_config"]["nodes"]["end"] = {
                 "task_messages": [
                     {
                         "role": "system",
                         "content": "The session is now complete. Say goodbye in a friendly and encouraging way."
                     }
                 ],
+                "functions": [],  # Empty functions array for end node
                 "post_actions": [
                     {
                         "type": "end_conversation"
@@ -225,32 +238,37 @@ def generate_json():
                 ]
             }
         
-        # Determine filename
-        if original_filename and original_filename.endswith('.json'):
-            # Use the original filename
-            filename = original_filename
-        else:
-            # Generate new filename with timestamp
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"flow_{timestamp}.json"
+        # Create necessary directories
+        os.makedirs(os.path.join("static", "output", "flows"), exist_ok=True)
+        os.makedirs(os.path.join("static", "output", "session_variables"), exist_ok=True)
         
-        # Ensure output directory exists
-        os.makedirs(os.path.join("static", "output"), exist_ok=True)
+        # Save the flow JSON file
+        flow_filename = f"{base_name}.json"
+        flow_path = os.path.join("static", "output", "flows", flow_filename)
         
-        # Save the JSON file
-        with open(os.path.join("static", "output", filename), 'w') as f:
+        with open(flow_path, 'w') as f:
             json.dump(flow_data, f, indent=2)
         
-        return jsonify({"success": True, "filename": filename})
+        # Always return just the main flow file
+        print(f"JSON file generated successfully: {flow_path}")
+        return jsonify({
+            "success": True, 
+            "filename": f"flows/{flow_filename}"
+        })
     
     except Exception as e:
-        import traceback
-        print("Error generating JSON:", traceback.format_exc())
-        return jsonify({"success": False, "error": str(e)})
+        error_detail = traceback.format_exc()
+        print("Error generating JSON:", error_detail)
+        return jsonify({
+            "success": False, 
+            "error": str(e),
+            "detail": error_detail
+        })
 
-@app.route('/download/<filename>', methods=['GET'])
+@app.route('/download/<path:filename>', methods=['GET'])
 def download(filename):
+    # Handle the new file structure with subdirectories
     return send_file(os.path.join("static", "output", filename), as_attachment=True)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5001)

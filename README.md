@@ -46,7 +46,8 @@ The code has a client-server architecture. You find instructions on how to run t
 - [x] add and structure a bit more avatar creation and voice selection (Fabio)
 - [x] add short term memory (in case of refrash) (Fabio)
 - [x] add session history page (Fabio)
-- [ ] KIVA vocabulary activity (Bruce)
+- [x] KIVA vocabulary activity (Bruce)
+- [ ] Make KIVA vocabulary activity more modular (the story should be ACTUALLY dinamically chosen) (Bruce)
 - [ ] cleaning animations!!!!!!! (Fabio: "I have cleaned them a bit but they are still not good if you play them multiple times..." - for lip sync, the best would be to make the model onnx format)
 
 
