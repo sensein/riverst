@@ -321,19 +321,10 @@
                 </div>
                 
                 <div class="mb-3">
-                    <div class="d-flex align-items-center">
-                        <small class="text-muted me-2">Pre-action:</small>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input pre-action-toggle" type="checkbox" role="switch">
-                            <label class="form-check-label pre-action-toggle-label">Add TTS pre-action</label>
-                        </div>
-                    </div>
-                    <div class="pre-action-container mt-2" style="display: none;">
-                        <div class="input-group input-group-sm">
-                            <span class="input-group-text">TTS Text</span>
-                            <input type="text" class="form-control pre-action-text" placeholder="Hold on a moment...">
-                        </div>
-                        <small class="text-muted">This will be spoken before LLM processing</small>
+                    <label class="form-label">TTS Pre-action <small class="text-muted">(Leave blank for no pre-action)</small></label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">Text to speak</span>
+                        <input type="text" class="form-control pre-action-text" placeholder="Enter text to be spoken before LLM processing...">
                     </div>
                 </div>
             </div>

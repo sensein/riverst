@@ -449,7 +449,8 @@ document.addEventListener('DOMContentLoaded', function () {
         // Process each function in the node
         nodeFunctions.forEach(funcData => {
             // Skip the check_progress function which is automatically added
-            if (funcData.function && funcData.function.transition_callback === "general_transition_callback") return;
+            if (funcData.function && funcData.function.transition_callback === "general_transition_callback" && 
+                funcData.function.handler === "general_handler") return;
 
             if (funcData.function && (funcData.function.handler === "get_session_variable_handler" ||
                 funcData.function.handler === "get_info_variable_handler")) {
@@ -488,13 +489,7 @@ document.addEventListener('DOMContentLoaded', function () {
         nodeNameInput.value = nodeName;
         nodeNameDisplay.textContent = nodeName;
         
-        // Set up pre-action toggle
-        const preActionToggle = nodeElement.querySelector('.pre-action-toggle');
-        const preActionContainer = nodeElement.querySelector('.pre-action-container');
-        
-        preActionToggle.addEventListener('change', function() {
-            preActionContainer.style.display = this.checked ? 'block' : 'none';
-        });
+        // No need for event listeners for pre-action as it's now just a text field
 
         // Set default messages
         const incompleteMessage = nodeElement.querySelector('.node-incomplete-message');
@@ -784,10 +779,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
 
-            // Check if pre-action is enabled
-            const preActionToggle = nodeCard.querySelector('.pre-action-toggle');
-            const preActionText = nodeCard.querySelector('.pre-action-text');
-            
             // Create node object
             const nodeData = {
                 node_name: nodeName,
@@ -800,11 +791,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 checklist_complete_message: completeMessage || `Great job! Moving on to the next stage.`
             };
             
-            // Add pre-action if toggled on
-            if (preActionToggle && preActionToggle.checked && preActionText && preActionText.value.trim()) {
-                nodeData.pre_action = {
-                    text: cleanString(preActionText.value)
-                };
+            // Add pre-action if text is provided
+            const preActionText = nodeCard.querySelector('.pre-action-text');
+            const preActionTextValue = preActionText ? cleanString(preActionText.value) : "";
+            
+            if (preActionTextValue.trim() !== "") {
+                nodeData.pre_actions = [
+                    {
+                        type: "tts_say",
+                        text: preActionTextValue
+                    }
+                ];
             }
 
             // Add functions if there are any

@@ -409,13 +409,9 @@ function createNodeFromConfig(nodeName, node, stage, config) {
     if (node.pre_actions && node.pre_actions.length > 0) {
         const preAction = node.pre_actions[0];
         if (preAction.type === 'tts_say' && preAction.text) {
-            const preActionToggle = nodeEl.querySelector('.pre-action-toggle');
-            const preActionContainer = nodeEl.querySelector('.pre-action-container');
             const preActionText = nodeEl.querySelector('.pre-action-text');
             
-            if (preActionToggle && preActionContainer && preActionText) {
-                preActionToggle.checked = true;
-                preActionContainer.style.display = 'block';
+            if (preActionText) {
                 preActionText.value = preAction.text;
             }
         }
@@ -426,7 +422,8 @@ function createNodeFromConfig(nodeName, node, stage, config) {
     // Look through functions for the one with the transition_callback
     if (node.functions) {
         for (const funcData of node.functions) {
-            if (funcData.function && funcData.function.transition_callback === "general_transition_callback") {
+            if (funcData.function && funcData.function.transition_callback === "general_transition_callback" && 
+                funcData.function.handler === "general_handler") {
                 schemaDesc = funcData.function.description || "";
                 break;
             }
@@ -448,7 +445,8 @@ function createNodeFromConfig(nodeName, node, stage, config) {
     
     if (node.functions) {
         for (const funcData of node.functions) {
-            if (funcData.function && funcData.function.transition_callback === "general_transition_callback") {
+            if (funcData.function && funcData.function.transition_callback === "general_transition_callback" && 
+                funcData.function.handler === "general_handler") {
                 properties = funcData.function.parameters?.properties || {};
                 break;
             }
@@ -605,7 +603,8 @@ function loadNodeFunctions(nodeEl, nodeName, node) {
     // Process each function in the node
     nodeFunctions.forEach(funcData => {
         // Skip the check_progress function which is automatically added
-        if (funcData.function && funcData.function.transition_callback === "general_transition_callback") return;
+        if (funcData.function && funcData.function.transition_callback === "general_transition_callback" && 
+            funcData.function.handler === "general_handler") return;
         
         if (funcData.function && (funcData.function.handler === "get_task_variable_handler" || 
                                  funcData.function.handler === "get_session_variable_handler" ||

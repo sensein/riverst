@@ -80,7 +80,8 @@ def generate_json():
                         "properties": {},
                         "required": []
                     },
-                    "transition_callback": "general_transition_callback"  # Use transition_callback instead of handler
+                    "transition_callback": "general_transition_callback",  # Use transition_callback 
+                    "handler": "general_handler"
                 }
             })
             
@@ -155,13 +156,8 @@ def generate_json():
                 ]
             
             # Add pre-actions if specified
-            if "pre_action" in node and node["pre_action"].get("text"):
-                node_data["pre_actions"] = [
-                    {
-                        "type": "tts_say",
-                        "text": node["pre_action"]["text"]
-                    }
-                ]
+            if "pre_actions" in node:
+                node_data["pre_actions"] = node["pre_actions"]
             
             # No post_actions for regular nodes or closing node
                 
@@ -275,4 +271,4 @@ def download(filename):
     return send_file(os.path.join("static", "output", filename), as_attachment=True)
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5001)
