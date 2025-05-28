@@ -1,5 +1,5 @@
 // src/components/MuteButton.tsx
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRTVIClient } from '@pipecat-ai/client-react'
 import { FloatButton } from 'antd'
 import { AudioOutlined, AudioMutedOutlined } from '@ant-design/icons'
@@ -7,6 +7,13 @@ import { AudioOutlined, AudioMutedOutlined } from '@ant-design/icons'
 export default function MuteButton() {
   const client = useRTVIClient()
   const [isMuted, setIsMuted] = useState(false)
+
+  // Sync with actual status on mount
+  useEffect(() => {
+    if (client) {
+      setIsMuted(!client.isMicEnabled)
+    }
+  }, [client])
 
   const toggleMic = async () => {
     if (!client) return

@@ -1,5 +1,4 @@
-// src/components/CameraButton.tsx
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRTVIClient, useRTVIClientEvent } from '@pipecat-ai/client-react'
 import { FloatButton } from 'antd'
 import { VideoCameraOutlined, VideoCameraAddOutlined } from '@ant-design/icons'
@@ -9,10 +8,18 @@ export default function CameraButton() {
   const client = useRTVIClient()
   const [isCameraOn, setIsCameraOn] = useState(true)
 
+  // Sync with actual status on mount
+  useEffect(() => {
+    if (client) {
+      setIsCameraOn(!!client.isCamEnabled)
+    }
+  }, [client])
+
   const toggleCam = async () => {
     if (!client) return
     let isCamEnabled = client.isCamEnabled
     await client.enableCam(!isCamEnabled)
+    setIsCameraOn(!isCamEnabled) // update local state manually
   }
 
   useRTVIClientEvent(
@@ -41,10 +48,7 @@ export default function CameraButton() {
           : <VideoCameraAddOutlined style={{ color: 'blue' }} />
       }
       type={isCameraOn ? 'primary' : 'default'}
-      style={{
-        right: 150,
-        zIndex: 9999,
-      }}
+      style={{ right: 150, zIndex: 9999 }}
       onClick={toggleCam}
     />
   )

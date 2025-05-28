@@ -221,7 +221,8 @@ import React, {
   
     return (
       <div className="app">
-        <FloatGroup />
+        <FloatGroup 
+          videoFlag={videoFlag} />
         <BotVideo
           cameraType={cameraType}
           setCameraType={setCameraType}

@@ -10,9 +10,11 @@ import './FloatGroup.css'
 import { useRTVIClientTransportState } from '@pipecat-ai/client-react'
 
 
-interface FloatGroupProps {}
+interface FloatGroupProps {
+  videoFlag: boolean
+}
 
-const FloatGroup: React.FC<FloatGroupProps> = () => {
+const FloatGroup: React.FC<FloatGroupProps> = ({ videoFlag }) => {
   const transportState = useRTVIClientTransportState()
   const isConnected = transportState === 'connected'
 
@@ -29,7 +31,7 @@ const FloatGroup: React.FC<FloatGroupProps> = () => {
       }
     >
       <DisconnectButton />
-      <CameraButton />
+      { videoFlag && <CameraButton /> }
       <MuteButton />
 
     </FloatButton.Group>
