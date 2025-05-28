@@ -30,23 +30,25 @@ const SettingsForm = ({ schema, onSubmit }) => {
     return acc;
   }, {});
 
-  const pipelineModality = Form.useWatch(['options', 'pipeline_modality'], form) || 'e2e';
+  let pipelineModality = Form.useWatch(['options', 'pipeline_modality'], form) || 'classic';
 
   // Clear fields when pipeline_modality changes
   useEffect(() => {
     if (!form) return;
 
     const currentValues = form.getFieldValue('options') || {};
+
+    console.log('currentValues:', currentValues);
     const updates = { ...currentValues };
 
     // Reset incompatible fields when switching modality
-    if (pipelineModality === 'classic') {
+    if (updates['pipelineModality'] === 'classic') {
       if (!['openai', 'llama3.2'].includes(updates.llm_type)) {
         updates.llm_type = 'openai'; // default to a valid option
         updates.stt_type = 'openai'; // default to a valid option
         updates.tts_type = 'openai'; // default to a valid option
       }
-    } else if (pipelineModality === 'e2e') {
+    } else if (updates['pipelineModality'] === 'e2e') {
       if (!['openai_realtime_beta', 'gemini'].includes(updates.llm_type)) {
         updates.llm_type = 'openai_realtime_beta';
         updates.stt_type = undefined;
