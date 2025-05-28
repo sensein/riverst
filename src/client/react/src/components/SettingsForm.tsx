@@ -1,5 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Form, Input, Select, Switch, Button, Typography, Checkbox, Tooltip } from 'antd';
+import {
+  Form,
+  Input,
+  Select,
+  Switch,
+  Button,
+  Typography,
+  Checkbox,
+  Tooltip,
+  Collapse
+} from 'antd';
 import { InfoCircleOutlined, CloseOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import validator from '@rjsf/validator-ajv8';
@@ -8,14 +18,13 @@ import axios from 'axios';
 
 const { Title, Paragraph } = Typography;
 const { TextArea } = Input;
+const { Panel } = Collapse;
 
 const SettingsForm = ({ schema, onSubmit }) => {
   const transportState = useRTVIClientTransportState();
   const [form] = Form.useForm();
   const [isValid, setIsValid] = useState(false);
-  const [dynamicEnums, setDynamicEnums] = useState({
-    books: []
-  });
+  const [dynamicEnums, setDynamicEnums] = useState({ books: [] });
 
   const options = schema?.properties?.options?.properties || {};
   const requiredFields = schema?.properties?.options?.required || [];
@@ -30,23 +39,18 @@ const SettingsForm = ({ schema, onSubmit }) => {
     return acc;
   }, {});
 
-  let pipelineModality = Form.useWatch(['options', 'pipeline_modality'], form) || 'classic';
+  const pipelineModality = Form.useWatch(['options', 'pipeline_modality'], form) || 'classic';
 
-  // Clear fields when pipeline_modality changes
   useEffect(() => {
     if (!form) return;
-
     const currentValues = form.getFieldValue('options') || {};
-
-    console.log('currentValues:', currentValues);
     const updates = { ...currentValues };
 
-    // Reset incompatible fields when switching modality
     if (updates['pipelineModality'] === 'classic') {
       if (!['openai', 'llama3.2'].includes(updates.llm_type)) {
-        updates.llm_type = 'openai'; // default to a valid option
-        updates.stt_type = 'openai'; // default to a valid option
-        updates.tts_type = 'openai'; // default to a valid option
+        updates.llm_type = 'openai';
+        updates.stt_type = 'openai';
+        updates.tts_type = 'openai';
       }
     } else if (updates['pipelineModality'] === 'e2e') {
       if (!['openai_realtime_beta', 'gemini'].includes(updates.llm_type)) {
@@ -78,11 +82,7 @@ const SettingsForm = ({ schema, onSubmit }) => {
 
   const renderFormItem = (key, config) => {
     if (config.const !== undefined) return null;
-
-    // Conditional logic
-    // if (key === 'user_transcript' && pipelineModality !== 'classic') return null;
     if (['stt_type', 'tts_type'].includes(key) && pipelineModality !== 'classic') return null;
-
     if (key === 'llm_type') {
       const filteredEnums =
         pipelineModality === 'classic'
@@ -92,12 +92,8 @@ const SettingsForm = ({ schema, onSubmit }) => {
     }
 
     const rules = [];
-    if (requiredFields.includes(key)) {
-      rules.push({ required: true, message: `${key} is required` });
-    }
-    if (config.maxLength) {
-      rules.push({ max: config.maxLength });
-    }
+    if (requiredFields.includes(key)) rules.push({ required: true, message: `${key} is required` });
+    if (config.maxLength) rules.push({ max: config.maxLength });
 
     const label = (config.title || key.replace(/_/g, ' ')).toUpperCase();
     const namePath = ['options', key];
@@ -114,15 +110,6 @@ const SettingsForm = ({ schema, onSubmit }) => {
           },
         });
       }
-
-      return (
-        <Form.Item key={key} name={namePath} label={labelWithTooltip} rules={rules}>
-          <Checkbox.Group options={config.items.enum} />
-        </Form.Item>
-      );
-    }
-
-    if (config.type === 'array' && config.items?.enum) {
       return (
         <Form.Item key={key} name={namePath} label={labelWithTooltip} rules={rules}>
           <Checkbox.Group options={config.items.enum} />
@@ -131,7 +118,6 @@ const SettingsForm = ({ schema, onSubmit }) => {
     }
 
     if ((config.enum || config.dynamicEnum) && config.type !== 'array') {
-      // Handle dynamic enums (e.g., books dropdown)
       if (config.dynamicEnum === 'books') {
         return (
           <Form.Item key={key} name={namePath} label={labelWithTooltip} rules={rules}>
@@ -145,8 +131,7 @@ const SettingsForm = ({ schema, onSubmit }) => {
           </Form.Item>
         );
       }
-      
-      // Regular static enums
+
       return (
         <Form.Item key={key} name={namePath} label={labelWithTooltip} rules={rules}>
           <Select>
@@ -185,7 +170,6 @@ const SettingsForm = ({ schema, onSubmit }) => {
     }
   };
 
-  // Fetch dynamic enums (books list)
   useEffect(() => {
     const fetchBooks = async () => {
       try {
@@ -198,7 +182,7 @@ const SettingsForm = ({ schema, onSubmit }) => {
         console.error('Failed to fetch books:', error);
       }
     };
-    
+
     fetchBooks();
     validateSchema();
   }, []);
@@ -210,19 +194,17 @@ const SettingsForm = ({ schema, onSubmit }) => {
       </Link>
 
       <div style={{ marginBottom: 24 }}>
-        <Title level={3} style={{ marginBottom: 4 }}>
-          {schemaName}
-        </Title>
-        <Paragraph type="secondary" style={{ margin: 0 }}>
-          {schemaDescription}
-        </Paragraph>
+        <Title level={3} style={{ marginBottom: 4 }}>{schemaName}</Title>
+        <Paragraph type="secondary" style={{ margin: 0 }}>{schemaDescription}</Paragraph>
       </div>
 
       <Form
         form={form}
         layout="vertical"
         initialValues={{ options: initialValues }}
-        onFinish={({ options }) => onSubmit(options)}
+        onFinish={({ options }) =>
+          onSubmit({ ...options })
+        }
         onFieldsChange={validateSchema}
       >
         {Object.entries(options).map(([key, config]) =>
@@ -238,7 +220,7 @@ const SettingsForm = ({ schema, onSubmit }) => {
               const values = await form.getFieldsValue(true);
               const result = validator.validateFormData(schema, values);
               if (result.errors.length > 0) return;
-              onSubmit(values.options);
+              onSubmit({ ...values.options });
             }}
           >
             Start the session

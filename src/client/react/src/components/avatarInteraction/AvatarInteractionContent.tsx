@@ -14,7 +14,7 @@ import React, {
   import { RTVIEvent, Participant } from '@pipecat-ai/client-js'
   
   // assuming you’ve moved these out into their own files:
-  import DisconnectButton from './DisconnectButton'
+  import FloatGroup from './FloatGroup'
   import BotVideo from './BotVideo'
   import SubtitleOverlay from './SubtitleOverlay'
   
@@ -221,7 +221,7 @@ import React, {
   
     return (
       <div className="app">
-        <DisconnectButton />
+        <FloatGroup />
         <BotVideo
           cameraType={cameraType}
           setCameraType={setCameraType}
