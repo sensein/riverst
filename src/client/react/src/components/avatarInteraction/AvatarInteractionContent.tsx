@@ -53,7 +53,7 @@ import React, {
       { id: number; text: string; speaker: 'user' | 'bot' }[]
     >([])
     const subtitleIdRef = useRef(0)
-    const SUBTITLE_DURATION_MS = 5000
+    const SUBTITLE_DURATION_MS = 6000
   
     // ---- viseme buffering logic ----
     const visemeTimer = useRef<NodeJS.Timeout | null>(null)

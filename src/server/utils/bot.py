@@ -23,6 +23,7 @@ from pipecat.adapters.schemas.tools_schema import ToolsSchema
 from pipecat.transports.base_transport import TransportParams
 from pipecat.transports.network.small_webrtc import SmallWebRTCTransport
 from pipecat.frames.frames import EndFrame
+from pipecat.services.llm_service import FunctionCallParams
 
 import asyncio
 from .video_processor import VideoProcessor
@@ -122,15 +123,16 @@ async def run_bot(
             return wrapper
         
         # Define animation trigger function callable by LLM
-        async def handle_animation(function_name, tool_call_id, args, llm, context, result_callback):
-            animation_id = args.get("animation_id")
+        async def handle_animation(params: FunctionCallParams):
+            animation_id = params.arguments["animation_id"]
+            print(f"Triggering animation: {animation_id}")
             if animation_id:
                 frame = RTVIServerMessageFrame(data={"type": "animation-event", "payload": {"animation_id": animation_id}})
                 await rtvi.push_frame(frame)
-            await result_callback({"status": "animation_triggered"})
+            await params.result_callback({"status": "animation_triggered"})
 
         # Register wrapped functions
-        llm.register_function("trigger_animation", function_call_debug_wrapper(handle_animation))
+        llm.register_function("trigger_animation", handle_animation)
         
 
         async def handle_user_idle(_: UserIdleProcessor, retry_count: int) -> bool:

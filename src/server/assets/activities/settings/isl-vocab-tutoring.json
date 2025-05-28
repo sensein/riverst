@@ -1,15 +1,15 @@
 {
-  "title": "Basic Avatar Interaction Configuration",
-  "description": "Schema for configuring a basic avatar interaction activity.",
+  "title": "Italian as a second language for Americans Vocab Tutoring Configuration",
+  "description": "Schema for configuring a ISL vocab tutoring activity.",
   "type": "object",
   "properties": {
     "name": {
       "type": "string",
-      "const": "basic-avatar-interaction"
+      "const": "isl-vocab-tutoring"
     },
     "description": {
       "type": "string",
-      "const": "Basic avatar interaction activity."
+      "const": "Italian as a Second Language Vocab Tutoring for Americans."
     },
     "options": {
       "type": "object",
@@ -24,25 +24,15 @@
           "type": "string",
           "enum": ["classic", "e2e"],
           "default": "e2e",
+          "const": "e2e",
           "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline."
         },
         "llm_type": {
           "type": "string",
-          "enum": ["openai", "openai_realtime_beta", "gemini", "llama3.2"],
+          "enum": ["openai_realtime_beta", "gemini"],
           "default": "openai_realtime_beta",
+          "const": "openai_realtime_beta",
           "description": "The LLM service to use."
-        },
-        "stt_type": {
-          "type": "string",
-          "enum": ["whisper", "openai"],
-          "default": "openai",
-          "description": "The STT service to use."
-        },
-        "tts_type": {
-          "type": "string",
-          "enum": ["openai", "piper"],
-          "default": "openai",
-          "description": "The TTS service to use."
         },
         "body_animations": {
           "type": "array",
@@ -51,36 +41,43 @@
             "enum": ["wave", "dance", "i_dont_know"]
           },
           "default": ["wave", "dance", "i_dont_know"],
+          "const": ["wave", "dance", "i_dont_know"],
           "description": "List of body animations that the avatar can perform."
         },
         "camera_settings": {
           "type": "string",
           "enum": ["half_body", "headshot", "full_body"],
           "default": "half_body",
+          "const": "half_body",
           "description": "Select the camera framing used for the avatar during the interaction."
         },
         "avatar_system_prompt": {
           "type": "string",
           "maxLength": 500,
           "default": "You are an interactive robot. Keep your responses brief (one or two sentences at most). Your output will be converted to audio so don't include special characters in your answers. Respond to what the user said in a creative and helpful way. Start the conversation by introducing yourself and trigger the 'wave' animation.",
+          "const": "You are an interactive robot. Keep your responses brief (one or two sentences at most). Your output will be converted to audio so don't include special characters in your answers. Respond to what the user said in a creative and helpful way. Start the conversation by introducing yourself and trigger the 'wave' animation.",
           "description": "Instructions defining how the avatar should behave during the interaction."
         },
         "avatar_personality_description": {
           "type": "string",
           "maxLength": 500,
           "default": "You are the Riverst avatar, a friendly, helpful robot.",
+          "const": "You are the Riverst avatar, a friendly, helpful robot.",
           "description": "Text describing the avatar’s personality and role."
         },
         "task_description": {
           "type": "string",
           "maxLength": 500,
-          "default": "Demonstrate how you can interact with the user in a short conversation. Assist the user with their requests.",
+          "default": "Demonstrate how you can teach the user some basic vocabulary in Italian in a short conversation. Provide them with definition, translation, examples and interactively ask them to repeat the words and use them in a sentence.",
+          "const": "Demonstrate how you can teach the user some basic vocabulary in Italian in a short conversation. Provide them with definition, translation, examples and interactively ask them to repeat the words and use them in a sentence.",
           "description": "Free-text description of the task or goal of the interaction."
         },
         "user_description": {
           "type": "string",
           "maxLength": 500,
-          "description": "Optional free-text field to describe the user."
+          "description": "Optional free-text field to describe the user.",
+          "default": "The user is a native American speaker.",
+          "const": "The user is a native American speaker."
         },
         "languages": {
           "type": "array",
@@ -88,12 +85,13 @@
             "type": "string",
             "enum": ["english", "italian", "spanish", "german"]
           },
-          "default": [],
+          "default": ["english", "italian"],
+          "const": ["english", "italian"],
           "description": "List of languages supported by the avatar. If empty, the avatar supports all languages in the intersection of the languages supported by the STT, LLM and TTS services."
         },
         "video_flag": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Enable or disable video processing during the session."
         },
         "video_out_width": {
@@ -117,6 +115,7 @@
         "user_transcript": {
           "type": "boolean",
           "default": false,
+          "const": false,
           "description": "Enable showing the transcript of the user’s speech."
         },
         "bot_transcript": {

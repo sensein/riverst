@@ -30,7 +30,7 @@ const SettingsForm = ({ schema, onSubmit }) => {
     return acc;
   }, {});
 
-  const pipelineModality = Form.useWatch(['options', 'pipeline_modality'], form) || 'classic';
+  const pipelineModality = Form.useWatch(['options', 'pipeline_modality'], form) || 'e2e';
 
   // Clear fields when pipeline_modality changes
   useEffect(() => {

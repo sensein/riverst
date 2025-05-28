@@ -30,9 +30,9 @@ ALLOWED_LLM = {
 }
 
 VALID_ANIMATIONS = [
-    {"id": "wave", "description": "When the user joins the room, say hi and (sometimes) wave with your hand."},
-    {"id": "dance", "description": "When you want to congratulate, sometimes you can dance."},
-    {"id": "i_dont_know", "description": "When you don’t know something, you can do the 'I don’t know' animation."},
+    {"id": "wave", "description": "When you welcome the user or greet them or introduce yourself, you always wave with your hand (animation)."},
+    {"id": "dance", "description": "When you congratulate or appreciate the user or are happy, you dance (animation)."},
+    {"id": "i_dont_know", "description": "When you don’t know something, you do the 'I don’t know' animation."},
 ]
 
 @dataclass

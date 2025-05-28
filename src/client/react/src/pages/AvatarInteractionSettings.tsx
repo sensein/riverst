@@ -26,6 +26,7 @@ export default function AvatarInteractionSettings() {
 
 
   const onSubmit = async (values: any) => {
+    console.log('Form values:', values);
     try {
       // 1. Get avatar object from localStorage or server
       let avatar: any = null;

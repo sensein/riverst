@@ -33,7 +33,17 @@
         "route": "/avatar-interaction-settings",
         "disabled": false,
         "settings_options_filepath": "activities/settings/basic-avatar-interaction.json"
+      },
+      {
+        "title": "Demo ready to go",
+        "images": ["/figures/avatar_interaction_white.svg",
+                   "/figures/avatar_interaction_black.svg"],
+        "description": "See how easy it is to get started.",
+        "route": "/avatar-interaction-settings",
+        "disabled": false,
+        "settings_options_filepath": "activities/settings/basic-avatar-demo.json"
       }
+
     ]
   },
   {
@@ -55,7 +65,26 @@
         "description": "Follow along with visual cues that support reading, not just listening.",
         "route": "/read-book",
         "disabled": true
+      },
+      {
+        "title": "English as a second language for Italians",
+        "images": ["/figures/avatar_interaction_black.svg", 
+                   "/figures/avatar_interaction_white.svg"],
+        "description": "Discover new English words through fun, guided play with your avatar.",
+        "route": "/avatar-interaction-settings",
+        "disabled": false,
+        "settings_options_filepath": "activities/settings/esl-vocab-tutoring.json"
+      },
+      {
+        "title": "Italian as a second language for Americans",
+        "images": ["/figures/avatar_interaction_black.svg", 
+                   "/figures/avatar_interaction_white.svg"],
+        "description": "Discover new Italian words through fun, guided play with your avatar.",
+        "route": "/avatar-interaction-settings",
+        "disabled": false,
+        "settings_options_filepath": "activities/settings/isl-vocab-tutoring.json"
       }
+
     ]
   }
 ]
