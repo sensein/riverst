@@ -1,6 +1,10 @@
 # riverst
 Just the coolest multimodal avatar interface 
 
+## Introduction
+Riverst is a platform for interactive interaction and data collection. It enables the easy creation of multimodal experiences—such as conversational agents, educational games, health-related assessment and treatment—and supports automatic behavioral analysis of the collected data. 
+
+
 ## Project Structure
 
 ```
