@@ -1,0 +1,4 @@
+- https://www.sesame.com/research/crossing_the_uncanny_valley_of_voice#demo
+- https://www.linkedin.com/posts/andrewyng_the-voice-stack-is-improving-rapidly-systems-activity-7300912040959778818-B_hc/
+- https://www.linkedin.com/feed/update/urn:li:activity:7306294278815633408/
+- https://github.com/Berkeley-Speech-Group/Speech-Articulatory-Coding
