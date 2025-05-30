@@ -28,6 +28,7 @@ app = FastAPI()
 
 BASE_SESSION_DIR = Path(__file__).parent
 
+(BASE_SESSION_DIR / "sessions").mkdir(exist_ok=True)
 app.mount("/sessions", StaticFiles(directory=BASE_SESSION_DIR / "sessions"), name="sessions")
 
 # Enable CORS for all origins
