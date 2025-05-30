@@ -3,7 +3,7 @@ fastapi[all]
 uvicorn
 aiortc
 opencv-python
-pipecat-ai[google,silero,webrtc,whisper] @ git+https://github.com/pipecat-ai/pipecat
+pipecat-ai[google,silero,webrtc,whisper] @ git+https://github.com/pipecat-ai/pipecat@0.0.68
 pipecat-ai-small-webrtc-prebuilt
 aiofiles
 noisereduce
