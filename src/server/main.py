@@ -270,8 +270,21 @@ async def list_sessions() -> JSONResponse:
     session_root = BASE_SESSION_DIR / "sessions"
     if not session_root.is_dir():
         return JSONResponse(content=[], status_code=200)
-    session_ids = [p.name for p in session_root.iterdir() if p.is_dir()]
-    return JSONResponse(content=session_ids)
+    valid_session_ids = []
+    for session_dir in session_root.iterdir():
+        if not session_dir.is_dir():
+            continue
+        audio_dir = session_dir / "audios"
+        json_dir = session_dir / "json"
+        if not (audio_dir.is_dir() and json_dir.is_dir()):
+            continue
+        wav_files = list(audio_dir.glob("*.wav"))
+        if not wav_files:
+            continue
+        all_json_exist = all((json_dir / (wav_file.stem + ".json")).exists() for wav_file in wav_files)
+        if all_json_exist:
+            valid_session_ids.append(session_dir.name)
+    return JSONResponse(content=valid_session_ids)
 
 @app.get("/api/session/{session_id}")
 async def get_session_data(session_id: str) -> JSONResponse:

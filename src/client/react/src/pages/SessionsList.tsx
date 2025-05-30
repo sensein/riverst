@@ -24,10 +24,27 @@ export default function SessionsList() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch("http://localhost:7860/api/sessions")
-      .then((res) => res.json())
-      .then(setSessions)
-      .finally(() => setLoading(false));
+    let isMounted = true;
+    let intervalId;
+
+    const fetchSessions = () => {
+      fetch("http://localhost:7860/api/sessions")
+        .then((res) => res.json())
+        .then((data) => {
+          if (isMounted) setSessions(data);
+        })
+        .finally(() => {
+          if (isMounted) setLoading(false);
+        });
+    };
+
+    fetchSessions();
+    intervalId = setInterval(fetchSessions, 5000); // Poll every 5 seconds
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
   }, []);
 
   if (loading) return <Spin />;
