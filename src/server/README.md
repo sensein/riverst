@@ -34,3 +34,66 @@ python3 -m piper.http_server --model <path_to_voices_folder>/en_GB-alan-medium.o
 ```bash
 python server.py
 ```
+
+## Utilities
+
+### Gutenberg Book Converter
+
+The server includes a utility to convert Project Gutenberg HTML books into the riverst JSON format. This allows you to add new books to the system.
+
+#### Single File Conversion
+
+```bash
+# Convert a single HTML file
+python -m utils.gutenberg_converter path/to/book.html
+
+# Convert a zip file containing HTML and images
+python -m utils.gutenberg_converter path/to/book.zip
+
+# With custom output directory
+python -m utils.gutenberg_converter path/to/book.html --output-dir custom/output/path
+
+# Force overwrite existing files
+python -m utils.gutenberg_converter path/to/book.html --force
+```
+
+#### Batch Processing
+
+You can easily convert multiple books at once by placing the zip files in the `utils/book_converter/raw_downloads` directory and running:
+
+```bash
+# Process all books in the raw_downloads directory
+python -m utils.gutenberg_converter --batch
+
+# Force overwrite existing files
+python -m utils.gutenberg_converter --batch --force
+```
+
+#### How to Get Books from Project Gutenberg
+
+1. Go to [Project Gutenberg](https://www.gutenberg.org/) and find a book
+2. Click on "Read this book online: HTML"
+3. Download the HTML version (usually available as a zip file)
+4. Place the zip file in `utils/book_converter/raw_downloads/`
+5. Run the batch converter
+
+The converter will:
+1. Extract files from zip archives (if applicable)
+2. Find and parse the HTML content
+3. Extract chapters and organize content
+4. Create the proper directory structure (book_name/audios/)
+5. Generate vocabulary words for each chapter
+6. Copy any associated images to an 'images' subdirectory
+7. Create a properly formatted JSON file as required by the riverst system
+
+Example:
+
+```bash
+# Single file conversion
+python -m utils.gutenberg_converter assets/books/pg16-h/pg16-images.html
+
+# Batch conversion
+python -m utils.gutenberg_converter --batch
+```
+
+This will create/update the appropriate directories in `/assets/books/` with the converted content.
