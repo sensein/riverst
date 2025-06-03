@@ -1,6 +1,6 @@
 // src/components/BotVideo.tsx
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { useRTVIClientEvent } from '@pipecat-ai/client-react'
+import { useRTVIClientEvent, useRTVIClient } from '@pipecat-ai/client-react'
 import { RTVIEvent, Participant } from '@pipecat-ai/client-js'
 import AvatarRenderer from './AvatarRenderer'
 import axios from 'axios'
@@ -29,6 +29,7 @@ export default function BotVideo({
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [showVideo, setShowVideo] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const client = useRTVIClient()
 
   useEffect(() => {
     const stored = localStorage.getItem('selectedAvatar');
@@ -77,6 +78,17 @@ export default function BotVideo({
     }, [])
   )
 
+  useRTVIClientEvent(
+    RTVIEvent.TrackStopped,
+    useCallback((track: MediaStreamTrack, participant?: Participant) => {
+      if (participant?.local) return
+      if (track.kind === 'video' && videoRef.current) {
+        setShowVideo(false)
+      }
+    }, [])
+  )
+
+
   if (!avatarUrl) return null
 
   return (
@@ -108,7 +120,7 @@ export default function BotVideo({
             border: '1px solid black',
             zIndex: 6,
             boxShadow: '0 0 10px rgba(0,0,0,0.3)',
-            opacity: showVideo ? 1 : 0,
+            opacity: showVideo && !!client?.isCamEnabled ? 1 : 0,
             transition: 'opacity 0.3s ease-in-out',
           }}
         />

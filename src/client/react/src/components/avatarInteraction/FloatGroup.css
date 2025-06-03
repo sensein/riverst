@@ -1,0 +1,7 @@
+.float-btn-group-connected button {
+cursor: default;
+}
+
+.float-btn-group-disconnected button {
+cursor: not-allowed;
+}

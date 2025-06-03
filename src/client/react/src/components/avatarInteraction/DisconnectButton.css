@@ -2,14 +2,6 @@
 background-color: red !important;
 }
 
-.float-btn-disconnected {
-background-color: white !important;
-}
-
 .float-btn-connected .ant-float-btn-body {
 background-color: red !important;
-}
-
-.float-btn-disconnected .ant-float-btn-body {
-background-color: white !important;
 }

@@ -14,7 +14,7 @@ import React, {
   import { RTVIEvent, Participant } from '@pipecat-ai/client-js'
   
   // assuming you’ve moved these out into their own files:
-  import DisconnectButton from './DisconnectButton'
+  import FloatGroup from './FloatGroup'
   import BotVideo from './BotVideo'
   import SubtitleOverlay from './SubtitleOverlay'
   
@@ -53,7 +53,7 @@ import React, {
       { id: number; text: string; speaker: 'user' | 'bot' }[]
     >([])
     const subtitleIdRef = useRef(0)
-    const SUBTITLE_DURATION_MS = 5000
+    const SUBTITLE_DURATION_MS = 6000
   
     // ---- viseme buffering logic ----
     const visemeTimer = useRef<NodeJS.Timeout | null>(null)
@@ -221,7 +221,8 @@ import React, {
   
     return (
       <div className="app">
-        <DisconnectButton />
+        <FloatGroup 
+          videoFlag={videoFlag} />
         <BotVideo
           cameraType={cameraType}
           setCameraType={setCameraType}

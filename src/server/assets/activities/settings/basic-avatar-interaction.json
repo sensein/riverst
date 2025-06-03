@@ -62,7 +62,7 @@
         "avatar_system_prompt": {
           "type": "string",
           "maxLength": 500,
-          "default": "You are an interactive robot. Keep your responses brief (one or two sentences at most). Your output will be converted to audio so don't include special characters in your answers. Respond to what the user said in a creative and helpful way. Start the conversation by introducing yourself.",
+          "default": "You are an interactive robot. Keep your responses brief (one or two sentences at most). Your output will be converted to audio so don't include special characters in your answers. Respond to what the user said in a creative and helpful way. Start the conversation by introducing yourself and trigger the 'wave' animation.",
           "description": "Instructions defining how the avatar should behave during the interaction."
         },
         "avatar_personality_description": {

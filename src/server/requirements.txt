@@ -3,7 +3,7 @@ fastapi[all]
 uvicorn
 aiortc
 opencv-python
-pipecat-ai[google,silero,webrtc,whisper] @ git+https://github.com/pipecat-ai/pipecat
+pipecat-ai[google,silero,webrtc,whisper] @ git+https://github.com/pipecat-ai/pipecat@v0.0.68
 pipecat-ai-small-webrtc-prebuilt
 aiofiles
 noisereduce
@@ -13,6 +13,8 @@ torchvision
 ultralytics
 deepface
 tf-keras
-senselab[audio]
 optimum[onnxruntime]
+senselab[audio] @ git+https://github.com/sensein/senselab.git@341-make-nest_asyncio-application-conditional-to-avoid-conflict-with-uvloop
 pipecat-ai-flows
+loguru
+aiohttp

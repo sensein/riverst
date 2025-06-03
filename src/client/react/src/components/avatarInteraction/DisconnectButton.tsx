@@ -8,29 +8,24 @@ import './DisconnectButton.css'
 
 export default function DisconnectButton() {
   const client = useRTVIClient()
-  const transportState = useRTVIClientTransportState()
   const navigate = useNavigate()
   const [visible, setVisible] = useState(false)
-  const isConnected = transportState === 'connected'
 
   return (
     <>
       <FloatButton
-        icon={
-          isConnected
-            ? <PoweroffOutlined style={{ color: '#fff' }} />
-            : <LoadingOutlined style={{ color: '#ff4d4f' }} />
-        }
+        icon={<PoweroffOutlined style={{ color: '#fff' }} />}
         type="primary"
-        className={isConnected ? 'float-btn-connected' : 'float-btn-disconnected'}
-        style={{ top: 24, right: 24, zIndex: 9999, cursor: isConnected ? 'pointer' : 'default' }}
-        onClick={() => isConnected && setVisible(true)}
+        className={'float-btn-connected'}
+        style={{ right: 24, zIndex: 9999 }}
+        onClick={() => setVisible(true)}
       />
       {visible && (
-        <div style={{ position: 'absolute', top: 80, right: 24, zIndex: 10000 }}>
+        <div style={{ position: 'absolute', right: 24, zIndex: 10000 }}>
           <Popconfirm
             title="Are you sure you want to disconnect?"
             open={visible}
+            onOpenChange={(newOpen) => setVisible(newOpen)}
             onConfirm={async () => {
               await client.disconnect()
               navigate('/')
@@ -38,7 +33,7 @@ export default function DisconnectButton() {
             onCancel={() => setVisible(false)}
             okText="Yes"
             cancelText="No"
-            placement="topRight"
+            placement="rightBottom"
             okButtonProps={{ danger: true }}
           />
         </div>

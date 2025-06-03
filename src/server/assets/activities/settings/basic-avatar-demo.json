@@ -1,0 +1,139 @@
+{
+  "title": "Basic Avatar Demo Configuration",
+  "description": "Schema for configuring a basic avatar demo.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "const": "basic-avatar-demo"
+    },
+    "description": {
+      "type": "string",
+      "const": "Basic avatar demo."
+    },
+    "options": {
+      "type": "object",
+      "properties": {
+        "advanced_flows": {
+          "type": "boolean",
+          "const": false,
+          "default": false,
+          "description": "This activity only supports basic flows. Advanced flows are not allowed for the basic avatar interaction activity and must be set to false."
+        },
+        "pipeline_modality": {
+          "type": "string",
+          "enum": ["e2e"],
+          "default": "e2e",
+          "const": "e2e",
+          "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline."
+        },
+        "llm_type": {
+          "type": "string",
+          "enum": ["openai_realtime_beta", "gemini"],
+          "default": "openai_realtime_beta",
+          "const": "openai_realtime_beta",
+          "description": "The LLM service to use."
+        },
+        "body_animations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["wave", "dance", "i_dont_know"]
+          },
+          "default": ["wave", "dance", "i_dont_know"],
+          "const": ["wave", "dance", "i_dont_know"],
+          "description": "List of body animations that the avatar can perform."
+        },
+        "camera_settings": {
+          "type": "string",
+          "enum": ["half_body", "headshot", "full_body"],
+          "default": "half_body",
+          "const": "half_body",
+          "description": "Select the camera framing used for the avatar during the interaction."
+        },
+        "avatar_system_prompt": {
+          "type": "string",
+          "maxLength": 500,
+          "default": "You are an interactive robot. Keep your responses brief (one or two sentences at most). Your output will be converted to audio so don't include special characters in your answers. Respond to what the user said in a creative and helpful way. Start the conversation by introducing yourself.",
+          "const": "You are an interactive robot. Keep your responses brief (one or two sentences at most). Your output will be converted to audio so don't include special characters in your answers. Respond to what the user said in a creative and helpful way. Start the conversation by introducing yourself.",
+          "description": "Instructions defining how the avatar should behave during the interaction."
+        },
+        "avatar_personality_description": {
+          "type": "string",
+          "maxLength": 500,
+          "default": "You are the Riverst avatar, a friendly, helpful robot.",
+          "const": "You are the Riverst avatar, a friendly, helpful robot.",
+          "description": "Text describing the avatar’s personality and role."
+        },
+        "task_description": {
+          "type": "string",
+          "maxLength": 500,
+          "default": "Demonstrate how you can interact with the user in a short conversation. Assist the user with their requests.",
+          "const": "Demonstrate how you can interact with the user in a short conversation. Assist the user with their requests.",
+          "description": "Free-text description of the task or goal of the interaction."
+        },
+        "user_description": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Optional free-text field to describe the user.",
+          "default": "",
+          "const": ""
+        },
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["english", "italian", "spanish", "german"]
+          },
+          "default": [],
+          "const": [],
+          "description": "List of languages supported by the avatar. If empty, the avatar supports all languages in the intersection of the languages supported by the STT, LLM and TTS services."
+        },
+        "video_flag": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable or disable video processing during the session."
+        },
+        "video_out_width": {
+          "type": "integer",
+          "const": 640,
+          "default": 640,
+          "description": "Width of the video output in pixels."
+        },
+        "video_out_height": {
+          "type": "integer",
+          "const": 320,
+          "default": 320,
+          "description": "Height of the video output in pixels."
+        },
+        "video_out_framerate": {
+          "type": "integer",
+          "const": 30,
+          "default": 30,
+          "description": "Framerate of the video output in frames per second."
+        },
+        "user_transcript": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable showing the transcript of the user’s speech."
+        },
+        "bot_transcript": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable showing the transcript of the avatar’s speech."
+        }
+      },
+      "required": [
+        "advanced_flows",
+        "camera_settings",
+        "task_description",
+        "avatar_personality_description",
+        "avatar_system_prompt",
+        "video_flag",
+        "user_transcript",
+        "bot_transcript"
+      ]
+    }
+  },
+  "required": ["name", "description", "options"]
+}

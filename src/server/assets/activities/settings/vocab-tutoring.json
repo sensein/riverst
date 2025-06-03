@@ -1,6 +1,6 @@
 {
-  "title": "Vocabulary Tutoring",
-  "description": "Schema for configuring KIVA's vocabulary tutoring activity.",
+  "title": "Vocab Tutoring",
+  "description": "Schema for configuring a Vocab tutoring activity.",
   "type": "object",
   "properties": {
     "name": {
@@ -9,7 +9,7 @@
     },
     "description": {
       "type": "string",
-      "const": "Vocabulary tutoring activity with KIVA."
+      "const": "Vocab Tutoring"
     },
     "options": {
       "type": "object",
@@ -18,24 +18,31 @@
           "type": "boolean",
           "const": true,
           "default": true,
-          "description": "This activity requires advanced flows."
+          "description": "This activity requires advanced flows for structured KIVA interactions."
         },
         "advanced_flows_config_path": {
           "type": "string",
-          "const": "./assets/activities/flows/vocab-tutoring.json",
           "default": "./assets/activities/flows/vocab-tutoring.json",
+          "const": "./assets/activities/flows/vocab-tutoring.json",
           "description": "Path to the advanced flows configuration file."
+        },
+        "session_variables_path": {
+          "type": "string",
+          "title": "Books",
+          "dynamicEnum": "books",
+          "default": "./assets/books/the_tale_of_peter_rabbit/paginated_story.json",
+          "description": "Select the book to use for vocabulary tutoring."
         },
         "pipeline_modality": {
           "type": "string",
           "enum": ["classic", "e2e"],
           "default": "classic",
           "const": "classic",
-          "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline. Pipecat-flows doesn't support e2e mode yet."
+          "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline."
         },
         "llm_type": {
           "type": "string",
-          "enum": ["openai", "llama3.2"],
+          "enum": ["openai", "openai_realtime_beta", "gemini", "llama3.2"],
           "default": "openai",
           "description": "The LLM service to use."
         },
@@ -69,7 +76,7 @@
         "user_description": {
           "type": "string",
           "maxLength": 500,
-          "default": "A 3rd or 4th grader.",
+          "default": "The user is a 4-grade student. They want to learn vocabulary words from a book.",
           "description": "Optional free-text field to describe the user."
         },
         "video_flag": {
@@ -97,25 +104,34 @@
         },
         "user_transcript": {
           "type": "boolean",
-          "default": false,
-          "description": "Enable showing the transcript of the user’s speech. This only works with the classic pipeline modality."
+          "default": true,
+          "description": "Enable showing the transcript of the user's speech. FUTURE WORK: This cannot be implemented yet because some LLM services send transcripts in the wrong order (see Gemini and OpenAI realtime beta)."
         },
         "bot_transcript": {
           "type": "boolean",
-          "default": false,
-          "description": "Enable showing the transcript of the avatar’s speech."
+          "default": true,
+          "description": "Enable showing the transcript of the avatar's speech."
         }
       },
       "required": [
         "advanced_flows",
         "advanced_flows_config_path",
         "camera_settings",
-        "task_description",
-        "avatar_personality_description",
-        "avatar_system_prompt",
         "video_flag",
         "user_transcript",
         "bot_transcript"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "advanced_flows": { "enum": [true] }
+            }
+          },
+          "then": {
+            "required": ["advanced_flows_config_path"]
+          }
+        }
       ]
     }
   },

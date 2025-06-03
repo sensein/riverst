@@ -1,0 +1,18 @@
+{
+  "reading_context": {
+    "indexable_by" : "pages",
+    "current_index": 1,
+    "book_title": "Horoscope Animals Book",
+    "pages": [
+      {
+        "text": "If the person's horoscope is a Pisces, their spirit animal is a kangaroo"
+      },
+      {
+        "text": "If the person's horoscope is a Scorpio, their spirit animal is a naked mole rat"
+      },
+      {
+        "text": "If the person's horoscope is a Libra, their spirit animal is a dolphin"
+      }
+    ]
+  }
+}

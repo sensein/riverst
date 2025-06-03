@@ -3,13 +3,14 @@ from typing import Optional, Tuple, Literal, List, Dict, Any
 from dataclasses import dataclass
 
 from pipecat.services.openai.stt import OpenAISTTService
-from pipecat.services.openai import OpenAILLMService, OpenAITTSService
+from pipecat.services.openai.tts import OpenAITTSService
+from pipecat.services.openai.llm import OpenAILLMService
 from pipecat.services.openai_realtime_beta import (
     InputAudioNoiseReduction, InputAudioTranscription,
     OpenAIRealtimeBetaLLMService, SemanticTurnDetection, SessionProperties
 )
-from pipecat.services.ollama import OLLamaLLMService
-from pipecat.services.piper import PiperTTSService
+from pipecat.services.ollama.llm import OLLamaLLMService
+from pipecat.services.piper.tts import PiperTTSService
 from pipecat.services.gemini_multimodal_live import GeminiMultimodalLiveLLMService
 from pipecat.services.whisper.stt import WhisperSTTService
 from pipecat.adapters.schemas.tools_schema import ToolsSchema
@@ -29,9 +30,9 @@ ALLOWED_LLM = {
 }
 
 VALID_ANIMATIONS = [
-    {"id": "wave", "description": "When the user joins the room, say hi and (sometimes) wave with your hand."},
-    {"id": "dance", "description": "When you want to congratulate, sometimes you can dance."},
-    {"id": "i_dont_know", "description": "When you don’t know something, you can do the 'I don’t know' animation."},
+    {"id": "wave", "description": "When you welcome the user or greet them or introduce yourself, you always wave with your hand (animation)."},
+    {"id": "dance", "description": "When you congratulate or appreciate the user or are happy, you dance (animation)."},
+    {"id": "i_dont_know", "description": "When you don’t know something, you do the 'I don’t know' animation."},
 ]
 
 @dataclass
@@ -44,6 +45,8 @@ class BotComponentFactory:
     stt_params: Optional[Dict[str, Any]] = None
     tts_type: Optional[TTSType] = None
     tts_params: Optional[Dict[str, Any]] = None
+    advanced_flows: bool = False
+    flow_params: Optional[Dict[str, Any]] = None
 
     task_description: str = ""
     user_description: Optional[str] = None

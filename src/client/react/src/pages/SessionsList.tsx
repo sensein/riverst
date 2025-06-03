@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 const { Title, Text } = Typography;
 import { useParams, useNavigate } from "react-router-dom";
 
-function formatSessionId(id) {
+function formatSessionId(id: string) {
   // Expected format: 20250521_165335_2f11d904
   const [datePart, timePart, uniquePart] = id.split("_");
   if (!datePart || !timePart || !uniquePart) return { date: id, time: "", unique: "" };
@@ -19,18 +19,48 @@ function formatSessionId(id) {
 }
 
 export default function SessionsList() {
-  const [sessions, setSessions] = useState([]);
+  const [sessions, setSessions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch("http://localhost:7860/api/sessions")
-      .then((res) => res.json())
-      .then(setSessions)
-      .finally(() => setLoading(false));
+    let isMounted = true;
+    let intervalId;
+
+    const fetchSessions = () => {
+      fetch("http://localhost:7860/api/sessions")
+        .then((res) => res.json())
+        .then((data) => {
+          if (isMounted) setSessions(data);
+        })
+        .finally(() => {
+          if (isMounted) setLoading(false);
+        });
+    };
+
+    fetchSessions();
+    intervalId = setInterval(fetchSessions, 5000); // Poll every 5 seconds
+
+    return () => {
+      isMounted = false;
+      clearInterval(intervalId);
+    };
   }, []);
 
   if (loading) return <Spin />;
+
+  // Sort sessions by date and time descending (newest first)
+  const sortedSessions = [...sessions].sort((a: string, b: string) => {
+    // a and b are session IDs like "20250521_165335_2f11d904"
+    // Extract date and time as a comparable string
+    const [aDate, aTime] = a.split("_");
+    const [bDate, bTime] = b.split("_");
+    // Combine date and time for comparison
+    const aDT = aDate + aTime;
+    const bDT = bDate + bTime;
+    // Descending order: newest first
+    return bDT.localeCompare(aDT);
+  });
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -56,7 +86,7 @@ export default function SessionsList() {
           <div style={{ width: 104 }} /> {/* Spacer to match Back button width */}
         </div>
         <List
-          dataSource={sessions}
+          dataSource={sortedSessions}
           bordered
           renderItem={id => {
             const { date, time, unique } = formatSessionId(id);

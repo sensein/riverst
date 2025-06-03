@@ -21,9 +21,12 @@ class FlowComponentFactory:
         llm: Any,
         context_aggregator: Any,
         task: PipelineTask,
+        tts: Optional[Any] = None,
         advanced_flows: bool = False,
         flow_config_path: Optional[str] = None,
+        session_variables_path: Optional[str] = None,
         user_description: Optional[str] = None,
+        session_dir: Optional[str] = None,
         context_strategy: ContextStrategy = ContextStrategy.RESET_WITH_SUMMARY,
         summary_prompt: str = "Summarize the key moments of learning, words, and concepts discussed in the tutoring session so far. Keep it concise and focused on vocabulary learning.",
     ):
@@ -35,14 +38,17 @@ class FlowComponentFactory:
             task: The pipeline task
             advanced_flows: Whether to use advanced flows
             flow_config_path: Path to the flow configuration file
+            session_variables_path: Path to the session variables file
             context_strategy: Strategy for managing context
             summary_prompt: Prompt for summarizing conversation
         """
         self.llm = llm
         self.context_aggregator = context_aggregator
         self.task = task
+        self.tts = tts
         self.advanced_flows = advanced_flows
         self.flow_config_path = flow_config_path
+        self.session_variables_path = session_variables_path
         self.user_description = user_description
         self.context_strategy = context_strategy
         self.summary_prompt = summary_prompt
@@ -59,15 +65,15 @@ class FlowComponentFactory:
             return None
 
         logger.info(f"Initializing flow manager with config path: {self.flow_config_path}")
+        logger.info(f"Session variables path: {self.session_variables_path}")
 
         if not self.flow_config_path:
             logger.error("Flow config path not provided but advanced_flows is enabled")
             return None
 
         try:
-
-            flow_config, state = load_config(self.flow_config_path)
-
+            flow_config, state = load_config(self.flow_config_path, self.session_variables_path)
+            
             if self.user_description:
                 for _, node_data in flow_config.get('nodes', {}).items():
                     if 'role_messages' not in node_data:
@@ -89,7 +95,7 @@ class FlowComponentFactory:
                             'role': 'system',
                             'content': f"User description: {self.user_description}"
                         })
-                                
+                                                        
             flow_manager = FlowManager(
                 llm=self.llm,
                 context_aggregator=self.context_aggregator,
@@ -98,39 +104,52 @@ class FlowComponentFactory:
                     summary_prompt=self.summary_prompt,
                 ),
                 task=self.task,
+                tts=self.tts,
                 flow_config=flow_config
             )
+                
             flow_manager.state = state
 
+            
             self.flow_manager = flow_manager
             logger.info("Flow manager successfully built")
             return flow_manager
-
+            
         except FileNotFoundError as e:
             logger.error(f"Flow configuration file not found: {e}")
             return None
         except json.JSONDecodeError as e:
             logger.error(f"Invalid JSON in flow configuration file: {e}")
             return None
-        except Exception as e:
-            logger.error(f"Error initializing flow manager: {e}")
-            return None
-
+        # except Exception as e:
+        #     logger.error(f"Error initializing flow manager: {e}")
+        #     return None
+        
+        
     async def initialize(self) -> bool:
         """Initialize the flow manager asynchronously.
         
         Returns:
             bool: True if initialization was successful, False otherwise
         """
-        print("[AAA] Initializing flow manager")
+        logger.info("DEBUG: Starting flow manager initialization")
         if not self.flow_manager:
             logger.warning("Flow manager not built, cannot initialize")
             return False
-
         try:
+            logger.info("DEBUG: Flow manager about to initialize with config: {}", 
+                       {k: v for k, v in self.flow_manager.flow_config.items() if k != 'nodes'})
+            logger.info("DEBUG: Initial node: {}", self.flow_manager.flow_config.get('initial_node'))
+            logger.info("DEBUG: Available nodes: {}", list(self.flow_manager.nodes.keys()))
+            
             await self.flow_manager.initialize()
+            
+            logger.info("DEBUG: Flow manager state after initialization: {}", self.flow_manager.state)
+            logger.info("DEBUG: Current node after initialization: {}", self.flow_manager.current_node)
             logger.info("Flow manager successfully initialized")
             return True
         except Exception as e:
-            logger.error(f"Error during flow manager initialization: {e}")
+            logger.error("DEBUG: Error during flow manager initialization: {}", e)
+            import traceback
+            logger.error("DEBUG: Traceback: {}", traceback.format_exc())
             return False

@@ -1,19 +1,11 @@
 // AvatarRenderer.tsx
-/*
-  Notes for lip sync:
-    - https://docs.readyplayer.me/ready-player-me/api-reference/avatars/morph-targets/apple-arkit
-    - https://docs.readyplayer.me/ready-player-me/api-reference/avatars/morph-targets/oculus-ovr-libsync
-    - https://readyplayer.me/developers/video-tutorials/face-animations-generated-from-audio-with-oculus-lipsync
-    - https://community.openai.com/t/how-to-implement-real-time-lip-sync-of-avatar-chatbot-powered-by-gpt/534035/10
-    - https://github.com/pipecat-ai/pipecat/issues/1516
-*/
-
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Html } from '@react-three/drei';
+import { useRTVIClientTransportState } from '@pipecat-ai/client-react'
 
 interface CameraSettings {
   position: [number, number, number];
@@ -116,6 +108,9 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
   const currentBlendValuesRef = useRef<{ [key: string]: number }>({});
   const targetBlendValuesRef = useRef<{ [key: string]: number }>({});
 
+  const transportState = useRTVIClientTransportState()
+  const isConnected = transportState === 'connected'
+  
   const cameraSettings = useMemo(() => {
     switch (cameraType) {
       case 'half_body':
@@ -339,12 +334,12 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
       <color attach="background" args={['#ececec']} />
 
       {/* Ambient light to brighten everything uniformly */}
-      <ambientLight intensity={1.2} />
+      <ambientLight intensity={isConnected ? 1.2 : 0} />
 
       {/* Main directional light (like sunlight) */}
       <directionalLight
         position={[5, 10, 5]}
-        intensity={1}
+        intensity={isConnected ? 1 : 0}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}

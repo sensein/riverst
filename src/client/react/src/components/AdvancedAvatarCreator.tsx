@@ -13,7 +13,8 @@ const AdvancedAvatarCreator: React.FC<AdvancedAvatarCreatorProps> = ({
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  const defaultAdvancedAvatarCreatorUrl = 'https://create.readyplayer.me/avatar';
+  //const defaultAdvancedAvatarCreatorUrl = 'https://create.readyplayer.me/avatar';
+  const defaultAdvancedAvatarCreatorUrl = 'https://interactive-avatar-tijf7k.readyplayer.me/en/avatar';
 
   useEffect(() => {
     const handleMessage = async (event: MessageEvent) => {
@@ -78,7 +79,7 @@ const AdvancedAvatarCreator: React.FC<AdvancedAvatarCreatorProps> = ({
   return (
     <iframe
       ref={iframeRef}
-      src={`${AdvancedAvatarCreatorUrl || defaultAdvancedAvatarCreatorUrl}?lang=en&frameApi&clearCache&quickStart=false&t=${Date.now()}`}
+      src={`${AdvancedAvatarCreatorUrl || defaultAdvancedAvatarCreatorUrl}?frameApi&clearCache&quickStart=false&t=${Date.now()}`}
       allow="camera *;"
       style={{ width: '100%', height: '100%', border: 'none' }}
     />

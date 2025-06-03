@@ -4,9 +4,10 @@ from transformers import pipeline as transformers_pipeline
 import json
 import asyncio
 from .utils import get_best_device
+import os
 
 class VisemeProcessor:
-    PHONEME_VISEME_MAP_PATH = "assets/phoneme_viseme_map.json"
+    PHONEME_VISEME_MAP_PATH = os.path.abspath("assets/phoneme_viseme_map.json")
 
     def __init__(self, model_name: str = "bookbot/wav2vec2-ljspeech-gruut"):
         """

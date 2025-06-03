@@ -13,6 +13,11 @@
 - https://github.com/interactiveaudiolab/ppgs
 - https://gooey.ai/
 - https://github.com/huggingface/optimum/issues/2250 (related issue i opened on optimum)
+- https://docs.readyplayer.me/ready-player-me/api-reference/avatars/morph-targets/apple-arkit
+- https://docs.readyplayer.me/ready-player-me/api-reference/avatars/morph-targets/oculus-ovr-libsync
+- https://readyplayer.me/developers/video-tutorials/face-animations-generated-from-audio-with-oculus-lipsync
+- https://community.openai.com/t/how-to-implement-real-time-lip-sync-of-avatar-chatbot-powered-by-gpt/534035/10
+- https://github.com/pipecat-ai/pipecat/issues/1516
 
 - For Apple Silicon or Mac, PyTorch with MPS is currently the fastest and most reliable option for real-time inference.
 - ONNX Runtime is only advantageous on CPU or with CUDA (NVIDIA GPU).
