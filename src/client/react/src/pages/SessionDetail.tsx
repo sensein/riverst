@@ -17,6 +17,7 @@ const { Title, Paragraph } = Typography;
 const { Content } = Layout;
 
 import FeatureModal from "../components/FeatureModal";
+import MetricModal from "../components/MetricModal";
 
 // ---- Type Definitions ----
 interface TranscriptChunk {
@@ -67,6 +68,8 @@ export default function SessionDetail() {
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [modalFeatures, setModalFeatures] = useState<Features | null>(null);
+  const [sessionMetrics, setSessionMetrics] = useState<Features | null>(null);
+  const [metricsModalOpen, setMetricsModalOpen] = useState(false);
 
   useEffect(() => {
     setError(null);
@@ -90,7 +93,10 @@ export default function SessionDetail() {
         }
         return res.json();
       })
-      .then((data: Step[]) => setSteps(data))
+      .then((data) => {
+        setSteps(data.data || []);
+        setSessionMetrics(data.metrics_summary || {});
+      })
       .catch((err) => {
         setError("Failed to load session data: " + err.message);
         setSteps([]); // Prevent infinite spinner
@@ -151,6 +157,15 @@ export default function SessionDetail() {
               const { date, time, unique } = formatSessionId(id);
               return `${date} ${time} ${unique ? `(${unique})` : ""}`;
             })()}
+            <InfoCircleOutlined
+              onClick={() => setMetricsModalOpen(true)}
+              style={{
+                fontSize: 20,
+                marginLeft: 12,
+                cursor: "pointer",
+                verticalAlign: "middle",
+              }}
+            />
           </Title>
           <div style={{ width: 104 }} /> {/* Spacer to match Back button width */}
         </div>
@@ -270,6 +285,11 @@ export default function SessionDetail() {
           open={modalOpen}
           onClose={() => setModalOpen(false)}
           features={modalFeatures}
+        />
+        <MetricModal
+          open={metricsModalOpen}
+          onClose={() => setMetricsModalOpen(false)}
+          metrics={sessionMetrics}
         />
       </Content>
     </Layout>

@@ -310,8 +310,20 @@ async def get_session_data(session_id: str) -> JSONResponse:
         # Return audio file as relative path (or signed URL if preferred)
         data["audio_file"] = f"/sessions/{session_id}/audios/{base_name}.wav"
         results.append(data)
-    return JSONResponse(content=results)
 
+    metrics = {}
+    metrics_path = session_dir / "metrics_summary.json"
+    if metrics_path.exists():
+        try:
+            with open(metrics_path, "r", encoding="utf-8") as f:
+                metrics = json.load(f)
+        except Exception:
+            metrics = {"error": "Could not read metrics_summary.json"}
+
+    return JSONResponse(content={
+        "data": results,
+        "metrics_summary": metrics
+    })
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
