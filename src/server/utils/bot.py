@@ -33,6 +33,7 @@ from .audio_analyzer import AudioAnalyzer
 from .viseme import VisemeProcessor
 from .bot_component_factory import BotComponentFactory
 from .flow_component_factory import FlowComponentFactory
+from .metrics import MetricsLoggerProcessor
 
 load_dotenv(override=True)
 
@@ -76,6 +77,7 @@ async def run_bot(
         )
 
         stt, llm, tts, tools, instruction, context, context_aggregator = await factory.build()
+        metrics_logger = MetricsLoggerProcessor(session_dir=session_dir)
 
         # Setup WebRTC transport parameters
         transport_params = TransportParams(
@@ -192,6 +194,7 @@ async def run_bot(
                     transcript.assistant(),
                     # user_idle,
                     context_aggregator.assistant(),
+                    metrics_logger,
                 ]
         else:
             steps = [
@@ -209,13 +212,17 @@ async def run_bot(
                     transcript.assistant(),
                     # user_idle,
                     context_aggregator.assistant(),
+                    metrics_logger,
                 ]
 
         pipeline = Pipeline([p for p in steps if p is not None])
 
         task = PipelineTask(
             pipeline,
-            params=PipelineParams(allow_interruptions=True, observers=[RTVIObserver(rtvi)]),
+            params=PipelineParams(allow_interruptions=True, 
+                                  enable_metrics=True,  # performance metrics
+                                  enable_usage_metrics=True,  # usage metrics
+                                  observers=[RTVIObserver(rtvi)]),
         )
         
         
@@ -279,12 +286,10 @@ async def run_bot(
         @pipecat_transport.event_handler("on_client_disconnected")
         async def on_client_disconnected(_, __):
             logger.info("Client disconnected")
-
-        @pipecat_transport.event_handler("on_client_closed")
-        async def on_client_closed(_, __):
             await viseme_audiobuffer.stop_recording()
             await audiobuffer.stop_recording()
             await task.cancel()
+            await metrics_logger.aggregate_and_save()
 
             async def trigger_analysis_on_audios(audios_dir: str):
                 # Trigger analysis on all files in audios_dir without waiting for them
@@ -295,8 +300,7 @@ async def run_bot(
                         await AudioAnalyzer.analyze_audio(filepath)
 
             audios_dir = f"{session_dir}/audios"
-            if os.path.exists(audios_dir):
-                asyncio.create_task(trigger_analysis_on_audios(audios_dir))
+            asyncio.create_task(trigger_analysis_on_audios(audios_dir))
 
         runner = PipelineRunner(handle_sigint=False)
         await runner.run(task)
