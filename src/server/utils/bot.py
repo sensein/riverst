@@ -215,7 +215,10 @@ async def run_bot(
 
         task = PipelineTask(
             pipeline,
-            params=PipelineParams(allow_interruptions=True, observers=[RTVIObserver(rtvi)]),
+            params=PipelineParams(allow_interruptions=True, 
+                                  enable_metrics=True,  # performance metrics
+                                  enable_usage_metrics=True,  # usage metrics
+                                  observers=[RTVIObserver(rtvi)]),
         )
         
         
@@ -279,9 +282,6 @@ async def run_bot(
         @pipecat_transport.event_handler("on_client_disconnected")
         async def on_client_disconnected(_, __):
             logger.info("Client disconnected")
-
-        @pipecat_transport.event_handler("on_client_closed")
-        async def on_client_closed(_, __):
             await viseme_audiobuffer.stop_recording()
             await audiobuffer.stop_recording()
             await task.cancel()
@@ -295,8 +295,7 @@ async def run_bot(
                         await AudioAnalyzer.analyze_audio(filepath)
 
             audios_dir = f"{session_dir}/audios"
-            if os.path.exists(audios_dir):
-                asyncio.create_task(trigger_analysis_on_audios(audios_dir))
+            asyncio.create_task(trigger_analysis_on_audios(audios_dir))
 
         runner = PipelineRunner(handle_sigint=False)
         await runner.run(task)
