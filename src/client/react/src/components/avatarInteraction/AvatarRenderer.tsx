@@ -23,11 +23,11 @@ const HALF_BODY_CAMERA_SETTINGS: CameraSettings = {
 };
 
 const HEADSHOT_CAMERA_SETTINGS: CameraSettings = {
-  position: [0, 2.6, 5],
+  position: [0, 2.6, 2],
   fov: 10,
 };
 
-const MAX_IDLE_ANIMATIONS = 6;
+const MAX_IDLE_ANIMATIONS = 1;  // 6
 
 
 // Blend shapes that trigger teeth movement

@@ -70,7 +70,7 @@
         "camera_settings": {
           "type": "string",
           "enum": ["half_body", "headshot", "full_body"],
-          "default": "half_body",
+          "default": "headshot",
           "description": "Select the camera framing used for the avatar during the interaction."
         },
         "user_description": {
