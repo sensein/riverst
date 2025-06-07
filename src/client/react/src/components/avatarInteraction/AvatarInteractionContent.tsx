@@ -22,7 +22,6 @@ import React, {
     cameraType: 'full_body' | 'half_body' | 'headshot'
     videoFlag: boolean
     subtitlesEnabled: { user: boolean; bot: boolean }
-    onSoftReload: () => void
   }
   
   export default function AvatarInteractionContent({
