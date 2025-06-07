@@ -119,6 +119,7 @@ class BotComponentFactory:
     def build_tools(self) -> ToolsSchema:
         valid_ids = {a["id"] for a in VALID_ANIMATIONS}
         animations = list(set(self.body_animations or []) & valid_ids)
+        self.used_animations = animations
         return ToolsSchema(standard_tools=[
             FunctionSchema(
                 name="trigger_animation",
@@ -236,4 +237,4 @@ class BotComponentFactory:
         context = OpenAILLMContext(messages=messages, tools=tools)
         context_aggregator = llm.create_context_aggregator(context=context)
 
-        return stt, llm, tts, tools, instruction, context, context_aggregator
+        return stt, llm, tts, tools, instruction, context, context_aggregator, self.used_animations
