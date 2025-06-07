@@ -28,10 +28,7 @@ import React, {
     cameraType: initialCameraType,
     videoFlag,
     subtitlesEnabled: initialSubtitlesEnabled,
-  }: Props) {
-    const client = useRTVIClient()
-    const transportState = useRTVIClientTransportState()
-  
+  }: Props) {  
     // ---- state derived from props ----
     const [cameraType, setCameraType] = useState(initialCameraType)
     const [subtitlesEnabled] = useState(initialSubtitlesEnabled)
@@ -64,6 +61,9 @@ import React, {
     const usingRealVisemesRef = useRef(false)
     const timeoutHandlesRef = useRef<NodeJS.Timeout[]>([])
   
+    const client = useRTVIClient()
+    const transportState = useRTVIClientTransportState()
+
     const clearAllTimeouts = useCallback(() => {
       timeoutHandlesRef.current.forEach(clearTimeout)
       timeoutHandlesRef.current = []
@@ -126,17 +126,29 @@ import React, {
       []
     )
   
-    // auto‑connect when ready
     useEffect(() => {
-        const connectIfReady = () => {
-            if (
-                interactionPhase === 'ready' &&
-                    (transportState === 'disconnected')
-                ) {
-                  client.connect()
-            }
+      const connectIfReady = () => {
+        console.log("connectIfReady", interactionPhase, transportState)
+        if (interactionPhase === 'ready' && transportState === 'disconnected') {
+          console.log("✅ connecting")
+          client.connect()
         }
-        connectIfReady()
+      }
+
+      connectIfReady()
+
+      // if stuck in 'ready' + 'initializing' for too long, refresh >>> TODO: TEST THIS!!!!
+      let stuckTimeout: NodeJS.Timeout | null = null
+      if (interactionPhase === 'ready' && transportState === 'initializing') {
+        stuckTimeout = setTimeout(() => {
+          console.warn("🚨 Still initializing after 1.5s, reloading page.")
+          window.location.reload()
+        }, 1500)
+      }
+
+      return () => {
+        if (stuckTimeout) clearTimeout(stuckTimeout)
+      }
     }, [interactionPhase, transportState, client])
     
   
