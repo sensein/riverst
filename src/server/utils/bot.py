@@ -24,6 +24,7 @@ from pipecat.transports.base_transport import TransportParams
 from pipecat.transports.network.small_webrtc import SmallWebRTCTransport
 from pipecat.frames.frames import EndFrame
 from pipecat.services.llm_service import FunctionCallParams
+from pipecat.processors.filters.stt_mute_filter import STTMuteConfig, STTMuteFilter, STTMuteStrategy
 
 import asyncio
 from .video_processor import VideoProcessor
@@ -189,10 +190,20 @@ async def run_bot(
         transcript = TranscriptProcessor()
         transcript_handler = TranscriptHandler(output_file=os.path.join(session_dir, "transcript.json"))
 
+        # Configure with one or more strategies
+        stt_mute_processor = STTMuteFilter(
+            config=STTMuteConfig(
+                strategies={
+                    STTMuteStrategy.FIRST_SPEECH, # Mute only during the bot’s first speech utterance. Useful for introductions when you want the bot to complete its greeting before the user can speak.
+                }
+            ),
+        )
+
         if stt is not None and tts is not None:
             steps = [
                     pipecat_transport.input(),
                     rtvi,
+                    stt_mute_processor, # Add the mute processor before STT
                     stt,
                     transcript.user(),
                     context_aggregator.user(),
@@ -217,6 +228,7 @@ async def run_bot(
                     VideoProcessor(
                         transport_params.video_out_width, transport_params.video_out_height
                     ) if config.get("video_flag", False) else None,
+                    stt_mute_processor, # Add the mute processor before LLM
                     llm,  # LLM
                     transcript.user(),
                     viseme_audiobuffer,
