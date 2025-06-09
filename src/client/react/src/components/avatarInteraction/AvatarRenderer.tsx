@@ -109,7 +109,6 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
   const targetBlendValuesRef = useRef<{ [key: string]: number }>({});
 
   const transportState = useRTVIClientTransportState()
-  const isConnected = transportState === 'connected'
   
   const cameraSettings = useMemo(() => {
     switch (cameraType) {
@@ -334,12 +333,12 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
       <color attach="background" args={['#ececec']} />
 
       {/* Ambient light to brighten everything uniformly */}
-      <ambientLight intensity={isConnected ? 1.2 : 0} />
+      <ambientLight intensity={transportState === 'ready' ? 1.2 : 0} />
 
       {/* Main directional light (like sunlight) */}
       <directionalLight
         position={[5, 10, 5]}
-        intensity={isConnected ? 1 : 0}
+        intensity={transportState === 'ready' ? 1 : 0}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}

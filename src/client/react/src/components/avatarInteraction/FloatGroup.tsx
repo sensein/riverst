@@ -16,16 +16,15 @@ interface FloatGroupProps {
 
 const FloatGroup: React.FC<FloatGroupProps> = ({ videoFlag }) => {
   const transportState = useRTVIClientTransportState()
-  const isConnected = transportState === 'connected'
 
   return (
     <FloatButton.Group
       trigger="click"
       type="default"
-      className={isConnected ? 'float-btn-group-connected' : 'float-btn-group-disconnected'}
-      disabled={!isConnected}
+      className={transportState === 'ready' ? 'float-btn-group-connected' : 'float-btn-group-disconnected'}
+      disabled={transportState !== 'ready'}
       icon={
-        isConnected
+        transportState === 'ready'
           ? <UpOutlined />
           : <LoadingOutlined style={{ color: '#ff4d4f' }} />
       }
