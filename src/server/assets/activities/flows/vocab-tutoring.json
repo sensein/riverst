@@ -104,7 +104,7 @@
                   "has_listened_to_book": {
                     "type": "boolean",
                     "description": "Whether the child has listened to their audiobook (for state checking)"
-                  }
+                  }                  
                 },
                 "required": [
                   "friendly_greeting_done",

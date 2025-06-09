@@ -20,12 +20,12 @@ from pipecat.transports.base_transport import TransportParams
 import json
 
 ModalityType = Literal["classic", "e2e"]
-LLMType = Literal["openai", "openai_realtime_beta", "gemini", "llama3.2"]
+LLMType = Literal["openai", "openai_realtime_beta", "gemini", "mistral:7b"]
 STTType = Literal["openai", "whisper"]
 TTSType = Literal["openai", "piper"]
 
 ALLOWED_LLM = {
-    "classic": {"openai", "llama3.2"},
+    "classic": {"openai", "mistral:7b"},
     "e2e": {"openai_realtime_beta", "gemini"},
 }
 
@@ -163,7 +163,7 @@ class BotComponentFactory:
                     api_key=os.getenv("OPENAI_API_KEY"),
                     model=(self.llm_params or {}).get("model", "gpt-4o-mini")
                 )
-            elif self.llm_type == "llama3.2":
+            elif self.llm_type == "mistral:7b":
                 llm = OLLamaLLMService(model=self.llm_type)
 
             if self.tts_type == "openai":

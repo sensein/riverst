@@ -47,7 +47,7 @@ const SettingsForm = ({ schema, onSubmit }) => {
     const updates = { ...currentValues };
 
     if (updates['pipelineModality'] === 'classic') {
-      if (!['openai', 'llama3.2'].includes(updates.llm_type)) {
+      if (!['openai', 'mistral:7b'].includes(updates.llm_type)) {
         updates.llm_type = 'openai';
         updates.stt_type = 'openai';
         updates.tts_type = 'openai';
@@ -86,7 +86,7 @@ const SettingsForm = ({ schema, onSubmit }) => {
     if (key === 'llm_type') {
       const filteredEnums =
         pipelineModality === 'classic'
-          ? ['openai', 'llama3.2']
+          ? ['openai', 'mistral:7b']
           : ['openai_realtime_beta', 'gemini'];
       config.enum = filteredEnums;
     }
