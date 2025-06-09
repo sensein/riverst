@@ -1,5 +1,4 @@
 // src/pages/AvatarInteractionSettings.tsx
-// TODO: make the MODAL LOOK NICER!!!
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { Spin, Alert, Modal, Button, QRCode, Typography, Divider, Tooltip } from 'antd';
