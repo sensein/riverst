@@ -91,13 +91,13 @@ class BotComponentFactory:
             animation_map[anim_id]
             for anim_id in set(self.body_animations) & set(animation_map)
         ]
-        return " ".join(instructions)
+        self.animation_instruction = f"Animation Instruction: {" ".join(instructions)}\n"
 
     def build_instruction(self) -> str:
         instruction = f"{self.avatar_system_prompt}\n"
-        animation_instruction = self.build_animation_instruction()
-        if animation_instruction:
-            instruction += f"\nAnimation instructions: {animation_instruction}\n"
+        self.build_animation_instruction()
+        if self.animation_instruction:
+            instruction += self.animation_instruction
         if self.languages:
             print(f"Supported languages: {self.languages}")
             instruction += (
@@ -139,10 +139,13 @@ class BotComponentFactory:
         Optional[object],  # STT
         object,            # LLM
         Optional[object],  # TTS
-        ToolsSchema,
-        str,
+        ToolsSchema,    # tools
+        str,        # instruction
         object,            # context
-        object            # context_aggregator
+        object,            # context_aggregator
+        object,            # used_animations
+        str,        # animation_instruction
+        
     ]:
         stt, llm, tts = None, None, None
         instruction = self.build_instruction()
@@ -237,4 +240,4 @@ class BotComponentFactory:
         context = OpenAILLMContext(messages=messages, tools=tools)
         context_aggregator = llm.create_context_aggregator(context=context)
 
-        return stt, llm, tts, tools, instruction, context, context_aggregator, self.used_animations
+        return stt, llm, tts, tools, instruction, context, context_aggregator, self.used_animations, self.animation_instruction

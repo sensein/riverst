@@ -24,14 +24,14 @@
           "type": "string",
           "enum": ["classic", "e2e"],
           "default": "e2e",
-          "const": "e2e",
+          "const": "classic",
           "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline."
         },
         "llm_type": {
           "type": "string",
           "enum": ["openai_realtime_beta", "gemini"],
           "default": "openai_realtime_beta",
-          "const": "openai_realtime_beta",
+          "const": "gemini",
           "description": "The LLM service to use."
         },
         "body_animations": {

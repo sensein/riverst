@@ -77,7 +77,7 @@ async def run_bot(
             avatar=config["avatar"]
         )
 
-        stt, llm, tts, tools, instruction, context, context_aggregator, allowed_animations = await factory.build()
+        stt, llm, tts, tools, instruction, context, context_aggregator, allowed_animations, animation_instruction = await factory.build()
         metrics_logger = MetricsLoggerProcessor(session_dir=session_dir)
 
         # Setup WebRTC transport parameters
@@ -260,6 +260,8 @@ async def run_bot(
             advanced_flows=config.get("advanced_flows", False),
             flow_config_path=config.get("advanced_flows_config_path"),
             session_variables_path=config.get("session_variables_path"),
+            user_description=config.get("user_description", ""),
+            animation_instruction= animation_instruction,
             summary_prompt="Summarize the key moments of learning, words, and concepts discussed in the tutoring session so far. Keep it concise and focused on vocabulary learning.",
         )
         flow_manager = flow_factory.build()
