@@ -1,11 +1,7 @@
-export const getUserId = (): string => {
-  const storedId = localStorage.getItem('user_id');
-  if (storedId) return storedId;
-  const generatedId = 'user_' + Math.random().toString(36).substr(2, 9);
-  localStorage.setItem('user_id', generatedId);
-  return generatedId;
-};
+import FingerprintJS from '@fingerprintjs/fingerprintjs';
 
-export const setUserId = (id: string): void => {
-  localStorage.setItem('user_id', id);
+export const getUserId = async (): Promise<string> => {
+  const fp = await FingerprintJS.load();
+  const result = await fp.get();
+  return result.visitorId; // consistent across sessions on same browser
 };

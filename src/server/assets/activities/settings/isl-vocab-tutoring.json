@@ -79,6 +79,12 @@
           "default": "The user is a native American speaker.",
           "const": "The user is a native American speaker."
         },
+        "long_term_memory": {
+          "type": "boolean",
+          "default": false,
+          "const": false,
+          "description": "Enable or disable long-term memory. If enabled, the avatar will remember information from previous interactions and use it to guide the conversation."
+        },
         "languages": {
           "type": "array",
           "items": {
@@ -91,7 +97,7 @@
         },
         "video_flag": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "description": "Enable or disable video processing during the session."
         },
         "video_out_width": {

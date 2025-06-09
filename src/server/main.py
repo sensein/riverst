@@ -66,7 +66,10 @@ async def create_session(config: dict = Body(...)) -> JSONResponse:
     Returns:
         JSONResponse: Contains the newly generated session ID.
     """
-    session_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + str(uuid.uuid4())[:8]
+    if not config.get("user_id"):
+        return JSONResponse(status_code=400, content={"error": "User ID is required"})
+    user_id = config['user_id']
+    session_id = user_id + "__" + datetime.datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + str(uuid.uuid4())[:8]
     session_dir = BASE_SESSION_DIR / Path("sessions") / session_id
     session_dir.mkdir(parents=True, exist_ok=True)
 
@@ -267,6 +270,7 @@ async def get_activity_settings(settings_path: str) -> JSONResponse:
 
 @app.get("/api/sessions")
 async def list_sessions() -> JSONResponse:
+    """Lists all available sessions."""
     session_root = BASE_SESSION_DIR / "sessions"
     if not session_root.is_dir():
         return JSONResponse(content=[], status_code=200)
@@ -286,8 +290,21 @@ async def list_sessions() -> JSONResponse:
             valid_session_ids.append(session_dir.name)
     return JSONResponse(content=valid_session_ids)
 
+@app.get("/api/session_config/{session_id}")
+async def get_session_config(session_id: str) -> JSONResponse:
+    """Fetches the configuration for a specific session."""
+    session_dir = BASE_SESSION_DIR / "sessions" / session_id
+    config_path = session_dir / "config.json"
+    if not config_path.is_file():
+        return JSONResponse(content={"error": "Config file not found"}, status_code=404)
+    with config_path.open("r", encoding="utf-8") as f:
+        config = json.load(f)
+    return JSONResponse(content=config)
+
+
 @app.get("/api/session/{session_id}")
 async def get_session_data(session_id: str) -> JSONResponse:
+    """Fetches the data for a specific session."""
     session_dir = BASE_SESSION_DIR / "sessions" / session_id
     audio_dir = session_dir / "audios"
     json_dir = session_dir / "json"

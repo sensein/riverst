@@ -317,13 +317,16 @@ async def run_bot(
             await metrics_logger.aggregate_and_save()
 
             async def trigger_analysis_on_audios(audios_dir: str):
-                # Trigger analysis on all files in audios_dir without waiting for them
-                for filename in os.listdir(audios_dir):
-                    if filename.endswith(".wav"):
-                        filepath = os.path.join(audios_dir, filename)
-                        # asyncio.create_task(AudioAnalyzer.analyze_audio(filepath))
-                        await AudioAnalyzer.analyze_audio(filepath)
-
+                try:
+                    # Trigger analysis on all files in audios_dir without waiting for them
+                    for filename in os.listdir(audios_dir):
+                        if filename.endswith(".wav"):
+                            filepath = os.path.join(audios_dir, filename)
+                            # asyncio.create_task(AudioAnalyzer.analyze_audio(filepath))
+                            await AudioAnalyzer.analyze_audio(filepath)
+                except Exception as e:
+                    logger.error(f"Error triggering analysis on audios: {e}")
+                    
             audios_dir = f"{session_dir}/audios"
             asyncio.create_task(trigger_analysis_on_audios(audios_dir))
 
