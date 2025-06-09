@@ -78,6 +78,11 @@
           "default": "The user is a 4-grade student. They want to learn vocabulary words from a book.",
           "description": "Optional free-text field to describe the user."
         },
+        "long_term_memory": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable or disable long-term memory. If enabled, the avatar will remember information from previous interactions and use it to guide the conversation."
+        },
         "video_flag": {
           "type": "boolean",
           "default": false,

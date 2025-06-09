@@ -79,6 +79,12 @@
           "default": "The user is a native Italian speaker.",
           "const": "The user is a native Italian speaker."
         },
+        "long_term_memory": {
+          "type": "boolean",
+          "default": false,
+          "const": false,
+          "description": "Enable or disable long-term memory. If enabled, the avatar will remember information from previous interactions and use it to guide the conversation."
+        },
         "languages": {
           "type": "array",
           "items": {

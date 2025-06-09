@@ -152,7 +152,7 @@ export default function SessionDetail() {
           >
             Back to Sessions
           </Button>
-          <Title level={2} style={{ margin: 0, flex: 1, textAlign: "center" }}>
+          <Title level={4} style={{ margin: 0, flex: 1, textAlign: "center" }}>
             Session: {(() => {
               const { date, time, unique } = formatSessionId(id);
               return `${date} ${time} ${unique ? `(${unique})` : ""}`;

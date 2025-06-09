@@ -126,31 +126,49 @@ import React, {
       []
     )
   
+    const isConnectingRef = useRef(false)
+    const retryCountRef = useRef(0)
+
     useEffect(() => {
-      const connectIfReady = () => {
+      let stuckTimeout: NodeJS.Timeout | null = null
+
+      const connectIfReady = async () => {
         console.log("connectIfReady", interactionPhase, transportState)
-        if (interactionPhase === 'ready' && transportState === 'disconnected') {
+        if (interactionPhase === 'ready' && transportState === 'disconnected' && !isConnectingRef.current) {
           console.log("✅ connecting")
-          client.connect()
+          isConnectingRef.current = true
+          retryCountRef.current = 0
+          try {
+            await client?.connect()
+          } catch (err) {
+            console.error("❌ Connection failed:", err)
+          } finally {
+            isConnectingRef.current = false
+          }
         }
       }
 
       connectIfReady()
 
-      // if stuck in 'ready' + 'initializing' for too long, refresh >>> TODO: TEST THIS!!!!
-      let stuckTimeout: NodeJS.Timeout | null = null
-      if (interactionPhase === 'ready' && transportState === 'initializing') {
-        stuckTimeout = setTimeout(() => {
-          console.warn("🚨 Still initializing after 0.5s, reloading page.")
-          window.location.reload()
-        }, 500)
+      // handle stuck in initializing
+      if (
+        interactionPhase === 'ready' &&
+        transportState === 'initializing' &&
+        retryCountRef.current < 3 &&
+        !isConnectingRef.current
+      ) {
+        stuckTimeout = setTimeout(async () => {
+          console.warn("🚨 Still initializing, disconnecting to trigger retry.")
+          retryCountRef.current += 1
+          await client?.disconnect()
+        }, 1500) 
       }
 
       return () => {
         if (stuckTimeout) clearTimeout(stuckTimeout)
       }
     }, [interactionPhase, transportState, client])
-    
+
   
     // event handlers
     useRTVIClientEvent(RTVIEvent.BotStartedSpeaking, () => {

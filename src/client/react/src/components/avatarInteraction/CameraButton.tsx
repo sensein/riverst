@@ -1,53 +1,28 @@
-import { useState, useEffect, useCallback } from 'react'
-import { useRTVIClient, useRTVIClientEvent } from '@pipecat-ai/client-react'
+import { useEffect } from 'react'
 import { FloatButton } from 'antd'
 import { VideoCameraOutlined, VideoCameraAddOutlined } from '@ant-design/icons'
-import { RTVIEvent, Participant } from '@pipecat-ai/client-js'
+import { useRTVIClientCamControl } from "@pipecat-ai/client-react";
 
 export default function CameraButton() {
-  const client = useRTVIClient()
-  const [isCameraOn, setIsCameraOn] = useState(true)
+  const { enableCam, isCamEnabled } = useRTVIClientCamControl();
 
   // Sync with actual status on mount
   useEffect(() => {
-    if (client) {
-      setIsCameraOn(!!client.isCamEnabled)
-    }
-  }, [client])
+    enableCam(isCamEnabled)
+  }, [])
 
   const toggleCam = async () => {
-    if (!client) return
-    let isCamEnabled = client.isCamEnabled
-    await client.enableCam(!isCamEnabled)
-    setIsCameraOn(!isCamEnabled) // update local state manually
+    await enableCam(!isCamEnabled)
   }
-
-  useRTVIClientEvent(
-    RTVIEvent.TrackStopped,
-    useCallback((track: MediaStreamTrack, participant?: Participant) => {
-      if (participant?.local && track.kind === 'video') {
-        setIsCameraOn(false)
-      }
-    }, [])
-  )
-
-  useRTVIClientEvent(
-    RTVIEvent.TrackStarted,
-    useCallback((track: MediaStreamTrack, participant?: Participant) => {
-      if (participant?.local && track.kind === 'video') {
-        setIsCameraOn(true)
-      }
-    }, [])
-  )
 
   return (
     <FloatButton
       icon={
-        isCameraOn
+        isCamEnabled
           ? <VideoCameraOutlined style={{ color: '#fff' }} />
           : <VideoCameraAddOutlined style={{ color: 'blue' }} />
       }
-      type={isCameraOn ? 'primary' : 'default'}
+      type={isCamEnabled ? 'primary' : 'default'}
       style={{ right: 150, zIndex: 9999 }}
       onClick={toggleCam}
     />
