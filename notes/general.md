@@ -3,3 +3,9 @@
 - https://www.linkedin.com/feed/update/urn:li:activity:7306294278815633408/
 - https://github.com/Berkeley-Speech-Group/Speech-Articulatory-Coding
 - https://medium.com/@ggarciabernardo/realtime-ai-agents-frameworks-bb466ccb2a09 (comparison of different frameworks for live agents)
+- https://www.dollyglot.com/ >> fun f2f interactions
+- https://www.talkie-ai.com/it >> fun app where you practice different speaking scenarios (actually texting)
+- https://character.ai/ (same as above, but very bad)
+- https://getfluently.app/ >> app for improving your english
+- https://replika.com/ >> for comparison with our avatar, they don't seem able to detect and control emotions and cannot even move (https://my.replika.com/)
+- https://docs.ultravox.ai/ (alternative to pipecat?)
