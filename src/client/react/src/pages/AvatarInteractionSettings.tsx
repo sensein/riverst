@@ -1,34 +1,40 @@
 // src/pages/AvatarInteractionSettings.tsx
-import { useState, useEffect } from 'react'
-import { useLocation, useNavigate, Link } from 'react-router-dom'
-import { Spin, Alert } from 'antd'
-import axios from 'axios'
-import SettingsForm from '../components/SettingsForm'
+// TODO: make the MODAL LOOK NICER!!!
+import { useState, useEffect } from 'react';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { Spin, Alert, Modal, Button, QRCode, Typography, Divider, Tooltip } from 'antd';
+import { CopyOutlined } from '@ant-design/icons';
+import Logo from '/logo/riverst_black.svg';
+
+import axios from 'axios';
+import SettingsForm from '../components/SettingsForm';
+const { Paragraph, Text } = Typography;
 
 export default function AvatarInteractionSettings() {
-  const location = useLocation()
-  const settingsUrl = (location.state as any)?.settingsUrl as string | undefined
-  const [schema, setSchema] = useState<any>(null)
-  const navigate = useNavigate()
+  const location = useLocation();
+  const settingsUrl = (location.state as any)?.settingsUrl as string | undefined;
+  const [schema, setSchema] = useState<any>(null);
+  const navigate = useNavigate();
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [sessionLink, setSessionLink] = useState('');
+  const [sessionPayload, setSessionPayload] = useState<any>(null);
 
   // fetch the form schema from the passed-in URL
   useEffect(() => {
-    if (!settingsUrl) return
+    if (!settingsUrl) return;
     const url = settingsUrl.startsWith('http')
       ? settingsUrl
-      : `http://localhost:7860/${settingsUrl}`
+      : `http://localhost:7860/${settingsUrl}`;
 
     axios
       .get(url)
       .then(res => setSchema(res.data))
-      .catch(err => console.error('Failed to load schema:', err))
-  }, [settingsUrl])
-
+      .catch(err => console.error('Failed to load schema:', err));
+  }, [settingsUrl]);
 
   const onSubmit = async (values: any) => {
-    //console.log('Form values:', values);
     try {
-      // 1. Get avatar object from localStorage or server
       let avatar: any = null;
       const stored = localStorage.getItem('selectedAvatar');
 
@@ -58,18 +64,20 @@ export default function AvatarInteractionSettings() {
         }
       }
 
-      // 2. Compose full payload
       const fullPayload = {
         ...values,
         avatar,
       };
 
-      // 3. Create session
+      console.log(fullPayload);
+
       const res = await axios.post('http://localhost:7860/api/session', fullPayload);
       const sessionId: string = res.data.session_id;
+      const link = `/avatar-interaction/${sessionId}`;
 
-      // 4. Navigate with fullPayload
-      navigate(`/avatar-interaction/${sessionId}`, { state: fullPayload });
+      setSessionLink(link);
+      setSessionPayload(fullPayload);
+      setModalVisible(true);
     } catch (err) {
       console.error('Failed to create session:', err);
     }
@@ -80,7 +88,7 @@ export default function AvatarInteractionSettings() {
       <div style={{ maxWidth: 600, margin: '40px auto', padding: 20 }}>
         <Alert
           type="error"
-          message="No activitysettings provided."
+          message="No activity settings provided."
           description={
             <>
               Please start from the <Link to="/">home page</Link>.
@@ -89,7 +97,7 @@ export default function AvatarInteractionSettings() {
           showIcon
         />
       </div>
-    )
+    );
   }
 
   if (!schema) {
@@ -97,12 +105,68 @@ export default function AvatarInteractionSettings() {
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: 100 }}>
         <Spin size="large" />
       </div>
-    )
+    );
   }
+
+  const fullLink = window.location.origin + sessionLink;
 
   return (
     <div>
       <SettingsForm schema={schema} onSubmit={onSubmit} />
+
+      <Modal
+        title="Session created"
+        open={modalVisible}
+        onCancel={() => setModalVisible(false)}
+        footer={null}
+      >
+        <Paragraph>Scan the QR code or copy the link below to invite others to join the session.</Paragraph>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+          <div style={{ textAlign: 'center', flex: 1 }}>
+            <QRCode 
+              value={window.location.origin + sessionLink} 
+              size={160} 
+              icon={Logo}
+              iconSize={60}
+            />
+          </div>
+          <div style={{ flex: 2, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <Text strong>Link:</Text>
+                        <div style={{ display: 'flex', alignItems: 'center', marginTop: 8 }}>
+                          <Text
+              copyable={{
+                text: fullLink,
+                icon: [
+                  <Tooltip title="Copy link" key="copy">
+                    <CopyOutlined style={{ marginLeft: 8, color: '#1890ff' }} />
+                  </Tooltip>,
+                  <span style={{ marginLeft: 8 }}>Copied!</span>
+                ],
+              }}
+              style={{ fontFamily: 'monospace', backgroundColor: '#f5f5f5', padding: '4px 8px', borderRadius: 4 }}
+            >
+              {fullLink}
+            </Text>
+            </div>
+          </div>
+        </div>
+
+        <Divider orientation="center">
+          OR
+        </Divider>
+
+        <Paragraph>Click on the button below to begin with the session.</Paragraph>
+        <Button
+          type="primary"
+          block
+          size="large"
+          onClick={() => navigate(sessionLink, { state: sessionPayload })}
+        >
+          Start the session
+        </Button>
+      </Modal>
+
     </div>
-  )
+  );
 }

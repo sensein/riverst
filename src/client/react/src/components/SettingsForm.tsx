@@ -7,24 +7,24 @@ import {
   Button,
   Typography,
   Checkbox,
-  Tooltip,
-  Collapse
+  Tooltip
 } from 'antd';
 import { InfoCircleOutlined, CloseOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import validator from '@rjsf/validator-ajv8';
 import { useRTVIClientTransportState } from '@pipecat-ai/client-react';
 import axios from 'axios';
+import { getUserId } from '../utils/userId';
 
 const { Title, Paragraph } = Typography;
 const { TextArea } = Input;
-const { Panel } = Collapse;
 
 const SettingsForm = ({ schema, onSubmit }) => {
   const transportState = useRTVIClientTransportState();
   const [form] = Form.useForm();
   const [isValid, setIsValid] = useState(false);
   const [dynamicEnums, setDynamicEnums] = useState({ books: [] });
+  const [userId, setUserId] = useState<string | null>(null);
 
   const options = schema?.properties?.options?.properties || {};
   const requiredFields = schema?.properties?.options?.required || [];
@@ -32,32 +32,47 @@ const SettingsForm = ({ schema, onSubmit }) => {
   const schemaName = schema?.properties?.name?.const;
   const schemaDescription = schema?.properties?.description?.const;
 
-  const initialValues = Object.entries(options).reduce((acc, [key, def]) => {
-    acc[key] =
-      def.default ??
-      (def.type === 'boolean' ? false : def.type === 'array' ? [] : '');
-    return acc;
-  }, {});
-
-  const pipelineModality = Form.useWatch(['options', 'pipeline_modality'], form) || 'classic';
+  const pipelineModality = Form.useWatch(['options', 'pipeline_modality'], form);
 
   useEffect(() => {
-    if (!form) return;
+    const fetchUserId = async () => {
+      const id = await getUserId();
+      setUserId(id);
+      form.setFieldsValue({ user_id: id });
+    };
+
+    fetchUserId();
+
+    const fetchBooks = async () => {
+      try {
+        const response = await axios.get('http://localhost:7860/books');
+        setDynamicEnums(prev => ({
+          ...prev,
+          books: response.data
+        }));
+      } catch (error) {
+        console.error('Failed to fetch books:', error);
+      }
+    };
+
+    fetchBooks();
+    validateSchema();
+  }, []);
+
+  useEffect(() => {
+    if (!pipelineModality) return;
+
     const currentValues = form.getFieldValue('options') || {};
     const updates = { ...currentValues };
 
-    if (updates['pipelineModality'] === 'classic') {
-      if (!['openai', 'llama3.2'].includes(updates.llm_type)) {
-        updates.llm_type = 'openai';
-        updates.stt_type = 'openai';
-        updates.tts_type = 'openai';
-      }
-    } else if (updates['pipelineModality'] === 'e2e') {
-      if (!['openai_realtime_beta', 'gemini'].includes(updates.llm_type)) {
-        updates.llm_type = 'openai_realtime_beta';
-        updates.stt_type = undefined;
-        updates.tts_type = undefined;
-      }
+    if (pipelineModality === 'classic') {
+      updates.llm_type = 'openai';
+      updates.stt_type = 'openai';
+      updates.tts_type = 'openai';
+    } else if (pipelineModality === 'e2e') {
+      updates.llm_type = 'openai_realtime_beta';
+      updates.stt_type = undefined;
+      updates.tts_type = undefined;
     }
 
     form.setFieldsValue({ options: updates });
@@ -170,22 +185,12 @@ const SettingsForm = ({ schema, onSubmit }) => {
     }
   };
 
-  useEffect(() => {
-    const fetchBooks = async () => {
-      try {
-        const response = await axios.get('http://localhost:7860/books');
-        setDynamicEnums(prev => ({
-          ...prev,
-          books: response.data
-        }));
-      } catch (error) {
-        console.error('Failed to fetch books:', error);
-      }
-    };
-
-    fetchBooks();
-    validateSchema();
-  }, []);
+  const defaultOptions = Object.entries(options).reduce((acc, [key, def]) => {
+    acc[key] =
+      def.default ??
+      (def.type === 'boolean' ? false : def.type === 'array' ? [] : '');
+    return acc;
+  }, {});
 
   return (
     <div style={{ maxWidth: 600, margin: '0 auto', padding: 24, position: 'relative' }}>
@@ -201,12 +206,18 @@ const SettingsForm = ({ schema, onSubmit }) => {
       <Form
         form={form}
         layout="vertical"
-        initialValues={{ options: initialValues }}
-        onFinish={({ options }) =>
-          onSubmit({ ...options })
-        }
+        initialValues={{ options: defaultOptions }}
+        onFinish={({ options, user_id }) => onSubmit({ ...options, user_id })}
         onFieldsChange={validateSchema}
       >
+        <Form.Item
+          name="user_id"
+          label="USER ID"
+          rules={[{ required: true, message: 'User ID is required' }]}
+        >
+          <Input />
+        </Form.Item>
+
         {Object.entries(options).map(([key, config]) =>
           renderFormItem(key, config)
         )}
@@ -220,10 +231,10 @@ const SettingsForm = ({ schema, onSubmit }) => {
               const values = await form.getFieldsValue(true);
               const result = validator.validateFormData(schema, values);
               if (result.errors.length > 0) return;
-              onSubmit({ ...values.options });
+              onSubmit({ ...values.options, user_id: values.user_id });
             }}
           >
-            Start the session
+            Confirm session settings
           </Button>
         </Form.Item>
       </Form>

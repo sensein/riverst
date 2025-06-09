@@ -141,9 +141,11 @@ import React, {
       let stuckTimeout: NodeJS.Timeout | null = null
       if (interactionPhase === 'ready' && transportState === 'initializing') {
         stuckTimeout = setTimeout(() => {
-          console.warn("🚨 Still initializing after 0.5s, reloading page.")
-          window.location.reload()
-        }, 500)
+          //console.warn("🚨 Still initializing after 0.5s, reloading page.")
+          //window.location.reload()
+          console.warn("🚨 Still initializing, disconnecting to trigger retry.")
+          client?.disconnect()
+        }, 1000)
       }
 
       return () => {
