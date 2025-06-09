@@ -35,7 +35,7 @@
         },
         "pipeline_modality": {
           "type": "string",
-          "enum": ["classic", "e2e"],
+          "enum": ["classic"],
           "default": "classic",
           "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline."
         },
