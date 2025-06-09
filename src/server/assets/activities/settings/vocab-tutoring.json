@@ -35,13 +35,13 @@
         },
         "pipeline_modality": {
           "type": "string",
-          "enum": ["classic", "e2e"],
+          "enum": ["classic"],
           "default": "classic",
-          "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline."
+          "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline. 'e2e' is not supported for advanced flows."
         },
         "llm_type": {
           "type": "string",
-          "enum": ["openai", "openai_realtime_beta", "gemini", "mistral:7b"],
+          "enum": ["openai", "openai_realtime_beta", "gemini", "llama3.2"],
           "default": "openai",
           "description": "The LLM service to use."
         },

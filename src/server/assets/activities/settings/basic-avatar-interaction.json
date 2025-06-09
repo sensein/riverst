@@ -28,7 +28,7 @@
         },
         "llm_type": {
           "type": "string",
-          "enum": ["openai", "openai_realtime_beta", "gemini", "mistral:7b"],
+          "enum": ["openai", "openai_realtime_beta", "gemini", "llama3.2"],
           "default": "openai_realtime_beta",
           "description": "The LLM service to use."
         },
