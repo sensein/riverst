@@ -24,6 +24,7 @@ from pipecat.transports.base_transport import TransportParams
 from pipecat.transports.network.small_webrtc import SmallWebRTCTransport
 from pipecat.frames.frames import EndFrame
 from pipecat.services.llm_service import FunctionCallParams
+from pipecat.processors.filters.stt_mute_filter import STTMuteConfig, STTMuteFilter, STTMuteStrategy
 
 import asyncio
 from .video_processor import VideoProcessor
@@ -76,7 +77,7 @@ async def run_bot(
             avatar=config["avatar"]
         )
 
-        stt, llm, tts, tools, instruction, context, context_aggregator = await factory.build()
+        stt, llm, tts, tools, instruction, context, context_aggregator, allowed_animations = await factory.build()
         metrics_logger = MetricsLoggerProcessor(session_dir=session_dir)
 
         # Setup WebRTC transport parameters
@@ -108,33 +109,46 @@ async def run_bot(
         rtvi = RTVIProcessor(config=RTVIConfig(config=[]))
         viseme_processor = VisemeProcessor()
 
-        # Debug wrapper for function calls
+        # Debug wrapper for function calls from LLM (useful for catching errors)
         def function_call_debug_wrapper(fn):
-            async def wrapper(function_name, tool_call_id, args, llm, context, result_callback):
-                logger.info("FUNCTION_DEBUG: Function '{}' called with args: {}", function_name, json.dumps(args))
+            async def wrapper(params: FunctionCallParams):
+                logger.info("FUNCTION_DEBUG: Function '{}' called with args: {}", fn.__name__, json.dumps(params.arguments))
                 try:
-                    result = await fn(function_name, tool_call_id, args, llm, context, result_callback)
+                    result = await fn(params)
                     logger.info("FUNCTION_DEBUG: Function '{}' completed successfully with result: {}", 
-                               function_name, json.dumps(result) if result else "None")
+                               fn.__name__, json.dumps(result) if result else "None")
                     return result
                 except Exception as e:
-                    logger.error("FUNCTION_DEBUG: Error in function '{}': {}", function_name, str(e))
+                    logger.error("FUNCTION_DEBUG: Error in function '{}': {}", fn.__name__, str(e))
                     logger.error("FUNCTION_DEBUG: {}", traceback.format_exc())
-                    # Forward the exception
-                    raise
+                    await params.result_callback({
+                        "status": "error",
+                        "message": f"Execution error in '{fn.__name__}': {str(e)}"
+                    })
             return wrapper
         
         # Define animation trigger function callable by LLM
         async def handle_animation(params: FunctionCallParams):
-            animation_id = params.arguments["animation_id"]
-            print(f"Triggering animation: {animation_id}")
-            if animation_id:
-                frame = RTVIServerMessageFrame(data={"type": "animation-event", "payload": {"animation_id": animation_id}})
-                await rtvi.push_frame(frame)
-            await params.result_callback({"status": "animation_triggered"})
-
+            try:
+                animation_id = params.arguments["animation_id"]
+                print(f"Triggering animation: {animation_id}")
+                if animation_id and animation_id in allowed_animations:
+                    frame = RTVIServerMessageFrame(data={"type": "animation-event", "payload": {"animation_id": animation_id}})
+                    await rtvi.push_frame(frame)
+                    await params.result_callback({"status": "animation_triggered"})
+                else:
+                    await params.result_callback({
+                        "error": f"Failed to handle animation {animation_id}: Invalid animation ID. Valid IDs: {allowed_animations}"
+                    })
+            except Exception as e:
+                # Handle errors
+                logger.error(f"FUNCTION_DEBUG: Failed to handle animation: {str(e)}")
+                await params.result_callback({
+                    "error": f"Failed to handle animation: {str(e)}"
+                })
+                
         # Register wrapped functions
-        llm.register_function("trigger_animation", handle_animation)
+        llm.register_function("trigger_animation", function_call_debug_wrapper(handle_animation))
         
 
         async def handle_user_idle(_: UserIdleProcessor, retry_count: int) -> bool:
@@ -176,10 +190,20 @@ async def run_bot(
         transcript = TranscriptProcessor()
         transcript_handler = TranscriptHandler(output_file=os.path.join(session_dir, "transcript.json"))
 
+        # Configure with one or more strategies
+        stt_mute_processor = STTMuteFilter(
+            config=STTMuteConfig(
+                strategies={
+                    STTMuteStrategy.FIRST_SPEECH, # Mute only during the bot’s first speech utterance. Useful for introductions when you want the bot to complete its greeting before the user can speak.
+                }
+            ),
+        )
+
         if stt is not None and tts is not None:
             steps = [
                     pipecat_transport.input(),
                     rtvi,
+                    stt_mute_processor, # Add the mute processor before STT
                     stt,
                     transcript.user(),
                     context_aggregator.user(),
@@ -204,6 +228,7 @@ async def run_bot(
                     VideoProcessor(
                         transport_params.video_out_width, transport_params.video_out_height
                     ) if config.get("video_flag", False) else None,
+                    stt_mute_processor, # Add the mute processor before LLM
                     llm,  # LLM
                     transcript.user(),
                     viseme_audiobuffer,
