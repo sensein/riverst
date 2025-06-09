@@ -97,7 +97,7 @@
         },
         "video_flag": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Enable or disable video processing during the session."
         },
         "video_out_width": {
