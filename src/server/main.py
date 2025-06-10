@@ -302,6 +302,18 @@ async def get_session_config(session_id: str) -> JSONResponse:
     return JSONResponse(content=config)
 
 
+import math
+
+def clean_for_json(obj):
+    if isinstance(obj, dict):
+        return {k: clean_for_json(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [clean_for_json(i) for i in obj]
+    elif isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
+        return None
+    return obj
+
+
 @app.get("/api/session/{session_id}")
 async def get_session_data(session_id: str) -> JSONResponse:
     """Fetches the data for a specific session."""
@@ -337,10 +349,10 @@ async def get_session_data(session_id: str) -> JSONResponse:
         except Exception:
             metrics = {"error": "Could not read metrics_summary.json"}
 
-    return JSONResponse(content={
+    return JSONResponse(content=clean_for_json({
         "data": results,
         "metrics_summary": metrics
-    })
+    }))
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
