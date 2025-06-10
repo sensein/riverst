@@ -33,10 +33,12 @@ class MetricsLoggerProcessor(FrameProcessor):
         if isinstance(frame, MetricsFrame):
             timestamp = datetime.datetime.now().isoformat()
             for item in frame.data:
+                raw_processor = getattr(item, "processor", None)
+                processor = raw_processor.split("#")[0] if isinstance(raw_processor, str) and "#" in raw_processor else raw_processor
                 base = {
                     "timestamp": timestamp,
                     "type": type(item).__name__,
-                    "processor": getattr(item, "processor", None),
+                    "processor": processor,
                     "model": getattr(item, "model", None),
                 }
 
