@@ -35,19 +35,47 @@ def create_batch_tasks(path_to_books: str) -> tuple[list, dict]:
     Returns:
         tuple: (tasks_list, metadata_dict)
     """
-    system_message = (
-        "You are a helpful assistant that returns only valid JSON. "
-        "Extract high-quality Tier 2 vocabulary words from the provided text. "
-        "Do not duplicate words across levels. "
-        "Choose only Tier 2 words and categorize them as easy, medium, or hard. "
-        "Include as many valid words as possible in each category, but only if they appear in the original text exactly as written. "
-        "The expected output format is as follows: \n"
-        "{\n"
-        "  \"easy\": [\"word1\", \"word2\", \"...\"],\n"
-        "  \"medium\": [\"word1\", \"word2\", \"...\"],\n"
-        "  \"hard\": [\"word1\", \"word2\", \"...\"]\n"
-        "}"
-    )
+    system_message = """You are a vocabulary extraction specialist that returns only valid JSON.
+
+TASK: Extract high-quality Tier 2 vocabulary words from the provided text and categorize by grade level.
+
+TIER 2 DEFINITION - Words that:
+• Occur widely across domains and genres, marking written style rather than casual talk
+• Add precision or nuance beyond basic conversational words
+• Are NOT discipline-specific technical terms (those are Tier 3)
+• Include both cross-disciplinary academic words AND vivid literary words
+• Appear frequently enough in school texts to merit instruction
+
+TIER 2 EXAMPLES:
+• Academic: analyze, coordinate, duration, significant, establish, contrast, factor
+• Literary: remorse, solace, surreptitious, stride, fortunate, acquire, contemplate
+
+EXCLUDE (NOT Tier 2):
+• Tier 1 high-frequency words: walk, get, big, happy, said, because, after
+• Tier 3 technical terms: photosynthesis, algorithm, metaphor, protagonist
+• Proper nouns: names, places, brands
+• Very rare or archaic words
+
+GRADE LEVEL CATEGORIZATION:
+• Grade 4: Accessible Tier 2 words that 4th graders can handle (fortunate, establish, consider)
+• Grade 5: Intermediate Tier 2 words appropriate for 5th grade complexity (coordinate, significant, acquire)
+• Grade 6: Advanced Tier 2 words suitable for 6th grade level (surreptitious, contemplate, reluctant)
+
+SELECTION RULES:
+1. Only include words that actually appear in the provided text
+2. Focus on words that enhance precision and academic/literary expression
+3. Prioritize words useful across multiple contexts
+4. No duplicates across grade levels
+5. Consider vocabulary complexity and developmental appropriateness for each grade
+
+TARGET: Aim for 8-12 high-quality Tier 2 words per 10,000 words of text (adjust based on text richness).
+
+OUTPUT FORMAT:
+{
+  "grade_4": ["word1", "word2"],
+  "grade_5": ["word1", "word2"], 
+  "grade_6": ["word1", "word2"]
+}"""
     
     tasks = []
     metadata = {}
@@ -88,11 +116,9 @@ def create_batch_tasks(path_to_books: str) -> tuple[list, dict]:
                                         "method": "POST",
                                         "url": "/v1/chat/completions",
                                         "body": {
-                                            "model": "gpt-4o-mini",
+                                            "model": "gpt-4o-mini",  # More widely available than gpt-4
                                             "temperature": 0.3,
-                                            "response_format": { 
-                                                "type": "json_object"
-                                            },
+                                            "response_format": {"type": "json_object"},
                                             "messages": [
                                                 {"role": "system", "content": system_message},
                                                 {"role": "user", "content": filtered_text}

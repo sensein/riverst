@@ -4,15 +4,27 @@ This guide shows you how to automatically extract and categorize vocabulary word
 
 ## What This System Does
 
-The vocabulary extraction system analyzes your story chapters and automatically identifies **Tier 2 vocabulary words** - academic and literary words that are:
-- More sophisticated than everyday conversation words
-- Essential for reading comprehension and academic success  
-- Appropriately challenging for learners
+The vocabulary extraction system analyzes your story chapters and automatically identifies **Tier 2 vocabulary words** using research-based criteria. Tier 2 words are:
 
-For each chapter, the system extracts vocabulary and organizes words into three difficulty levels:
-- **Easy**: Accessible vocabulary words
-- **Medium**: Moderately challenging words  
-- **Hard**: Advanced or complex vocabulary
+- **Cross-domain academic and literary words** that occur widely across genres, marking written style rather than casual conversation
+- **Precision enhancers** that add nuance beyond basic conversational vocabulary (Tier 1)
+- **Not technical jargon** (Tier 3) but sophisticated enough to merit instruction
+- **Examples include:**
+  - Academic: *analyze, coordinate, duration, significant, establish, contrast, factor*
+  - Literary: *remorse, solace, surreptitious, stride, fortunate, acquire, contemplate*
+
+The system **excludes:**
+- **Tier 1 words**: High-frequency conversational words (*walk, get, big, happy, said*)
+- **Tier 3 words**: Technical discipline-specific terms (*photosynthesis, algorithm, protagonist*)
+- **Proper nouns**: Names, places, brands
+- **Very rare/archaic words**: Words unlikely to be encountered again
+
+For each chapter, the system extracts vocabulary and organizes words into three grade-appropriate levels:
+- **Grade 4**: Accessible Tier 2 vocabulary words appropriate for 4th grade reading level
+- **Grade 5**: Intermediate Tier 2 words suitable for 5th grade complexity
+- **Grade 6**: Advanced Tier 2 vocabulary appropriate for 6th grade level
+
+**Target extraction rate**: 8-12 high-quality Tier 2 words per 10,000 words of text (adjusted based on text richness).
 
 ## Before You Start
 
@@ -59,6 +71,26 @@ Each JSON file should have this structure:
 }
 ```
 
+After processing, vocabulary will be added:
+```json
+{
+  "reading_context": {
+    "book_title": "The Great Adventure", 
+    "chapters": [
+      {
+        "text": "Chapter content goes here...",
+        "title": "Chapter 1",
+        "vocab_words": {
+          "grade_4": ["word1", "word2"],
+          "grade_5": ["word1", "word2"],
+          "grade_6": ["word1", "word2"] 
+        }
+      }
+    ]
+  }
+}
+```
+
 ## Two Processing Options
 
 Choose the approach that best fits your needs:
@@ -89,9 +121,22 @@ Choose the approach that best fits your needs:
 Perfect for testing the system or processing smaller collections.
 
 ### 1. Run the extraction script
+
+**Option A: Standard processing**
 ```bash
 python extract_vocabulary.py
 ```
+
+**Option B: Research-enhanced processing (recommended)**
+```bash
+python extract_vocabulary_improved.py
+```
+
+The improved version includes:
+- ✅ Research-based Tier 2 criteria from Beck & McKeown, Coxhead, et al.
+- ✅ Better filtering of Tier 1 (high-frequency) and Tier 3 (technical) words
+- ✅ Quality statistics and extraction rate monitoring
+- ✅ Enhanced validation and error handling
 
 ### 2. Monitor progress
 You'll see a progress bar for each book being processed:
@@ -197,9 +242,9 @@ After processing, each chapter in your books will have vocabulary words added:
         "text": "The intrepid explorer ventured through the treacherous mountain pass...",
         "title": "Chapter 1",
         "vocab_words": {
-          "easy": ["explorer", "mountain", "journey"],
-          "medium": ["intrepid", "ventured", "treacherous"],
-          "hard": ["perilous", "arduous", "expedition"]
+          "grade_4": ["explorer", "mountain", "journey"],
+          "grade_5": ["intrepid", "ventured", "treacherous"],
+          "grade_6": ["perilous", "arduous", "expedition"]
         }
       }
     ]
@@ -209,24 +254,32 @@ After processing, each chapter in your books will have vocabulary words added:
 
 ## Quality Control
 
-The system includes several quality controls:
+The system implements research-based quality controls following Beck & McKeown's vocabulary frameworks:
 
-### Word Filtering
-- Removes words shorter than 4 characters
-- Excludes overly common words (appearing more than twice)
-- Strips punctuation and formatting
+### Evidence-Based Filtering
+- **Tier 1 Exclusion**: Removes high-frequency conversational words (first 2,000 most common spoken words)
+- **Tier 3 Exclusion**: Filters out technical discipline-specific terminology  
+- **Cross-Domain Validation**: Prioritizes words useful across multiple academic and literary contexts
+- **Frequency Analysis**: Targets words that appear often enough in school texts to merit instruction
 
-### Vocabulary Validation
-- Only includes words that actually appear in the original text
-- Categorizes words appropriately by difficulty
-- Focuses specifically on Tier 2 vocabulary (academic/literary words)
-- Avoids duplicating words across difficulty levels
+### Text Processing
+- **Lemmatization**: Groups word variants (e.g., "analyzing" → "analyze")
+- **Context Validation**: Only includes words that actually appear in the source text
+- **Proper Noun Filtering**: Excludes names, places, and brand terms
+- **Precision Focus**: Prioritizes words that add nuance beyond basic vocabulary
+
+### Academic Standards
+- **Cross-Disciplinary Focus**: Includes academic words useful across subjects (*coordinate, establish, factor*)
+- **Literary Enrichment**: Captures vivid narrative vocabulary (*remorse, solace, surreptitious*)
+- **Grade-Level Appropriateness**: Categorizes vocabulary by developmental reading levels (grades 4-6)
+- **Instructional Value**: Selects words that enhance both comprehension and expression
+- **Research-Based**: Follows Beck & McKeown's three-tier vocabulary framework
 
 ### Error Handling
-- Validates JSON responses from GPT-4
-- Skips chapters that can't be processed
-- Preserves original files if processing fails
-- Provides detailed error messages
+- **JSON Validation**: Ensures properly formatted responses from AI processing
+- **Duplicate Prevention**: No word appears across multiple grade levels
+- **Content Verification**: Validates extracted words against original text
+- **Fallback Processing**: Handles edge cases and processing errors gracefully
 
 ## Cost Estimation
 
@@ -283,4 +336,3 @@ python -c "import json; print(json.dumps(json.load(open('path/to/book.json')), i
 - Copy one book to a test directory
 - Update the script paths to process just that book
 - Verify the output before processing your full collection
-
