@@ -59,9 +59,23 @@ function formatSessionId(id) {
   return { date, time, unique: uniquePart };
 }
 
+// ---- Timestamp Extraction for Step ----
+function formatTimestamp(file: string) {
+  if (!file) return { date: "", time: "" };
+  const fileName = file.split("/").pop() || file;
+  const name = fileName.replace(/\.(wav|json)$/, "");
+  // Handles filenames like 20250610_113610_827606_AGENT
+  const match = name.match(/^(\d{8})_(\d{6})/);
+  if (!match) return { date: "", time: "" };
+  const [_, datePart, timePart] = match;
+  const date = `${datePart.slice(0, 4)}-${datePart.slice(4, 6)}-${datePart.slice(6, 8)}`;
+  const time = `${timePart.slice(0, 2)}:${timePart.slice(2, 4)}:${timePart.slice(4, 6)}`;
+  return { date, time };
+}
+
 // ---- Main Component ----
 export default function SessionDetail() {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
 
   const [steps, setSteps] = useState<Step[] | null>(null);
@@ -183,6 +197,7 @@ export default function SessionDetail() {
               const text = step.transcript?.text || "(no transcript)";
               const audioSrc =
                 "http://localhost:7860" + (step.audio_file || "");
+              const { date, time } = formatTimestamp(step.audio_file || "");
 
               // For chat layout: grid with avatar (left/right), bubble stretches in between
               return (
@@ -237,6 +252,9 @@ export default function SessionDetail() {
                   >
                     <Paragraph style={{ marginBottom: 8, marginTop: 0 }}>
                       <b>{displayName}:</b> {text}
+                    </Paragraph>
+                    <Paragraph style={{ marginBottom: 8, marginTop: 0, fontSize: "0.85em", color: "#888" }}>
+                      {date && time ? `${date} ${time}` : ""}
                     </Paragraph>
                     <audio
                       src={audioSrc}

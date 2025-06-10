@@ -38,6 +38,7 @@ VALID_ANIMATIONS = [
 @dataclass
 class BotComponentFactory:
     session_dir: str
+    user_id: str
     modality: ModalityType
     llm_type: LLMType
     llm_params: Optional[Dict[str, Any]] = None
@@ -47,6 +48,7 @@ class BotComponentFactory:
     tts_params: Optional[Dict[str, Any]] = None
     advanced_flows: bool = False
     flow_params: Optional[Dict[str, Any]] = None
+    long_term_memory: bool = False
 
     task_description: str = ""
     user_description: Optional[str] = None
@@ -212,6 +214,53 @@ class BotComponentFactory:
                     tools=tools,
                 )
 
+        messages = []
+        messages.append({"role": "system", "content": instruction})
+        if self.long_term_memory:
+            print("Building long term memory...")
+            parent_dir = os.path.dirname(self.session_dir)
+            print("Parent directory:", parent_dir)
+            current_session_name = os.path.basename(self.session_dir)
+
+            # Get all previous sessions for this user
+            user_sessions = sorted([
+                d for d in os.listdir(parent_dir)
+                if d.startswith(self.user_id) and d != current_session_name and os.path.isdir(os.path.join(parent_dir, d))
+            ])
+
+            print("Previous sessions for this user:", user_sessions)
+
+            all_past_messages = []
+            for session_id in user_sessions:
+                session_path = os.path.join(parent_dir, session_id)
+                transcript_path = os.path.join(session_path, "transcript.json")
+                if os.path.exists(transcript_path):
+                    try:
+                        with open(transcript_path, "r", encoding="utf-8") as f:
+                            data = json.load(f)
+                            # Add a system message before each session's messages
+                            all_past_messages.append({
+                                "role": "system",
+                                "content": f"--- Start of previous session `{session_id}` ---"
+                            })
+                            for message in data:
+                                if "role" in message and "content" in message:
+                                    all_past_messages.append({
+                                        "role": message["role"] if message["role"] == "user" else "assistant",
+                                        "content": message["content"]
+                                    })
+                            all_past_messages.append({
+                                "role": "system",
+                                "content": f"--- End of previous session `{session_id}` ---"
+                            })
+                    except Exception as e:
+                        print(f"Error loading transcript from {session_id}: {e}")
+                        continue
+
+            if all_past_messages:
+                messages.extend(all_past_messages)
+
+        print("messages before this session:", messages)
 
         transcript_path = os.path.join(self.session_dir, "transcript.json")
         if os.path.exists(transcript_path):
@@ -219,24 +268,32 @@ class BotComponentFactory:
             try:
                 with open(transcript_path, "r", encoding="utf-8") as f:
                     transcript_data = json.load(f)
-                    messages = [{"role": "system", "content": instruction}]
+
+                    messages.append({"role": "system", "content": "--- Start of the current session ---"})
                     for message in transcript_data:
                         messages.append({
-                            "role": message["role"] if message["role"] == "user" else "model",
+                            "role": message["role"] if message["role"] == "user" else "assistant",
                             "content": message["content"],
                         })
                     messages.append({
                         "role": "system",
-                        "content": "Please continue the conversation from where you left. There has been an interruption. Maybe make a summary of the conversation so far before continuing.",
+                        "content": "Please continue the conversation from where you left. There has been an interruption. Make a summary of the conversation so far before continuing.",
                     })
             except Exception as e:
                 print(f"Failed to load transcript.json: {e}")
                 raise ValueError("Failed to load transcript.json")
         else:
             print("No transcript.json found. Starting a new conversation.")
-            messages = [{"role": "system", "content": instruction}]
+            if self.long_term_memory and all_past_messages:
+                print("Still, be aware of the previous sessions.")
+                messages.append({
+                    "role": "system",
+                    "content": "Please make a summary of the previous conversations so far (stressing goals and achievements), and then continue the conversation from where you left.",
+                })
 
-        print("Messages:", messages)
+
+        print("Messages of this session:", messages)
+
         context = OpenAILLMContext(messages=messages, tools=tools)
         context_aggregator = llm.create_context_aggregator(context=context)
 
