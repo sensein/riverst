@@ -74,13 +74,13 @@ def generate_json():
                 "type": "function",
                 "function": {
                     "name": f"check_{node_name}_progress",
-                    "description": node.get("schema_description", "Check progress of checklist items, and update relevant info variables"),
+                    "description": node.get("schema_description", "Based on non-summary sections of the conversation, check progress of checklist items, and update relevant info variables"),
                     "parameters": {
                         "type": "object",
                         "properties": {},
                         "required": []
                     },
-                    "transition_callback": "general_transition_callback",  # Use transition_callback 
+                    "transition_callback": "general_transition_callback",
                     "handler": "general_handler"
                 }
             })

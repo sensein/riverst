@@ -50,7 +50,8 @@
     "info": {
       "has_listened_to_book": false,
       "vocab_words_known": [],
-      "vocab_words_taught": []
+      "vocab_words_taught+mastered": [],
+      "vocab_words_taught+not_mastered": []
     },
     "session_variables": {
       "reading_context": {
@@ -85,7 +86,7 @@
             "type": "function",
             "function": {
               "name": "check_warm_up_progress",
-              "description": "Check if all required warm-up elements have been covered in the preceding conversation. Return true or false for each item.",
+              "description": "Based on non-summary parts of the conversation, check if all required warm-up elements have been covered in the preceding conversation. Return true or false for each item.",
               "parameters": {
                 "type": "object",
                 "properties": {
@@ -104,7 +105,7 @@
                   "has_listened_to_book": {
                     "type": "boolean",
                     "description": "Whether the child has listened to their audiobook (for state checking)"
-                  }                  
+                  }
                 },
                 "required": [
                   "friendly_greeting_done",
@@ -156,7 +157,7 @@
         "task_messages": [
           {
             "role": "system",
-            "content": "TOOLS:\nYou may silently use the get_reading_context() function to retrieve the text and associated vocabulary words. Do not mention the function or its contents. Use details from the reading only as they naturally fit into the conversation.\n\nYou may silently call the check_vocabulary_progress() function only after completing all teaching steps for the current word. Do not mention that you are doing this.\n\nPROCEDURE:\nBegin by silently calling get_reading_context() to retrieve the current vocabulary list and text.\n\nStart with the first vocabulary word. Ask the child:\n\n\u201cDo you know what [word] means?\u201d\n\nBased on their response:\n\nIf they say yes but don\u2019t explain, ask:\n\n\u201cCan you tell me what it means?\u201d\n\nIf they give a correct explanation, acknowledge it and move to the next word. This is very important!!\n\nIf they don\u2019t know the word or explain it incorrectly, then and only then, continue teaching the word through natural conversation.\n\nTEACHING STEPS (only if the child does not know the word):\nIn a warm and conversational way (without listing steps), guide the child through the following:\n\nDefine the word using simple, child-friendly language.\n\nConnect it to the story:\nAsk the child to relate the word to the current reading, but do not give the answer away first (e.g.,\njust ask \u201cCan you think of something in the story that was [word]?\u201d)\nProvide feedback as needed.\n\nConnect it to their life:\nAsk the child to relate the word to their own experience (e.g.,\n\n\u201cWhat\u2019s something [word] in your own life?\u201d)\nGive clear feedback.\n\nPractice using the word:\nAsk the child to make up a new sentence using the word.\nOffer support and correction as needed.\n\nOnce you have taught two vocab words that the student didn't know, silently call check_vocabulary_progress() to move on. Do not keep going with words, and do not mention you are calling it!"
+            "content": "TOOLS:\nYou may silently use the get_reading_context() function to retrieve the text and associated vocabulary words. Do not mention the function or its contents. Use details from the reading only as they naturally fit into the conversation.\n\nYou may silently call the check_vocabulary_progress() function only after completing all teaching steps for the current word. Do not mention that you are doing this.\n\nPROCEDURE:\nBegin by silently calling get_reading_context() to retrieve the current vocabulary list and text.\n\nStart with the first vocabulary word. Ask the child:\n\n\u201cDo you know what [word] means?\u201d\n\nBased on their response:\n\nIf they say yes but don\u2019t explain, ask:\n\n\u201cCan you tell me what it means?\u201d\n\nIf they give a correct explanation, acknowledge it and move to the next word. This is very important!!\n\nIf they don\u2019t know the word or explain it incorrectly, then and only then, continue teaching the word through natural conversation.\n\nTEACHING STEPS (only if the child does not know the word):\nIn a warm and conversational way (without listing steps), guide the child through the following:\n\nDefine the word using simple, child-friendly language.\n\nConnect it to the story:\nFind in the story where the word is used, and provide the child the sentence, ask them what they think the word means in this context.\nProvide feedback to their response as needed.\n\nConnect it to their life:\nAsk the child to relate the word to their own experience (e.g.,\n\n\u201cWhat\u2019s something [word] in your own life?\u201d)\nGive clear feedback.\n\nPractice using the word:\nAsk the child to make up a new sentence using the word.\nOffer support and correction as needed.\n\nOnce you have taught two vocab words that the student didn't know, silently call check_vocabulary_progress() to move on. Do not keep going with words, and do not mention you are calling it!"
           }
         ],
         "functions": [
@@ -164,7 +165,7 @@
             "type": "function",
             "function": {
               "name": "check_vocab_progress",
-              "description": "Check progress through vocabulary instruction for both words",
+              "description": "Based on non-summary parts of the conversation, check progress through vocabulary instruction for both words",
               "parameters": {
                 "type": "object",
                 "properties": {
@@ -194,13 +195,6 @@
                       "type": "string"
                     },
                     "description": "List of vocab words the model asked about and child already knew and could provide accurate descriptions of."
-                  },
-                  "vocab_words_taught": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "description": "Info field for vocab_words_taught"
                   }
                 },
                 "required": [
@@ -209,8 +203,7 @@
                   "asked_book_context_understanding",
                   "asked_broader_context_understanding",
                   "asked_for_new_sentence",
-                  "vocab_words_known",
-                  "vocab_words_taught"
+                  "vocab_words_known"
                 ]
               },
               "transition_callback": "general_transition_callback",
@@ -264,7 +257,7 @@
             "type": "function",
             "function": {
               "name": "check_review_progress",
-              "description": "Check progress through review and recap of both words",
+              "description": "Based on non-summary parts of the conversation, check progress through review and recap of both words",
               "parameters": {
                 "type": "object",
                 "properties": {
@@ -289,29 +282,6 @@
               },
               "transition_callback": "general_transition_callback",
               "handler": "general_handler"
-            }
-          },
-          {
-            "type": "function",
-            "function": {
-              "name": "get_vocab_words_taught",
-              "description": "Get the vocab_words_taught info variable",
-              "parameters": {
-                "type": "object",
-                "properties": {
-                  "variable_name": {
-                    "type": "string",
-                    "description": "The name of the info variable to retrieve",
-                    "enum": [
-                      "vocab_words_taught"
-                    ]
-                  }
-                },
-                "required": [
-                  "variable_name"
-                ]
-              },
-              "handler": "get_info_variable_handler"
             }
           },
           {
@@ -351,7 +321,7 @@
             "type": "function",
             "function": {
               "name": "check_closing_progress",
-              "description": "Check completion of closing elements",
+              "description": "Based on non-summary parts of the conversation, check completion of closing elements",
               "parameters": {
                 "type": "object",
                 "properties": {
