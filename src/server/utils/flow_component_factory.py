@@ -136,9 +136,9 @@ class FlowComponentFactory:
         except json.JSONDecodeError as e:
             logger.error(f"Invalid JSON in flow configuration file: {e}")
             return None
-        # except Exception as e:
-        #     logger.error(f"Error initializing flow manager: {e}")
-        #     return None
+        except Exception as e:
+            logger.error(f"Error initializing flow manager: {e}")
+            return None
         
         
     async def initialize(self) -> bool:
