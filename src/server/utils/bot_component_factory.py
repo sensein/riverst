@@ -58,6 +58,7 @@ class BotComponentFactory:
     languages: Optional[List[str]] = None
     avatar: Dict[str, Any] = None
 
+
     def __post_init__(self):
         if self.llm_type not in ALLOWED_LLM[self.modality]:
             raise ValueError(f"LLM '{self.llm_type}' not allowed for modality '{self.modality}'.")
@@ -136,6 +137,9 @@ class BotComponentFactory:
                 required=["animation_id"]
             )
         ])
+        
+        
+        
 
     async def build(self) -> Tuple[
         Optional[object],  # STT
@@ -294,7 +298,7 @@ class BotComponentFactory:
 
         print("Messages of this session:", messages)
 
-        context = OpenAILLMContext(messages=messages, tools=tools)
+        context = OpenAILLMContext(messages=messages, tools=tools, tool_choice="auto")
         context_aggregator = llm.create_context_aggregator(context=context)
 
         return stt, llm, tts, tools, instruction, context, context_aggregator, self.used_animations, self.animation_instruction

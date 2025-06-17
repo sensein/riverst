@@ -110,47 +110,42 @@ async def run_bot(
 
         rtvi = RTVIProcessor(config=RTVIConfig(config=[]))
         viseme_processor = VisemeProcessor()
-
-        # Debug wrapper for function calls from LLM (useful for catching errors)
-        def function_call_debug_wrapper(fn):
-            async def wrapper(params: FunctionCallParams):
-                logger.info("FUNCTION_DEBUG: Function '{}' called with args: {}", fn.__name__, json.dumps(params.arguments))
-                try:
-                    result = await fn(params)
-                    logger.info("FUNCTION_DEBUG: Function '{}' completed successfully with result: {}", 
-                               fn.__name__, json.dumps(result) if result else "None")
-                    return result
-                except Exception as e:
-                    logger.error("FUNCTION_DEBUG: Error in function '{}': {}", fn.__name__, str(e))
-                    logger.error("FUNCTION_DEBUG: {}", traceback.format_exc())
-                    await params.result_callback({
-                        "status": "error",
-                        "message": f"Execution error in '{fn.__name__}': {str(e)}"
-                    })
-            return wrapper
+        
         
         # Define animation trigger function callable by LLM
-        async def handle_animation(params: FunctionCallParams):
+        async def handle_animation(params):
+            """Handle animation - works with both regular Pipecat and Pipecat Flows"""
+            
+            # Extract arguments regardless of paradigm
+            args = params.arguments if isinstance(params, FunctionCallParams) else params
+            animation_id = args.get("animation_id")
+            
             try:
-                animation_id = params.arguments["animation_id"]
-                print(f"Triggering animation: {animation_id}")
+                # Do the work
                 if animation_id and animation_id in allowed_animations:
-                    frame = RTVIServerMessageFrame(data={"type": "animation-event", "payload": {"animation_id": animation_id}})
-                    await rtvi.push_frame(frame)
-                    await params.result_callback({"status": "animation_triggered"})
-                else:
-                    await params.result_callback({
-                        "error": f"Failed to handle animation {animation_id}: Invalid animation ID. Valid IDs: {allowed_animations}"
+                    frame = RTVIServerMessageFrame(data={
+                        "type": "animation-event", 
+                        "payload": {"animation_id": animation_id}
                     })
+                    await rtvi.push_frame(frame)
+                    result = {"status": "animation_triggered"}
+                else:
+                    result = {
+                        "status": "error",
+                        "error": f"Invalid animation ID. Valid IDs: {allowed_animations}"
+                    }
             except Exception as e:
-                # Handle errors
-                logger.error(f"FUNCTION_DEBUG: Failed to handle animation: {str(e)}")
-                await params.result_callback({
-                    "error": f"Failed to handle animation: {str(e)}"
-                })
+                result = {"status": "error", "error": f"Failed to handle animation: {str(e)}"}
+            
+            # Handle result based on paradigm
+            if isinstance(params, FunctionCallParams):
+                await params.result_callback(result)
+            else:
+                return result
                 
-        # Register wrapped functions
-        llm.register_function("trigger_animation", function_call_debug_wrapper(handle_animation))
+        llm.register_function("trigger_animation", handle_animation)
+        
+        
         
 
         async def handle_user_idle(_: UserIdleProcessor, retry_count: int) -> bool:

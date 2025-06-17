@@ -1,10 +1,12 @@
 import os
 import json
-from typing import Any, Optional
+import copy
+from typing import Any, Optional, Dict
 
 from loguru import logger
 from pipecat.pipeline.task import PipelineTask
 from pipecat_flows import FlowManager, ContextStrategy, ContextStrategyConfig
+from pipecat_flows.types import FlowsFunctionSchema
 
 from .flows import load_config
 
@@ -80,37 +82,14 @@ class FlowComponentFactory:
         try:
             flow_config, state = load_config(self.flow_config_path, self.session_variables_path)
             
-            if self.user_description:
-                for _, node_data in flow_config.get('nodes', {}).items():
-                    if 'role_messages' not in node_data:
-                        continue  # Skip nodes without role_messages
-
-                    role_messages = node_data['role_messages']
-                    
-                    # Find first system message in role_messages
-                    system_msg = next(
-                        (msg for msg in role_messages 
-                        if msg.get('role') == 'system'), None)
-                    
-                    if system_msg:
-                        # Append to existing system message
-                        system_msg['content'] += f"\nUser description: {self.user_description}"
-
-            if self.animation_instruction:
-                for _, node_data in flow_config.get('nodes', {}).items():
-                    if 'role_messages' not in node_data:
-                        continue
-                    role_messages = node_data['role_messages']
-                    # Find first system message in role_messages
-                    system_msg = next(
-                        (msg for msg in role_messages 
-                        if msg.get('role') == 'system'), None)
-                    if system_msg:
-                        # Append to existing system message
-                        system_msg['content'] += self.animation_instruction
-                
-                        
-                                                        
+            
+            # Modify system messages in all nodes to include user description and animation instruction, and tools
+            for node_id, node_data in flow_config.get('nodes', {}).items():
+                self._add_llm_tools_to_node(node_data)
+                if 'role_messages' in node_data:
+                    self._update_system_message(node_data['role_messages'])
+            
+                                     
             flow_manager = FlowManager(
                 llm=self.llm,
                 context_aggregator=self.context_aggregator,
@@ -124,7 +103,7 @@ class FlowComponentFactory:
             )
                 
             flow_manager.state = state
-
+        
             
             self.flow_manager = flow_manager
             logger.info("Flow manager successfully built")
@@ -168,3 +147,48 @@ class FlowComponentFactory:
             import traceback
             logger.error("DEBUG: Traceback: {}", traceback.format_exc())
             return False
+        
+
+    def _add_llm_tools_to_node(self, node_data):
+        """Add existing LLM tools to node functions"""
+        if "functions" not in node_data:
+            return
+            
+        # Create lookup for tool schemas by function name
+        tool_schemas = {
+            schema.get("function", {}).get("name"): schema 
+            for schema in self.context_aggregator._user.context.tools
+        }
+        
+        for func_name, tool in self.llm._functions.items():
+            if func_name in tool_schemas:
+                function = tool_schemas[func_name]["function"]
+                parameters = function.get("parameters", {})
+                
+                node_data["functions"].append({
+                    "type": "function",
+                    "function": {
+                        "name": func_name,
+                        "description": function.get("description"),
+                        "parameters": {
+                            "type": "object",
+                            "properties": parameters.get("properties", {}),
+                            "required": parameters.get("required", [])
+                        },
+                        "handler": tool.handler
+                    }
+                })
+
+    def _update_system_message(self, role_messages):
+        """Update first system message with user description and animation instruction"""
+        system_msg = next(
+            (msg for msg in role_messages if msg.get('role') == 'system'), 
+            None
+        )
+        
+        if system_msg:
+            if self.user_description:
+                system_msg['content'] += f"\nUser description: {self.user_description}"
+            
+            if self.animation_instruction:
+                system_msg['content'] += f"\n{self.animation_instruction}"
