@@ -111,6 +111,23 @@ async def run_bot(
         rtvi = RTVIProcessor(config=RTVIConfig(config=[]))
         viseme_processor = VisemeProcessor()
         
+        def function_call_debug_wrapper(fn):
+            async def wrapper(params: FunctionCallParams):
+                logger.info("FUNCTION_DEBUG: Function '{}' called with args: {}", fn.__name__, json.dumps(params.arguments))
+                try:
+                    result = await fn(params)
+                    logger.info("FUNCTION_DEBUG: Function '{}' completed successfully with result: {}", 
+                               fn.__name__, json.dumps(result) if result else "None")
+                    return result
+                except Exception as e:
+                    logger.error("FUNCTION_DEBUG: Error in function '{}': {}", fn.__name__, str(e))
+                    logger.error("FUNCTION_DEBUG: {}", traceback.format_exc())
+                    await params.result_callback({
+                        "status": "error",
+                        "message": f"Execution error in '{fn.__name__}': {str(e)}"
+                    })
+            return wrapper
+        
         
         # Define animation trigger function callable by LLM
         async def handle_animation(params):
@@ -143,8 +160,7 @@ async def run_bot(
             else:
                 return result
                 
-        llm.register_function("trigger_animation", handle_animation)
-        
+        llm.register_function("trigger_animation", function_call_debug_wrapper(handle_animation))
         
         
 
