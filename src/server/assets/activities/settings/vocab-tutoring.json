@@ -35,13 +35,13 @@
         },
         "pipeline_modality": {
           "type": "string",
-          "enum": ["classic", "e2e"],
+          "enum": ["classic"],
           "default": "classic",
-          "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline."
+          "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline. 'e2e' is not supported for advanced flows."
         },
         "llm_type": {
           "type": "string",
-          "enum": ["openai", "openai_realtime_beta", "gemini", "mistral:7b"],
+          "enum": ["openai", "openai_realtime_beta", "gemini", "llama3.2"],
           "default": "openai",
           "description": "The LLM service to use."
         },
@@ -77,6 +77,11 @@
           "maxLength": 500,
           "default": "The user is a 4-grade student. They want to learn vocabulary words from a book.",
           "description": "Optional free-text field to describe the user."
+        },
+        "long_term_memory": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable or disable long-term memory. If enabled, the avatar will remember information from previous interactions and use it to guide the conversation."
         },
         "video_flag": {
           "type": "boolean",

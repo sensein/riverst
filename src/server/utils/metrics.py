@@ -14,9 +14,17 @@ class MetricsLoggerProcessor(FrameProcessor):
         super().__init__()
 
         self.session_dir = session_dir
-        self.metrics_log_path = os.path.join(session_dir, "metrics_log.json")
         self.summary_path = os.path.join(session_dir, "metrics_summary.json")
-        self.metrics: List[dict] = []
+        self.metrics_log_path = os.path.join(session_dir, "metrics_log.json")
+        if os.path.exists(self.metrics_log_path):
+            with open(self.metrics_log_path, "r", encoding="utf-8") as f:
+                try:
+                    self.metrics: List[dict] = json.load(f)
+                except Exception:
+                    self.metrics: List[dict] = []
+        else:
+            self.metrics: List[dict] = []
+        print(f"Metrics: {self.metrics}")
         os.makedirs(session_dir, exist_ok=True)
 
     async def process_frame(self, frame: Frame, direction: FrameDirection):
@@ -25,10 +33,12 @@ class MetricsLoggerProcessor(FrameProcessor):
         if isinstance(frame, MetricsFrame):
             timestamp = datetime.datetime.now().isoformat()
             for item in frame.data:
+                raw_processor = getattr(item, "processor", None)
+                processor = raw_processor.split("#")[0] if isinstance(raw_processor, str) and "#" in raw_processor else raw_processor
                 base = {
                     "timestamp": timestamp,
                     "type": type(item).__name__,
-                    "processor": getattr(item, "processor", None),
+                    "processor": processor,
                     "model": getattr(item, "model", None),
                 }
 

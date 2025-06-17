@@ -22,17 +22,31 @@
         },
         "pipeline_modality": {
           "type": "string",
-          "enum": ["e2e"],
-          "default": "e2e",
-          "const": "e2e",
+          "enum": ["classic"],
+          "default": "classic",
+          "const": "classic",
           "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline."
         },
         "llm_type": {
           "type": "string",
-          "enum": ["openai_realtime_beta", "gemini"],
-          "default": "openai_realtime_beta",
-          "const": "openai_realtime_beta",
+          "enum": ["openai", "llama3.2"],
+          "default": "openai",
+          "const": "openai",
           "description": "The LLM service to use."
+        },
+        "stt_type": {
+          "type": "string",
+          "enum": ["whisper", "openai"],
+          "default": "openai",
+          "const": "openai",
+          "description": "The STT service to use."
+        },
+        "tts_type": {
+          "type": "string",
+          "enum": ["openai", "piper"],
+          "default": "openai",
+          "const": "openai",
+          "description": "The TTS service to use."
         },
         "body_animations": {
           "type": "array",
@@ -78,6 +92,12 @@
           "description": "Optional free-text field to describe the user.",
           "default": "",
           "const": ""
+        },
+        "long_term_memory": {
+          "type": "boolean",
+          "default": false,
+          "const": false,
+          "description": "Enable or disable long-term memory. If enabled, the avatar will remember information from previous interactions and use it to guide the conversation."
         },
         "languages": {
           "type": "array",

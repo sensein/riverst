@@ -22,7 +22,7 @@
           "asked_for_new_sentence": false
         },
         "checklist_incomplete_message": "You made an error with and did not accomplish the following things, please read the task instructions thoroughly and the conversation thus far, and naturally fix this: {}.",
-        "checklist_complete_message": "Great job teaching the first vocabulary word. Now let's move on to the second vocabulary word.",
+        "checklist_complete_message": "Great job teaching the vocab, now let's move on to a review phase to check mastery.",
         "next_stage": "review"
       },
       "review": {
@@ -50,110 +50,21 @@
     "info": {
       "has_listened_to_book": false,
       "vocab_words_known": [],
-      "vocab_words_taught": []
+      "vocab_words_taught+mastered": [],
+      "vocab_words_taught+not_mastered": []
     },
     "session_variables": {
       "reading_context": {
-        "indexable_by": "pages",
+        "indexable_by": "chapters",
         "current_index": 1,
-        "book_title": "The Tale of Peter Rabbit",
-        "book_author": "Beatrix Potter",
+        "book_title": "",
+        "book_author": "",
         "pages": [
           {
-            "text": "Once upon a time there were four little Rabbits, and their names were\u2014 Flopsy, Mopsy, Cotton-tail, and Peter. They lived with their Mother in a sand-bank, underneath the root of a very big fir tree. \"Now, my dears,\" said old Mrs. Rabbit one morning, \"you may go into the fields or down the lane, but don't go into Mr. McGregor's garden: your Father had an accident there; he was put in a pie by Mrs. McGregor.\" \"Now run along, and don't get into mischief. I am going out.\" Then old Mrs. Rabbit took a basket and her umbrella, and went through the wood to the baker's. She bought a loaf of brown bread and five currant buns. Flopsy, Mopsy, and Cotton-tail, who were good little bunnies, went down the lane to gather blackberries; But Peter, who was very naughty, ran straight away to Mr. McGregor's garden, and squeezed under the gate!",
-            "image": "page1.png",
+            "text": "",
+            "image": "",
             "vocab_words": [
-              "blackberries",
-              "currant",
-              "mischief",
-              "umbrella",
-              "underneath"
-            ]
-          },
-          {
-            "text": "First he ate some lettuces and some French beans; and then he ate some radishes; And then, feeling rather sick, he went to look for some parsley. But round the end of a cucumber frame, whom should he meet but Mr. McGregor! Mr. McGregor was on his hands and knees planting out young cabbages, but he jumped up and ran after Peter, waving a rake and calling out, \"Stop thief!\" Peter was most dreadfully frightened; he rushed all over the garden, for he had forgotten the way back to the gate. He lost one of his shoes among the cabbages, and the other shoe amongst the potatoes. After losing them, he ran on four legs and went faster, so that he might have got away altogether if he had not, unfortunately, run into a gooseberry net, and got caught by the large buttons on his jacket.",
-            "image": "page2.png",
-            "vocab_words": [
-              "altogether",
-              "cabbages",
-              "cucumber",
-              "dreadfully",
-              "forgotten",
-              "frightened",
-              "gooseberry",
-              "lettuces",
-              "parsley",
-              "planting",
-              "radishes",
-              "unfortunately"
-            ]
-          },
-          {
-            "text": " It was a blue jacket with brass buttons, quite new. Peter gave himself up for lost, and shed big tears; but his sobs were overheard by some friendly sparrows, who flew to him in great excitement, and implored him to exert himself. Mr. McGregor came up with a sieve, which he intended to pop upon the top of Peter; but Peter wriggled out just in time, leaving his jacket behind him, and rushed into the tool-shed, and jumped into a can. It would have been a beautiful thing to hide in, if it had not had so much water in it. Mr. McGregor was quite sure that Peter was somewhere in the tool-shed, perhaps hidden underneath a flower-pot. He began to turn them over carefully, looking under each. Presently Peter sneezed\u2014\"Kerchoo!\" ",
-            "image": "page3.png",
-            "vocab_words": [
-              "beautiful",
-              "carefully",
-              "excitement",
-              "flowerpot",
-              "friendly",
-              "implored",
-              "overheard",
-              "presently",
-              "sparrows",
-              "somewhere",
-              "underneath",
-              "wriggled"
-            ]
-          },
-          {
-            "text": "Mr. McGregor was after him in no time, And tried to put his foot upon Peter, who jumped out of a window, upsetting three plants. The window was too small for Mr. McGregor, and he was tired of running after Peter. He went back to his work. Peter sat down to rest; he was out of breath and trembling with fright, and he had not the least idea which way to go. Also he was very damp with sitting in that can. After a time he began to wander about, going lippity\u2014lippity\u2014not very fast, and looking all around. He found a door in a wall; but it was locked, and there was no room for a fat little rabbit to squeeze underneath. An old mouse was running in and out over the stone doorstep, carrying peas and beans to her family in the wood. Peter asked her the way to the gate, but she had such a large pea in her mouth that she could not answer. ",
-            "image": "page4.png",
-            "vocab_words": [
-              "doorstep",
-              "squeeze",
-              "trembling",
-              "underneath",
-              "upsetting",
-              "wander"
-            ]
-          },
-          {
-            "text": "She only shook her head at him. Peter began to cry. Then he tried to find his way straight across the garden, but he became more and more puzzled. Presently, he came to a pond where Mr. McGregor filled his water-cans. A white cat was staring at some goldfish. She sat very, very still, but now and then the tip of her tail twitched as if it were alive. Peter thought it best to go away without speaking to her; he had heard about cats from his cousin, little Benjamin Bunny. He went back towards the tool-shed, but suddenly, quite close to him, he heard the noise of a hoe\u2014scr-r-ritch, scratch, scratch, scritch. Peter scuttered underneath the bushes. But presently, as nothing happened, he came out, and climbed upon a wheelbarrow, and peeped over. The first thing he saw was Mr. McGregor hoeing onions. His back was turned towards Peter, and beyond him was the gate! ",
-            "image": "page5.png",
-            "vocab_words": [
-              "goldfish",
-              "presently",
-              "puzzled",
-              "scuttered",
-              "suddenly",
-              "towards",
-              "twitched",
-              "underneath",
-              "wheelbarrow"
-            ]
-          },
-          {
-            "text": "Peter got down very quietly off the wheelbarrow and started running as fast as he could go, along a straight walk behind some black-currant bushes. Mr. McGregor caught sight of him at the corner, but Peter did not care. He slipped underneath the gate, and was safe at last in the wood outside the garden. Mr. McGregor hung up the little jacket and the shoes for a scarecrow to frighten the blackbirds. Peter never stopped running or looked behind him till he got home to the big fir tree. He was so tired that he flopped down upon the nice soft sand on the floor of the rabbit-hole and shut his eyes. His mother was busy cooking; she wondered what he had done with his clothes. It was the second little jacket and pair of shoes that Peter had lost in a fortnight!",
-            "image": "page6.png",
-            "vocab_words": [
-              "blackbirds",
-              "currant",
-              "frighten",
-              "fortnight",
-              "rabbit-hole",
-              "scarecrow",
-              "underneath",
-              "wheelbarrow"
-            ]
-          },
-          {
-            "text": "I am sorry to say that Peter was not very well during the evening. His mother put him to bed, and made some chamomile tea; and she gave a dose of it to Peter! \"One table-spoonful to be taken at bedtime.\" But Flopsy, Mopsy, and Cotton-tail had bread and milk and blackberries for supper.",
-            "image": "page7.png",
-            "vocab_words": [
-              "blackberries",
-              "chamomile",
-              "spoonful"
+              ""
             ]
           }
         ]
@@ -167,7 +78,7 @@
         "task_messages": [
           {
             "role": "system",
-            "content": "TOOLS:\nYou may silently call the check_warm_up_progress() function only after all warm-up conversation steps have been completed and you are ready to begin vocabulary instruction. Do not mention that you are doing this.\nSilently call the get_reading_context function to get the content of the book is. Do not mention that you are doing this, and only use the details as they naturally relate to the conversation.\n\nPROCEDURE:\nBegin with a friendly, natural greeting as if you're reconnecting with a child after a week apart. Keep the tone warm and familiar. Ask briefly about their week.\nSilently call the get_reading_context to get the current context, then ask the child if they had a chance to listen to their audiobook this week based on the information you get from calling that function.\nIf they have listened, ask one thoughtful and age-appropriate follow-up question about the story or a literary theme from the book. Wait for their replies, follow-up appropriately, but keep it very brief.\nIf they have not listened, gently encourage them to start soon, and ask what time of day might be best for them to listen.\n\nDo not teach vocab in this section, call check_warm_up_progress silently to proceed to the vocabulary phase after all steps are complete, but do not mention you are using that function, simply call it and don't mention it at all!"
+            "content": "TOOLS:\nYou may silently call the check_warm_up_progress() function only after all warm-up conversation steps have been completed and you are ready to begin vocabulary instruction. Do not mention that you are doing this.\nSilently call the get_reading_context function to get the content of the book is. Do not mention that you are doing this, and only use the details as they naturally relate to the conversation.\n\nPROCEDURE:\nBegin with a friendly, natural greeting as if you're reconnecting with a child after a week apart. Keep the tone warm and familiar, and ask a bit about their week, wait for their response, and then quickly transition to the task at hand.\nSilently call the get_reading_context to get the current context, then ask the child if they had a chance to listen to their audiobook this week based on the information you get from calling that function.\nIf they have listened, ask one thoughtful and age-appropriate follow-up question about the story or a literary theme from the book. Wait for their replies, follow-up appropriately, but keep it this exchange brief and make sure to push the conversation forwards.\nIf they have not listened, gently encourage them to start soon, and ask what time of day might be best for them to listen.\n\nDo not teach vocab in this section, call check_warm_up_progress silently to proceed to the vocabulary phase after all steps are complete, but do not mention you are using that function, simply call it and don't mention you are checking anything at all!"
           }
         ],
         "functions": [
@@ -175,7 +86,7 @@
             "type": "function",
             "function": {
               "name": "check_warm_up_progress",
-              "description": "Check if all required warm-up elements have been covered in the preceding conversation. Return true or false for each item.",
+              "description": "Based on non-summary parts of the conversation, check if all required warm-up elements have been covered in the preceding conversation. Return true or false for each item.",
               "parameters": {
                 "type": "object",
                 "properties": {
@@ -246,7 +157,7 @@
         "task_messages": [
           {
             "role": "system",
-            "content": "TOOLS:\nYou may silently use the get_reading_context() function to retrieve the text and associated vocabulary words. Do not mention the function or its contents. Use details from the reading only as they naturally fit into the conversation.\n\nYou may silently call the check_vocabulary_progress() function only after completing all teaching steps for the current word. Do not mention that you are doing this.\n\nPROCEDURE:\nBegin by silently calling get_reading_context() to retrieve the current vocabulary list and text.\n\nStart with the first vocabulary word. Ask the child:\n\n\u201cDo you know what [word] means?\u201d\n\nBased on their response:\n\nIf they say yes but don\u2019t explain, ask:\n\n\u201cCan you tell me what it means?\u201d\n\nIf they give a correct explanation, acknowledge it and move to the next word. This is very important!!\n\nIf they don\u2019t know the word or explain it incorrectly, then and only then, continue teaching the word through natural conversation.\n\nTEACHING STEPS (only if the child does not know the word):\nIn a warm and conversational way (without listing steps), guide the child through the following:\n\nDefine the word using simple, child-friendly language.\n\nConnect it to the story:\nAsk the child to relate the word to the current reading, but do not give the answer away first (e.g.,\njust ask \u201cCan you think of something in the story that was [word]?\u201d)\nProvide feedback as needed.\n\nConnect it to their life:\nAsk the child to relate the word to their own experience (e.g.,\n\n\u201cWhat\u2019s something [word] in your own life?\u201d)\nGive clear feedback.\n\nPractice using the word:\nAsk the child to make up a new sentence using the word.\nOffer support and correction as needed.\n\nOnce you have taught two vocab words that the student didn't know, silently call check_vocabulary_progress() to move on. Do not keep going with words, and do not mention you are calling it!"
+            "content": "TOOLS:\nYou may silently use the get_reading_context() function to retrieve the text and associated vocabulary words. Do not mention the function or its contents. Use details from the reading only as they naturally fit into the conversation.\nYou may silently call the check_vocabulary_progress() function only after completing all teaching steps for the current word. Do not mention that you are doing this.\nCRITICAL INSTRUCTION:\nDO NOT teach words the child already knows. If a child demonstrates they know a word, immediately move to the next word. This is essential for efficient learning.\nPROCEDURE:\nBegin by silently calling get_reading_context() to retrieve the current vocabulary list and text.\nStart with the first vocabulary word. Ask the child:\n\"Do you know what [word] means?\"\nBased on their response:\nIf they say yes but don't explain, ask:\n\"Can you tell me what it means?\"\nIf they give a correct explanation implying that they do know it, MOVE ON TO ANOTHER WORD. This is very important! You do not need to teach words they already know.\nIf they don't know the word or explain it incorrectly, then and only then, continue teaching the word through natural conversation.\nTEACHING STEPS (only if the child does not know the word):\nIn a warm and conversational way (without listing steps), guide the child through the following:\nDefine the word using simple, child-friendly language.\nConnect it to the story:\nFind in the story where the word is used, and provide the child the sentence, ask them what they think the word means in this context.\nProvide feedback to their response as needed.\nConnect it to their life:\nAsk the child to relate the word to their own experience (e.g.,\n\"What's something [word] in your own life?\")\nGive clear feedback.\nPractice using the word:\nAsk the child to make up a new sentence using the word.\nOffer support and correction as needed.\nOnce you have taught a vocab word that the student didn't already know, silently call check_vocabulary_progress() to move on. Do not keep going with words, and do not mention you are calling or checking anything at all!"
           }
         ],
         "functions": [
@@ -254,7 +165,7 @@
             "type": "function",
             "function": {
               "name": "check_vocab_progress",
-              "description": "Check progress through vocabulary instruction for both words",
+              "description": "Based on non-summary parts of the conversation, check progress through vocabulary instruction for both words",
               "parameters": {
                 "type": "object",
                 "properties": {
@@ -284,13 +195,6 @@
                       "type": "string"
                     },
                     "description": "List of vocab words the model asked about and child already knew and could provide accurate descriptions of."
-                  },
-                  "vocab_words_taught": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "description": "Info field for vocab_words_taught"
                   }
                 },
                 "required": [
@@ -299,8 +203,7 @@
                   "asked_book_context_understanding",
                   "asked_broader_context_understanding",
                   "asked_for_new_sentence",
-                  "vocab_words_known",
-                  "vocab_words_taught"
+                  "vocab_words_known"
                 ]
               },
               "transition_callback": "general_transition_callback",
@@ -346,7 +249,7 @@
         "task_messages": [
           {
             "role": "system",
-            "content": "Now review and recap vocab words that we covered. Silently call the vocab_words_taught function to get the words that were taught, but do not mention out loud the results. \nFor each word, 1. Ask the child to define the word again in their own words. 2. Ask them to use the word in a new sentence without any help 3. Provide the formal definition one more time. Make this feel like a natural conversation while ensuring you cover all these elements for both words. Call the check_review_progress function after finishing the review of each word."
+            "content": "Now conduct a SECOND ROUND of assessment for the vocabulary words we taught today.\n\nFor each word that required teaching (skip words they already knew), repeat these same three steps you did during instruction:\n1. Ask the child to define the word again in their own words\n2. Ask them to use the word in a new sentence without any help  \n3. Provide the formal definition one more time\n\nThis is the second time doing these steps - the first was during teaching, now you're doing them again as final review. Make this feel natural while systematically covering all elements again. Give detailed feedback to determine true mastery.\n\nAfter completing this second assessment round for all taught words, silently call check_review_progress (do not mention this function, or that you are checking anything at all!)"
           }
         ],
         "functions": [
@@ -354,7 +257,7 @@
             "type": "function",
             "function": {
               "name": "check_review_progress",
-              "description": "Check progress through review and recap of both words",
+              "description": "Based on non-summary parts of the conversation, check progress through review and recap of both words",
               "parameters": {
                 "type": "object",
                 "properties": {
@@ -364,68 +267,44 @@
                   },
                   "asked_for_sentence": {
                     "type": "boolean",
-                    "description": "Whether the model asked for a new sentence without prompting"
+                    "description": "Whether the model asked for a new sentence once again"
                   },
                   "provided_formal_definition": {
                     "type": "boolean",
                     "description": "Whether the model provided the formal definition again"
+                  },
+                  "vocab_words_taught+mastered": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Info field for vocab_words_taught+mastered"
+                  },
+                  "vocab_words_taught+not_mastered": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Info field for vocab_words_taught+not_mastered"
                   }
                 },
                 "required": [
                   "asked_for_definition",
                   "asked_for_sentence",
-                  "provided_formal_definition"
+                  "provided_formal_definition",
+                  "vocab_words_taught+mastered",
+                  "vocab_words_taught+not_mastered"
                 ]
               },
               "transition_callback": "general_transition_callback",
               "handler": "general_handler"
             }
-          },
+          }
+        ],
+        "pre_actions": [
           {
-            "type": "function",
-            "function": {
-              "name": "get_vocab_words_taught",
-              "description": "Get the vocab_words_taught info variable",
-              "parameters": {
-                "type": "object",
-                "properties": {
-                  "variable_name": {
-                    "type": "string",
-                    "description": "The name of the info variable to retrieve",
-                    "enum": [
-                      "vocab_words_taught"
-                    ]
-                  }
-                },
-                "required": [
-                  "variable_name"
-                ]
-              },
-              "handler": "get_info_variable_handler"
-            }
-          },
-          {
-            "type": "function",
-            "function": {
-              "name": "get_vocab_words_known",
-              "description": "Get the vocab_words_known info variable",
-              "parameters": {
-                "type": "object",
-                "properties": {
-                  "variable_name": {
-                    "type": "string",
-                    "description": "The name of the info variable to retrieve",
-                    "enum": [
-                      "vocab_words_known"
-                    ]
-                  }
-                },
-                "required": [
-                  "variable_name"
-                ]
-              },
-              "handler": "get_info_variable_handler"
-            }
+            "type": "tts_say",
+            "text": "Okay, now let's cover the words once more to ensure you have really got them down."
           }
         ]
       },
@@ -433,7 +312,7 @@
         "task_messages": [
           {
             "role": "system",
-            "content": "Close the session by: 1. Praising the child for their hard work learning the new vocabulary words. 2. Encouraging them to continue listening to their audiobook. 3. Suggesting they try to notice these new words in their reading or use them in conversations. 4. Briefly summarizing what they learned today. Keep this friendly and encouraging! Only call the check_closing_progress function when you've covered all the closing elements and are ready to end the session completely."
+            "content": "Close the session by covering all four elements in a warm, encouraging manner:\n1. Praise the child specifically for their hard work learning the new vocabulary words\n2. Encourage them to continue listening to their audiobook\n3. Suggest they try to notice these new words when reading or use them in conversations with family/friends\n4. Briefly summarize what vocabulary words they learned today and what each one means\n\nKeep this friendly, upbeat, and encouraging! Make the child feel proud of their accomplishments.\n\nOnly call the check_closing_progress function after you have completed ALL four closing elements and are completely finished with the session."
           }
         ],
         "functions": [
@@ -441,7 +320,7 @@
             "type": "function",
             "function": {
               "name": "check_closing_progress",
-              "description": "Check completion of closing elements",
+              "description": "Based on non-summary parts of the conversation, check completion of closing elements",
               "parameters": {
                 "type": "object",
                 "properties": {

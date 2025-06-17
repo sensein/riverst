@@ -1,21 +1,29 @@
-// src/pages/SessionsList.jsx
 import React, { useEffect, useState } from "react";
-import { List, Card, Typography, Spin, Layout, Button } from "antd";
-import { InfoCircleOutlined, ArrowLeftOutlined } from "@ant-design/icons";
-import { Link } from "react-router-dom";
+import {
+  List,
+  Typography,
+  Spin,
+  Layout,
+  Button,
+  Divider
+} from "antd";
+import { ArrowLeftOutlined } from "@ant-design/icons";
+import { Link, useNavigate } from "react-router-dom";
+
 const { Title, Text } = Typography;
-import { useParams, useNavigate } from "react-router-dom";
 
 function formatSessionId(id: string) {
-  // Expected format: 20250521_165335_2f11d904
-  const [datePart, timePart, uniquePart] = id.split("_");
-  if (!datePart || !timePart || !uniquePart) return { date: id, time: "", unique: "" };
+  // format: user_id__20250521_165335_2f11d904
+  const [userPart, rest] = id.split("__");
+  if (!rest) return { user: userPart, date: "", time: "", unique: "" };
 
-  // Format date: 20250521 -> 2025-05-21
+  const [datePart, timePart, uniquePart] = rest.split("_");
+  if (!datePart || !timePart || !uniquePart)
+    return { user: userPart, date: rest, time: "", unique: "" };
+
   const date = `${datePart.slice(0, 4)}-${datePart.slice(4, 6)}-${datePart.slice(6, 8)}`;
-  // Format time: 165335 -> 16:53:35
   const time = `${timePart.slice(0, 2)}:${timePart.slice(2, 4)}:${timePart.slice(4, 6)}`;
-  return { date, time, unique: uniquePart };
+  return { user: userPart, date, time, unique: uniquePart };
 }
 
 export default function SessionsList() {
@@ -25,8 +33,6 @@ export default function SessionsList() {
 
   useEffect(() => {
     let isMounted = true;
-    let intervalId;
-
     const fetchSessions = () => {
       fetch("http://localhost:7860/api/sessions")
         .then((res) => res.json())
@@ -37,10 +43,8 @@ export default function SessionsList() {
           if (isMounted) setLoading(false);
         });
     };
-
     fetchSessions();
-    intervalId = setInterval(fetchSessions, 5000); // Poll every 5 seconds
-
+    const intervalId = setInterval(fetchSessions, 5000);
     return () => {
       isMounted = false;
       clearInterval(intervalId);
@@ -49,22 +53,26 @@ export default function SessionsList() {
 
   if (loading) return <Spin />;
 
-  // Sort sessions by date and time descending (newest first)
-  const sortedSessions = [...sessions].sort((a: string, b: string) => {
-    // a and b are session IDs like "20250521_165335_2f11d904"
-    // Extract date and time as a comparable string
-    const [aDate, aTime] = a.split("_");
-    const [bDate, bTime] = b.split("_");
-    // Combine date and time for comparison
-    const aDT = aDate + aTime;
-    const bDT = bDate + bTime;
-    // Descending order: newest first
-    return bDT.localeCompare(aDT);
+  // Group by user_id
+  const grouped = sessions.reduce((acc, id) => {
+    const { user } = formatSessionId(id);
+    if (!acc[user]) acc[user] = [];
+    acc[user].push(id);
+    return acc;
+  }, {} as Record<string, string[]>);
+
+  // Sort sessions in each group by date+time descending
+  Object.keys(grouped).forEach((user) => {
+    grouped[user].sort((a, b) => {
+      const [, aRest] = a.split("__");
+      const [, bRest] = b.split("__");
+      return aRest.localeCompare(bRest); // Oldest first
+    });
   });
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
-      <div style={{ padding: "2rem"}}>
+      <div style={{ padding: "2rem" }}>
         <div
           style={{
             padding: "0 32px",
@@ -82,27 +90,37 @@ export default function SessionsList() {
           >
             Back to Home
           </Button>
-          <Title level={2} style={{ margin: 0, flex: 1, textAlign: "center" }}>Sessions</Title>
-          <div style={{ width: 104 }} /> {/* Spacer to match Back button width */}
+          <Title level={2} style={{ margin: 0, flex: 1, textAlign: "center" }}>
+            Sessions
+          </Title>
+          <div style={{ width: 104 }} />
         </div>
-        <List
-          dataSource={sortedSessions}
-          bordered
-          renderItem={id => {
-            const { date, time, unique } = formatSessionId(id);
-            return (
-              <Link to={`/sessions/${id}`}>
-                <List.Item key={id} style={{ background: "#fff" }}>
-                  <Text strong>{date}</Text>{" "}
-                  <Text code>{time}</Text>{" "}
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    {unique}
-                  </Text>
-                </List.Item>
-              </Link>
-            );
-          }}
-        />
+
+        {Object.entries(grouped).map(([user, userSessions]) => (
+          <div key={user} style={{ marginBottom: "2rem" }}>
+            <Divider orientation="left">
+              <Title level={4}>{user}</Title>
+            </Divider>
+            <List
+              dataSource={userSessions}
+              bordered
+              renderItem={(id) => {
+                const { date, time, unique } = formatSessionId(id);
+                return (
+                  <Link to={`/sessions/${id}`}>
+                    <List.Item key={id} style={{ background: "#fff" }}>
+                      <Text strong>{date}</Text>{" "}
+                      <Text code>{time}</Text>{" "}
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        {unique}
+                      </Text>
+                    </List.Item>
+                  </Link>
+                );
+              }}
+            />
+          </div>
+        ))}
       </div>
     </Layout>
   );

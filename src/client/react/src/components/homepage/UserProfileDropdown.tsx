@@ -1,41 +1,48 @@
-import React, { useState } from 'react';
-import { Dropdown, Avatar, Modal, Input } from 'antd';
-import { UserOutlined, SettingOutlined, HistoryOutlined, EditOutlined } from '@ant-design/icons';
-import { getUserId, setUserId as persistUserId } from '../../utils/userId';
+import React, { useEffect, useState } from 'react';
+import { Dropdown, Avatar, Spin } from 'antd';
+import {
+  UserOutlined,
+  SettingOutlined,
+  HistoryOutlined
+} from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-const UserProfileDropdown: React.FC = () => {
-  const [userId, setUserIdState] = useState<string>(getUserId());
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [newUserId, setNewUserId] = useState(userId);
-  const navigate = useNavigate();
 
-  const handleOk = () => {
-    persistUserId(newUserId);
-    setUserIdState(newUserId);
-    setIsModalVisible(false);
-  };
+const UserProfileDropdown: React.FC = () => {
+  const navigate = useNavigate();
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSessions = () => {
+      fetch("http://localhost:7860/api/sessions")
+        .then((res) => res.json())
+        .then((data) => {
+          setSessions(data);
+        })
+        .catch(() => {
+          setSessions([]);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    };
+
+    fetchSessions(); // Initial fetch
+    const intervalId = setInterval(fetchSessions, 5000); // Poll every 5s
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, []);
 
   const menuItems = [
-    {
-      key: 'userId',
-      label: `ID: ${userId}`,
-      icon: <UserOutlined />,
-      disabled: true
-    },
-    {
-      key: 'edit',
-      label: 'Edit ID',
-      icon: <EditOutlined />,
-      onClick: () => setIsModalVisible(true),
-    },
     {
       key: 'history',
       label: 'History',
       icon: <HistoryOutlined />,
-      disabled: false,
+      disabled: loading || sessions.length === 0,
       onClick: () => {
-        // Handle history action here
-        navigate('/sessions');
+        if (sessions.length > 0) navigate('/sessions');
       }
     },
     {
@@ -47,12 +54,12 @@ const UserProfileDropdown: React.FC = () => {
   ];
 
   return (
-    <>
-      <Dropdown
-        menu={{ items: menuItems }}
-        trigger={['click']}
-        placement="bottomRight"
-      >
+    <Dropdown
+      menu={{ items: menuItems }}
+      trigger={['click']}
+      placement="bottomRight"
+    >
+      <Spin spinning={loading} size="small">
         <Avatar
           style={{
             backgroundColor: '#E69F00',
@@ -63,21 +70,8 @@ const UserProfileDropdown: React.FC = () => {
           }}
           icon={<UserOutlined />}
         />
-      </Dropdown>
-
-      <Modal
-        title="Edit User ID"
-        open={isModalVisible}
-        onOk={handleOk}
-        onCancel={() => setIsModalVisible(false)}
-      >
-        <Input
-          maxLength={30}
-          value={newUserId}
-          onChange={(e) => setNewUserId(e.target.value)}
-        />
-      </Modal>
-    </>
+      </Spin>
+    </Dropdown>
   );
 };
 

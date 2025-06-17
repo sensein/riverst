@@ -63,11 +63,13 @@ async def run_bot(
         # Instantiate the bot components using factory pattern
         factory = BotComponentFactory(
             session_dir=session_dir,
+            user_id=config["user_id"],
             modality=config["pipeline_modality"],
             llm_type=config["llm_type"],
             stt_type=config["stt_type"] if "stt_type" in config else None,
             tts_type=config["tts_type"] if "tts_type" in config else None,
             tts_params={"client_session": session} if "tts_type" in config and config["tts_type"] == "piper" else None,
+            long_term_memory=config.get("long_term_memory", False),
             task_description=config.get("task_description", ""),
             user_description=config.get("user_description", ""),
             avatar_personality_description=config.get("avatar_personality_description", ""),
@@ -77,7 +79,7 @@ async def run_bot(
             avatar=config["avatar"]
         )
 
-        stt, llm, tts, tools, instruction, context, context_aggregator, allowed_animations = await factory.build()
+        stt, llm, tts, tools, instruction, context, context_aggregator, allowed_animations, animation_instruction = await factory.build()
         metrics_logger = MetricsLoggerProcessor(session_dir=session_dir)
 
         # Setup WebRTC transport parameters
@@ -200,6 +202,7 @@ async def run_bot(
         )
 
         if stt is not None and tts is not None:
+            # Note: e2e is faster, but classic is still preferable for now
             steps = [
                     pipecat_transport.input(),
                     rtvi,
@@ -260,7 +263,9 @@ async def run_bot(
             advanced_flows=config.get("advanced_flows", False),
             flow_config_path=config.get("advanced_flows_config_path"),
             session_variables_path=config.get("session_variables_path"),
-            summary_prompt="Summarize the key moments of learning, words, and concepts discussed in the tutoring session so far. Keep it concise and focused on vocabulary learning.",
+            user_description=config.get("user_description", ""),
+            animation_instruction= animation_instruction,
+            summary_prompt="Summarize the key moments of the session and concepts discussed so far. Keep it concise and focused on the activity goal and achievements.",
         )
         flow_manager = flow_factory.build()
 
@@ -285,7 +290,12 @@ async def run_bot(
 
         @audiobuffer.event_handler("on_audio_data")
         async def on_audio_data(_, audio, sr, ch):
-            await save_audio_file(audio, os.path.join(session_dir, "session.wav"), sr, ch)
+            # Note: this audio seems to be not very reliable (voices get overlapped)
+            i = 0
+            while os.path.exists(os.path.join(session_dir, f"session_{i}.wav")):
+                i += 1
+            session_wav = os.path.join(session_dir, f"session_{i}.wav")
+            await save_audio_file(audio, session_wav, sr, ch)
 
         @viseme_audiobuffer.event_handler("on_track_audio_data")
         async def on_track_audio_data(_, user_audio, bot_audio, sr, ch):
@@ -317,13 +327,16 @@ async def run_bot(
             await metrics_logger.aggregate_and_save()
 
             async def trigger_analysis_on_audios(audios_dir: str):
-                # Trigger analysis on all files in audios_dir without waiting for them
-                for filename in os.listdir(audios_dir):
-                    if filename.endswith(".wav"):
-                        filepath = os.path.join(audios_dir, filename)
-                        # asyncio.create_task(AudioAnalyzer.analyze_audio(filepath))
-                        await AudioAnalyzer.analyze_audio(filepath)
-
+                try:
+                    # Trigger analysis on all files in audios_dir without waiting for them
+                    for filename in os.listdir(audios_dir):
+                        if filename.endswith(".wav"):
+                            filepath = os.path.join(audios_dir, filename)
+                            # asyncio.create_task(AudioAnalyzer.analyze_audio(filepath))
+                            await AudioAnalyzer.analyze_audio(filepath)
+                except Exception as e:
+                    logger.error(f"Error triggering analysis on audios: {e}")
+                    
             audios_dir = f"{session_dir}/audios"
             asyncio.create_task(trigger_analysis_on_audios(audios_dir))
 
