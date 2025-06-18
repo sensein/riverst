@@ -273,3 +273,6 @@ async def get_info_variable_handler(args: FlowArgs, flow_manager: FlowManager) -
         "status": "success",
         "data": flow_manager.state["info"].get(variable_name)
     }
+
+
+# Animation handling has been moved to animation_handler.py

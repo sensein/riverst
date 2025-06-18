@@ -1,7 +1,7 @@
 import os
 import json
 import copy
-from typing import Any, Optional, Dict
+from typing import Any, Optional, Dict, List
 
 from loguru import logger
 from pipecat.pipeline.task import PipelineTask
@@ -9,6 +9,7 @@ from pipecat_flows import FlowManager, ContextStrategy, ContextStrategyConfig
 from pipecat_flows.types import FlowsFunctionSchema
 
 from .flows import load_config
+from .animation_handler import AnimationHandler
 
 
 class FlowComponentFactory:
@@ -28,7 +29,7 @@ class FlowComponentFactory:
         flow_config_path: Optional[str] = None,
         session_variables_path: Optional[str] = None,
         user_description: Optional[str] = None,
-        animation_instruction: str = "",
+        enabled_animations: Optional[List[str]] = None,
         session_dir: Optional[str] = None,
         context_strategy: ContextStrategy = ContextStrategy.RESET_WITH_SUMMARY,
         summary_prompt: str = "Summarize the key moments of learning, words, and concepts discussed in the tutoring session so far. Keep it concise and focused on vocabulary learning.",
@@ -57,7 +58,7 @@ class FlowComponentFactory:
         self.flow_config_path = flow_config_path
         self.session_variables_path = session_variables_path
         self.user_description = user_description
-        self.animation_instruction = animation_instruction
+        self.enabled_animations = enabled_animations or []
         self.context_strategy = context_strategy
         self.summary_prompt = summary_prompt
         self.flow_manager = None
@@ -190,5 +191,7 @@ class FlowComponentFactory:
             if self.user_description:
                 system_msg['content'] += f"\nUser description: {self.user_description}"
             
-            if self.animation_instruction:
-                system_msg['content'] += f"\n{self.animation_instruction}"
+            if self.enabled_animations:
+                animation_instruction = AnimationHandler.get_animation_instruction(self.enabled_animations)
+                if animation_instruction:
+                    system_msg['content'] += f"\n{animation_instruction}"

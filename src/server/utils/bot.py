@@ -35,6 +35,8 @@ from .viseme import VisemeProcessor
 from .bot_component_factory import BotComponentFactory
 from .flow_component_factory import FlowComponentFactory
 from .metrics import MetricsLoggerProcessor
+from .animation_handler import AnimationHandler
+
 
 load_dotenv(override=True)
 
@@ -128,39 +130,38 @@ async def run_bot(
                     })
             return wrapper
         
-        
-        # Define animation trigger function callable by LLM
-        async def handle_animation(params):
-            """Handle animation - works with both regular Pipecat and Pipecat Flows"""
-            
-            # Extract arguments regardless of paradigm
-            args = params.arguments if isinstance(params, FunctionCallParams) else params
-            animation_id = args.get("animation_id")
-            
-            try:
-                # Do the work
-                if animation_id and animation_id in allowed_animations:
-                    frame = RTVIServerMessageFrame(data={
-                        "type": "animation-event", 
-                        "payload": {"animation_id": animation_id}
-                    })
-                    await rtvi.push_frame(frame)
-                    result = {"status": "animation_triggered"}
-                else:
-                    result = {
-                        "status": "error",
-                        "error": f"Invalid animation ID. Valid IDs: {allowed_animations}"
-                    }
-            except Exception as e:
-                result = {"status": "error", "error": f"Failed to handle animation: {str(e)}"}
-            
-            # Handle result based on paradigm
-            if isinstance(params, FunctionCallParams):
-                await params.result_callback(result)
-            else:
-                return result
                 
-        llm.register_function("trigger_animation", function_call_debug_wrapper(handle_animation))
+        # create a closure that provides the rtvi instance to the handler
+        async def animation_handler_wrapper(params):
+            print("Calling animation_handler_wrapper with params:", params)
+            # Debug logging via logger.error to ensure visibility
+            logger.error("ANIMATION_WRAPPER_DEBUG: Received params type: {}", type(params))
+            logger.error("ANIMATION_WRAPPER_DEBUG: Has arguments attribute: {}", hasattr(params, 'arguments'))
+            
+            # Use a copy to avoid modifying the original
+            if isinstance(params, dict):
+                # Check for call from pipecat-flows using traceback
+                import traceback
+                stack = traceback.format_stack()
+                is_from_pipecat_flows = any("pipecat_flows/manager.py" in frame for frame in stack)
+                
+                if is_from_pipecat_flows and not hasattr(params, 'arguments'):
+                    logger.error("ANIMATION_WRAPPER_DEBUG: Called from pipecat_flows - adding arguments attribute")
+                    # Use ArgumentsDict to add the arguments attribute
+                    params = AnimationHandler.ArgumentsDict(params)
+                    logger.error("ANIMATION_WRAPPER_DEBUG: Added arguments attribute: {}", hasattr(params, 'arguments'))
+            
+            # Add allowed animations to appropriate location
+            if isinstance(params, FunctionCallParams):
+                params.arguments["_allowed_animations"] = allowed_animations
+            elif hasattr(params, 'arguments') and isinstance(params.arguments, dict):
+                params.arguments["_allowed_animations"] = allowed_animations
+            elif isinstance(params, dict):
+                params["_allowed_animations"] = allowed_animations
+            
+            return await AnimationHandler.handle_animation(params, rtvi=rtvi)
+                
+        llm.register_function("trigger_animation", function_call_debug_wrapper(animation_handler_wrapper))
         
         
 
@@ -275,7 +276,7 @@ async def run_bot(
             flow_config_path=config.get("advanced_flows_config_path"),
             session_variables_path=config.get("session_variables_path"),
             user_description=config.get("user_description", ""),
-            animation_instruction= animation_instruction,
+            enabled_animations=allowed_animations,
             summary_prompt="Summarize the key moments of the session and concepts discussed so far. Keep it concise and focused on the activity goal and achievements.",
         )
         flow_manager = flow_factory.build()

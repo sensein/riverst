@@ -18,6 +18,7 @@ from pipecat.adapters.schemas.function_schema import FunctionSchema
 from pipecat.processors.aggregators.openai_llm_context import OpenAILLMContext
 from pipecat.transports.base_transport import TransportParams
 import json
+from .animation_handler import AnimationHandler
 
 ModalityType = Literal["classic", "e2e"]
 LLMType = Literal["openai", "openai_realtime_beta", "gemini", "llama3.2"]
@@ -29,11 +30,6 @@ ALLOWED_LLM = {
     "e2e": {"openai_realtime_beta", "gemini"},
 }
 
-VALID_ANIMATIONS = [
-    {"id": "wave", "description": "When you welcome the user or greet them or introduce yourself, you always wave with your hand (animation)."},
-    {"id": "dance", "description": "When you congratulate or appreciate the user or are happy, you dance (animation)."},
-    {"id": "i_dont_know", "description": "When you don’t know something, you do the 'I don’t know' animation."},
-]
 
 @dataclass
 class BotComponentFactory:
@@ -57,6 +53,7 @@ class BotComponentFactory:
     body_animations: Optional[List[str]] = None
     languages: Optional[List[str]] = None
     avatar: Dict[str, Any] = None
+    animation_instruction: str = ""
 
 
     def __post_init__(self):
@@ -80,27 +77,18 @@ class BotComponentFactory:
             raise ValueError("Piper TTS requires 'client_session' in tts_params.")
 
         if self.body_animations:
-            valid_ids = {a["id"] for a in VALID_ANIMATIONS}
+            valid_ids = AnimationHandler.get_valid_animation_ids()
             invalid = [a for a in self.body_animations if a not in valid_ids]
             if invalid:
                 raise ValueError(f"Invalid animations: {invalid}. Allowed: {sorted(valid_ids)}")
 
-    def build_animation_instruction(self) -> str:
-        if not self.body_animations:
-            return ""
-
-        animation_map = {a["id"]: a["description"] for a in VALID_ANIMATIONS}
-        instructions = [
-            animation_map[anim_id]
-            for anim_id in set(self.body_animations) & set(animation_map)
-        ]
-        self.animation_instruction = f"Animation Instruction: {" ".join(instructions)}\n"
 
     def build_instruction(self) -> str:
         instruction = f"{self.avatar_system_prompt}\n"
-        self.build_animation_instruction()
-        if self.animation_instruction:
-            instruction += self.animation_instruction
+        animation_instruction = AnimationHandler.get_animation_instruction(self.body_animations)
+        if animation_instruction:
+            instruction += animation_instruction
+            self.animation_instruction = animation_instruction
         if self.languages:
             print(f"Supported languages: {self.languages}")
             instruction += (
@@ -120,21 +108,15 @@ class BotComponentFactory:
         return instruction.strip()
 
     def build_tools(self) -> ToolsSchema:
-        valid_ids = {a["id"] for a in VALID_ANIMATIONS}
-        animations = list(set(self.body_animations or []) & valid_ids)
-        self.used_animations = animations
+        animation_schema = AnimationHandler.build_animation_tools_schema(self.body_animations)
+        self.used_animations = animation_schema.get("properties", {}).get("animation_id", {}).get("enum", [])
+        
         return ToolsSchema(standard_tools=[
             FunctionSchema(
-                name="trigger_animation",
-                description="Trigger an avatar animation (only one at a time).",
-                properties={
-                    "animation_id": {
-                        "type": "string",
-                        "enum": animations,
-                        "description": "The animation ID to trigger.",
-                    }
-                },
-                required=["animation_id"]
+                name=animation_schema["name"],
+                description=animation_schema["description"],
+                properties=animation_schema["properties"],
+                required=animation_schema["required"],
             )
         ])
         
