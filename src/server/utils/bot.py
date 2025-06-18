@@ -115,7 +115,8 @@ async def run_bot(
         
         def function_call_debug_wrapper(fn):
             async def wrapper(params: FunctionCallParams):
-                logger.info("FUNCTION_DEBUG: Function '{}' called with args: {}", fn.__name__, json.dumps(params.arguments))
+                args = params.arguments if isinstance(params, FunctionCallParams) else params
+                logger.info("FUNCTION_DEBUG: Function '{}' called with args: {}", fn.__name__, json.dumps(args))
                 try:
                     result = await fn(params)
                     logger.info("FUNCTION_DEBUG: Function '{}' completed successfully with result: {}", 
@@ -124,42 +125,23 @@ async def run_bot(
                 except Exception as e:
                     logger.error("FUNCTION_DEBUG: Error in function '{}': {}", fn.__name__, str(e))
                     logger.error("FUNCTION_DEBUG: {}", traceback.format_exc())
-                    await params.result_callback({
+                    
+                    result = {
                         "status": "error",
                         "message": f"Execution error in '{fn.__name__}': {str(e)}"
-                    })
+                    }
+                    
+                    if isinstance(params, FunctionCallParams):
+                        await params.result_callback(result)
+                    else:
+                        return result
             return wrapper
         
                 
-        # create a closure that provides the rtvi instance to the handler
+        # create a closure that provides the rtvi instance and allowed animations to the handler
         async def animation_handler_wrapper(params):
-            print("Calling animation_handler_wrapper with params:", params)
-            # Debug logging via logger.error to ensure visibility
-            logger.error("ANIMATION_WRAPPER_DEBUG: Received params type: {}", type(params))
-            logger.error("ANIMATION_WRAPPER_DEBUG: Has arguments attribute: {}", hasattr(params, 'arguments'))
-            
-            # Use a copy to avoid modifying the original
-            if isinstance(params, dict):
-                # Check for call from pipecat-flows using traceback
-                import traceback
-                stack = traceback.format_stack()
-                is_from_pipecat_flows = any("pipecat_flows/manager.py" in frame for frame in stack)
-                
-                if is_from_pipecat_flows and not hasattr(params, 'arguments'):
-                    logger.error("ANIMATION_WRAPPER_DEBUG: Called from pipecat_flows - adding arguments attribute")
-                    # Use ArgumentsDict to add the arguments attribute
-                    params = AnimationHandler.ArgumentsDict(params)
-                    logger.error("ANIMATION_WRAPPER_DEBUG: Added arguments attribute: {}", hasattr(params, 'arguments'))
-            
-            # Add allowed animations to appropriate location
-            if isinstance(params, FunctionCallParams):
-                params.arguments["_allowed_animations"] = allowed_animations
-            elif hasattr(params, 'arguments') and isinstance(params.arguments, dict):
-                params.arguments["_allowed_animations"] = allowed_animations
-            elif isinstance(params, dict):
-                params["_allowed_animations"] = allowed_animations
-            
-            return await AnimationHandler.handle_animation(params, rtvi=rtvi)
+            """Wrapper for the animation handler to include RTVI instance."""
+            return await AnimationHandler.handle_animation(params, rtvi=rtvi, allowed_animations=allowed_animations)
                 
         llm.register_function("trigger_animation", function_call_debug_wrapper(animation_handler_wrapper))
         
