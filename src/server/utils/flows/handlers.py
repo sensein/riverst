@@ -5,6 +5,7 @@ from typing import Dict, Any, Tuple
 from pipecat_flows import FlowArgs, FlowResult, FlowManager, NodeConfig
 from loguru import logger
 from pprint import pformat
+import operator
 
 
 def update_checklist_fields(args: FlowArgs, checklist: Dict[str, bool]) -> None:    
@@ -33,15 +34,18 @@ def update_info_fields(args: FlowArgs, flow_manager: FlowManager) -> None:
     logger.info("Info after updating:\n{}", pformat(flow_manager.state["info"]))
 
 
-
 def create_next_node(flow_manager: FlowManager) -> Tuple[str , NodeConfig]:
     """
     Create the configuration for the next node based on current stage. 
     
-    This is actually rather sneaky because 
-    we are technically initializing the flow manager with static transitions, but actually we are using callbacks
-    and dynamic transitions, mimicing static transitions mostly. This is only because the static transitions don't 
-    quite have all the functionality we need.
+    This function evaluates transition conditions (found in flows config) and routes to the appropriate target node.
+    
+    Steps:
+    1. Get the current stage from flow manager
+    2. Retrieve transition logic for the current stage
+    3. Evaluate conditions in transition logic
+    4. If a condition is met, route to the target node specified in that condition
+    5. If no conditions are met or there are no conditions, route to the default target node
     
     Args:
         flow_manager: Flow manager instance
@@ -49,48 +53,69 @@ def create_next_node(flow_manager: FlowManager) -> Tuple[str , NodeConfig]:
     Returns:
         Next node configuration
     """
+    OPERATORS = {
+    "==": operator.eq,
+    "!=": operator.ne,
+    ">": operator.gt,
+    ">=": operator.ge,
+    "<": operator.lt,
+    "<=": operator.le,
+    "in": operator.contains,
+    "not_in": lambda a, b: not operator.contains(a, b)
+    }
+    
     stage = flow_manager.current_node
     if not stage:
         raise ValueError("Current stage is not set in flow manager.")
     
-    next_stage = flow_manager.state["stages"][stage]["next_stage"]
-    if not next_stage or type(next_stage) is not str:
-        raise ValueError(f"Next stage '{next_stage}' is not a valid string.")
-    node = flow_manager.nodes.get(next_stage)
-    if not node:
-        raise ValueError(f"Node '{next_stage}' not found in flow manager nodes.")
-    return next_stage, node
-
-
-def create_current_node(flow_manager: FlowManager, message: str) -> NodeConfig:
-    """
-    Create the configuration for the current node based on the current stage.
+    transition_logic = flow_manager.state["stages"][stage]["transition_logic"]
+    conditions = transition_logic.get("conditions", [])
+    default_target = transition_logic.get("default_target", None)
     
-    Args:
-        flow_manager: Flow manager instance
-        checklist: Checklist dictionary for the current stage
+    for condition in conditions:
+        info_variable = condition["parameters"]["variable_path"]
+        value = condition["parameters"]["value"]
+        operator_str = condition["parameters"]["operator"]
         
-    Returns:
-        Current node configuration
-    """    
-    stage = flow_manager.current_node
-    if not stage:
-        raise ValueError("Current stage is not set in flow manager.")
+        if info_variable not in flow_manager.state["info"]:
+            raise ValueError(f"Info variable '{info_variable}' not found in flow manager state.")
+        info_value = flow_manager.state["info"][info_variable]
+        
+        if operator_str not in OPERATORS:
+            raise ValueError(f"Unsupported operator: {operator_str}")
     
-    node = flow_manager.nodes.get(stage)
-    if not node:
-        raise ValueError(f"Node '{stage}' not found in flow manager nodes.")
+        if OPERATORS[operator_str](info_value, value):
+            # Condition is true, route to target node
+            target_node = condition["target_node"]
+            node = flow_manager.nodes.get(target_node)
+            if not node:
+                raise ValueError(f"Node '{next_stage}' not found in flow manager nodes.")
+            return target_node, node
     
-    node["task_messages"][0]["content"] += f"\n\n{message}"
-    node["pre_actions"] = []
-    
-    return node
+    # If no conditions matched, use the default target
+    if default_target:
+        target_node = default_target
+        node = flow_manager.nodes.get(target_node)
+        if not node:
+            raise ValueError(f"Node '{target_node}' not found in flow manager nodes.")
+        return target_node, node
+    else:
+        # If no default target, raise an error
+        raise ValueError(f"No matching conditions and no default target specified for stage '{stage}'.")
+
 
 
 
 async def general_handler(args: FlowArgs, flow_manager: FlowManager) -> Dict[str, Any]:
     """
     General handler to check progress through a stage, store details in flow state, and handle transitions.
+    
+    Steps:
+    1. Update info fields in flow state with args
+    2. Update checklist fields in the current stage's checklist
+    3. Check if all checklist items are complete
+    4. If complete, create next node and return success message
+    5. If incomplete, return error message with details of incomplete items
     
     Args:
         args: Flow arguments
@@ -108,6 +133,7 @@ async def general_handler(args: FlowArgs, flow_manager: FlowManager) -> Dict[str
     
     if complete:
         message = flow_manager.state["stages"][stage]["checklist_complete_message"]
+        node = create_next_node(flow_manager)
     else:
         message = flow_manager.state["stages"][stage]["checklist_incomplete_message"].format(
             ", ".join([item for item, done in checklist.items() if not done])
@@ -117,28 +143,9 @@ async def general_handler(args: FlowArgs, flow_manager: FlowManager) -> Dict[str
         "status": "success" if complete else "error",
         "checklist": checklist,
         "message": message
-    }
+    }, node
 
 
-async def general_transition_callback(args: Dict, result: FlowResult, flow_manager: FlowManager):
-    """
-    Handle transitions to the next node.
-    
-    Args:
-        args: Flow arguments
-        result: Flow result
-        flow_manager: Flow manager instance
-    """
-    if result.get("status") == "success":
-        try:
-            next_stage, node = create_next_node(flow_manager)
-            await flow_manager.set_node(next_stage, node)
-        except Exception as e:
-            import traceback
-    else:
-        message = result.get("message", "Please ensure you have completed all required checklist items.")
-        await flow_manager.set_node(flow_manager.current_node, create_current_node(flow_manager, message))
-    
     
 
 
@@ -275,4 +282,3 @@ async def get_info_variable_handler(args: FlowArgs, flow_manager: FlowManager) -
     }
 
 
-# Animation handling has been moved to animation_handler.py
