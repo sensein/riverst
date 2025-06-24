@@ -35,7 +35,7 @@ def update_info_fields(args: FlowArgs, flow_manager: FlowManager) -> None:
     logger.info("Info after updating:\n{}", pformat(flow_manager.state["info"]))
 
 
-def create_next_node(flow_manager: FlowManager) -> str:
+def create_next_node(flow_manager: FlowManager) -> Tuple[str, NodeConfig]:
     """
     Determine the next node ID based on current stage and transition logic.
     
@@ -53,7 +53,7 @@ def create_next_node(flow_manager: FlowManager) -> str:
         flow_manager: Flow manager instance
         
     Returns:
-        String containing the next node ID to transition to
+        Tuple containing the next node ID and its configuration.
     """
     OPERATORS = {
         "==": operator.eq,
@@ -126,7 +126,7 @@ def create_current_node(flow_manager: FlowManager, message: str) -> NodeConfig:
     
     node = flow_manager.nodes.get(current_node)
     if not node:
-        raise ValueError(f"Node '{stage}' not found in flow manager nodes.")
+        raise ValueError(f"Node '{current_node}' not found in flow manager nodes.")
     
     node["task_messages"][0]["content"] += f"\n\n{message}"
     node["pre_actions"] = []

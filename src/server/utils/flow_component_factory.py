@@ -86,9 +86,6 @@ class FlowComponentFactory:
         try:
             flow_config, state = load_config(self.flow_config_path, self.session_variables_path)
             
-            logger.error(f"Flow config loaded: {flow_config}")
-            logger.error(f"Flow state loaded: {state}")
-            
             
             # Modify system messages in all nodes to include user description and animation instruction, and tools
             for node_id, node_data in flow_config.get('nodes', {}).items():
