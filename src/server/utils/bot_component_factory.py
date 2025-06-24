@@ -85,10 +85,9 @@ class BotComponentFactory:
 
     def build_instruction(self) -> str:
         instruction = f"{self.avatar_system_prompt}\n"
-        animation_instruction = AnimationHandler.get_animation_instruction(self.body_animations)
-        if animation_instruction:
-            instruction += animation_instruction
-            self.animation_instruction = animation_instruction
+        self.animation_instruction = AnimationHandler.get_animation_instruction(self.body_animations)
+        if self.animation_instruction:
+            instruction += self.animation_instruction
         if self.languages:
             print(f"Supported languages: {self.languages}")
             instruction += (

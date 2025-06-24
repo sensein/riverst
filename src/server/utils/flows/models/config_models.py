@@ -81,21 +81,42 @@ class FlowConfigurationFile(BaseModel):
             checklist_keys = set(stage.checklist.keys())
             
             # Check each function
+            general_handler_found = False
             for func in node.functions:
                 if not hasattr(func, 'function') or not hasattr(func.function, 'parameters'):
                     continue
+                
+                # Check if this is the general_handler which handles the checklist
+                if hasattr(func.function, 'handler') and func.function.handler == 'general_handler':
+                    general_handler_found = True
                     
-                params = func.function.parameters
-                properties = params.get('properties', {})
-                
-                # Check that all checklist items have corresponding parameters
-                property_keys = set(properties.keys())
-                missing_checklist_params = checklist_keys - property_keys
-                
-                if missing_checklist_params:
-                    raise ValueError(
-                        f"Node '{stage_name}' checklist items {missing_checklist_params} "
-                        f"do not have corresponding function parameters"
-                    )
+                    params = func.function.parameters
+                    properties = params.get('properties', {})
+                    
+                    # Check that all checklist items have corresponding parameters
+                    property_keys = set(properties.keys())
+                    missing_checklist_params = checklist_keys - property_keys
+                    
+                    if missing_checklist_params:
+                        raise ValueError(
+                            f"Node '{stage_name}' checklist items {missing_checklist_params} "
+                            f"do not have corresponding function parameters"
+                        )
+                    
+                    # Also check that info variables used in transition_logic have corresponding parameters
+                    if hasattr(stage, 'transition_logic') and stage.transition_logic:
+                        for condition in stage.transition_logic.conditions:
+                            var_path = condition.parameters.variable_path
+                            if var_path not in property_keys and var_path in state_config.info:
+                                raise ValueError(
+                                    f"Node '{stage_name}' transition condition uses variable '{var_path}' "
+                                    f"but it's not included in the function parameters"
+                                )
+            
+            # Verify that a general_handler is present for nodes with checklists
+            if checklist_keys and not general_handler_found:
+                raise ValueError(
+                    f"Node '{stage_name}' has checklist items but no general_handler function"
+                )
         
         return self

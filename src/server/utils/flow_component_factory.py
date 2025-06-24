@@ -74,7 +74,10 @@ class FlowComponentFactory:
             return None
 
         logger.info(f"Initializing flow manager with config path: {self.flow_config_path}")
-        logger.info(f"Session variables path: {self.session_variables_path}")
+        if not self.session_variables_path:
+            logger.warning("Session variables path not provided, using default within flow config file")
+        else:
+            logger.info(f"Session variables path: {self.session_variables_path}")
 
         if not self.flow_config_path:
             logger.error("Flow config path not provided but advanced_flows is enabled")
@@ -82,6 +85,9 @@ class FlowComponentFactory:
 
         try:
             flow_config, state = load_config(self.flow_config_path, self.session_variables_path)
+            
+            logger.error(f"Flow config loaded: {flow_config}")
+            logger.error(f"Flow state loaded: {state}")
             
             
             # Modify system messages in all nodes to include user description and animation instruction, and tools

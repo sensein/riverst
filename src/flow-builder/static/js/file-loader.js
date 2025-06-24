@@ -1,7 +1,5 @@
 // file-loader.js - Handles loading and parsing configuration files
 
-// Store file handles for saving back to the same file
-window.currentFileHandle = null;
 
 window.loadConfigFromFile = async function(file) {
     console.log("Starting to load file:", file.name);
@@ -16,22 +14,8 @@ window.loadConfigFromFile = async function(file) {
         </div>
     `;
     
-    // Check if the file comes from a file handle (from showOpenFilePicker)
+    // Read the file
     try {
-        if (file.handle) {
-            // Verify we have read permission
-            const options = { mode: 'read' };
-            if ((await file.handle.queryPermission(options)) !== 'granted') {
-                if ((await file.handle.requestPermission(options)) !== 'granted') {
-                    throw new Error("Permission to read the file was denied");
-                }
-            }
-            
-            window.currentFileHandle = file.handle;
-            console.log("Stored file handle for direct saving");
-        } else {
-            window.currentFileHandle = null;
-        }
         
         const reader = new FileReader();
         
@@ -350,17 +334,24 @@ function loadNodes(config) {
     let sequence = [];
     let currentNode = initialNodeName;
     
-    // In the original structure, next_stage is in the stage data
+    // With dynamic transitions, we need to handle transition_logic
     // Start by adding initial node
     if (currentNode) {
         sequence.push(currentNode);
     }
     
-    // Follow the chain of next_stage in stages
+    // Follow the chain using transition_logic
     while (currentNode && currentNode !== 'end' && !sequence.includes(currentNode)) {
         const stageName = stageMapping[currentNode] || currentNode;
         const stage = stages[stageName] || {};
-        currentNode = stage?.next_stage || null;
+        
+        // Get the default target from transition_logic
+        if (stage.transition_logic && stage.transition_logic.default_target_node) {
+            currentNode = stage.transition_logic.default_target_node;
+        } else {
+            // If no transition_logic, we can't determine the next node
+            break;
+        }
         
         if (currentNode && currentNode !== 'end' && !sequence.includes(currentNode)) {
             sequence.push(currentNode);
@@ -402,39 +393,244 @@ function createNodeFromConfig(nodeName, node, stage, config) {
     // Set node task message
     const taskMessages = node.task_messages || [];
     if (taskMessages.length > 0) {
-        nodeEl.querySelector('.node-task-message').value = taskMessages[0].content || "";
+        let taskMessage = taskMessages[0].content || "";
+        // If task message doesn't already have the prepended text, add it
+        if (!taskMessage.startsWith('TOOLS:')) {
+            taskMessage = `TOOLS: \nYou may silently call the check_${nodeName}_progress() function only after all ${nodeName} conversation steps have been completed. Do not mention you are doing this. Look at the other tools you have available, and if you need a certain piece of information that they provide, you may call them (silently, do not mention you are doing so!)\n\n${taskMessage}`;
+        }
+        nodeEl.querySelector('.node-task-message').value = taskMessage;
     }
     
     // Handle pre-actions if present
     if (node.pre_actions && node.pre_actions.length > 0) {
-        const preAction = node.pre_actions[0];
-        if (preAction.type === 'tts_say' && preAction.text) {
+        // Look for tts_say actions
+        const ttsAction = node.pre_actions.find(action => action.type === 'tts_say');
+        if (ttsAction && ttsAction.text) {
             const preActionText = nodeEl.querySelector('.pre-action-text');
-            
             if (preActionText) {
-                preActionText.value = preAction.text;
+                preActionText.value = ttsAction.text;
             }
         }
+        
+        // Look for function pre-actions
+        node.pre_actions.forEach(action => {
+            if (action.type === 'function') {
+                const handler = action.handler;
+                
+                // Handle all variable getters: we'll transform these to get_variable_action_handler
+                if (handler === 'get_session_variable_handler' || 
+                    handler === 'get_info_variable_handler' || 
+                    handler === 'get_variable_action_handler') {
+                    
+                    // For simplified format, variable_name is directly on the action
+                    let varName = action.variable_name;
+                    
+                    // Determine the source based on handler type or explicit source
+                    let source = action.source || 
+                                (handler === 'get_info_variable_handler' ? 'info' : 'session_variables');
+                    
+                    if (!varName) {
+                        // Try to extract from the old format if needed
+                        const funcDef = action.function;
+                        if (funcDef && funcDef.parameters) {
+                            const varEnum = funcDef.parameters?.properties?.variable_name?.enum;
+                            if (varEnum && varEnum.length > 0) {
+                                varName = varEnum[0];
+                            } else {
+                                return;
+                            }
+                        } else {
+                            return;
+                        }
+                    }
+                    
+                    const isInfoVar = source === 'info';
+                    const funcDescription = `Get the ${varName} for the session`;
+                    
+                    // Add as a pre-action function directly to the pre-actions tab
+                    // This keeps the UI representation the same even though we'll convert
+                    // these to post-actions when generating the JSON
+                    addPreActionFunction(nodeEl, varName, funcDescription, isInfoVar);
+                }
+            }
+        });
     }
     
     // Find schema description
     let schemaDesc = "";
-    // Look through functions for the one with the transition_callback
+    // Look through functions for the one with the general_handler
     if (node.functions) {
         for (const funcData of node.functions) {
-            if (funcData.function && funcData.function.transition_callback === "general_transition_callback" && 
-                funcData.function.handler === "general_handler") {
+            if (funcData.function && funcData.function.handler === "general_handler") {
                 schemaDesc = funcData.function.description || "";
                 break;
             }
         }
     }
     
-    nodeEl.querySelector('.schema-description').value = schemaDesc;
+    nodeEl.querySelector('.schema-description').value = "From the non-summarizing elements of the conversation, return whether each task has been accomplished, and for info fields, return an accurate and precise answer.";
     
-    // Set messages
-    nodeEl.querySelector('.node-incomplete-message').value = stage.checklist_incomplete_message || `Please complete the following ${nodeName} items: {}`;
-    nodeEl.querySelector('.node-complete-message').value = stage.checklist_complete_message || "Great job! Moving on to the next stage.";
+    // Set incomplete message if element exists
+    const incompleteMessageEl = nodeEl.querySelector('.node-incomplete-message');
+    if (incompleteMessageEl) {
+        incompleteMessageEl.value = stage.checklist_incomplete_message || `Please complete the following ${nodeName} items: {}`;
+    }
+    
+    // Set up transitions
+    const transitionLogic = stage.transition_logic || {};
+    const defaultTarget = transitionLogic.default_target_node || "end";
+    
+    // Set default target node if present
+    const defaultTargetSelect = nodeEl.querySelector('.default-target-node');
+    if (defaultTargetSelect) {
+        // Populate the dropdown first
+        const nodes = Object.keys(config.flow_config.nodes);
+        nodes.forEach(nodeName => {
+            if (nodeName !== 'end') {
+                const option = document.createElement('option');
+                option.value = nodeName;
+                option.text = nodeName;
+                defaultTargetSelect.appendChild(option);
+            }
+        });
+        
+        // Add end node
+        const endOption = document.createElement('option');
+        endOption.value = 'end';
+        endOption.text = 'end';
+        defaultTargetSelect.appendChild(endOption);
+        
+        // Set selected value
+        defaultTargetSelect.value = defaultTarget;
+    }
+    
+    // Add transition conditions
+    const transitionsContainer = nodeEl.querySelector('.transition-conditions-container');
+    if (transitionsContainer && transitionLogic.conditions) {
+        transitionLogic.conditions.forEach(condition => {
+            const conditionEl = document.getElementById('transitionConditionTemplate').content.cloneNode(true);
+            
+            // Set variable
+            const variableSelect = conditionEl.querySelector('.condition-variable');
+            const infoFields = Object.keys(config.state_config.info || {});
+            infoFields.forEach(field => {
+                const option = document.createElement('option');
+                option.value = field;
+                option.text = field;
+                variableSelect.appendChild(option);
+            });
+            
+            if (condition.parameters && condition.parameters.variable_path) {
+                variableSelect.value = condition.parameters.variable_path;
+            }
+            
+            // Set operator
+            const operatorSelect = conditionEl.querySelector('.condition-operator');
+            if (condition.parameters && condition.parameters.operator) {
+                operatorSelect.value = condition.parameters.operator;
+            }
+            
+            // Set value
+            const valueContainer = conditionEl.querySelector('.condition-value-container');
+            const valueInput = conditionEl.querySelector('.condition-value');
+            
+            if (condition.parameters && condition.parameters.value !== undefined) {
+                const value = condition.parameters.value;
+                
+                if (typeof value === 'boolean') {
+                    // Replace input with select for boolean
+                    valueContainer.innerHTML = `
+                        <select class="form-select form-select-sm condition-value">
+                            <option value="true">true</option>
+                            <option value="false">false</option>
+                        </select>
+                    `;
+                    valueContainer.querySelector('.condition-value').value = value ? 'true' : 'false';
+                } else if (typeof value === 'number') {
+                    // Number input
+                    valueContainer.innerHTML = `<input type="number" class="form-control form-control-sm condition-value" value="${value}">`;
+                } else if (Array.isArray(value)) {
+                    // Array input
+                    valueContainer.innerHTML = `<input type="text" class="form-control form-control-sm condition-value" value="${JSON.stringify(value)}">`;
+                } else {
+                    // String input
+                    valueContainer.innerHTML = `<input type="text" class="form-control form-control-sm condition-value" value="${value}">`;
+                }
+            }
+            
+            // Set target node
+            const targetSelect = conditionEl.querySelector('.condition-target-node');
+            const nodes = Object.keys(config.flow_config.nodes);
+            nodes.forEach(nodeName => {
+                if (nodeName !== 'end') {
+                    const option = document.createElement('option');
+                    option.value = nodeName;
+                    option.text = nodeName;
+                    targetSelect.appendChild(option);
+                }
+            });
+            
+            // Add end node
+            const endOption = document.createElement('option');
+            endOption.value = 'end';
+            endOption.text = 'end';
+            targetSelect.appendChild(endOption);
+            
+            if (condition.target_node) {
+                targetSelect.value = condition.target_node;
+            }
+            
+            // Set up remove button
+            conditionEl.querySelector('.remove-condition-btn').addEventListener('click', function() {
+                this.closest('.transition-condition-card').remove();
+            });
+            
+            transitionsContainer.appendChild(conditionEl);
+        });
+    }
+    
+    // Set up add condition button
+    const addConditionBtn = nodeEl.querySelector('.add-condition-btn');
+    if (addConditionBtn) {
+        addConditionBtn.addEventListener('click', function() {
+            const conditionEl = document.getElementById('transitionConditionTemplate').content.cloneNode(true);
+            
+            // Set up the condition variable dropdown
+            const variableSelect = conditionEl.querySelector('.condition-variable');
+            const infoFields = Object.keys(config.state_config.info || {});
+            infoFields.forEach(field => {
+                const option = document.createElement('option');
+                option.value = field;
+                option.text = field;
+                variableSelect.appendChild(option);
+            });
+            
+            // Set up the target node dropdown
+            const targetSelect = conditionEl.querySelector('.condition-target-node');
+            const nodes = Object.keys(config.flow_config.nodes);
+            nodes.forEach(nodeName => {
+                if (nodeName !== 'end') {
+                    const option = document.createElement('option');
+                    option.value = nodeName;
+                    option.text = nodeName;
+                    targetSelect.appendChild(option);
+                }
+            });
+            
+            // Add end node
+            const endOption = document.createElement('option');
+            endOption.value = 'end';
+            endOption.text = 'end';
+            targetSelect.appendChild(endOption);
+            
+            // Set up remove button
+            conditionEl.querySelector('.remove-condition-btn').addEventListener('click', function() {
+                this.closest('.transition-condition-card').remove();
+            });
+            
+            transitionsContainer.appendChild(conditionEl);
+        });
+    }
     
     // Add checklist items
     const checklistContainer = nodeEl.querySelector('.checklist-container');
@@ -603,8 +799,7 @@ function loadNodeFunctions(nodeEl, nodeName, node) {
     // Process each function in the node
     nodeFunctions.forEach(funcData => {
         // Skip the check_progress function which is automatically added
-        if (funcData.function && funcData.function.transition_callback === "general_transition_callback" && 
-            funcData.function.handler === "general_handler") return;
+        if (funcData.function && funcData.function.handler === "general_handler") return;
         
         if (funcData.function && (funcData.function.handler === "get_task_variable_handler" || 
                                  funcData.function.handler === "get_session_variable_handler" ||

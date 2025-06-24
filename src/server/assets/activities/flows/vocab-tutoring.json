@@ -11,7 +11,29 @@
         },
         "checklist_incomplete_message": "Please complete the following warm-up items: {}.",
         "checklist_complete_message": "Great job completing the warm-up stage. Now let's move on to the first vocabulary word.",
-        "next_stage": "vocab"
+        "transition_logic" : {
+          "conditions": [
+            {
+              "parameters": {
+                "variable_path": "has_listened_to_book",
+                "operator": "==",
+                "value": true
+              },
+              "target_node": "vocab"
+            },
+            {
+              "parameters": {
+                "variable_path": "has_listened_to_book",
+                "operator": "==",
+                "value": false
+
+              },
+              "target_node": "closing"
+            }
+          ],
+          "default_target_node": "vocab"
+          
+        }
       },
       "vocab": {
         "checklist": {

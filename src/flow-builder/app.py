@@ -63,7 +63,7 @@ def generate_json():
                 "task_messages": [
                     {
                         "role": "system",
-                        "content": node.get("task_message", "")
+                        "content": node.get('task_message', '')
                     }
                 ],
                 "functions": []
@@ -74,14 +74,14 @@ def generate_json():
                 "type": "function",
                 "function": {
                     "name": f"check_{node_name}_progress",
-                    "description": node.get("schema_description", "Based on non-summary sections of the conversation, check progress of checklist items, and update relevant info variables"),
+                    "description": "From the non-summarizing elements of the conversation, return whether each task has been accomplished, and for info fields, return an accurate and precise answer.",
                     "parameters": {
                         "type": "object",
                         "properties": {},
                         "required": []
                     },
-                    "transition_callback": "general_transition_callback",
-                    "handler": "general_handler"
+                    "handler": "general_handler",
+                    "transition_callback": "general_transition_callback"
                 }
             })
             
@@ -155,11 +155,57 @@ def generate_json():
                     }
                 ]
             
-            # Add pre-actions if specified
-            if "pre_actions" in node:
-                node_data["pre_actions"] = node["pre_actions"]
+            # Process actions (both pre and post)
+            pre_actions = []
+            post_actions = []
             
-            # No post_actions for regular nodes or closing node
+            # Process pre-actions that are TTS actions
+            if "pre_actions" in node:
+                for pre_action in node["pre_actions"]:
+                    # Only TTS actions go in pre-actions
+                    if pre_action.get("type") == "tts_say":
+                        pre_actions.append(pre_action)
+                    # Function actions using variables will go to post-actions
+                    elif pre_action.get("type") == "function":
+                        # Create a function post-action in the simplified format
+                        function_data = pre_action.get("function", {})
+                        
+                        # Get handler type from either location
+                        handler_type = pre_action.get("handler") or function_data.get("handler")
+                        
+                        # If it's a variable getter, use add_to_context_handler instead
+                        if handler_type in ["get_session_variable_handler", "get_info_variable_handler"]:
+                            # Extract variable name from parameters
+                            variable_name = None
+                            if function_data and "parameters" in function_data:
+                                var_enum = function_data.get("parameters", {}).get("properties", {}).get("variable_name", {}).get("enum", [])
+                                if var_enum and len(var_enum) > 0:
+                                    variable_name = var_enum[0]
+                            
+                            if variable_name:
+                                # Create new post_action in the simplified format
+                                # Determine the source based on the handler type
+                                source = "info" if handler_type == "get_info_variable_handler" else "session_variables"
+                                
+                                new_post_action = {
+                                    "type": "function",
+                                    "handler": "get_variable_action_handler",
+                                    "variable_name": variable_name,
+                                    "source": source
+                                }
+                                post_actions.append(new_post_action)
+            
+            # Add existing post-actions if specified
+            if "post_actions" in node:
+                for post_action in node["post_actions"]:
+                    post_actions.append(post_action)
+            
+            # Add the actions to the node configuration
+            if pre_actions:
+                node_data["pre_actions"] = pre_actions
+            
+            if post_actions:
+                node_data["post_actions"] = post_actions
                 
             flow_data["flow_config"]["nodes"][node_name] = node_data
             
@@ -168,18 +214,17 @@ def generate_json():
             for checklist_item in node.get("checklist_items", []):
                 checklist[checklist_item] = False
                 
-            # Create stage with checklist and messages
+            # Create stage with checklist and standardized incomplete message
             stage_data = {
                 "checklist": checklist,
-                "checklist_incomplete_message": node.get("checklist_incomplete_message", f"Please complete the following {node_name} items: {{}}"),
-                "checklist_complete_message": node.get("checklist_complete_message", "Great job! Moving on to the next stage.")
+                "checklist_incomplete_message": "Please complete the following items from the instruction, and only these items. Everything else is completed: {}"
             }
             
-            # Add next_stage if not the last node
-            if i < len(nodes) - 1:
-                stage_data["next_stage"] = nodes[i + 1]["node_name"]
-            else:
-                stage_data["next_stage"] = "end"
+            # Always use transition_logic, even if no conditions are provided
+            stage_data["transition_logic"] = {
+                "conditions": node.get("transition_conditions", []),
+                "default_target_node": node.get("default_target_node", "end")
+            }
                 
             flow_data["state_config"]["stages"][node_name] = stage_data
             

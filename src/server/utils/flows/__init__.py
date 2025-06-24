@@ -46,6 +46,21 @@ Example structure of a config file:
                 "checklist_incomplete_message": "Missing information: {0}",
                 "checklist_complete_message": "All information collected.",
                 "next_stage": "next_stage_name"
+                
+                # OR with dynamic transitions:
+                "transition_logic": {
+                    "conditions": [
+                        {
+                            "parameters": {
+                                "variable_path": "info_field_name",
+                                "operator": "==",
+                                "value": true
+                            },
+                            "target_node": "node_name"
+                        }
+                    ],
+                    "default_target_node": "default_node_name"
+                }
             }
         },
         "info": { ... }
