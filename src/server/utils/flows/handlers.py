@@ -1,10 +1,12 @@
 """
 Handlers for flow state management and transitions.
 """
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Union
 from pipecat_flows import FlowArgs, FlowResult, FlowManager, NodeConfig
 from loguru import logger
 from pprint import pformat
+import operator
+import json
 
 
 def update_checklist_fields(args: FlowArgs, checklist: Dict[str, bool]) -> None:    
@@ -33,34 +35,79 @@ def update_info_fields(args: FlowArgs, flow_manager: FlowManager) -> None:
     logger.info("Info after updating:\n{}", pformat(flow_manager.state["info"]))
 
 
-
-def create_next_node(flow_manager: FlowManager) -> Tuple[str , NodeConfig]:
+def create_next_node(flow_manager: FlowManager) -> Tuple[str, NodeConfig]:
     """
-    Create the configuration for the next node based on current stage. 
+    Determine the next node ID based on current stage and transition logic.
     
-    This is actually rather sneaky because 
-    we are technically initializing the flow manager with static transitions, but actually we are using callbacks
-    and dynamic transitions, mimicing static transitions mostly. This is only because the static transitions don't 
-    quite have all the functionality we need.
+    This function evaluates transition conditions (found in flows config) and routes to the appropriate target node.
+    
+    Steps:
+    1. Get the current stage from flow manager
+    2. Check if stage uses next_stage (legacy) or transition_logic (new dynamic transitions)
+    3a. If using next_stage, use that directly
+    3b. If using transition_logic, evaluate conditions:
+       - If a condition is met, route to the target node specified in that condition
+       - If no conditions are met or there are no conditions, route to the default target node
     
     Args:
         flow_manager: Flow manager instance
         
     Returns:
-        Next node configuration
+        Tuple containing the next node ID and its configuration.
     """
+    OPERATORS = {
+        "==": operator.eq,
+        "!=": operator.ne,
+        ">": operator.gt,
+        ">=": operator.ge,
+        "<": operator.lt,
+        "<=": operator.le,
+        "in": operator.contains,
+        "not_in": lambda a, b: not operator.contains(a, b)
+    }
+    
     stage = flow_manager.current_node
     if not stage:
         raise ValueError("Current stage is not set in flow manager.")
     
-    next_stage = flow_manager.state["stages"][stage]["next_stage"]
-    if not next_stage or type(next_stage) is not str:
-        raise ValueError(f"Next stage '{next_stage}' is not a valid string.")
-    node = flow_manager.nodes.get(next_stage)
+    transition_logic = flow_manager.state["stages"][stage]["transition_logic"]
+    conditions = transition_logic.get("conditions", [])
+    default_target = transition_logic.get("default_target_node")
+    
+    # If no default target is specified, raise an error
+    if not default_target:
+        raise ValueError(f"No default_target_node specified for stage '{stage}'.")
+    
+    # Evaluate each condition in order
+    for condition in conditions:
+        info_variable = condition["parameters"]["variable_path"]
+        value = condition["parameters"]["value"]
+        operator_str = condition["parameters"]["operator"]
+        
+        if info_variable not in flow_manager.state["info"]:
+            raise ValueError(f"Info variable '{info_variable}' not found in flow manager state.")
+        
+        info_value = flow_manager.state["info"][info_variable]
+        
+        if operator_str not in OPERATORS:
+            raise ValueError(f"Unsupported operator: {operator_str}")
+    
+        # Check if condition matches
+        if OPERATORS[operator_str](info_value, value):
+            # Condition is true, route to target node
+            target_node = condition["target_node"]
+            node = flow_manager.nodes.get(target_node)
+            if not node:
+                raise ValueError(f"Node '{target_node}' not found in flow manager nodes.")
+            logger.info(f"Condition matched: {info_variable} {operator_str} {value}, routing to {target_node}")
+            return target_node, node
+    
+    # If no conditions matched, use the default target
+    logger.info(f"No conditions matched, using default target: {default_target}")
+    node = flow_manager.nodes.get(default_target)
     if not node:
-        raise ValueError(f"Node '{next_stage}' not found in flow manager nodes.")
-    return next_stage, node
-
+        raise ValueError(f"Default target node '{default_target}' not found in flow manager nodes.")
+    return default_target, node
 
 def create_current_node(flow_manager: FlowManager, message: str) -> NodeConfig:
     """
@@ -73,13 +120,13 @@ def create_current_node(flow_manager: FlowManager, message: str) -> NodeConfig:
     Returns:
         Current node configuration
     """    
-    stage = flow_manager.current_node
-    if not stage:
+    current_node = flow_manager.current_node
+    if not current_node:
         raise ValueError("Current stage is not set in flow manager.")
     
-    node = flow_manager.nodes.get(stage)
+    node = flow_manager.nodes.get(current_node)
     if not node:
-        raise ValueError(f"Node '{stage}' not found in flow manager nodes.")
+        raise ValueError(f"Node '{current_node}' not found in flow manager nodes.")
     
     node["task_messages"][0]["content"] += f"\n\n{message}"
     node["pre_actions"] = []
@@ -87,19 +134,23 @@ def create_current_node(flow_manager: FlowManager, message: str) -> NodeConfig:
     return node
 
 
-
 async def general_handler(args: FlowArgs, flow_manager: FlowManager) -> Dict[str, Any]:
     """
     General handler to check progress through a stage, store details in flow state, and handle transitions.
+    
+    Steps:
+    1. Update info fields in flow state with args
+    2. Update checklist fields in the current stage's checklist
+    3. Check if all checklist items are complete
+    5. If incomplete, return error message with details of incomplete items, otherwise return success message
     
     Args:
         args: Flow arguments
         flow_manager: Flow manager instance
         
     Returns:
-        Flow result with status and message
+        A dictionary with the status, checklist, and message.
     """
-    logger.info("GENERAL_DEBUG: general_handler called with args: {}", args)
     update_info_fields(args, flow_manager)
     stage = flow_manager.current_node
     checklist = flow_manager.state["stages"][stage]["checklist"]
@@ -107,17 +158,19 @@ async def general_handler(args: FlowArgs, flow_manager: FlowManager) -> Dict[str
     complete = all(checklist.values())
     
     if complete:
-        message = flow_manager.state["stages"][stage]["checklist_complete_message"]
+        message = "Complete"
     else:
         message = flow_manager.state["stages"][stage]["checklist_incomplete_message"].format(
             ", ".join([item for item, done in checklist.items() if not done])
         )
         
-    return {
+    result = {
         "status": "success" if complete else "error",
         "checklist": checklist,
         "message": message
-    }
+    }    
+    return result
+
 
 
 async def general_transition_callback(args: Dict, result: FlowResult, flow_manager: FlowManager):
@@ -137,12 +190,13 @@ async def general_transition_callback(args: Dict, result: FlowResult, flow_manag
             import traceback
     else:
         message = result.get("message", "Please ensure you have completed all required checklist items.")
-        await flow_manager.set_node(flow_manager.current_node, create_current_node(flow_manager, message))
-    
+        message = "CRITICAL INSTRUCTION: You are rejoining the flow at a point where you have not completed all required tasks. LOOK AT YOUR INSTRUCTIONS CAREFULLY AND MAKE SURE YOU UNDERSTAND THE TASKS YOU NEED TO COMPLETE, and SKIP ANY TASKS THAT I HAVE NOT ASKED YOU TO COMPLETE AGAIN: " + message
+        await flow_manager.set_node(flow_manager.current_node, create_current_node(flow_manager, message))    
     
 
 
-async def get_session_variable_handler(args: FlowArgs, flow_manager: FlowManager) -> Dict[str, Any]:
+
+async def get_session_variable_handler(args: Union[FlowArgs,dict], flow_manager: FlowManager) -> Dict[str, Any]:
     """
     Handler to retrieve task variables from the flow state.
     
@@ -177,7 +231,7 @@ async def get_session_variable_handler(args: FlowArgs, flow_manager: FlowManager
         }
     
     # Check if this is an indexable variable
-    index_field = root_data.get("indexable_by", None)
+    index_field = isinstance(root_data, dict) and root_data.get("indexable_by", None)
     
     if not index_field:
         # Simple variable - return as is
@@ -244,7 +298,7 @@ async def get_session_variable_handler(args: FlowArgs, flow_manager: FlowManager
         "data": data
     }
     
-async def get_info_variable_handler(args: FlowArgs, flow_manager: FlowManager) -> Dict[str, Any]:
+async def get_info_variable_handler(args: Union[FlowArgs,dict], flow_manager: FlowManager) -> Dict[str, Any]:
     """
     Handler to retrieve a task variable from the flow state.
     
@@ -273,3 +327,133 @@ async def get_info_variable_handler(args: FlowArgs, flow_manager: FlowManager) -
         "status": "success",
         "data": flow_manager.state["info"].get(variable_name)
     }
+
+
+async def get_variable_action_handler(action: dict, flow_manager: FlowManager) -> None:
+    """
+    Pre-action handler that adds a variable value to the LLM context.
+    
+    This handler retrieves the value of the specified variable and adds it
+    directly to the LLM context as a system message. It supports multiple LLM
+    providers including OpenAI, Anthropic, Google/Gemini, and AWS Bedrock.
+    
+    Args:
+        action: Action configuration with variable_name field
+        flow_manager: Flow manager instance
+    """
+    variable_name = action.get("variable_name")
+    if not variable_name:
+        logger.error("Missing variable_name in add_to_context action")
+        return
+    
+    source = action.get("source", "session_variables")  # Default to session_variables if not specified
+    
+    if source not in flow_manager.state:
+        logger.error(f"Source '{source}' not found in flow manager state")
+        return
+        
+    if variable_name not in flow_manager.state[source]:
+        logger.error(f"Variable '{variable_name}' not found in {source} within flow manager state")
+        return
+        
+    value = flow_manager.state[source][variable_name]
+    if value is None:
+        logger.error(f"Variable '{variable_name}' has None value in {source}")
+        return
+    
+    # Format the content based on the variable type
+    if isinstance(value, dict):
+        content = f"Available information - {variable_name}: {json.dumps(value, indent=2)}"
+    else:
+        content = f"Available information - {variable_name}: {value}"
+    
+    logger.info(f"Adding {variable_name} from {source} to context: {value}")
+    
+    # Add to context
+    if not hasattr(flow_manager, "_context_aggregator") or not flow_manager._context_aggregator:
+        logger.error("Flow manager has no context aggregator")
+        return
+        
+    context = flow_manager._context_aggregator.user()._context
+    
+    # Handle different LLM providers based on context class type
+    context_class_name = context.__class__.__name__
+    
+    try:
+        if context_class_name == "OpenAILLMContext":
+            # OpenAI format
+            message = {"role": "system", "content": content}
+            context.add_message(message)
+            
+        elif context_class_name == "AnthropicLLMContext":
+            # Anthropic format
+            message = {"role": "system", "content": [{"type": "text", "text": content}]}
+            context.add_message(message)
+            
+        elif context_class_name == "GoogleLLMContext":
+            # Google/Gemini format
+            from pipecat.services.google.llm import Content, Part
+            message = Content(role="system", parts=[Part(text=content)])
+            context.add_message(message)
+            
+        elif context_class_name == "AWSBedrockLLMContext":
+            # AWS Bedrock format
+            message = {"role": "system", "content": [{"type": "text", "text": content}]}
+            context.add_message(message)
+            
+        else:
+            # Fallback attempt with generic add_message
+            if hasattr(context, "add_message"):
+                message = {"role": "system", "content": content}
+                context.add_message(message)
+            else:
+                logger.error(f"Unsupported context type: {context_class_name}")
+                return
+                
+        logger.info(f"Successfully added {variable_name} to {context_class_name} context")
+        
+        logger.error("Current context messages:\n{}", pformat(context.get_messages()))
+        
+    except Exception as e:
+        logger.error(f"Error adding message to context: {e}")
+        return
+
+
+
+
+
+# async def get_info_variable_action_handlerd(args: dict, flow_manager: FlowManager) -> Dict[str, Any]:
+#     """
+#     Action handler to retrieve a task variable from the flow state.
+    
+#     Args:
+#         args: Flow arguments, should include 'variable_name'
+#         flow_manager: Flow manager instance
+        
+#     Returns:
+#         Flow result with the requested variable value
+#     """
+#     result = await get_info_variable_handler(args, flow_manager)
+    
+#     if result.get("status") == "success":
+#         flow.manager.
+    
+    
+# async def get_session_variable_action_handler(args: dict, flow_manager: FlowManager) -> Dict[str, Any]:
+#     """
+#     Action handler to retrieve task variables from the flow state.
+    
+#     For simple variables: returns the variable directly
+#     For indexable variables: root[root["indexable_by"]][index][field] (if field specified)
+    
+#     Args:
+#         args: Flow arguments:
+#             - variable_name (required): Name of the session variable
+#             - current_index (optional): Index for indexable variables
+#             - field (optional): Field name to extract from indexed item
+#         flow_manager: Flow manager instance
+        
+#     Returns:
+#         Flow result with the requested variable value
+#     """
+#     return await get_session_variable_handler(args, flow_manager)

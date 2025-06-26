@@ -380,6 +380,107 @@ document.addEventListener('DOMContentLoaded', function () {
         container.appendChild(functionElement);
         return functionElement;
     }
+    
+    // Add a pre-action function
+    function addPreActionFunction(nodeCard, sessionVar = "", description = "", isInfoVariable = false) {
+        const container = nodeCard.querySelector('.function-pre-actions-container');
+
+        // Create element from template
+        const functionElement = createFromTemplate('preActionFunctionTemplate');
+
+        // Set description if provided
+        if (description) {
+            functionElement.querySelector('.pre-action-function-description').value = description;
+        }
+
+        // Get the dropdown
+        const varSelect = functionElement.querySelector('.pre-action-variable-select');
+        
+        // Mark as info variable if needed
+        if (isInfoVariable || (sessionVar && Array.from(document.querySelectorAll('.session-info-name')).map(input => input.value).includes(sessionVar))) {
+            varSelect.classList.add('info-variable-select');
+        }
+
+        // Update variable dropdown (reuse the same function but for pre-actions)
+        updatePreActionVariableDropdown(varSelect);
+
+        // Set selected variable if provided
+        if (sessionVar) {
+            varSelect.value = sessionVar;
+        }
+
+        // Set up remove button
+        functionElement.querySelector('.remove-pre-action-function-btn').addEventListener('click', function () {
+            this.closest('.pre-action-function-card').remove();
+        });
+
+        // Add auto-generate description listener
+        varSelect.addEventListener('change', function () {
+            const descInput = this.closest('.pre-action-function-card').querySelector('.pre-action-function-description');
+            const varName = this.value;
+            const isInfo = this.classList.contains('info-variable-select');
+
+            if (!descInput.value && varName) {
+                descInput.value = isInfo 
+                    ? `Get the ${varName} info variable` 
+                    : `Get the ${varName} for the session`;
+            }
+        });
+
+        // Add element to container
+        container.appendChild(functionElement);
+        return functionElement;
+    }
+    
+    // Update pre-action variable dropdown
+    function updatePreActionVariableDropdown(select) {
+        // Get all session variables
+        const sessionVars = [];
+        
+        // Get info variables if this select has the info-variable-select class
+        const isInfoSelect = select.classList.contains('info-variable-select');
+        
+        if (isInfoSelect) {
+            // Get info variables
+            document.querySelectorAll('.session-info-name').forEach(input => {
+                const name = input.value.trim();
+                if (name) sessionVars.push(name);
+            });
+        } else {
+            // Get from task variables that are marked as session
+            document.querySelectorAll('.task-var-name[data-var-type="session"]').forEach(input => {
+                const name = input.value.trim();
+                if (name) sessionVars.push(name);
+            });
+
+            // If no explicitly marked session variables, get all task variables as fallback
+            if (sessionVars.length === 0) {
+                document.querySelectorAll('.task-var-name').forEach(input => {
+                    const name = input.value.trim();
+                    if (name) sessionVars.push(name);
+                });
+            }
+        }
+
+        // Save current selection
+        const currentValue = select.value;
+
+        // Clear current options
+        select.innerHTML = '<option value="">Select a value...</option>';
+
+        // Add options for each session variable
+        sessionVars.forEach(name => {
+            const option = document.createElement('option');
+            option.value = name;
+            option.text = name;
+            select.appendChild(option);
+        });
+
+        // Restore selection if possible
+        if (currentValue && sessionVars.includes(currentValue)) {
+            select.value = currentValue;
+        }
+    }
 
     // Function to update session variable dropdown
     function updateSessionVariableDropdown(select) {
@@ -434,6 +535,236 @@ document.addEventListener('DOMContentLoaded', function () {
     // Update all session variable dropdowns
     function updateAllSessionVariableDropdowns() {
         document.querySelectorAll('.session-variable-select').forEach(updateSessionVariableDropdown);
+        document.querySelectorAll('.condition-variable').forEach(updateConditionVariableDropdown);
+    }
+    
+    // Function to add a transition condition
+    function addTransitionCondition(nodeCard) {
+        const container = nodeCard.querySelector('.transition-conditions-container');
+        const conditionElement = createFromTemplate('transitionConditionTemplate');
+        
+        // Set up the condition variable dropdown
+        const variableSelect = conditionElement.querySelector('.condition-variable');
+        updateConditionVariableDropdown(variableSelect);
+        
+        // Set up operator change handler
+        const operatorSelect = conditionElement.querySelector('.condition-operator');
+        const valueContainer = conditionElement.querySelector('.condition-value-container');
+        
+        operatorSelect.addEventListener('change', function() {
+            updateConditionValueInput(variableSelect.value, this.value, valueContainer);
+        });
+        
+        // Set up variable change handler
+        variableSelect.addEventListener('change', function() {
+            updateConditionValueInput(this.value, operatorSelect.value, valueContainer);
+        });
+        
+        // Set up the target node dropdown
+        const targetNodeSelect = conditionElement.querySelector('.condition-target-node');
+        updateNodeTargetDropdown(targetNodeSelect);
+        
+        // Add verification for required fields
+        variableSelect.addEventListener('change', function() {
+            verifyConditionFields(conditionElement);
+        });
+        
+        operatorSelect.addEventListener('change', function() {
+            verifyConditionFields(conditionElement);
+        });
+        
+        // Add input event listener for the value field - only if it exists
+        const valueField = conditionElement.querySelector('.condition-value');
+        if (valueField) {
+            valueField.addEventListener('input', function() {
+                verifyConditionFields(conditionElement);
+            });
+        }
+        
+        targetNodeSelect.addEventListener('change', function() {
+            verifyConditionFields(conditionElement);
+        });
+        
+        // Set up remove button
+        conditionElement.querySelector('.remove-condition-btn').addEventListener('click', function() {
+            this.closest('.transition-condition-card').remove();
+        });
+        
+        container.appendChild(conditionElement);
+        
+        // Initial verification
+        verifyConditionFields(conditionElement);
+        
+        return conditionElement;
+    }
+    
+    // Update the condition variable dropdown with info fields
+    function updateConditionVariableDropdown(select) {
+        // Get all info fields
+        const infoFields = Array.from(document.querySelectorAll('.session-info-name')).map(input => {
+            return {
+                name: input.value.trim(),
+                type: input.closest('.session-info-card').querySelector('.session-info-type').value
+            };
+        }).filter(field => field.name !== '');
+        
+        // Save current selection
+        const currentValue = select.value;
+        
+        // Clear current options
+        select.innerHTML = '<option value="">Select variable...</option>';
+        
+        // Add options for each info field
+        infoFields.forEach(field => {
+            const option = document.createElement('option');
+            option.value = field.name;
+            option.text = field.name;
+            option.dataset.type = field.type;
+            select.appendChild(option);
+        });
+        
+        // Restore selection if possible
+        if (currentValue && infoFields.some(field => field.name === currentValue)) {
+            select.value = currentValue;
+        }
+    }
+    
+    // Update the value input based on the selected variable and operator
+    function updateConditionValueInput(variableName, operator, container) {
+        // Find the variable type from info fields
+        let variableType = 'string'; // Default type
+        
+        if (variableName) {
+            const infoTypeSelect = document.querySelector(`.session-info-name[value="${variableName}"]`)?.closest('.session-info-card')?.querySelector('.session-info-type');
+            if (infoTypeSelect) {
+                variableType = infoTypeSelect.value;
+            }
+        }
+        
+        // Clear the container
+        container.innerHTML = '';
+        
+        // Create the appropriate input based on type and operator
+        if (operator === 'in' || operator === 'not_in') {
+            // For "in" or "not in" operators, we need a string input
+            container.innerHTML = `<input type="text" class="form-control form-control-sm condition-value" placeholder="Value">`;
+        } else if (variableType === 'boolean') {
+            // For boolean type, create a select with true/false options
+            container.innerHTML = `
+                <select class="form-select form-select-sm condition-value">
+                    <option value="true">true</option>
+                    <option value="false">false</option>
+                </select>
+            `;
+        } else if (variableType === 'number') {
+            // For number type, create a number input
+            container.innerHTML = `<input type="number" class="form-control form-control-sm condition-value" placeholder="Value">`;
+        } else if (variableType === 'array' || variableType === 'number_array') {
+            // For array types and "in"/"not_in" operators
+            if (operator === 'in' || operator === 'not_in') {
+                container.innerHTML = `<input type="text" class="form-control form-control-sm condition-value" placeholder="Value">`;
+            } else {
+                container.innerHTML = `<input type="text" class="form-control form-control-sm condition-value" placeholder="[value1, value2, ...]">`;
+            }
+        } else {
+            // Default to string input for any other type
+            container.innerHTML = `<input type="text" class="form-control form-control-sm condition-value" placeholder="Value">`;
+        }
+        
+        // Add event listener for input validation
+        const valueInput = container.querySelector('.condition-value');
+        if (valueInput) {
+            valueInput.addEventListener('input', function() {
+                // Remove validation classes when editing
+                this.classList.remove('is-invalid', 'is-valid');
+            });
+        }
+    }
+    
+    // Update a target node dropdown with all available nodes
+    function updateNodeTargetDropdown(select) {
+        const nodes = Array.from(document.querySelectorAll('.node-name')).map(input => input.value.trim()).filter(name => name !== '');
+        
+        // Add "end" node always
+        if (!nodes.includes('end')) {
+            nodes.push('end');
+        }
+        
+        // Save current selection
+        const currentValue = select.value;
+        
+        // Clear current options
+        select.innerHTML = '<option value="">Select target...</option>';
+        
+        // Add options for each node
+        nodes.forEach(nodeName => {
+            const option = document.createElement('option');
+            option.value = nodeName;
+            option.text = nodeName;
+            select.appendChild(option);
+        });
+        
+        // Restore selection if possible
+        if (currentValue && nodes.includes(currentValue)) {
+            select.value = currentValue;
+        }
+    }
+    
+    // Update all node target dropdowns
+    function updateAllNodeTargetDropdowns() {
+        document.querySelectorAll('.condition-target-node, .default-target-node').forEach(updateNodeTargetDropdown);
+    }
+    
+    // Verify all fields in a condition are properly filled
+    function verifyConditionFields(conditionElement) {
+        const variableSelect = conditionElement.querySelector('.condition-variable');
+        const operatorSelect = conditionElement.querySelector('.condition-operator');
+        const valueInput = conditionElement.querySelector('.condition-value');
+        const targetNodeSelect = conditionElement.querySelector('.condition-target-node');
+        
+        let isValid = true;
+        
+        // Check variable field
+        if (!variableSelect.value) {
+            variableSelect.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            variableSelect.classList.remove('is-invalid');
+            variableSelect.classList.add('is-valid');
+        }
+        
+        // Check operator field
+        if (!operatorSelect.value) {
+            operatorSelect.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            operatorSelect.classList.remove('is-invalid');
+            operatorSelect.classList.add('is-valid');
+        }
+        
+        // Check value field
+        if (!valueInput) {
+            // If valueInput is null, we can't validate it
+            console.error("Missing value input field in condition");
+            isValid = false;
+        } else if (valueInput.value === '') {
+            valueInput.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            valueInput.classList.remove('is-invalid');
+            valueInput.classList.add('is-valid');
+        }
+        
+        // Check target node field
+        if (!targetNodeSelect.value) {
+            targetNodeSelect.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            targetNodeSelect.classList.remove('is-invalid');
+            targetNodeSelect.classList.add('is-valid');
+        }
+        
+        return isValid;
     }
 
     // Helper function to load functions for a node
@@ -449,8 +780,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Process each function in the node
         nodeFunctions.forEach(funcData => {
             // Skip the check_progress function which is automatically added
-            if (funcData.function && funcData.function.transition_callback === "general_transition_callback" && 
-                funcData.function.handler === "general_handler") return;
+            if (funcData.function && funcData.function.handler === "general_handler") return;
 
             if (funcData.function && (funcData.function.handler === "get_session_variable_handler" ||
                 funcData.function.handler === "get_info_variable_handler")) {
@@ -488,24 +818,40 @@ document.addEventListener('DOMContentLoaded', function () {
 
         nodeNameInput.value = nodeName;
         nodeNameDisplay.textContent = nodeName;
-        
-        // No need for event listeners for pre-action as it's now just a text field
 
-        // Set default messages
+        // Set default task message with prepended text
+        const taskMessage = nodeElement.querySelector('.node-task-message');
+        taskMessage.value = `TOOLS: \nYou may silently call the check_${nodeName}_progress() function only after all ${nodeName} conversation steps have been completed. Do not mention you are doing this. Look at the other tools you have available, and if you need a certain piece of information that they provide, you may call them (silently, do not mention you are doing so!)\n\n`;
+
+        // Set default incomplete message with standardized format
         const incompleteMessage = nodeElement.querySelector('.node-incomplete-message');
-        const completeMessage = nodeElement.querySelector('.node-complete-message');
+        incompleteMessage.value = "Please complete the following items from the instruction, and only these items. Everything else is completed: {}";
+        
+        // Set default schema description
+        const schemaDescription = nodeElement.querySelector('.schema-description');
+        schemaDescription.value = "From the non-summarizing elements of the conversation, return whether each task has been accomplished, and for info fields, return an accurate and precise answer.";
 
-        incompleteMessage.value = `Please complete the following ${nodeName} items: {}`;
-        completeMessage.value = `Great job! Moving on to the next stage.`;
-
-        // Prevent spaces in node name
+        // Prevent spaces in node name and validate
         nodeNameInput.addEventListener('input', function () {
             // Replace spaces with underscores
             this.value = this.value.replace(/\s+/g, '_');
             nodeNameDisplay.textContent = this.value || 'unnamed';
 
-            // Update the incomplete message when node name changes
-            incompleteMessage.value = `Please complete the following ${this.value} items: {}`;
+            // No longer update the incomplete message when node name changes
+            // incompleteMessage.value = `Please complete the following ${this.value} items: {}`;
+            // Keep using the standardized message format
+            
+            // Update the task message preamble with new node name
+            const currentValue = taskMessage.value;
+            const nodeName = this.value || 'unnamed';
+            taskMessage.value = `TOOLS: \nYou may silently call the check_${nodeName}_progress() function only after all ${nodeName} conversation steps have been completed. Do not mention you are doing this. Look at the other tools you have available, and if you need a certain piece of information that they provide, you may call them (silently, do not mention you are doing so!)\n\n` + 
+            currentValue.split('\n\n').slice(1).join('\n\n');
+            
+            // Validate node name
+            validateNodeName(this);
+            
+            // Update node names in all target dropdowns
+            updateAllNodeTargetDropdowns();
         });
 
         // Set up remove node button
@@ -518,6 +864,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (confirm('Are you sure you want to remove this node?')) {
                 this.closest('.node-card').remove();
                 updateNodeOrder();
+                updateAllNodeTargetDropdowns();
             }
         });
 
@@ -572,12 +919,54 @@ document.addEventListener('DOMContentLoaded', function () {
                 addNodeFunction(this.closest('.node-card'), "", "", true);
             });
         }
+        
+        // Set up transition conditions
+        const addConditionBtn = nodeElement.querySelector('.add-condition-btn');
+        if (addConditionBtn) {
+            addConditionBtn.addEventListener('click', function() {
+                addTransitionCondition(this.closest('.node-card'));
+            });
+        }
+        
+        // Set up pre-action functions
+        const addPreActionSessionFunctionBtn = nodeElement.querySelector('.add-pre-action-session-function');
+        if (addPreActionSessionFunctionBtn) {
+            addPreActionSessionFunctionBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                addPreActionFunction(this.closest('.node-card'));
+            });
+        }
+        
+        const addPreActionInfoFunctionBtn = nodeElement.querySelector('.add-pre-action-info-function');
+        if (addPreActionInfoFunctionBtn) {
+            addPreActionInfoFunctionBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                addPreActionFunction(this.closest('.node-card'), "", "", true);
+            });
+        }
+        
+        // Initialize the default target node dropdown
+        const defaultTargetSelect = nodeElement.querySelector('.default-target-node');
+        if (defaultTargetSelect) {
+            updateNodeTargetDropdown(defaultTargetSelect);
+            
+            // Add validation for default target
+            defaultTargetSelect.addEventListener('change', function() {
+                if (!this.value) {
+                    this.classList.add('is-invalid');
+                } else {
+                    this.classList.remove('is-invalid');
+                    this.classList.add('is-valid');
+                }
+            });
+        }
 
         // Update info field dropdown
         updateInfoFieldDropdowns();
 
         // Add the node to the container
         container.appendChild(nodeElement);
+        updateAllNodeTargetDropdowns();
         return nodeElement;
     }
 
@@ -728,9 +1117,9 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!nodeName) return;
 
             const taskMessage = cleanString(nodeCard.querySelector('.node-task-message').value);
-            const schemaDescription = cleanString(nodeCard.querySelector('.schema-description').value);
-            const incompleteMessage = cleanString(nodeCard.querySelector('.node-incomplete-message').value);
-            const completeMessage = cleanString(nodeCard.querySelector('.node-complete-message').value);
+            
+            // We no longer use complete message, so we can skip this
+            // const completeMessage = cleanString(nodeCard.querySelector('.node-complete-message')?.value || "");
 
             // Collect checklist items
             const checklistItems = [];
@@ -780,28 +1169,117 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             // Create node object
+            // Collect transition conditions
+            const transitionConditions = [];
+            nodeCard.querySelectorAll('.transition-condition-card').forEach(conditionCard => {
+                const variable = conditionCard.querySelector('.condition-variable').value;
+                const operator = conditionCard.querySelector('.condition-operator').value;
+                const targetNode = conditionCard.querySelector('.condition-target-node').value;
+                const valueInput = conditionCard.querySelector('.condition-value');
+                
+                if (!variable || !operator || !targetNode) return;
+                
+                // Get the value based on the input type
+                let value;
+                if (valueInput.tagName === 'SELECT') {
+                    value = valueInput.value === 'true';
+                } else if (valueInput.type === 'number') {
+                    value = parseFloat(valueInput.value);
+                } else {
+                    // For string or array input
+                    const rawValue = cleanString(valueInput.value);
+                    
+                    // Determine if this should be parsed as JSON (for arrays)
+                    if (rawValue.startsWith('[') && rawValue.endsWith(']')) {
+                        try {
+                            value = JSON.parse(rawValue);
+                        } catch (e) {
+                            value = rawValue;
+                        }
+                    } else {
+                        // Find the type of the variable
+                        const varTypeSelect = document.querySelector(`.session-info-name[value="${variable}"]`)?.closest('.session-info-card')?.querySelector('.session-info-type');
+                        const varType = varTypeSelect?.value || 'string';
+                        
+                        if (varType === 'boolean') {
+                            value = rawValue === 'true';
+                        } else if (varType === 'number') {
+                            value = parseFloat(rawValue);
+                        } else {
+                            value = rawValue;
+                        }
+                    }
+                }
+                
+                transitionConditions.push({
+                    parameters: {
+                        variable_path: variable,
+                        operator: operator,
+                        value: value
+                    },
+                    target_node: targetNode
+                });
+            });
+            
+            // Get default target node
+            const defaultTargetNode = nodeCard.querySelector('.default-target-node').value;
+            
             const nodeData = {
                 node_name: nodeName,
                 task_message: taskMessage,
-                schema_description: schemaDescription || `Check progress of checklist items, and update relevant info variables`,
+                schema_description: nodeCard.querySelector('.schema-description')?.value || "From the non-summarizing elements of the conversation, return whether each task has been accomplished, and for info fields, return an accurate and precise answer.",
                 checklist_items: checklistItems,
                 checklist_descriptions: checklistDescriptions,
                 info_fields: infoFields,
-                checklist_incomplete_message: incompleteMessage || `Please complete the following ${nodeName} items: {}`,
-                checklist_complete_message: completeMessage || `Great job! Moving on to the next stage.`
+                transition_conditions: transitionConditions,
+                default_target_node: defaultTargetNode || 'end'
             };
             
-            // Add pre-action if text is provided
-            const preActionText = nodeCard.querySelector('.pre-action-text');
-            const preActionTextValue = preActionText ? cleanString(preActionText.value) : "";
+            // Initialize pre-actions array
+            const preActions = [];
             
-            if (preActionTextValue.trim() !== "") {
-                nodeData.pre_actions = [
-                    {
+            // Add text pre-action if provided
+            const preActionText = nodeCard.querySelector('.pre-action-text');
+            
+            if (preActionText) {
+                const preActionTextValue = cleanString(preActionText.value) || "";
+                
+                if (preActionTextValue.trim() !== "") {
+                    preActions.push({
                         type: "tts_say",
                         text: preActionTextValue
-                    }
-                ];
+                    });
+                }
+            }
+            
+            // Add function pre-actions from the pre-actions tab
+            nodeCard.querySelectorAll('.pre-action-function-card').forEach(functionCard => {
+                const sessionVar = cleanString(functionCard.querySelector('.pre-action-variable-select').value);
+                const description = cleanString(functionCard.querySelector('.pre-action-function-description').value);
+                
+                if (sessionVar) {
+                    const funcName = `get_${sessionVar}`;
+                    
+                    // Check if this is an info field
+                    const infoFields = Array.from(document.querySelectorAll('.session-info-name')).map(input => input.value);
+                    const useInfoHandler = infoFields.includes(sessionVar);
+                    
+                    // Create the function definition in the simplified format
+                    const functionDef = {
+                        type: "function",
+                        handler: useInfoHandler ? "get_info_variable_handler" : "get_session_variable_handler",
+                        variable_name: sessionVar
+                    };
+                    
+                    // No need to add current_index parameter in the simplified format
+                    
+                    preActions.push(functionDef);
+                }
+            });
+            
+            // Add pre-actions to node data if any exist
+            if (preActions.length > 0) {
+                nodeData.pre_actions = preActions;
             }
 
             // Add functions if there are any
@@ -851,53 +1329,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
         
-        // Add open file button that uses the File System Access API
-        const openFileBtn = document.createElement('button');
-        openFileBtn.type = 'button';
-        openFileBtn.id = 'openFileBtn';
-        openFileBtn.className = 'btn btn-outline-primary me-2';
-        openFileBtn.innerHTML = '<i class="bi bi-folder2-open"></i> Open File';
-        fileInput.parentNode.insertBefore(openFileBtn, fileInput.nextSibling);
-        
-        // Hide the file input since we're using the open file button
-        fileInput.style.display = 'none';
-        
-        // Open file handler with File System Access API
-        openFileBtn.addEventListener('click', async function() {
-            try {
-                // Check if the File System Access API is supported
-                if ('showOpenFilePicker' in window) {
-                    const options = {
-                        types: [
-                            {
-                                description: 'JSON Files',
-                                accept: {
-                                    'application/json': ['.json']
-                                }
-                            }
-                        ],
-                        excludeAcceptAllOption: false,
-                        multiple: false
-                    };
-                    
-                    // Show file picker
-                    const [fileHandle] = await window.showOpenFilePicker(options);
-                    const file = await fileHandle.getFile();
-                    
-                    // Add the handle to the file object for later use
-                    file.handle = fileHandle;
-                    
-                    // Load the file
-                    await loadConfigFromFile(file);
-                } else {
-                    // Fallback for browsers that don't support the File System Access API
-                    fileInput.click();
-                }
-            } catch (error) {
-                console.error("Error opening file:", error);
-                // The user cancelled the file picker, do nothing
-            }
-        });
     }
 
     function resetForm() {
@@ -920,6 +1351,134 @@ document.addEventListener('DOMContentLoaded', function () {
         // Add initial node
         addNode();
     }
+    
+    // Validate node name uniqueness
+    function validateNodeName(inputElement) {
+        const name = inputElement.value.trim();
+        
+        // Check if empty
+        if (!name) {
+            inputElement.classList.add('is-invalid');
+            inputElement.classList.remove('is-valid');
+            return false;
+        }
+        
+        // Check for uniqueness
+        const allNodeNames = Array.from(document.querySelectorAll('.node-name'))
+            .filter(input => input !== inputElement)
+            .map(input => input.value.trim());
+            
+        if (allNodeNames.includes(name)) {
+            inputElement.classList.add('is-invalid');
+            inputElement.classList.remove('is-valid');
+            return false;
+        }
+        
+        // Valid name
+        inputElement.classList.remove('is-invalid');
+        inputElement.classList.add('is-valid');
+        return true;
+    }
+    
+    // Validate all required fields in the form
+    function validateAllFields() {
+        let isValid = true;
+        let firstInvalidElement = null;
+        
+        // Validate flow name
+        const flowName = document.getElementById('flowName');
+        if (!flowName.value.trim()) {
+            flowName.classList.add('is-invalid');
+            isValid = false;
+            firstInvalidElement = flowName;
+        } else {
+            flowName.classList.remove('is-invalid');
+            flowName.classList.add('is-valid');
+        }
+        
+        // Validate node names and task messages
+        const nodeNames = new Set();
+        const duplicateNodeNames = new Set();
+        const emptyTaskMessages = [];
+        
+        document.querySelectorAll('.node-card').forEach(nodeCard => {
+            // Validate node name
+            const nodeNameInput = nodeCard.querySelector('.node-name');
+            const name = nodeNameInput.value.trim();
+            const nameDisplay = nodeCard.querySelector('.node-name-display').textContent;
+            
+            // Check if node name is empty
+            if (!name) {
+                nodeNameInput.classList.add('is-invalid');
+                isValid = false;
+                if (!firstInvalidElement) firstInvalidElement = nodeNameInput;
+                return;
+            }
+            
+            // Check for duplicate node names
+            if (nodeNames.has(name)) {
+                duplicateNodeNames.add(name);
+                nodeNameInput.classList.add('is-invalid');
+                isValid = false;
+                if (!firstInvalidElement) firstInvalidElement = nodeNameInput;
+            } else {
+                nodeNames.add(name);
+                nodeNameInput.classList.remove('is-invalid');
+                nodeNameInput.classList.add('is-valid');
+            }
+            
+            // Validate task message
+            const taskMessage = nodeCard.querySelector('.node-task-message');
+            if (!taskMessage.value.trim()) {
+                taskMessage.classList.add('is-invalid');
+                emptyTaskMessages.push(nameDisplay);
+                isValid = false;
+                if (!firstInvalidElement) firstInvalidElement = taskMessage;
+            } else {
+                taskMessage.classList.remove('is-invalid');
+                taskMessage.classList.add('is-valid');
+            }
+        });
+        
+        // Show alerts for validation issues
+        if (duplicateNodeNames.size > 0) {
+            alert(`Duplicate node names found: ${Array.from(duplicateNodeNames).join(', ')}. Node names must be unique.`);
+        }
+        
+        if (emptyTaskMessages.length > 0) {
+            alert(`Task messages are missing for nodes: ${emptyTaskMessages.join(', ')}`);
+        }
+        
+        // Validate transition conditions
+        document.querySelectorAll('.transition-condition-card').forEach(conditionCard => {
+            if (!verifyConditionFields(conditionCard)) {
+                isValid = false;
+                if (!firstInvalidElement) {
+                    firstInvalidElement = conditionCard.querySelector('.is-invalid');
+                }
+            }
+        });
+        
+        // Validate default target nodes
+        document.querySelectorAll('.default-target-node').forEach(select => {
+            if (!select.value) {
+                select.classList.add('is-invalid');
+                isValid = false;
+                if (!firstInvalidElement) firstInvalidElement = select;
+            } else {
+                select.classList.remove('is-invalid');
+                select.classList.add('is-valid');
+            }
+        });
+        
+        // Scroll to first invalid element if found
+        if (firstInvalidElement) {
+            firstInvalidElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            firstInvalidElement.focus();
+        }
+        
+        return isValid;
+    }
 
     // Collect form data without debugging
     function collectFormDataForGeneration() {
@@ -928,12 +1487,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function generateJson() {
         try {
+            // Clear the console
+            console.clear();
+            
+            // Advanced validation before collecting form data
+            if (!validateAllFields()) {
+                return;
+            }
+            
             // Get form data
             const formData = collectFormDataForGeneration();
+            
+            // Log the form data
+            console.log("Form data to be sent:", formData);
 
             // Basic validation
             if (!formData.name) {
                 alert('Flow name is required!');
+                document.getElementById('flowName').classList.add('is-invalid');
+                document.getElementById('flowName').focus();
                 return;
             }
 
@@ -952,143 +1524,10 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
         `;
 
-            // Always try to save directly if we have a file handle
-            if (window.currentFileHandle && 'showSaveFilePicker' in window) {
-                try {
-                    // Check if we have write permission
-                    const options = {
-                        mode: 'readwrite'
-                    };
-                    
-                    // Request permission if needed
-                    if ((await window.currentFileHandle.queryPermission(options)) !== 'granted') {
-                        if ((await window.currentFileHandle.requestPermission(options)) !== 'granted') {
-                            throw new Error("Permission to write to the file was denied");
-                        }
-                    }
-                    
-                    // Send data to server to generate the JSON structure
-                    const response = await fetch('/generate_json', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(formData)
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        // Fetch the generated file content from the server
-                        const flowFileResponse = await fetch(`/download/${data.filename}`);
-                        const flowContent = await flowFileResponse.text();
-                        
-                        try {
-                            // Create a writable stream and write to the file
-                            const writable = await window.currentFileHandle.createWritable();
-                            await writable.write(flowContent);
-                            await writable.close();
-                            
-                            // Show success message
-                            resultContainer.innerHTML = `
-                            <div class="alert alert-success">
-                                <h4>Configuration Saved!</h4>
-                                <p>Your conversation flow has been saved successfully to the original file.</p>
-                            </div>`;
-                            
-                            // Hide success message after 3 seconds
-                            setTimeout(() => {
-                                resultContainer.style.display = 'none';
-                            }, 3000);
-                        } catch (error) {
-                            console.error("Error writing to original file:", error);
-                            resultContainer.innerHTML = `
-                            <div class="alert alert-danger">
-                                <h4>Error Saving File</h4>
-                                <p>${error.message || "There was a problem writing to the original file."}</p>
-                            </div>`;
-                            throw error; // Rethrow to trigger the fallback methods
-                        }
-                        
-                        return;
-                    }
-                } catch (error) {
-                    console.error("Error saving directly to file:", error);
-                    alert("Error saving to the original file. Please use the File System Access API to save to a specific location.");
-                }
-            } else {
-                // If we don't have a file handle, prompt to save with File System Access API
-                try {
-                    if ('showSaveFilePicker' in window) {
-                        const options = {
-                            types: [
-                                {
-                                    description: 'JSON Files',
-                                    accept: {
-                                        'application/json': ['.json']
-                                    }
-                                }
-                            ],
-                            suggestedName: formData.name + '.json'
-                        };
-                        
-                        const fileHandle = await window.showSaveFilePicker(options);
-                        window.currentFileHandle = fileHandle;
-                        
-                        // Send data to server to generate the JSON structure
-                        const response = await fetch('/generate_json', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify(formData)
-                        });
-                        
-                        const data = await response.json();
-                        
-                        if (data.success) {
-                            // Fetch the generated file content from the server
-                            const flowFileResponse = await fetch(`/download/${data.filename}`);
-                            const flowContent = await flowFileResponse.text();
-                            
-                            try {
-                            // Create a writable stream and write to the file
-                            const writable = await fileHandle.createWritable();
-                            await writable.write(flowContent);
-                            await writable.close();
-                            
-                            // Show success message
-                            resultContainer.innerHTML = `
-                            <div class="alert alert-success">
-                                <h4>Configuration Saved!</h4>
-                                <p>Your conversation flow has been saved successfully.</p>
-                            </div>`;
-                            
-                            // Hide success message after 3 seconds
-                            setTimeout(() => {
-                                resultContainer.style.display = 'none';
-                            }, 3000);
-                        } catch (error) {
-                            console.error("Error writing to file:", error);
-                            resultContainer.innerHTML = `
-                            <div class="alert alert-danger">
-                                <h4>Error Saving File</h4>
-                                <p>${error.message || "There was a problem writing to the file."}</p>
-                            </div>`;
-                        }
-                            
-                            return;
-                        }
-                    } else {
-                        throw new Error("File System Access API not supported by your browser.");
-                    }
-                } catch (error) {
-                    console.error("Error saving file with picker:", error);
-                    // Fall back to the server-side method if File System Access API fails
-                }
-            }
+            // Simplify to just use the standard download approach
+            console.log("Sending request to /generate_json");
             
-            // If both direct save methods failed, offer download option
+            // Send data to server to generate the JSON structure
             const response = await fetch('/generate_json', {
                 method: 'POST',
                 headers: {
@@ -1097,22 +1536,37 @@ document.addEventListener('DOMContentLoaded', function () {
                 body: JSON.stringify(formData)
             });
             
+            console.log("Response received:", response);
             const data = await response.json();
+            console.log("Response data:", data);
             
             if (data.success) {
                 // Create download link
                 const downloadUrl = `/download/${data.filename}`;
                 resultContainer.innerHTML = `
-                <div class="alert alert-warning">
-                    <h4>File System Access Failed</h4>
-                    <p>Your browser couldn't save the file directly, but you can download it instead:</p>
+                <div class="alert alert-success">
+                    <h4>JSON File Generated!</h4>
+                    <p>Your conversation flow has been created successfully.</p>
                     <a href="${downloadUrl}" class="btn btn-primary" download>Download JSON File</a>
                 </div>`;
+                
+                // Auto-download the file
+                console.log("Downloading file:", downloadUrl);
+                const downloadLink = document.createElement('a');
+                downloadLink.href = downloadUrl;
+                downloadLink.download = formData.name + '.json';
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                
+                return;
             } else {
+                console.error("Error generating JSON:", data.error);
                 resultContainer.innerHTML = `
                 <div class="alert alert-danger">
                     <h4>Error Saving File</h4>
-                    <p>There was a problem generating your file. Please try again or use a different browser.</p>
+                    <p>${data.error || "There was a problem generating your file. Please try again."}</p>
+                    <p class="small text-muted">Check browser console for details (F12).</p>
                 </div>`;
             }
 
@@ -1127,6 +1581,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <div class="alert alert-danger">
                 <h4>Error Generating JSON</h4>
                 <p>${error.message || "Unknown error"}</p>
+                <p class="small text-muted">Check browser console for details (F12).</p>
             </div>`;
             
             resultContainer.scrollIntoView({ behavior: 'smooth' });

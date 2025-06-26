@@ -35,6 +35,7 @@ class FunctionDefinition(BaseModel):
     description: str
     parameters: FunctionParameters
     transition_callback: Optional[str] = None
+    handler: Optional[str] = None
     
     @field_validator('parameters')
     @classmethod
@@ -58,9 +59,14 @@ class Function(BaseModel):
     @classmethod
     def validate_function(cls, function):
         """Validates the function structure."""
-        # Ensure transition_callback is present
-        if not function.transition_callback:
-            raise ValueError("Function must include transition_callback")
+        # For the general_handler function, transition_callback is optional now
+        # as it's handled by transition_logic in the stage
+        if function.handler == "general_handler":
+            return function
+            
+        # For other functions, check transition_callback requirements
+        if not function.transition_callback and not function.handler:
+            raise ValueError("Function must include either transition_callback or handler")
         
         # Ensure transition_to is not present
         if hasattr(function, 'transition_to'):

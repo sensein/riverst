@@ -23,6 +23,20 @@
     ]
   },
   {
+    "title": "Dynamic Transitions Testing",
+    "activities": [
+      {
+        "title": "Dynamic Test Activity",
+        "images": ["/figures/avatar_interaction_black.svg", 
+                   "/figures/avatar_interaction_white.svg"],
+        "description": "Test the dynamic transitions feature with this activity.",
+        "route": "/avatar-interaction-settings",
+        "disabled": false,
+        "settings_options_filepath": "activities/settings/dynamic-test.json"
+      }
+    ]
+  },
+  {
     "title": "Playground just for fun",
     "activities": [
       {

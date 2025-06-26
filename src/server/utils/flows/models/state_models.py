@@ -4,9 +4,25 @@ State configuration models.
 This module defines Pydantic models that represent the structure of
 state configurations in the flow system.
 """
-from typing import Dict, Any, Set
+from typing import Dict, Any, Set, List, Union, Optional, Literal
 from pydantic import BaseModel, model_validator, field_validator
 
+
+class ConditionParameters(BaseModel):
+    """Parameters for a condition in transition logic."""
+    variable_path: str
+    operator: Literal["==", "!=", ">", ">=", "<", "<=", "in", "not_in"]
+    value: Any
+
+class Condition(BaseModel):
+    """A condition for determining the next node in a flow."""
+    parameters: ConditionParameters
+    target_node: str
+
+class TransitionLogic(BaseModel):
+    """Logic for determining the next node in a flow."""
+    conditions: List[Condition] = []
+    default_target_node: str
 
 class StageModel(BaseModel):
     """
@@ -14,8 +30,9 @@ class StageModel(BaseModel):
     """
     checklist: Dict[str, bool] 
     checklist_incomplete_message: str
-    checklist_complete_message: str
-    next_stage: str
+    checklist_complete_message: Optional[str] = None
+    next_stage: Optional[str] = None
+    transition_logic: Optional[TransitionLogic] = None
     
     model_config = {"extra": "allow"} 
     
@@ -30,7 +47,7 @@ class StageModel(BaseModel):
                 raise ValueError(f"Checklist item '{key}' must be initialized to False")
         return checklist
     
-    @field_validator('checklist_incomplete_message', 'checklist_complete_message')
+    @field_validator('checklist_incomplete_message')
     @classmethod
     def validate_messages(cls, value, info):
         """Validates that message fields are strings and contain the expected format."""
@@ -38,18 +55,19 @@ class StageModel(BaseModel):
             raise ValueError(f"{info.field_name} must be a string, got {type(value)}")
             
         # For incomplete message, ensure it has a placeholder for the missing items
-        if info.field_name == 'checklist_incomplete_message' and '{}' not in value:
+        if '{}' not in value:
             raise ValueError(f"checklist_incomplete_message must contain a placeholder '{{}}' for missing items")
             
         return value
     
-    @field_validator('next_stage')
-    @classmethod
-    def validate_next_stage(cls, value):
-        """Validates that next_stage is a string."""
-        if not isinstance(value, str):
-            raise ValueError(f"next_stage must be a string, got {type(value)}")
-        return value
+    @model_validator(mode='after')
+    def validate_transition_fields(self):
+        """Validates that either next_stage or transition_logic is provided, but not both."""
+        if self.next_stage is None and self.transition_logic is None:
+            raise ValueError("Either next_stage or transition_logic must be provided")
+        if self.next_stage is not None and self.transition_logic is not None:
+            raise ValueError("Only one of next_stage or transition_logic can be provided")
+        return self
 
 
 class StateConfig(BaseModel):
@@ -95,8 +113,20 @@ class StateConfig(BaseModel):
         # Validate stage connections
         stage_names = set(self.stages.keys())
         for stage_name, stage in self.stages.items():
-            if stage.next_stage != 'end' and stage.next_stage not in stage_names:
-                raise ValueError(f"Stage '{stage_name}' has invalid next_stage '{stage.next_stage}'")
+            if stage.next_stage is not None:
+                if stage.next_stage != 'end' and stage.next_stage not in stage_names:
+                    raise ValueError(f"Stage '{stage_name}' has invalid next_stage '{stage.next_stage}'")
+            
+            if stage.transition_logic is not None:
+                # Check that all target nodes exist
+                for condition in stage.transition_logic.conditions:
+                    if condition.target_node != 'end' and condition.target_node not in stage_names:
+                        raise ValueError(f"Stage '{stage_name}' has condition with invalid target_node '{condition.target_node}'")
+                
+                # Check default target node
+                default = stage.transition_logic.default_target_node
+                if default != 'end' and default not in stage_names:
+                    raise ValueError(f"Stage '{stage_name}' has invalid default_target_node '{default}'")
             
         return self
         
