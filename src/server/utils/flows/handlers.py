@@ -134,22 +134,27 @@ def create_current_node(flow_manager: FlowManager, message: str) -> NodeConfig:
     return node
 
 
-async def general_handler(args: FlowArgs, flow_manager: FlowManager) -> Dict[str, Any]:
+async def general_handler(args: FlowArgs, flow_manager: FlowManager) -> Tuple[Dict[str, Any], NodeConfig]:
     """
-    General handler to check progress through a stage, store details in flow state, and handle transitions.
+    General handler to check progress through a stage, store details in flow state, and handle transitions. 
+    
+    note: Updated to match pipecat-flows 0.0.18 consolidated functions
     
     Steps:
     1. Update info fields in flow state with args
     2. Update checklist fields in the current stage's checklist
     3. Check if all checklist items are complete
-    5. If incomplete, return error message with details of incomplete items, otherwise return success message
+    4. If complete, create next node and return success message
+    5. If incomplete, create current node with error message and return it
     
     Args:
         args: Flow arguments
         flow_manager: Flow manager instance
         
     Returns:
-        A dictionary with the status, checklist, and message.
+        Tuple containing:
+            - Result dictionary with status and message
+            - Next node configuration if complete, or current node configuration if incomplete
     """
     update_info_fields(args, flow_manager)
     stage = flow_manager.current_node
@@ -159,39 +164,19 @@ async def general_handler(args: FlowArgs, flow_manager: FlowManager) -> Dict[str
     
     if complete:
         message = "Complete"
+        _, next_node = create_next_node(flow_manager)
     else:
         message = flow_manager.state["stages"][stage]["checklist_incomplete_message"].format(
             ", ".join([item for item, done in checklist.items() if not done])
         )
+        message = "CRITICAL INSTRUCTION: You are rejoining the flow at a point where you have not completed all required tasks. LOOK AT YOUR INSTRUCTIONS CAREFULLY AND MAKE SURE YOU UNDERSTAND THE TASKS YOU NEED TO COMPLETE, and SKIP ANY TASKS THAT I HAVE NOT ASKED YOU TO COMPLETE AGAIN: " + message
+        next_node = create_current_node(flow_manager, message)
         
     result = {
         "status": "success" if complete else "error",
-        "checklist": checklist,
         "message": message
     }    
-    return result
-
-
-
-async def general_transition_callback(args: Dict, result: FlowResult, flow_manager: FlowManager):
-    """
-    Handle transitions to the next node.
-    
-    Args:
-        args: Flow arguments
-        result: Flow result
-        flow_manager: Flow manager instance
-    """
-    if result.get("status") == "success":
-        try:
-            next_stage, node = create_next_node(flow_manager)
-            await flow_manager.set_node(next_stage, node)
-        except Exception as e:
-            import traceback
-    else:
-        message = result.get("message", "Please ensure you have completed all required checklist items.")
-        message = "CRITICAL INSTRUCTION: You are rejoining the flow at a point where you have not completed all required tasks. LOOK AT YOUR INSTRUCTIONS CAREFULLY AND MAKE SURE YOU UNDERSTAND THE TASKS YOU NEED TO COMPLETE, and SKIP ANY TASKS THAT I HAVE NOT ASKED YOU TO COMPLETE AGAIN: " + message
-        await flow_manager.set_node(flow_manager.current_node, create_current_node(flow_manager, message))    
+    return result, next_node
     
 
 

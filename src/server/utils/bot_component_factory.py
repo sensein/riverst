@@ -16,7 +16,6 @@ from pipecat.services.whisper.stt import WhisperSTTService
 from pipecat.adapters.schemas.tools_schema import ToolsSchema
 from pipecat.adapters.schemas.function_schema import FunctionSchema
 from pipecat.processors.aggregators.openai_llm_context import OpenAILLMContext
-from pipecat.transports.base_transport import TransportParams
 import json
 from .animation_handler import AnimationHandler
 
