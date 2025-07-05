@@ -11,6 +11,7 @@ interface SettingsState {
   video_flag: boolean
   user_transcript: boolean
   bot_transcript: boolean
+  tts_type?: string
 }
 
 export default function AvatarInteraction() {
@@ -71,6 +72,8 @@ export default function AvatarInteraction() {
           user: settings.user_transcript,
           bot: settings.bot_transcript,
         }}
+        sessionId={sessionId!}
+        ttsType={initialSettings?.tts_type}
       />
     </RTVIProvider>
   )

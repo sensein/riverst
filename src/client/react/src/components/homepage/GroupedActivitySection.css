@@ -1,57 +1,49 @@
-/* Section wrapper */
-
 .activity-section {
-margin-bottom: 32px;
+  margin-bottom: 32px;
 }
 
-/* Collapse container */
 .activity-section .ant-collapse {
-background-color: transparent;
+  background-color: transparent;
 }
 
-/* Individual collapse item */
 .activity-section .ant-collapse-item {
-margin-bottom: 12px;
+  margin-bottom: 12px;
 }
 
-/* Space between collapse panels */
 .activity-section .ant-collapse-item + .ant-collapse-item {
-margin-top: 16px;
+  margin-top: 16px;
 }
 
-/* Collapse header: default cursor when active */
 .activity-section .ant-collapse-item-active > .ant-collapse-header {
-cursor: default;
+  cursor: default;
 }
 
 .activity-panel-title {
-font-size: 32px;
-font-weight: 700;
-line-height: 0.5;
-color: #000;
-letter-spacing: 0.5px;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 0.5;
+  color: #000;
+  letter-spacing: 0.5px;
 }
 
-/* Panel content wrapper */
 .activity-panel-content {
-padding: 16px;
-border-radius: 8px;
+  padding: 16px;
+  border-radius: 8px;
 }
 
-/* Inner panel content override */
 .ant-collapse-content {
-border-radius: 6px;
-border: none;
+  border-radius: 6px;
+  border: none;
 }
 
 .activity-inline-wrapper {
-display: flex;
-flex-wrap: wrap;
-gap: 24px;
-justify-content: flex-start;
-padding: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  justify-content: flex-start;
+  padding: 16px;
 }
 
 .activity-inline-card {
-flex: 0 0 auto;
+  flex: 0 0 auto;
 }

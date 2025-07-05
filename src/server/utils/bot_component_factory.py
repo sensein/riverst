@@ -3,26 +3,25 @@ from typing import Optional, Tuple, Literal, List, Dict, Any
 from dataclasses import dataclass
 
 from pipecat.services.openai.stt import OpenAISTTService
-from pipecat.services.openai.tts import OpenAITTSService
 from pipecat.services.openai.llm import OpenAILLMService
 from pipecat.services.openai_realtime_beta import (
     InputAudioNoiseReduction, InputAudioTranscription,
     OpenAIRealtimeBetaLLMService, SemanticTurnDetection, SessionProperties
 )
 from pipecat.services.ollama.llm import OLLamaLLMService
-from pipecat.services.piper.tts import PiperTTSService
-from pipecat.services.gemini_multimodal_live import GeminiMultimodalLiveLLMService
+from pipecat.services.gemini_multimodal_live.gemini import GeminiMultimodalLiveLLMService, GeminiMultimodalModalities
+
 from pipecat.services.whisper.stt import WhisperSTTService
 from pipecat.adapters.schemas.tools_schema import ToolsSchema
 from pipecat.adapters.schemas.function_schema import FunctionSchema
 from pipecat.processors.aggregators.openai_llm_context import OpenAILLMContext
-from pipecat.transports.base_transport import TransportParams
 import json
+
 
 ModalityType = Literal["classic", "e2e"]
 LLMType = Literal["openai", "openai_realtime_beta", "gemini", "llama3.2"]
 STTType = Literal["openai", "whisper"]
-TTSType = Literal["openai", "piper"]
+TTSType = Literal["kokoro", "elevenlabs"]
 
 ALLOWED_LLM = {
     "classic": {"openai", "llama3.2"},
@@ -30,9 +29,21 @@ ALLOWED_LLM = {
 }
 
 VALID_ANIMATIONS = [
-    {"id": "wave", "description": "When you welcome the user or greet them or introduce yourself, you always wave with your hand (animation)."},
-    {"id": "dance", "description": "When you congratulate or appreciate the user or are happy, you dance (animation)."},
-    {"id": "i_dont_know", "description": "When you don’t know something, you do the 'I don’t know' animation."},
+    {"id": "dance", "description": "When you want to dance, you trigger the 'dance' animation."},
+    {"id": "wave", "description": "When you welcome the user or greet them or introduce yourself, you always trigger the 'wave' animation."},
+    {"id": "i_have_a_question", "description": "When you have a question, sometimes, you can do the 'i_have_a_question' animation."},
+    {"id": "thank_you", "description": "When you want to thank the user, you do the 'thank_you' animation."},
+    {"id": "i_dont_know", "description": "When you don’t know something, you do the 'i_dont_know' animation."},
+    {"id": "ok", "description": "When you want to say 'ok', you can do the 'ok' animation."},
+    {"id": "thumbup", "description": "When you want to give a thumbs up, you can do the 'thumbup' animation."},
+    {"id": "thumbdown", "description": "When you want to give a thumbs down, you can do the 'thumbdown' animation."},
+    {"id": "happy", "description": "When you are happy, you can do the 'happy' animation."},
+    {"id": "sad", "description": "When you are sad, you can do the 'sad' animation."},
+    {"id": "angry", "description": "When you are angry, you can do the 'angry' animation."},
+    {"id": "fear", "description": "When you are scared, you can do the 'fear' animation."},
+    {"id": "disgust", "description": "When you are disgusted, you can do the 'disgust' animation."},
+    {"id": "love", "description": "When you are in love with someone or something, you can do the 'love' animation."},
+    {"id": "sleep", "description": "When you are sleepy, you can do the 'sleep' animation."},
 ]
 
 @dataclass
@@ -45,7 +56,6 @@ class BotComponentFactory:
     stt_type: Optional[STTType] = None
     stt_params: Optional[Dict[str, Any]] = None
     tts_type: Optional[TTSType] = None
-    tts_params: Optional[Dict[str, Any]] = None
     advanced_flows: bool = False
     flow_params: Optional[Dict[str, Any]] = None
     long_term_memory: bool = False
@@ -65,18 +75,21 @@ class BotComponentFactory:
         if self.modality == "classic" and (not self.stt_type or not self.tts_type):
             raise ValueError("Both 'stt_type' and 'tts_type' are required in 'classic' modality.")
 
-        if self.modality == "e2e" and (self.stt_type or self.tts_type):
-            print("'stt_type' and 'tts_type' will be ignored in 'e2e' mode.")
+        if self.modality == "e2e" and (self.stt_type):
+            print("'stt_type' will be ignored in 'e2e' mode.")
+        if self.modality == "e2e" and not self.tts_type:
+            raise ValueError("'tts_type' is required in 'e2e' mode.")
 
-        if self.llm_type.startswith("openai") or self.stt_type == "openai" or self.tts_type == "openai":
+        if self.llm_type.startswith("openai") or self.stt_type == "openai":
             if not os.getenv("OPENAI_API_KEY"):
                 raise EnvironmentError("Missing OPENAI_API_KEY in environment.")
         if self.llm_type == "gemini":
             if not os.getenv("GOOGLE_API_KEY"):
                 raise EnvironmentError("Missing GOOGLE_API_KEY in environment.")
 
-        if self.tts_type == "piper" and not self.tts_params.get("client_session"):
-            raise ValueError("Piper TTS requires 'client_session' in tts_params.")
+        if self.tts_type == "elevenlabs":
+            if not os.getenv("ELEVENLABS_API_KEY"):
+                raise EnvironmentError("Missing ELEVENLABS_API_KEY in environment.")
 
         if self.body_animations:
             valid_ids = {a["id"] for a in VALID_ANIMATIONS}
@@ -140,7 +153,6 @@ class BotComponentFactory:
     async def build(self) -> Tuple[
         Optional[object],  # STT
         object,            # LLM
-        Optional[object],  # TTS
         ToolsSchema,    # tools
         str,        # instruction
         object,            # context
@@ -149,7 +161,7 @@ class BotComponentFactory:
         str,        # animation_instruction
         
     ]:
-        stt, llm, tts = None, None, None
+        stt, llm = None, None
         instruction = self.build_instruction()
         tools = self.build_tools()
 
@@ -172,46 +184,27 @@ class BotComponentFactory:
             elif self.llm_type == "llama3.2":
                 llm = OLLamaLLMService(model=self.llm_type)
 
-            if self.tts_type == "openai":
-                voice = "alloy" if 'gender' in self.avatar and self.avatar['gender'] == 'feminine' else "ash"
-                tts = OpenAITTSService(
-                    voice=voice,
-                    model=(self.tts_params or {}).get("model", "gpt-4o-mini-tts")
-                )
-            elif self.tts_type == "piper":
-                # this assumes that 5001 offers female and 5002 offers male
-                base_url = "http://localhost:5001/" if 'gender' in self.avatar and self.avatar['gender'] == 'feminine' else "http://localhost:5002/"
-                tts = PiperTTSService(
-                    base_url=base_url,
-                    aiohttp_session=(self.tts_params or {})["client_session"]
-                )
-
         elif self.modality == "e2e":
             if self.llm_type == "openai_realtime_beta":
-                voice = "alloy" if 'gender' in self.avatar and self.avatar['gender'] == 'feminine' else "ash"
-                print("Using OpenAI Realtime Beta LLM Service with voice:", voice, "avatar: ", self.avatar)
                 props = SessionProperties(
                     input_audio_transcription=InputAudioTranscription(),
                     turn_detection=SemanticTurnDetection(),
                     input_audio_noise_reduction=InputAudioNoiseReduction(type="near_field"),
                     instructions=instruction,
-                    voice = voice
+                    modalities=["text"],
                 )
                 llm = OpenAIRealtimeBetaLLMService(
                     api_key=os.getenv("OPENAI_API_KEY"),
                     model=(self.llm_params or {}).get("model", "gpt-4o-realtime-preview-2024-12-17"),
                     session_properties=props,
-                    start_audio_paused=False,
-                    send_transcription_frames=True,
                 )
             elif self.llm_type == "gemini":
                 llm = GeminiMultimodalLiveLLMService(
                     api_key=os.getenv("GOOGLE_API_KEY"),
-                    voice_id= "Aoede" if 'gender' in self.avatar and self.avatar['gender'] == 'feminine' else "Charon",
                     transcribe_user_audio=True,
-                    transcribe_model_audio=True,
                     system_instruction=instruction,
                     tools=tools,
+                    modalities=GeminiMultimodalModalities.TEXT
                 )
 
         messages = []
@@ -297,4 +290,4 @@ class BotComponentFactory:
         context = OpenAILLMContext(messages=messages, tools=tools)
         context_aggregator = llm.create_context_aggregator(context=context)
 
-        return stt, llm, tts, tools, instruction, context, context_aggregator, self.used_animations, self.animation_instruction
+        return stt, llm, tools, instruction, context, context_aggregator, self.used_animations, self.animation_instruction

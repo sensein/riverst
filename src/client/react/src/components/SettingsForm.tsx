@@ -68,11 +68,11 @@ const SettingsForm = ({ schema, onSubmit }) => {
     if (pipelineModality === 'classic') {
       updates.llm_type = 'openai';
       updates.stt_type = 'openai';
-      updates.tts_type = 'openai';
+      updates.tts_type = 'kokoro';
     } else if (pipelineModality === 'e2e') {
-      updates.llm_type = 'openai_realtime_beta';
+      updates.llm_type = 'gemini';
       updates.stt_type = undefined;
-      updates.tts_type = undefined;
+      updates.tts_type = 'kokoro';
     }
 
     form.setFieldsValue({ options: updates });
@@ -97,7 +97,7 @@ const SettingsForm = ({ schema, onSubmit }) => {
 
   const renderFormItem = (key, config) => {
     if (config.const !== undefined) return null;
-    if (['stt_type', 'tts_type'].includes(key) && pipelineModality !== 'classic') return null;
+    if (['stt_type'].includes(key) && pipelineModality !== 'classic') return null;
     if (key === 'llm_type') {
       const filteredEnums =
         pipelineModality === 'classic'

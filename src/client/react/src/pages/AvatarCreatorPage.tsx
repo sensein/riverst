@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { Row, Col, Card, Typography, message, Button, Layout } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
-import AvatarRenderer from '../components/avatarInteraction/AvatarRenderer';
+import TalkingHeadWrapper from '../components/avatarInteraction/TalkingHeadWrapper';
 
 const { Title } = Typography;
 
@@ -50,16 +50,13 @@ const AvatarCreatorPage = () => {
 
         <Row gutter={[24, 24]}>
           {avatars.map((avatar) => (
-            <Col xs={24} sm={12} lg={8} key={avatar.id}>
+            <Col xs={24} sm={12} lg={6} key={avatar.id}>
               <Card
-                title={avatar.name}
                 hoverable
                 onClick={() => handleAvatarSelect(avatar)}
                 style={{ cursor: 'pointer' }}
               >
-                <div style={{ height: '300px', overflow: 'hidden' }}>
-                  <AvatarRenderer avatarUrl={avatar.modelUrl} cameraType="headshot" />
-                </div>
+                <TalkingHeadWrapper avatar={avatar} cameraType="full" height={50} width={100} />
               </Card>
             </Col>
           ))}

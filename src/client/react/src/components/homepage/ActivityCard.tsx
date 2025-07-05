@@ -14,14 +14,25 @@ interface ActivityCardProps {
   settings_options_filepath?: string;
 }
 
-const ActivityCard: React.FC<ActivityCardProps> = ({ title, images, description, route, disabled = false, settings_options_filepath }) => {
+const ActivityCard: React.FC<ActivityCardProps> = ({
+  title,
+  images,
+  description,
+  route,
+  disabled = false,
+  settings_options_filepath,
+}) => {
   const cardContent = (
     <div
+      className="activity-card-container"
       style={{
         position: 'relative',
         opacity: disabled ? 0.6 : 1,
         cursor: disabled ? 'not-allowed' : 'pointer',
         pointerEvents: disabled ? 'none' : 'auto',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
       {disabled && (
@@ -40,10 +51,13 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ title, images, description,
       )}
       <Card
         style={{
-          width: 400,
+          height: '100%', 
           borderRadius: 12,
           overflow: 'hidden',
           boxShadow: '0 2px 10px rgba(0, 0, 0, 0.06)',
+          flexGrow: 1,
+          display: 'flex',
+          flexDirection: 'column',
         }}
         title={title}
         className="activity-card-body"
@@ -63,14 +77,12 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ title, images, description,
   );
 
   return disabled ? (
-    <div>{cardContent}
-        <p>{settings_options_filepath}</p>
-    </div>
+    <div>{cardContent}</div>
   ) : (
     <Link
       to={route}
       state={settings_options_filepath ? { settingsUrl: settings_options_filepath } : undefined}
-      style={{ textDecoration: 'none' }}
+      style={{ textDecoration: 'none', height: '100%', display: 'block' }}
     >
       {cardContent}
     </Link>

@@ -1,50 +1,51 @@
+import asyncio
 import datetime
-import aiohttp
 import json
+import os
 import traceback
 from typing import Any
 
+import aiohttp
 from dotenv import load_dotenv
 from loguru import logger
-import os
-from pipecat.audio.vad.silero import SileroVADAnalyzer
 from pipecat.audio.filters.noisereduce_filter import NoisereduceFilter
+from pipecat.audio.vad.silero import SileroVADAnalyzer
+from pipecat.frames.frames import EndFrame
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.runner import PipelineRunner
 from pipecat.pipeline.task import PipelineParams, PipelineTask
-from pipecat.processors.aggregators.openai_llm_context import OpenAILLMContext
-from pipecat.processors.frameworks.rtvi import RTVIConfig, RTVIObserver, RTVIProcessor, RTVIServerMessageFrame
-from pipecat.processors.user_idle_processor import UserIdleProcessor
 from pipecat.processors.audio.audio_buffer_processor import AudioBufferProcessor
+from pipecat.processors.filters.stt_mute_filter import (
+    STTMuteConfig,
+    STTMuteFilter,
+    STTMuteStrategy,
+)
+from pipecat.processors.frameworks.rtvi import (
+    RTVIConfig,
+    RTVIObserver,
+    RTVIProcessor,
+    RTVIServerMessageFrame,
+)
 from pipecat.processors.transcript_processor import TranscriptProcessor
-from pipecat.services.openai.stt import OpenAISTTService
-from pipecat.adapters.schemas.function_schema import FunctionSchema
-from pipecat.adapters.schemas.tools_schema import ToolsSchema
+from pipecat.processors.user_idle_processor import UserIdleProcessor
+from pipecat.services.llm_service import FunctionCallParams
 from pipecat.transports.base_transport import TransportParams
 from pipecat.transports.network.small_webrtc import SmallWebRTCTransport
-from pipecat.frames.frames import EndFrame
-from pipecat.services.llm_service import FunctionCallParams
-from pipecat.processors.filters.stt_mute_filter import STTMuteConfig, STTMuteFilter, STTMuteStrategy
 
-import asyncio
-from .video_processor import VideoProcessor
-from .utils import save_audio_file
-from .transcript_handler import TranscriptHandler
 from .audio_analyzer import AudioAnalyzer
-from .viseme import VisemeProcessor
 from .bot_component_factory import BotComponentFactory
 from .flow_component_factory import FlowComponentFactory
 from .metrics import MetricsLoggerProcessor
+from .transcript_handler import TranscriptHandler
+from .utils import save_audio_file
+from .video_processor import VideoProcessor
 
 load_dotenv(override=True)
 
 async def run_bot(
     webrtc_connection: Any,
     config: dict,
-    session_dir: str,
-    audio_channels: int = 1,
-    audio_sample_rate: int = 24000,
-    audio_bit_depth: int = 2,
+    session_dir: str
 ) -> None:
     """Main function that runs the Pipecat-based bot pipeline.
 
@@ -52,9 +53,6 @@ async def run_bot(
         webrtc_connection (Any): The WebRTC connection instance.
         config (dict): Dictionary containing the bot configuration.
         session_dir (str): Directory to store session artifacts.
-        audio_channels (int): Number of audio channels. Default is 1.
-        audio_sample_rate (int): Sample rate in Hz. Default is 24000.
-        audio_bit_depth (int): Bit depth for audio. Default is 2.
     """
     logger.info("Starting bot with config: {}", config)
     logger.info("Session directory: {}", session_dir)
@@ -68,7 +66,6 @@ async def run_bot(
             llm_type=config["llm_type"],
             stt_type=config["stt_type"] if "stt_type" in config else None,
             tts_type=config["tts_type"] if "tts_type" in config else None,
-            tts_params={"client_session": session} if "tts_type" in config and config["tts_type"] == "piper" else None,
             long_term_memory=config.get("long_term_memory", False),
             task_description=config.get("task_description", ""),
             user_description=config.get("user_description", ""),
@@ -79,7 +76,7 @@ async def run_bot(
             avatar=config["avatar"]
         )
 
-        stt, llm, tts, tools, instruction, context, context_aggregator, allowed_animations, animation_instruction = await factory.build()
+        stt, llm, tools, instruction, context, context_aggregator, allowed_animations, animation_instruction = await factory.build()
         metrics_logger = MetricsLoggerProcessor(session_dir=session_dir)
 
         # Setup WebRTC transport parameters
@@ -91,25 +88,19 @@ async def run_bot(
             video_out_height=config.get("video_out_height", 0),
             video_out_framerate=config.get("video_out_framerate", 0),
             audio_in_enabled=True,
-            audio_out_enabled=True,
+            audio_out_enabled=False,
             audio_in_filter=NoisereduceFilter(),
             vad_analyzer=SileroVADAnalyzer(),
             audio_in_passthrough=True,
-            audio_out_10ms_chunks=4,
+            # audio_out_10ms_chunks=4,
         )
 
         pipecat_transport = SmallWebRTCTransport(webrtc_connection=webrtc_connection, params=transport_params)
 
-        # Audio processors for raw and viseme audio streams
+        # Audio processors for the raw audio stream
         audiobuffer = AudioBufferProcessor(enable_turn_audio=True)
-        viseme_audiobuffer = AudioBufferProcessor(
-            enable_turn_audio=True,
-            sample_rate=16000,
-            buffer_size=0.5 * audio_channels * audio_sample_rate * audio_bit_depth,
-        )
 
         rtvi = RTVIProcessor(config=RTVIConfig(config=[]))
-        viseme_processor = VisemeProcessor()
 
         # Debug wrapper for function calls from LLM (useful for catching errors)
         def function_call_debug_wrapper(fn):
@@ -133,7 +124,7 @@ async def run_bot(
         async def handle_animation(params: FunctionCallParams):
             try:
                 animation_id = params.arguments["animation_id"]
-                print(f"Triggering animation: {animation_id}")
+                # print(f"Triggering animation: {animation_id}")
                 if animation_id and animation_id in allowed_animations:
                     frame = RTVIServerMessageFrame(data={"type": "animation-event", "payload": {"animation_id": animation_id}})
                     await rtvi.push_frame(frame)
@@ -201,7 +192,7 @@ async def run_bot(
             ),
         )
 
-        if stt is not None and tts is not None:
+        if stt is not None:
             # Note: e2e is faster, but classic is still preferable for now
             steps = [
                     pipecat_transport.input(),
@@ -211,8 +202,6 @@ async def run_bot(
                     transcript.user(),
                     context_aggregator.user(),
                     llm,
-                    tts,
-                    viseme_audiobuffer,
                     VideoProcessor(
                         transport_params.video_out_width, transport_params.video_out_height
                     ) if config.get("video_flag", False) else None,
@@ -234,7 +223,6 @@ async def run_bot(
                     stt_mute_processor, # Add the mute processor before LLM
                     llm,  # LLM
                     transcript.user(),
-                    viseme_audiobuffer,
                     pipecat_transport.output(),
                     audiobuffer,
                     transcript.assistant(),
@@ -253,13 +241,11 @@ async def run_bot(
                                   observers=[RTVIObserver(rtvi)]),
         )
         
-        
         # Will initialize flow manager if advanced flows are enabled
         flow_factory = FlowComponentFactory(
             llm=llm,
             context_aggregator=context_aggregator,
             task=task,
-            tts = tts,
             advanced_flows=config.get("advanced_flows", False),
             flow_config_path=config.get("advanced_flows_config_path"),
             session_variables_path=config.get("session_variables_path"),
@@ -269,7 +255,7 @@ async def run_bot(
         )
         flow_manager = flow_factory.build()
 
-        # Event handlers for data, transcripts, visemes, and UI events
+        # Event handlers for data, transcripts and UI events
         @transcript.event_handler("on_transcript_update")
         async def on_transcript_update(processor, frame):
             await transcript_handler.on_transcript_update(processor, frame)
@@ -297,13 +283,6 @@ async def run_bot(
             session_wav = os.path.join(session_dir, f"session_{i}.wav")
             await save_audio_file(audio, session_wav, sr, ch)
 
-        @viseme_audiobuffer.event_handler("on_track_audio_data")
-        async def on_track_audio_data(_, user_audio, bot_audio, sr, ch):
-            visemes = await viseme_processor.process_async(bot_audio, sr, ch)
-            if visemes and not (len(visemes) == 1 and visemes[0].get("visemes") == [0]):
-                frame = RTVIServerMessageFrame(data={"type": "visemes-event", "payload": visemes})
-                await rtvi.push_frame(frame)
-
         @rtvi.event_handler("on_client_ready")
         async def on_client_ready(rtvi):
             await rtvi.set_bot_ready()
@@ -315,13 +294,11 @@ async def run_bot(
 
         @pipecat_transport.event_handler("on_client_connected")
         async def on_client_connected(_, __):
-            await viseme_audiobuffer.start_recording()
             await audiobuffer.start_recording()
 
         @pipecat_transport.event_handler("on_client_disconnected")
         async def on_client_disconnected(_, __):
             logger.info("Client disconnected")
-            await viseme_audiobuffer.stop_recording()
             await audiobuffer.stop_recording()
             await task.cancel()
             await metrics_logger.aggregate_and_save()

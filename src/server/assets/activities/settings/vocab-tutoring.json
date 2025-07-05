@@ -53,23 +53,23 @@
         },
         "tts_type": {
           "type": "string",
-          "enum": ["openai", "piper"],
-          "default": "openai",
+          "enum": ["kokoro", "elevenlabs"],
+          "default": "kokoro",
           "description": "The TTS service to use."
         },
         "body_animations": {
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["wave", "dance", "i_dont_know"]
+            "enum": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep"]
           },
-          "default": ["wave", "dance", "i_dont_know"],
+          "default": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep"],
           "description": "List of body animations that the avatar can perform."
         },
         "camera_settings": {
           "type": "string",
-          "enum": ["half_body", "headshot", "full_body"],
-          "default": "headshot",
+          "enum": ["full", "mid", "upper", "head"],
+          "default": "upper",
           "description": "Select the camera framing used for the avatar during the interaction."
         },
         "user_description": {
@@ -82,6 +82,16 @@
           "type": "boolean",
           "default": false,
           "description": "Enable or disable long-term memory. If enabled, the avatar will remember information from previous interactions and use it to guide the conversation."
+        },
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["english", "italian", "spanish", "german"]
+          },
+          "default": ["english"],
+          "const": ["english"],
+          "description": "List of languages supported by the avatar. If empty, the avatar supports all languages in the intersection of the languages supported by the STT, LLM and TTS services."
         },
         "video_flag": {
           "type": "boolean",

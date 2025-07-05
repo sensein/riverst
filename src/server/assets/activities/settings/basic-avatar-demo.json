@@ -25,7 +25,7 @@
           "enum": ["classic"],
           "default": "classic",
           "const": "classic",
-          "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline."
+          "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline + tts."
         },
         "llm_type": {
           "type": "string",
@@ -43,26 +43,26 @@
         },
         "tts_type": {
           "type": "string",
-          "enum": ["openai", "piper"],
-          "default": "openai",
-          "const": "openai",
+          "enum": ["kokoro", "elevenlabs"],
+          "default": "kokoro",
+          "const": "kokoro",
           "description": "The TTS service to use."
         },
         "body_animations": {
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["wave", "dance", "i_dont_know"]
+            "enum": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep"]
           },
-          "default": ["wave", "dance", "i_dont_know"],
-          "const": ["wave", "dance", "i_dont_know"],
+          "default": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep"],
+          "const": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep"],
           "description": "List of body animations that the avatar can perform."
         },
         "camera_settings": {
           "type": "string",
-          "enum": ["half_body", "headshot", "full_body"],
-          "default": "half_body",
-          "const": "half_body",
+          "enum": ["full", "mid", "upper", "head"],
+          "default": "upper",
+          "const": "upper",
           "description": "Select the camera framing used for the avatar during the interaction."
         },
         "avatar_system_prompt": {
@@ -105,8 +105,8 @@
             "type": "string",
             "enum": ["english", "italian", "spanish", "german"]
           },
-          "default": [],
-          "const": [],
+          "default": ["english"],
+          "const": ["english"],
           "description": "List of languages supported by the avatar. If empty, the avatar supports all languages in the intersection of the languages supported by the STT, LLM and TTS services."
         },
         "video_flag": {

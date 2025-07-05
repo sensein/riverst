@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Dict, Optional, Any
 
 import uvicorn
+import uvloop
 from fastapi import BackgroundTasks, FastAPI, Request, Query, Body
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,8 +22,14 @@ from pipecat_ai_small_webrtc_prebuilt.frontend import SmallWebRTCPrebuiltUI
 from pipecat.transports.network.webrtc_connection import SmallWebRTCConnection
 from fastapi.staticfiles import StaticFiles
 
+import websockets
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from starlette.websockets import WebSocketState
+
+
 # Load environment variables
 load_dotenv(override=True)
+asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 app = FastAPI()
 
@@ -353,6 +360,133 @@ async def get_session_data(session_id: str) -> JSONResponse:
         "data": results,
         "metrics_summary": metrics
     }))
+
+
+
+
+
+
+
+
+
+
+@app.websocket("/tts-proxy/{session_id}")
+async def tts_proxy(websocket: WebSocket, session_id: str):
+    """WebSocket proxy for TTS streaming using ElevenLabs + other TTS services."""
+    await websocket.accept()
+
+    try:
+        # Load TTS config
+        session_dir = BASE_SESSION_DIR / "sessions" / session_id
+        config_path = session_dir / "config.json"
+        if not config_path.exists():
+            raise FileNotFoundError(f"No config found at {config_path}")
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = json.load(f)
+            print("Loaded config:", config)
+        tts_type = config.get("tts_type", None)
+
+        if tts_type == "elevenlabs":
+            print("Using ElevenLabs TTS...")
+            if 'voice_id' in config.get('avatar', {}):
+                voice_id = config.get('avatar', {})['voice_id']
+            else:
+                voice_id = "XrExE9yKIg1WjnnlVkGX" if 'gender' in config.get('avatar', {}) and config.get('avatar', {})['gender'] == 'feminine' else "cjVigY5qzO86Huf0OWal"
+            print("voice_id", voice_id)
+            ELEVEN_WS_URL = (
+                f"wss://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
+                f"/stream-input?model_id=eleven_turbo_v2_5&output_format=pcm_22050"
+            )
+            async with websockets.connect(
+                ELEVEN_WS_URL,
+                extra_headers={"xi-api-key": os.getenv("ELEVENLABS_API_KEY")},
+            ) as eleven_ws:
+
+                sent_bos = False
+
+                async def client_to_eleven():
+                    nonlocal sent_bos
+                    try:
+                        async for msg in websocket.iter_text():
+                            user_msg = json.loads(msg)
+
+                            if not sent_bos:
+                                bos_msg = {
+                                    "text": " ",
+                                    "voice_settings": {
+                                        "stability": 0.75,
+                                        "similarity_boost": True,
+                                    },
+                                    "generation_config": {
+                                        "chunk_length_schedule": [500, 500, 500, 500],
+                                    },
+                                }
+                                await eleven_ws.send(json.dumps(bos_msg))
+                                sent_bos = True
+
+                            payload = {
+                                "text": user_msg["text"],
+                                "try_trigger_generation": False,
+                                "flush": True,
+                            }
+                            print("Client->ElevenLabs:", payload)
+                            await eleven_ws.send(json.dumps(payload))
+
+                    except WebSocketDisconnect:
+                        pass
+                    except Exception as e:
+                        print("Client->ElevenLabs error:", e)
+
+                async def eleven_to_client():
+                    try:
+                        async for msg in eleven_ws:
+                            await websocket.send_text(msg)
+                    except Exception as e:
+                        print("ElevenLabs->Client error:", e)
+
+                async def send_keepalive():
+                    while True:
+                        await asyncio.sleep(15)  # ← every 15 seconds
+                        if eleven_ws.open:
+                            keepalive_msg = {
+                                "text": " ",
+                                "try_trigger_generation": False,
+                                "flush": False,
+                            }
+                            await eleven_ws.send(json.dumps(keepalive_msg))
+
+
+                await asyncio.gather(client_to_eleven(), eleven_to_client(), send_keepalive())
+        else:
+            print("Unsupported TTS type:", tts_type)
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported TTS type: {tts_type}. Only 'elevenlabs' is supported."
+            )
+
+
+    except Exception as e:
+        print("WebSocket Proxy Error:", e)
+        await websocket.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

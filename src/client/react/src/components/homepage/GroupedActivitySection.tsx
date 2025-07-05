@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Collapse, Typography } from 'antd';
+import { Collapse, Typography, Row, Col } from 'antd';
 import type { CollapseProps } from 'antd';
 import ActivityCard from './ActivityCard';
 import './GroupedActivitySection.css';
@@ -35,13 +35,13 @@ const GroupedActivitySection: React.FC<Props> = ({ groups }) => {
       </Title>
     ),
     children: (
-      <div className="activity-inline-wrapper">
+      <Row gutter={[16, 16]} justify="start" align="top">
         {group.activities.map((activity, idx) => (
-          <div key={idx} className="activity-inline-card">
+          <Col key={idx} xs={24} sm={12} md={8} lg={6} xl={6}>
             <ActivityCard {...activity} />
-          </div>
+          </Col>
         ))}
-      </div>
+      </Row>
     ),
   }));
 

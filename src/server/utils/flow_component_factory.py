@@ -21,7 +21,6 @@ class FlowComponentFactory:
         llm: Any,
         context_aggregator: Any,
         task: PipelineTask,
-        tts: Optional[Any] = None,
         advanced_flows: bool = False,
         flow_config_path: Optional[str] = None,
         session_variables_path: Optional[str] = None,
@@ -37,7 +36,6 @@ class FlowComponentFactory:
             llm: The language model to use with the flow manager
             context_aggregator: The context aggregator component
             task: The pipeline task
-            tts: Optional text-to-speech component for reflexive pre/post action responses that bypass LLM
             advanced_flows: Whether to use advanced flows (default: False)
             flow_config_path: Path to the flow configuration file
             session_variables_path: Path to the session variables file
@@ -50,7 +48,6 @@ class FlowComponentFactory:
         self.llm = llm
         self.context_aggregator = context_aggregator
         self.task = task
-        self.tts = tts
         self.advanced_flows = advanced_flows
         self.flow_config_path = flow_config_path
         self.session_variables_path = session_variables_path
@@ -119,7 +116,6 @@ class FlowComponentFactory:
                     summary_prompt=self.summary_prompt,
                 ),
                 task=self.task,
-                tts=self.tts,
                 flow_config=flow_config
             )
                 
