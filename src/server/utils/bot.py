@@ -132,9 +132,7 @@ async def run_bot(
             """Wrapper for the animation handler to include RTVI instance."""
             return await AnimationHandler.handle_animation(params, rtvi=rtvi, allowed_animations=allowed_animations)
 
-        llm.register_function("trigger_animation", function_call_debug_wrapper(animation_handler_wrapper))
-
-        
+        llm.register_function("trigger_animation", function_call_debug_wrapper(animation_handler_wrapper))       
 
         async def handle_user_idle(_: UserIdleProcessor, retry_count: int) -> bool:
             """Handle user inactivity by escalating reminders and ending the session if needed.

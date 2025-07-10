@@ -18,7 +18,6 @@ from pipecat.processors.aggregators.openai_llm_context import OpenAILLMContext
 import json
 from .animation_handler import AnimationHandler
 
-
 ModalityType = Literal["classic", "e2e"]
 LLMType = Literal["openai", "openai_realtime_beta", "gemini", "llama3.2"]
 STTType = Literal["openai", "whisper"]
@@ -80,6 +79,7 @@ class BotComponentFactory:
             invalid = [a for a in self.body_animations if a not in valid_ids]
             if invalid:
                 raise ValueError(f"Invalid animations: {invalid}. Allowed: {sorted(valid_ids)}")
+
     def build_instruction(self) -> str:
         instruction = f"{self.avatar_system_prompt}\n"
         self.animation_instruction = AnimationHandler.get_animation_instruction(self.body_animations)
@@ -115,7 +115,7 @@ class BotComponentFactory:
                 required=animation_schema["required"],
             )
         ])
- 
+
     async def build(self) -> Tuple[
         Optional[object],  # STT
         object,            # LLM

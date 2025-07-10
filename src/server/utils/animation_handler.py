@@ -27,7 +27,7 @@ VALID_ANIMATIONS = [
     {"id": "fear", "description": "When you are scared, you can do the 'fear' animation."},
     {"id": "disgust", "description": "When you are disgusted, you can do the 'disgust' animation."},
     {"id": "love", "description": "When you are in love with someone or something, you can do the 'love' animation."},
-    {"id": "sleep", "description": "When you are sleepy, you can do the 'sleep' animation."},
+    {"id": "sleep", "description": "When you are sleepy, you can do the 'sleep' animation."}
 ]
 
 class AnimationHandler:

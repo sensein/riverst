@@ -10,6 +10,7 @@ from pipecat_flows.types import FlowsFunctionSchema
 from .animation_handler import AnimationHandler
 
 from .flows import load_config
+from .animation_handler import AnimationHandler
 
 
 class FlowComponentFactory:
@@ -55,7 +56,7 @@ class FlowComponentFactory:
         self.flow_config_path = flow_config_path
         self.session_variables_path = session_variables_path
         self.user_description = user_description
-        self.animation_instruction = animation_instruction
+        self.enabled_animations = enabled_animations or []
         self.context_strategy = context_strategy
         self.summary_prompt = summary_prompt
         self.flow_manager = None
@@ -87,8 +88,8 @@ class FlowComponentFactory:
             for node_id, node_data in flow_config.get('nodes', {}).items():
                 self._add_llm_tools_to_node(node_data)
                 if 'role_messages' in node_data:
-                    self._update_system_message(node_data['role_messages'])                        
-                                                        
+                    self._update_system_message(node_data['role_messages'])
+            
             flow_manager = FlowManager(
                 llm=self.llm,
                 context_aggregator=self.context_aggregator,
@@ -101,7 +102,7 @@ class FlowComponentFactory:
             )
                 
             flow_manager.state = state
-
+        
             
             self.flow_manager = flow_manager
             logger.info("Flow manager successfully built")
