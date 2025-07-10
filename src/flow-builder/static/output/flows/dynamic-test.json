@@ -1,0 +1,253 @@
+{
+  "name": "dynamic-test",
+  "description": "A flow for an AI to bounce with it.",
+  "state_config": {
+    "stages": {
+      "warm_up": {
+        "checklist": {
+          "friendly_greeting_done": false,
+          "asked_whether_the_cat_is_dead": false
+        },
+        "checklist_incomplete_message": "Please complete the following warm_up items: {}",
+        "transition_logic": {
+          "conditions": [
+            {
+              "parameters": {
+                "variable_path": "cat_is_dead",
+                "operator": "==",
+                "value": true
+              },
+              "target_node": "dead_cat"
+            },
+            {
+              "parameters": {
+                "variable_path": "cat_is_dead",
+                "operator": "==",
+                "value": false
+              },
+              "target_node": "end"
+            }
+          ],
+          "default_target_node": "end"
+        }
+      },
+      "dead_cat": {
+        "checklist": {
+          "said_the_phrase_BOOM_SHAKALAKA": false
+        },
+        "checklist_incomplete_message": "Please complete the following dead_cat items: {}",
+        "transition_logic": {
+          "conditions": [],
+          "default_target_node": "end"
+        }
+      },
+      "alive_cat": {
+        "checklist": {
+          "told_the_user_what_number_they_are_thinking_of": false
+        },
+        "checklist_incomplete_message": "Please complete the following alive_cat items: {}",
+        "transition_logic": {
+          "conditions": [],
+          "default_target_node": "end"
+        }
+      }
+    },
+    "info": {
+      "cat_is_dead": false
+    },
+    "session_variables": {
+      "number_i_am_thinking_of": 87
+    }
+  },
+  "flow_config": {
+    "initial_node": "warm_up",
+    "nodes": {
+      "warm_up": {
+        "task_messages": [
+          {
+            "role": "system",
+            "content": "TOOLS:\nYou may silently call the check_warm_up_progress() function only after all warm-up conversation steps have been completed and you are ready to begin vocabulary instruction. Do not mention that you are doing this! Greet the user in a warm manner. After they have responded, ask the user if the cat is dead."
+          }
+        ],
+        "functions": [
+          {
+            "type": "function",
+            "function": {
+              "name": "check_warm_up_progress",
+              "description": "From the non-summarizing elements of the conversation, return whether each task has been accomplished, and for info fields, return an accurate and precise answer.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "friendly_greeting_done": {
+                    "type": "boolean",
+                    "description": "Check if friendly_greeting_done is completed"
+                  },
+                  "asked_whether_the_cat_is_dead": {
+                    "type": "boolean",
+                    "description": "Check if asked_whether_the_cat_is_dead is completed"
+                  },
+                  "cat_is_dead": {
+                    "type": "boolean",
+                    "description": "Whether the cat is dead."
+                  }
+                },
+                "required": [
+                  "friendly_greeting_done",
+                  "asked_whether_the_cat_is_dead",
+                  "cat_is_dead"
+                ]
+              },
+              "handler": "general_handler"
+            }
+          }
+        ],
+        "role_messages": [
+          {
+            "role": "system",
+            "content": "You are a testing bot, your purpose is to be tested to see if everything works correctly. Follow the simple instructions and accept your fate."
+          }
+        ]
+      },
+      "dead_cat": {
+        "task_messages": [
+          {
+            "role": "system",
+            "content": "TOOLS:\nYou may silently call the check_dead_cat_progress() function only after completing all teaching steps for the current word. Do not mention that you are doing this.\nSay the phrase 'BOOM SHAKALAKA' to the user, and then say that you are seriously vibing with it, you know?"
+          }
+        ],
+        "functions": [
+          {
+            "type": "function",
+            "function": {
+              "name": "check_dead_cat_progress",
+              "description": "From the non-summarizing elements of the conversation, return whether each task has been accomplished, and for info fields, return an accurate and precise answer.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "said_the_phrase_BOOM_SHAKALAKA": {
+                    "type": "boolean",
+                    "description": "Check if said_the_phrase_BOOM_SHAKALAKA is completed"
+                  }
+                },
+                "required": [
+                  "said_the_phrase_BOOM_SHAKALAKA"
+                ]
+              },
+              "handler": "general_handler"
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_number_i_am_thinking_of",
+              "description": "Get the number the user is thinking of",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "variable_name": {
+                    "type": "string",
+                    "description": "The name of the session variable to retrieve",
+                    "enum": [
+                      "number_i_am_thinking_of"
+                    ]
+                  },
+                  "current_index": {
+                    "type": "integer",
+                    "description": "The current index of the reading context"
+                  }
+                },
+                "required": [
+                  "variable_name"
+                ]
+              },
+              "handler": "get_session_variable_handler"
+            }
+          }
+        ],
+        "pre_actions": [
+          {
+            "type": "tts_say",
+            "text": "Okay, now let's vibe with it you feel me homes?"
+          }
+        ]
+      },
+      "alive_cat": {
+        "task_messages": [
+          {
+            "role": "system",
+            "content": "TOOLS: \nYou may silently call the check_alive_cat_progress() function only after all alive_cat conversation steps have been completed. Do not mention you are doing this. Look at the other tools you have available, and if you need a certain piece of information that they provide, you may call them (silently, do not mention you are doing so!)\n\nTell the user what number they are thinking of."
+          }
+        ],
+        "functions": [
+          {
+            "type": "function",
+            "function": {
+              "name": "check_alive_cat_progress",
+              "description": "From the non-summarizing elements of the conversation, return whether each task has been accomplished, and for info fields, return an accurate and precise answer.",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "told_the_user_what_number_they_are_thinking_of": {
+                    "type": "boolean",
+                    "description": "Did the model successfully tell the user what number they are thinking of?"
+                  }
+                },
+                "required": [
+                  "told_the_user_what_number_they_are_thinking_of"
+                ]
+              },
+              "handler": "general_handler"
+            }
+          }
+        ],
+        "pre_actions": [
+          {
+            "type": "tts_say",
+            "text": "Wazzup white boy Imma bout to show you some real magic. Think of a number between 1 and 20."
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_number_i_am_thinking_of",
+              "description": "Get the number_i_am_thinking_of for the session",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "variable_name": {
+                    "type": "string",
+                    "description": "The name of the session variable to retrieve",
+                    "enum": [
+                      "number_i_am_thinking_of"
+                    ]
+                  },
+                  "current_index": {
+                    "type": "integer",
+                    "description": "The current index of the reading context"
+                  }
+                },
+                "required": [
+                  "variable_name"
+                ]
+              },
+              "handler": "get_session_variable_handler"
+            }
+          }
+        ]
+      },
+      "end": {
+        "task_messages": [
+          {
+            "role": "system",
+            "content": "The session is now complete. Say goodbye in a friendly and encouraging way."
+          }
+        ],
+        "functions": [],
+        "post_actions": [
+          {
+            "type": "end_conversation"
+          }
+        ]
+      }
+    }
+  }
+}

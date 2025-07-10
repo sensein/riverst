@@ -119,9 +119,6 @@
                             <button type="button" class="btn btn-primary me-2" id="addNodeBtn">
                                 <i class="bi bi-plus-circle"></i> Add Node
                             </button>
-                            <div class="text-muted fst-italic align-self-center ms-2">
-                                <small>Nodes are processed in the order shown. Drag to reorder.</small>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -242,25 +239,55 @@
 
                 <ul class="nav nav-tabs mb-3" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target=".checklist-tab"
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target=".pre-actions-tab"
+                            type="button" role="tab">Pre-Actions</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target=".checklist-tab"
                             type="button" role="tab">Checklist</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target=".functions-tab" type="button"
+                            role="tab">Tools</button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" data-bs-toggle="tab" data-bs-target=".info-fields-tab" type="button"
                             role="tab">Info Fields</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" data-bs-toggle="tab" data-bs-target=".functions-tab" type="button"
-                            role="tab">Functions</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" data-bs-toggle="tab" data-bs-target=".messages-tab" type="button"
-                            role="tab">Messages</button>
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target=".transitions-tab" type="button"
+                            role="tab">Transition</button>
                     </li>
                 </ul>
 
                 <div class="tab-content">
-                    <div class="tab-pane fade show active checklist-tab" role="tabpanel">
+                    <div class="tab-pane fade show active pre-actions-tab" role="tabpanel">
+                        <div class="mb-3">
+                            <label class="form-label">TTS Pre-action</label>
+                            <div class="input-group input-group-sm mb-3">
+                                <span class="input-group-text">Text to speak</span>
+                                <input type="text" class="form-control pre-action-text" placeholder="Enter text to be spoken before LLM processing...">
+                            </div>
+                            
+                            <div class="mt-4">
+                                <label class="form-label">Function Pre-actions</label>
+                                <div class="function-pre-actions-container">
+                                    <!-- Function pre-actions will be added here -->
+                                </div>
+                                <div class="dropdown mt-2">
+                                    <button type="button" class="btn btn-sm btn-outline-primary add-pre-action-function-btn dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-plus-circle"></i> Add Function Pre-action
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item add-pre-action-session-function" href="#">Get Session Variable</a></li>
+                                        <li><a class="dropdown-item add-pre-action-info-function" href="#">Get Session Info</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                
+                    <div class="tab-pane fade checklist-tab" role="tabpanel">
                         <div class="mb-3">
                             <div class="checklist-container">
                                 <!-- Checklist items will be added here -->
@@ -268,6 +295,10 @@
                             <button type="button" class="btn btn-sm btn-outline-primary mt-2 add-checklist-item-btn">
                                 <i class="bi bi-plus-circle"></i> Add Checklist Item
                             </button>
+                            
+                            <!-- Hidden field with default incomplete message -->
+                            <input type="hidden" class="node-incomplete-message" 
+                                value="Please complete the following items: {}.">
                         </div>
                     </div>
 
@@ -281,6 +312,7 @@
                             </div>
                         </div>
                     </div>
+                    
                     <div class="tab-pane fade functions-tab" role="tabpanel">
                         <div class="mb-3">
                             <p class="small text-muted mb-2">Add functions to retrieve session variables for this node:
@@ -300,33 +332,34 @@
                         </div>
                     </div>
 
-                    <div class="tab-pane fade messages-tab" role="tabpanel">
+                    <div class="tab-pane fade transitions-tab" role="tabpanel">
                         <div class="mb-3">
-                            <label class="form-label">Checklist Incomplete Message</label>
-                            <input type="text" class="form-control node-incomplete-message"
-                                value="Please complete the following items: {}.">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Checklist Complete Message</label>
-                            <input type="text" class="form-control node-complete-message"
-                                value="Great job! Moving to the next stage.">
+                            <div class="card">
+                                <div class="card-body p-3">
+                                    <div class="transition-conditions-container">
+                                        <!-- Transition conditions will be added here -->
+                                    </div>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-sm btn-outline-primary add-condition-btn">
+                                            <i class="bi bi-plus-circle"></i> Add Condition
+                                        </button>
+                                    </div>
+                                    <div class="mt-3">
+                                        <label class="form-label">Default Target Node</label>
+                                        <select class="form-select form-select-sm default-target-node">
+                                            <option value="">Select default target...</option>
+                                        </select>
+                                        <div class="form-text">Node to transition to if no conditions are met</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Description of transition function in order to move on</label>
-                    <input type="text" class="form-control schema-description"
-                        placeholder="Check progress of checklist items, and update relevant info variables">
                 </div>
                 
-                <div class="mb-3">
-                    <label class="form-label">TTS Pre-action <small class="text-muted">(Leave blank for no pre-action)</small></label>
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text">Text to speak</span>
-                        <input type="text" class="form-control pre-action-text" placeholder="Enter text to be spoken before LLM processing...">
-                    </div>
-                </div>
+                <!-- Hidden field with default schema description -->
+                <input type="hidden" class="form-control schema-description"
+                    value="From the non-summarizing elements of the conversation, return whether each task has been accomplished, and for info fields, return an accurate and precise answer.">
             </div>
         </div>
     </template>
@@ -399,6 +432,87 @@
                     <div class="col-12">
                         <input type="text" class="form-control form-control-sm function-description"
                             placeholder="Function description">
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <div class="form-check">
+                            <input class="form-check-input function-pre-action-checkbox" type="checkbox" id="function-pre-action">
+                            <label class="form-check-label small text-muted" for="function-pre-action">
+                                Add as pre-action (runs before LLM)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Pre-action Function Template -->
+    <template id="preActionFunctionTemplate">
+        <div class="card mb-2 pre-action-function-card">
+            <div class="card-body py-2">
+                <div class="row g-2 align-items-center">
+                    <div class="col-8">
+                        <div class="input-group">
+                            <span class="input-group-text">get_</span>
+                            <select class="form-select form-select-sm pre-action-variable-select">
+                                <option value="">Select variable...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-pre-action-function-btn">
+                            <i class="bi bi-trash"></i> Remove
+                        </button>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <input type="text" class="form-control form-control-sm pre-action-function-description"
+                            placeholder="Function description">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+    
+    <!-- Transition Condition Template -->
+    <template id="transitionConditionTemplate">
+        <div class="card mb-2 transition-condition-card">
+            <div class="card-body py-2">
+                <div class="row g-2 align-items-center">
+                    <div class="col-3">
+                        <select class="form-select form-select-sm condition-variable">
+                            <option value="">Select variable...</option>
+                        </select>
+                    </div>
+                    <div class="col-3">
+                        <select class="form-select form-select-sm condition-operator">
+                            <option value="==">equals</option>
+                            <option value="!=">not equals</option>
+                            <option value=">">greater than</option>
+                            <option value=">=">greater than or equal to</option>
+                            <option value="<">less than</option>
+                            <option value="<=">less than or equal to</option>
+                            <option value="in">in</option>
+                            <option value="not_in">not in</option>
+                        </select>
+                    </div>
+                    <div class="col-3 condition-value-container">
+                        <input type="text" class="form-control form-control-sm condition-value" placeholder="Value">
+                    </div>
+                    <div class="col-3">
+                        <select class="form-select form-select-sm condition-target-node">
+                            <option value="">Select target...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-12 text-end">
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-condition-btn">
+                            <i class="bi bi-trash"></i> Remove
+                        </button>
                     </div>
                 </div>
             </div>
