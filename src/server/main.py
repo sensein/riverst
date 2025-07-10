@@ -388,13 +388,13 @@ async def tts_proxy(websocket: WebSocket, session_id: str):
 
         if tts_type == "elevenlabs":
             print("Using ElevenLabs TTS...")
-            if 'voice_id' in config.get('avatar', {}):
-                voice_id = config.get('avatar', {})['voice_id']
+            if 'elevenlabs_voice_id' in config.get('avatar', {}):
+                elevenlabs_voice_id = config.get('avatar', {})['elevenlabs_voice_id']
             else:
-                voice_id = "XrExE9yKIg1WjnnlVkGX" if 'gender' in config.get('avatar', {}) and config.get('avatar', {})['gender'] == 'feminine' else "cjVigY5qzO86Huf0OWal"
-            print("voice_id", voice_id)
+                elevenlabs_voice_id = "XrExE9yKIg1WjnnlVkGX" if 'gender' in config.get('avatar', {}) and config.get('avatar', {})['gender'] == 'feminine' else "cjVigY5qzO86Huf0OWal"
+            print("elevenlabs_voice_id", elevenlabs_voice_id)
             ELEVEN_WS_URL = (
-                f"wss://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
+                f"wss://api.elevenlabs.io/v1/text-to-speech/{elevenlabs_voice_id}"
                 f"/stream-input?model_id=eleven_turbo_v2_5&output_format=pcm_22050"
             )
             async with websockets.connect(
