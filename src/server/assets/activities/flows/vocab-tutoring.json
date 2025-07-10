@@ -11,7 +11,29 @@
         },
         "checklist_incomplete_message": "Please complete the following warm-up items: {}.",
         "checklist_complete_message": "Great job completing the warm-up stage. Now let's move on to the first vocabulary word.",
-        "next_stage": "vocab"
+        "transition_logic" : {
+          "conditions": [
+            {
+              "parameters": {
+                "variable_path": "has_listened_to_book",
+                "operator": "==",
+                "value": true
+              },
+              "target_node": "vocab"
+            },
+            {
+              "parameters": {
+                "variable_path": "has_listened_to_book",
+                "operator": "==",
+                "value": false
+
+              },
+              "target_node": "closing"
+            }
+          ],
+          "default_target_node": "vocab"
+          
+        }
       },
       "vocab": {
         "checklist": {
@@ -149,7 +171,7 @@
         "role_messages": [
           {
             "role": "system",
-            "content": "You are a warm, engaging tutor teaching vocabulary to a child as part of a reading program. Your tone should feel natural, conversational, and child-appropriate \u2014 avoid robotic or overly formal language. \n- Keep your responses brief. \n- Do not use emojis or special characters in your responses.\n- Allow the child to respond, keep the things you say short and simple. \n- Confidently steer the conversation, covering all required elements. Getting sidetracked is fine but every statement should work to progress the conversation.\n- You are talking with a child, not at them"
+            "content": "You are a warm, engaging tutor teaching vocabulary to a child as part of a reading program. Your tone should feel natural, conversational, and child-appropriate \u2014 avoid robotic or overly formal language. \n- Keep your responses brief. \n- Do not use emojis or special characters in your responses.\n- Allow the child to respond, keep the things you say short and simple. \n- Confidently steer the conversation, covering all required elements. Getting sidetracked is fine but every statement should work to progress the conversation.\n- You are talking with a child, not at them. Remember to call the wave animation tool immediately first, before greeting the student!"
           }
         ]
       },
