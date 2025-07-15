@@ -6,13 +6,13 @@ import React, {
   useRef,
 } from 'react'
 import {
-  useRTVIClientTransportState,
+  usePipecatClientTransportState,
   useRTVIClientEvent,
-  useRTVIClient,
-  RTVIClientAudio,
+  usePipecatClient,
+  PipecatClientAudio,
 } from '@pipecat-ai/client-react'
 import { RTVIEvent, Participant } from '@pipecat-ai/client-js'
-  
+
 // assuming you’ve moved these out into their own files:
 import FloatGroup from './FloatGroup'
 import SubtitleOverlay from './SubtitleOverlay'
@@ -26,18 +26,18 @@ import axios from 'axios';
     sessionId?: string,
     ttsType: string
   }
-  
+
   export default function AvatarInteractionContent({
     cameraType: initialCameraType,
     videoFlag,
     subtitlesEnabled: initialSubtitlesEnabled,
     sessionId,
     ttsType
-  }: Props) {  
+  }: Props) {
     // ---- state derived from props ----
     const [cameraType, setCameraType] = useState(initialCameraType)
     const [subtitlesEnabled] = useState(initialSubtitlesEnabled)
-  
+
     // ---- internal interaction state ----
     const [interactionPhase, setInteractionPhase] = useState<
       'mounting' | 'ready'
@@ -46,16 +46,13 @@ import axios from 'axios';
       null
     )
     const [currentViseme, setCurrentViseme] = useState(0)
-    const [interactionState, setInteractionState] = useState<
-      'speaking' | 'listening' | null
-    >(null)
 
     type VisemeFrame = { duration: number; visemes: number[] };
 
     // Add state to hold the full viseme sequence
     const [visemeSequence, setVisemeSequence] = useState<VisemeFrame[]>([]);
     const [utterance, setUtterance] = useState<string | null>(null)
- 
+
     const videoRef = useRef<HTMLVideoElement>(null)
     const [showVideo, setShowVideo] = useState(false)
 
@@ -65,17 +62,17 @@ import axios from 'axios';
     >([])
     const subtitleIdRef = useRef(0)
     const SUBTITLE_DURATION_MS = 6000
-  
+
     // ---- viseme buffering logic ----
     const startTimeRef = useRef<number | null>(null)
     const visemeBufferRef = useRef<{ duration: number; visemes: number[] }[]>(
       []
     )
     const usingRealVisemesRef = useRef(false)
-  
-    const client = useRTVIClient()
-    const transportState = useRTVIClientTransportState()
-    
+
+    const client = usePipecatClient()
+    const transportState = usePipecatClientTransportState()
+
     const addSubtitle = useCallback(
       (text: string, speaker: 'user' | 'bot') => {
         setSubtitleList((prev) => {
@@ -96,7 +93,7 @@ import axios from 'axios';
       },
       []
     );
-  
+
     const isConnectingRef = useRef(false)
     const retryCountRef = useRef(0)
 
@@ -161,7 +158,7 @@ import axios from 'axios';
           console.warn("🚨 Still initializing, disconnecting to trigger retry.")
           retryCountRef.current += 1
           await client?.disconnect()
-        }, 1500) 
+        }, 1500)
       }
 
       return () => {
@@ -169,29 +166,11 @@ import axios from 'axios';
       }
     }, [interactionPhase, transportState, client])
 
-  
+
     // event handlers
-    useRTVIClientEvent(RTVIEvent.BotStartedSpeaking, () => {
-      startTimeRef.current = performance.now()
-      usingRealVisemesRef.current = false
-      visemeBufferRef.current = []
-      setInteractionState('speaking')
-    })
-  
     useRTVIClientEvent(RTVIEvent.BotTranscript, (data) => {
       console.log("Bot Transcript:", data);
       setUtterance(data.text)
-    })
-
-    useRTVIClientEvent(RTVIEvent.BotStoppedSpeaking, () => {
-      startTimeRef.current = null
-      usingRealVisemesRef.current = false
-      visemeBufferRef.current = []
-      setInteractionState(null)
-    })
-  
-    useRTVIClientEvent(RTVIEvent.UserStartedSpeaking, () => {
-      setInteractionState('listening')
     })
 
     useRTVIClientEvent(
@@ -215,15 +194,6 @@ import axios from 'axios';
       }, [])
     )
 
-
-    //useRTVIClientEvent(RTVIEvent.BotTtsText, (data) => {
-    //  console.log("Bot TTS Text:", data.text);
-    //})
-
-    useRTVIClientEvent(RTVIEvent.UserStoppedSpeaking, () => {
-      setInteractionState(null)
-    })
-  
     useRTVIClientEvent(
       RTVIEvent.ServerMessage,
       useCallback(
@@ -249,7 +219,7 @@ import axios from 'axios';
         []
       )
     )
-  
+
     useRTVIClientEvent(
       RTVIEvent.UserTranscript,
       useCallback(
@@ -266,9 +236,9 @@ import axios from 'axios';
 
     return (
       <div className="app">
-        <FloatGroup 
+        <FloatGroup
           videoFlag={videoFlag} />
-        
+
         <TalkingHeadWrapper
           avatar={myAvatar}
           height={100}
@@ -279,7 +249,6 @@ import axios from 'axios';
               setInteractionPhase('ready')
             }
           }}
-          interactionState={interactionState}
           utterance={utterance}
           animation={animationTrigger}
           sessionId={sessionId}
@@ -288,7 +257,7 @@ import axios from 'axios';
           addSubtitle={addSubtitle}
         />
         <SubtitleOverlay subtitles={subtitleList} />
-        <RTVIClientAudio />
+        <PipecatClientAudio />
         {videoFlag && (
           <video
             ref={videoRef}
@@ -314,4 +283,3 @@ import axios from 'axios';
       </div>
     )
 }
-  

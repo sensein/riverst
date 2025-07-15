@@ -1,8 +1,8 @@
 // src/providers/RTVIProvider.tsx
 import { PropsWithChildren } from 'react'
-import { RTVIClient } from '@pipecat-ai/client-js'
+import { PipecatClient } from '@pipecat-ai/client-js'
 import { SmallWebRTCTransport } from '@pipecat-ai/small-webrtc-transport'
-import { RTVIClientProvider } from '@pipecat-ai/client-react'
+import { PipecatClientProvider } from '@pipecat-ai/client-react'
 import { useNavigate } from 'react-router-dom'
 
 interface RTVIProviderProps {
@@ -16,18 +16,16 @@ export function RTVIProvider({
   children
 }: PropsWithChildren<RTVIProviderProps>) {
   // keep the same transport instance
-  const transport = new SmallWebRTCTransport();
+  const transport = new SmallWebRTCTransport({
+    connectionUrl: `http://localhost:7860/api/offer?session_id=${encodeURIComponent(
+            sessionId
+          )}`
+  });
   const navigate = useNavigate()
 
   // recreate client whenever sessionId changes
-  const client = new RTVIClient({
+  const client = new PipecatClient({
         transport,
-        params: {
-          // inject sessionId into the offer URL
-          baseUrl: `http://localhost:7860/api/offer?session_id=${encodeURIComponent(
-            sessionId
-          )}`
-        },
         enableMic: true,
         enableCam: enableCam,
         timeout: 10000,
@@ -45,5 +43,5 @@ export function RTVIProvider({
         }
       });
 
-  return <RTVIClientProvider client={client} enableCam={enableCam}>{children}</RTVIClientProvider>
+  return <PipecatClientProvider client={client} enableCam={enableCam}>{children}</PipecatClientProvider>
 }

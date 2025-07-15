@@ -51,7 +51,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({
       )}
       <Card
         style={{
-          height: '100%', 
+          height: '100%',
           borderRadius: 12,
           overflow: 'hidden',
           boxShadow: '0 2px 10px rgba(0, 0, 0, 0.06)',

@@ -302,7 +302,7 @@ class LipsyncEn {
       return this.tens[Math.floor(num/10)]+" "+this.ones[num%10];
     }
   }
- 
+
   convertNumberToWords(num){
     if(num == "0"){
       return "zero";

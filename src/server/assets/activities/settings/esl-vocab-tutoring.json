@@ -25,14 +25,7 @@
           "enum": ["classic"],
           "default": "classic",
           "const": "classic",
-          "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline + tts."
-        },
-        "llm_type": {
-          "type": "string",
-          "enum": ["openai", "llama3.2"],
-          "default": "openai",
-          "const": "openai",
-          "description": "The LLM service to use."
+          "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline + tts (disabled for now)."
         },
         "stt_type": {
           "type": "string",
@@ -41,12 +34,19 @@
           "const": "openai",
           "description": "The STT service to use."
         },
+        "llm_type": {
+          "type": "string",
+          "enum": ["openai", "llama3.2"],
+          "default": "openai",
+          "const": "openai",
+          "description": "The LLM service to use. Llama3.2 is not very stable and we recommend using OpenAI for now."
+        },
         "tts_type": {
           "type": "string",
           "enum": ["kokoro", "elevenlabs"],
           "default": "elevenlabs",
           "const": "elevenlabs",
-          "description": "The TTS service to use."
+          "description": "The TTS service to use. We recommend using ElevenLabs for this activity given its multilingual capabilities."
         },
         "body_animations": {
           "type": "array",

@@ -4,6 +4,11 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from "react";
+import {
+  useRTVIClientEvent,
+} from '@pipecat-ai/client-react'
+import { RTVIEvent } from '@pipecat-ai/client-js'
+
 import { KokoroTTS } from "../../../kokorotts.mjs";
 
 const TTS_BASE_URL = `ws://localhost:7860/tts-proxy/`; // local proxy
@@ -33,7 +38,7 @@ export async function kokoroSpeak(
     const isLast = i === letters.length - 1;
     const letter = letters[i];
     const letterTwo = isLast ? null : letter + letters[i + 1];
-    const isDivider = isLast ? false : dividers.hasOwnProperty(letterTwo);
+    const isDivider = isLast ? false : (letterTwo !== null && dividers.hasOwnProperty(letterTwo));
     const isMax = i === maxLen;
 
     if (letter === " ") lastSpace = i;
@@ -173,7 +178,6 @@ export async function TTSspeak(head: any, text: string, lipsyncLang = "en", sess
 
 interface Props {
   cameraType: "full" | "mid" | "upper" | "head";
-  interactionState?: "speaking" | "listening" | null;
   utterance?: string | null;
   avatar: { id: number; modelUrl: string; gender: string };
   height: number;
@@ -189,7 +193,6 @@ interface Props {
 const TalkingHeadWrapper = forwardRef<any, Props>((props, ref) => {
   const {
     cameraType,
-    interactionState,
     utterance,
     avatar,
     height,
@@ -296,16 +299,12 @@ const TalkingHeadWrapper = forwardRef<any, Props>((props, ref) => {
   }, [utterance]);
 
   /* ------------------------------------------------ state effect */
-  useEffect(() => {
+  useRTVIClientEvent(RTVIEvent.UserStartedSpeaking, () => {
     const head = headRef.current;
     if (!head) return;
-
-    if (interactionState === "listening") {
-      head.stopSpeaking();
-    } else if (interactionState !== "speaking") {
-      head.setMood("neutral");
-    }
-  }, [interactionState]);
+    head.setMood("neutral");
+    head.stopSpeaking();
+  })
 
   /* ---------------------------------------------- animation effect */
   useEffect(() => {

@@ -1,5 +1,5 @@
 {
-  "title": "Basic Avatar Interaction Configuration",
+  "title": "Generic avatar interaction configuration",
   "description": "Schema for configuring a basic avatar interaction activity.",
   "type": "object",
   "properties": {
@@ -9,7 +9,7 @@
     },
     "description": {
       "type": "string",
-      "const": "Basic avatar interaction activity."
+      "const": "Generic avatar interaction activity."
     },
     "options": {
       "type": "object",
@@ -22,15 +22,9 @@
         },
         "pipeline_modality": {
           "type": "string",
-          "enum": ["classic", "e2e"],
+          "enum": ["classic"],
           "default": "classic",
-          "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline + tts. The e2e modality is not very stable and should be used with caution."
-        },
-        "llm_type": {
-          "type": "string",
-          "enum": ["openai", "openai_realtime_beta", "gemini", "llama3.2"],
-          "default": "openai",
-          "description": "The LLM service to use."
+          "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline + tts. The e2e modality is not very stable and has been disabled for now."
         },
         "stt_type": {
           "type": "string",
@@ -38,11 +32,17 @@
           "default": "openai",
           "description": "The STT service to use."
         },
+        "llm_type": {
+          "type": "string",
+          "enum": ["openai", "llama3.2"],
+          "default": "openai",
+          "description": "The LLM service to use. Llama3.2 is not very stable and we recommend using OpenAI for now."
+        },
         "tts_type": {
           "type": "string",
           "enum": ["kokoro", "elevenlabs"],
           "default": "kokoro",
-          "description": "The TTS service to use."
+          "description": "The TTS service to use. For English only activities we recommend using Kokoro, for other languages ElevenLabs is the best choice."
         },
         "body_animations": {
           "type": "array",

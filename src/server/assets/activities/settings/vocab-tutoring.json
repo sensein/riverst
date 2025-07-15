@@ -39,23 +39,23 @@
           "default": "classic",
           "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline. 'e2e' is not supported for advanced flows."
         },
-        "llm_type": {
-          "type": "string",
-          "enum": ["openai", "openai_realtime_beta", "gemini", "llama3.2"],
-          "default": "openai",
-          "description": "The LLM service to use."
-        },
         "stt_type": {
           "type": "string",
           "enum": ["whisper", "openai"],
           "default": "openai",
           "description": "The STT service to use."
         },
+        "llm_type": {
+          "type": "string",
+          "enum": ["openai", "llama3.2"],
+          "default": "openai",
+          "description": "The LLM service to use. Llama3.2 is not very stable and we recommend using OpenAI for now."
+        },
         "tts_type": {
           "type": "string",
           "enum": ["kokoro", "elevenlabs"],
           "default": "kokoro",
-          "description": "The TTS service to use."
+          "description": "The TTS service to use. For English only activities we recommend using Kokoro, which is good enough and for free."
         },
         "body_animations": {
           "type": "array",
@@ -64,18 +64,20 @@
             "enum": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep"]
           },
           "default": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep"],
+          "const": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep"],
           "description": "List of body animations that the avatar can perform."
         },
         "camera_settings": {
           "type": "string",
           "enum": ["full", "mid", "upper", "head"],
           "default": "upper",
+          "const": "upper",
           "description": "Select the camera framing used for the avatar during the interaction."
         },
         "user_description": {
           "type": "string",
           "maxLength": 500,
-          "default": "The user is a 4-grade student. They want to learn vocabulary words from a book.",
+          "default": "The user is a 4-grade student.",
           "description": "Optional free-text field to describe the user."
         },
         "long_term_memory": {

@@ -12,7 +12,7 @@ import {
 import { InfoCircleOutlined, CloseOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import validator from '@rjsf/validator-ajv8';
-import { useRTVIClientTransportState } from '@pipecat-ai/client-react';
+import { usePipecatClientTransportState } from '@pipecat-ai/client-react';
 import axios from 'axios';
 import { getUserId } from '../utils/userId';
 
@@ -20,7 +20,7 @@ const { Title, Paragraph } = Typography;
 const { TextArea } = Input;
 
 const SettingsForm = ({ schema, onSubmit }) => {
-  const transportState = useRTVIClientTransportState();
+  const transportState = usePipecatClientTransportState();
   const [form] = Form.useForm();
   const [isValid, setIsValid] = useState(false);
   const [dynamicEnums, setDynamicEnums] = useState({ books: [] });

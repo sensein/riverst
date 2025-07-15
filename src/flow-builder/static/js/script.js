@@ -56,7 +56,7 @@ function addToDebugOutput(type, args) {
 document.addEventListener('DOMContentLoaded', function () {
     // Set up console logging
     setupConsoleLogging();
-    
+
     // Add keyboard shortcut for saving (Ctrl+S or Cmd+S)
     document.addEventListener('keydown', function(e) {
         if ((e.ctrlKey || e.metaKey) && e.key === 's') {
@@ -325,7 +325,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Automatically create a function to get this info field
         const description = `Get the ${fieldName} info variable`;
         addNodeFunction(nodeCard, fieldName, description, true);
-        
+
         container.appendChild(fieldElement);
     }
 
@@ -344,7 +344,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Get the dropdown
         const varSelect = functionElement.querySelector('.session-variable-select');
-        
+
         // Mark as info variable if needed
         if (isInfoVariable || (sessionVar && Array.from(document.querySelectorAll('.session-info-name')).map(input => input.value).includes(sessionVar))) {
             varSelect.classList.add('info-variable-select');
@@ -370,8 +370,8 @@ document.addEventListener('DOMContentLoaded', function () {
             const isInfo = this.classList.contains('info-variable-select');
 
             if (!descInput.value && varName) {
-                descInput.value = isInfo 
-                    ? `Get the ${varName} info variable` 
+                descInput.value = isInfo
+                    ? `Get the ${varName} info variable`
                     : `Get the ${varName} for the session`;
             }
         });
@@ -380,7 +380,7 @@ document.addEventListener('DOMContentLoaded', function () {
         container.appendChild(functionElement);
         return functionElement;
     }
-    
+
     // Add a pre-action function
     function addPreActionFunction(nodeCard, sessionVar = "", description = "", isInfoVariable = false) {
         const container = nodeCard.querySelector('.function-pre-actions-container');
@@ -395,7 +395,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Get the dropdown
         const varSelect = functionElement.querySelector('.pre-action-variable-select');
-        
+
         // Mark as info variable if needed
         if (isInfoVariable || (sessionVar && Array.from(document.querySelectorAll('.session-info-name')).map(input => input.value).includes(sessionVar))) {
             varSelect.classList.add('info-variable-select');
@@ -421,8 +421,8 @@ document.addEventListener('DOMContentLoaded', function () {
             const isInfo = this.classList.contains('info-variable-select');
 
             if (!descInput.value && varName) {
-                descInput.value = isInfo 
-                    ? `Get the ${varName} info variable` 
+                descInput.value = isInfo
+                    ? `Get the ${varName} info variable`
                     : `Get the ${varName} for the session`;
             }
         });
@@ -431,15 +431,15 @@ document.addEventListener('DOMContentLoaded', function () {
         container.appendChild(functionElement);
         return functionElement;
     }
-    
+
     // Update pre-action variable dropdown
     function updatePreActionVariableDropdown(select) {
         // Get all session variables
         const sessionVars = [];
-        
+
         // Get info variables if this select has the info-variable-select class
         const isInfoSelect = select.classList.contains('info-variable-select');
-        
+
         if (isInfoSelect) {
             // Get info variables
             document.querySelectorAll('.session-info-name').forEach(input => {
@@ -486,10 +486,10 @@ document.addEventListener('DOMContentLoaded', function () {
     function updateSessionVariableDropdown(select) {
         // Get all session variables
         const sessionVars = [];
-        
+
         // Get info variables if this select has the info-variable-select class
         const isInfoSelect = select.classList.contains('info-variable-select');
-        
+
         if (isInfoSelect) {
             // Get info variables
             document.querySelectorAll('.session-info-name').forEach(input => {
@@ -537,42 +537,42 @@ document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('.session-variable-select').forEach(updateSessionVariableDropdown);
         document.querySelectorAll('.condition-variable').forEach(updateConditionVariableDropdown);
     }
-    
+
     // Function to add a transition condition
     function addTransitionCondition(nodeCard) {
         const container = nodeCard.querySelector('.transition-conditions-container');
         const conditionElement = createFromTemplate('transitionConditionTemplate');
-        
+
         // Set up the condition variable dropdown
         const variableSelect = conditionElement.querySelector('.condition-variable');
         updateConditionVariableDropdown(variableSelect);
-        
+
         // Set up operator change handler
         const operatorSelect = conditionElement.querySelector('.condition-operator');
         const valueContainer = conditionElement.querySelector('.condition-value-container');
-        
+
         operatorSelect.addEventListener('change', function() {
             updateConditionValueInput(variableSelect.value, this.value, valueContainer);
         });
-        
+
         // Set up variable change handler
         variableSelect.addEventListener('change', function() {
             updateConditionValueInput(this.value, operatorSelect.value, valueContainer);
         });
-        
+
         // Set up the target node dropdown
         const targetNodeSelect = conditionElement.querySelector('.condition-target-node');
         updateNodeTargetDropdown(targetNodeSelect);
-        
+
         // Add verification for required fields
         variableSelect.addEventListener('change', function() {
             verifyConditionFields(conditionElement);
         });
-        
+
         operatorSelect.addEventListener('change', function() {
             verifyConditionFields(conditionElement);
         });
-        
+
         // Add input event listener for the value field - only if it exists
         const valueField = conditionElement.querySelector('.condition-value');
         if (valueField) {
@@ -580,24 +580,24 @@ document.addEventListener('DOMContentLoaded', function () {
                 verifyConditionFields(conditionElement);
             });
         }
-        
+
         targetNodeSelect.addEventListener('change', function() {
             verifyConditionFields(conditionElement);
         });
-        
+
         // Set up remove button
         conditionElement.querySelector('.remove-condition-btn').addEventListener('click', function() {
             this.closest('.transition-condition-card').remove();
         });
-        
+
         container.appendChild(conditionElement);
-        
+
         // Initial verification
         verifyConditionFields(conditionElement);
-        
+
         return conditionElement;
     }
-    
+
     // Update the condition variable dropdown with info fields
     function updateConditionVariableDropdown(select) {
         // Get all info fields
@@ -607,13 +607,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 type: input.closest('.session-info-card').querySelector('.session-info-type').value
             };
         }).filter(field => field.name !== '');
-        
+
         // Save current selection
         const currentValue = select.value;
-        
+
         // Clear current options
         select.innerHTML = '<option value="">Select variable...</option>';
-        
+
         // Add options for each info field
         infoFields.forEach(field => {
             const option = document.createElement('option');
@@ -622,28 +622,28 @@ document.addEventListener('DOMContentLoaded', function () {
             option.dataset.type = field.type;
             select.appendChild(option);
         });
-        
+
         // Restore selection if possible
         if (currentValue && infoFields.some(field => field.name === currentValue)) {
             select.value = currentValue;
         }
     }
-    
+
     // Update the value input based on the selected variable and operator
     function updateConditionValueInput(variableName, operator, container) {
         // Find the variable type from info fields
         let variableType = 'string'; // Default type
-        
+
         if (variableName) {
             const infoTypeSelect = document.querySelector(`.session-info-name[value="${variableName}"]`)?.closest('.session-info-card')?.querySelector('.session-info-type');
             if (infoTypeSelect) {
                 variableType = infoTypeSelect.value;
             }
         }
-        
+
         // Clear the container
         container.innerHTML = '';
-        
+
         // Create the appropriate input based on type and operator
         if (operator === 'in' || operator === 'not_in') {
             // For "in" or "not in" operators, we need a string input
@@ -670,7 +670,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // Default to string input for any other type
             container.innerHTML = `<input type="text" class="form-control form-control-sm condition-value" placeholder="Value">`;
         }
-        
+
         // Add event listener for input validation
         const valueInput = container.querySelector('.condition-value');
         if (valueInput) {
@@ -680,22 +680,22 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
     }
-    
+
     // Update a target node dropdown with all available nodes
     function updateNodeTargetDropdown(select) {
         const nodes = Array.from(document.querySelectorAll('.node-name')).map(input => input.value.trim()).filter(name => name !== '');
-        
+
         // Add "end" node always
         if (!nodes.includes('end')) {
             nodes.push('end');
         }
-        
+
         // Save current selection
         const currentValue = select.value;
-        
+
         // Clear current options
         select.innerHTML = '<option value="">Select target...</option>';
-        
+
         // Add options for each node
         nodes.forEach(nodeName => {
             const option = document.createElement('option');
@@ -703,27 +703,27 @@ document.addEventListener('DOMContentLoaded', function () {
             option.text = nodeName;
             select.appendChild(option);
         });
-        
+
         // Restore selection if possible
         if (currentValue && nodes.includes(currentValue)) {
             select.value = currentValue;
         }
     }
-    
+
     // Update all node target dropdowns
     function updateAllNodeTargetDropdowns() {
         document.querySelectorAll('.condition-target-node, .default-target-node').forEach(updateNodeTargetDropdown);
     }
-    
+
     // Verify all fields in a condition are properly filled
     function verifyConditionFields(conditionElement) {
         const variableSelect = conditionElement.querySelector('.condition-variable');
         const operatorSelect = conditionElement.querySelector('.condition-operator');
         const valueInput = conditionElement.querySelector('.condition-value');
         const targetNodeSelect = conditionElement.querySelector('.condition-target-node');
-        
+
         let isValid = true;
-        
+
         // Check variable field
         if (!variableSelect.value) {
             variableSelect.classList.add('is-invalid');
@@ -732,7 +732,7 @@ document.addEventListener('DOMContentLoaded', function () {
             variableSelect.classList.remove('is-invalid');
             variableSelect.classList.add('is-valid');
         }
-        
+
         // Check operator field
         if (!operatorSelect.value) {
             operatorSelect.classList.add('is-invalid');
@@ -741,7 +741,7 @@ document.addEventListener('DOMContentLoaded', function () {
             operatorSelect.classList.remove('is-invalid');
             operatorSelect.classList.add('is-valid');
         }
-        
+
         // Check value field
         if (!valueInput) {
             // If valueInput is null, we can't validate it
@@ -754,7 +754,7 @@ document.addEventListener('DOMContentLoaded', function () {
             valueInput.classList.remove('is-invalid');
             valueInput.classList.add('is-valid');
         }
-        
+
         // Check target node field
         if (!targetNodeSelect.value) {
             targetNodeSelect.classList.add('is-invalid');
@@ -763,7 +763,7 @@ document.addEventListener('DOMContentLoaded', function () {
             targetNodeSelect.classList.remove('is-invalid');
             targetNodeSelect.classList.add('is-valid');
         }
-        
+
         return isValid;
     }
 
@@ -826,7 +826,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Set default incomplete message with standardized format
         const incompleteMessage = nodeElement.querySelector('.node-incomplete-message');
         incompleteMessage.value = "Please complete the following items from the instruction, and only these items. Everything else is completed: {}";
-        
+
         // Set default schema description
         const schemaDescription = nodeElement.querySelector('.schema-description');
         schemaDescription.value = "From the non-summarizing elements of the conversation, return whether each task has been accomplished, and for info fields, return an accurate and precise answer.";
@@ -840,16 +840,16 @@ document.addEventListener('DOMContentLoaded', function () {
             // No longer update the incomplete message when node name changes
             // incompleteMessage.value = `Please complete the following ${this.value} items: {}`;
             // Keep using the standardized message format
-            
+
             // Update the task message preamble with new node name
             const currentValue = taskMessage.value;
             const nodeName = this.value || 'unnamed';
-            taskMessage.value = `TOOLS: \nYou may silently call the check_${nodeName}_progress() function only after all ${nodeName} conversation steps have been completed. Do not mention you are doing this. Look at the other tools you have available, and if you need a certain piece of information that they provide, you may call them (silently, do not mention you are doing so!)\n\n` + 
+            taskMessage.value = `TOOLS: \nYou may silently call the check_${nodeName}_progress() function only after all ${nodeName} conversation steps have been completed. Do not mention you are doing this. Look at the other tools you have available, and if you need a certain piece of information that they provide, you may call them (silently, do not mention you are doing so!)\n\n` +
             currentValue.split('\n\n').slice(1).join('\n\n');
-            
+
             // Validate node name
             validateNodeName(this);
-            
+
             // Update node names in all target dropdowns
             updateAllNodeTargetDropdowns();
         });
@@ -911,7 +911,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 addNodeFunction(this.closest('.node-card'));
             });
         }
-        
+
         const addInfoFunctionBtn = nodeElement.querySelector('.add-info-function');
         if (addInfoFunctionBtn) {
             addInfoFunctionBtn.addEventListener('click', function(e) {
@@ -919,7 +919,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 addNodeFunction(this.closest('.node-card'), "", "", true);
             });
         }
-        
+
         // Set up transition conditions
         const addConditionBtn = nodeElement.querySelector('.add-condition-btn');
         if (addConditionBtn) {
@@ -927,7 +927,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 addTransitionCondition(this.closest('.node-card'));
             });
         }
-        
+
         // Set up pre-action functions
         const addPreActionSessionFunctionBtn = nodeElement.querySelector('.add-pre-action-session-function');
         if (addPreActionSessionFunctionBtn) {
@@ -936,7 +936,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 addPreActionFunction(this.closest('.node-card'));
             });
         }
-        
+
         const addPreActionInfoFunctionBtn = nodeElement.querySelector('.add-pre-action-info-function');
         if (addPreActionInfoFunctionBtn) {
             addPreActionInfoFunctionBtn.addEventListener('click', function(e) {
@@ -944,12 +944,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 addPreActionFunction(this.closest('.node-card'), "", "", true);
             });
         }
-        
+
         // Initialize the default target node dropdown
         const defaultTargetSelect = nodeElement.querySelector('.default-target-node');
         if (defaultTargetSelect) {
             updateNodeTargetDropdown(defaultTargetSelect);
-            
+
             // Add validation for default target
             defaultTargetSelect.addEventListener('change', function() {
                 if (!this.value) {
@@ -1117,7 +1117,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!nodeName) return;
 
             const taskMessage = cleanString(nodeCard.querySelector('.node-task-message').value);
-            
+
             // We no longer use complete message, so we can skip this
             // const completeMessage = cleanString(nodeCard.querySelector('.node-complete-message')?.value || "");
 
@@ -1158,7 +1158,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     // Check if this is an info field by checking if it exists in the info fields list
                     const infoFields = Array.from(document.querySelectorAll('.session-info-name')).map(input => input.value);
                     const useInfoHandler = infoFields.includes(sessionVar);
-                    
+
                     functions.push({
                         name: funcName,
                         variable: sessionVar,
@@ -1176,9 +1176,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 const operator = conditionCard.querySelector('.condition-operator').value;
                 const targetNode = conditionCard.querySelector('.condition-target-node').value;
                 const valueInput = conditionCard.querySelector('.condition-value');
-                
+
                 if (!variable || !operator || !targetNode) return;
-                
+
                 // Get the value based on the input type
                 let value;
                 if (valueInput.tagName === 'SELECT') {
@@ -1188,7 +1188,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else {
                     // For string or array input
                     const rawValue = cleanString(valueInput.value);
-                    
+
                     // Determine if this should be parsed as JSON (for arrays)
                     if (rawValue.startsWith('[') && rawValue.endsWith(']')) {
                         try {
@@ -1200,7 +1200,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         // Find the type of the variable
                         const varTypeSelect = document.querySelector(`.session-info-name[value="${variable}"]`)?.closest('.session-info-card')?.querySelector('.session-info-type');
                         const varType = varTypeSelect?.value || 'string';
-                        
+
                         if (varType === 'boolean') {
                             value = rawValue === 'true';
                         } else if (varType === 'number') {
@@ -1210,7 +1210,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         }
                     }
                 }
-                
+
                 transitionConditions.push({
                     parameters: {
                         variable_path: variable,
@@ -1220,10 +1220,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     target_node: targetNode
                 });
             });
-            
+
             // Get default target node
             const defaultTargetNode = nodeCard.querySelector('.default-target-node').value;
-            
+
             const nodeData = {
                 node_name: nodeName,
                 task_message: taskMessage,
@@ -1234,16 +1234,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 transition_conditions: transitionConditions,
                 default_target_node: defaultTargetNode || 'end'
             };
-            
+
             // Initialize pre-actions array
             const preActions = [];
-            
+
             // Add text pre-action if provided
             const preActionText = nodeCard.querySelector('.pre-action-text');
-            
+
             if (preActionText) {
                 const preActionTextValue = cleanString(preActionText.value) || "";
-                
+
                 if (preActionTextValue.trim() !== "") {
                     preActions.push({
                         type: "tts_say",
@@ -1251,32 +1251,32 @@ document.addEventListener('DOMContentLoaded', function () {
                     });
                 }
             }
-            
+
             // Add function pre-actions from the pre-actions tab
             nodeCard.querySelectorAll('.pre-action-function-card').forEach(functionCard => {
                 const sessionVar = cleanString(functionCard.querySelector('.pre-action-variable-select').value);
                 const description = cleanString(functionCard.querySelector('.pre-action-function-description').value);
-                
+
                 if (sessionVar) {
                     const funcName = `get_${sessionVar}`;
-                    
+
                     // Check if this is an info field
                     const infoFields = Array.from(document.querySelectorAll('.session-info-name')).map(input => input.value);
                     const useInfoHandler = infoFields.includes(sessionVar);
-                    
+
                     // Create the function definition in the simplified format
                     const functionDef = {
                         type: "function",
                         handler: useInfoHandler ? "get_info_variable_handler" : "get_session_variable_handler",
                         variable_name: sessionVar
                     };
-                    
+
                     // No need to add current_index parameter in the simplified format
-                    
+
                     preActions.push(functionDef);
                 }
             });
-            
+
             // Add pre-actions to node data if any exist
             if (preActions.length > 0) {
                 nodeData.pre_actions = preActions;
@@ -1328,7 +1328,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 loadConfigFromFile(file);
             }
         });
-        
+
     }
 
     function resetForm() {
@@ -1351,40 +1351,40 @@ document.addEventListener('DOMContentLoaded', function () {
         // Add initial node
         addNode();
     }
-    
+
     // Validate node name uniqueness
     function validateNodeName(inputElement) {
         const name = inputElement.value.trim();
-        
+
         // Check if empty
         if (!name) {
             inputElement.classList.add('is-invalid');
             inputElement.classList.remove('is-valid');
             return false;
         }
-        
+
         // Check for uniqueness
         const allNodeNames = Array.from(document.querySelectorAll('.node-name'))
             .filter(input => input !== inputElement)
             .map(input => input.value.trim());
-            
+
         if (allNodeNames.includes(name)) {
             inputElement.classList.add('is-invalid');
             inputElement.classList.remove('is-valid');
             return false;
         }
-        
+
         // Valid name
         inputElement.classList.remove('is-invalid');
         inputElement.classList.add('is-valid');
         return true;
     }
-    
+
     // Validate all required fields in the form
     function validateAllFields() {
         let isValid = true;
         let firstInvalidElement = null;
-        
+
         // Validate flow name
         const flowName = document.getElementById('flowName');
         if (!flowName.value.trim()) {
@@ -1395,18 +1395,18 @@ document.addEventListener('DOMContentLoaded', function () {
             flowName.classList.remove('is-invalid');
             flowName.classList.add('is-valid');
         }
-        
+
         // Validate node names and task messages
         const nodeNames = new Set();
         const duplicateNodeNames = new Set();
         const emptyTaskMessages = [];
-        
+
         document.querySelectorAll('.node-card').forEach(nodeCard => {
             // Validate node name
             const nodeNameInput = nodeCard.querySelector('.node-name');
             const name = nodeNameInput.value.trim();
             const nameDisplay = nodeCard.querySelector('.node-name-display').textContent;
-            
+
             // Check if node name is empty
             if (!name) {
                 nodeNameInput.classList.add('is-invalid');
@@ -1414,7 +1414,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (!firstInvalidElement) firstInvalidElement = nodeNameInput;
                 return;
             }
-            
+
             // Check for duplicate node names
             if (nodeNames.has(name)) {
                 duplicateNodeNames.add(name);
@@ -1426,7 +1426,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 nodeNameInput.classList.remove('is-invalid');
                 nodeNameInput.classList.add('is-valid');
             }
-            
+
             // Validate task message
             const taskMessage = nodeCard.querySelector('.node-task-message');
             if (!taskMessage.value.trim()) {
@@ -1439,16 +1439,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 taskMessage.classList.add('is-valid');
             }
         });
-        
+
         // Show alerts for validation issues
         if (duplicateNodeNames.size > 0) {
             alert(`Duplicate node names found: ${Array.from(duplicateNodeNames).join(', ')}. Node names must be unique.`);
         }
-        
+
         if (emptyTaskMessages.length > 0) {
             alert(`Task messages are missing for nodes: ${emptyTaskMessages.join(', ')}`);
         }
-        
+
         // Validate transition conditions
         document.querySelectorAll('.transition-condition-card').forEach(conditionCard => {
             if (!verifyConditionFields(conditionCard)) {
@@ -1458,7 +1458,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
         });
-        
+
         // Validate default target nodes
         document.querySelectorAll('.default-target-node').forEach(select => {
             if (!select.value) {
@@ -1470,13 +1470,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 select.classList.add('is-valid');
             }
         });
-        
+
         // Scroll to first invalid element if found
         if (firstInvalidElement) {
             firstInvalidElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
             firstInvalidElement.focus();
         }
-        
+
         return isValid;
     }
 
@@ -1489,15 +1489,15 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             // Clear the console
             console.clear();
-            
+
             // Advanced validation before collecting form data
             if (!validateAllFields()) {
                 return;
             }
-            
+
             // Get form data
             const formData = collectFormDataForGeneration();
-            
+
             // Log the form data
             console.log("Form data to be sent:", formData);
 
@@ -1526,7 +1526,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Simplify to just use the standard download approach
             console.log("Sending request to /generate_json");
-            
+
             // Send data to server to generate the JSON structure
             const response = await fetch('/generate_json', {
                 method: 'POST',
@@ -1535,11 +1535,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 },
                 body: JSON.stringify(formData)
             });
-            
+
             console.log("Response received:", response);
             const data = await response.json();
             console.log("Response data:", data);
-            
+
             if (data.success) {
                 // Create download link
                 const downloadUrl = `/download/${data.filename}`;
@@ -1549,7 +1549,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <p>Your conversation flow has been created successfully.</p>
                     <a href="${downloadUrl}" class="btn btn-primary" download>Download JSON File</a>
                 </div>`;
-                
+
                 // Auto-download the file
                 console.log("Downloading file:", downloadUrl);
                 const downloadLink = document.createElement('a');
@@ -1558,7 +1558,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.body.appendChild(downloadLink);
                 downloadLink.click();
                 document.body.removeChild(downloadLink);
-                
+
                 return;
             } else {
                 console.error("Error generating JSON:", data.error);
@@ -1574,7 +1574,7 @@ document.addEventListener('DOMContentLoaded', function () {
             resultContainer.scrollIntoView({ behavior: 'smooth' });
         } catch (error) {
             console.error("Error generating JSON:", error);
-            
+
             const resultContainer = document.getElementById('resultContainer');
             resultContainer.style.display = 'block';
             resultContainer.innerHTML = `
@@ -1583,7 +1583,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <p>${error.message || "Unknown error"}</p>
                 <p class="small text-muted">Check browser console for details (F12).</p>
             </div>`;
-            
+
             resultContainer.scrollIntoView({ behavior: 'smooth' });
         }
     }

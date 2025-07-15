@@ -1,13 +1,13 @@
 // src/components/DisconnectButton.tsx
 import { useState } from 'react'
-import { useRTVIClient, useRTVIClientTransportState } from '@pipecat-ai/client-react'
+import { usePipecatClient } from '@pipecat-ai/client-react'
 import { useNavigate } from 'react-router-dom'
 import { FloatButton, Popconfirm } from 'antd'
 import { PoweroffOutlined, LoadingOutlined } from '@ant-design/icons'
 import './DisconnectButton.css'
 
 export default function DisconnectButton() {
-  const client = useRTVIClient()
+  const client = usePipecatClient()
   const navigate = useNavigate()
   const [visible, setVisible] = useState(false)
 

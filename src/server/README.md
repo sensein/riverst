@@ -24,4 +24,3 @@ ollama run llama3.2
 ```bash
 python server.py
 ```
-

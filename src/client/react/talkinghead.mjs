@@ -139,7 +139,7 @@ class TalkingHead {
       modelRoot: "Armature",
       modelPixelRatio: 1,
       modelFPS: 30,
-      modelMovementFactor: 1.0,
+      modelMovementFactor: 0.1,
       cameraView: 'full',
       dracoEnabled: false,
       dracoDecoderPath: 'https://www.gstatic.com/draco/v1/decoders/',
@@ -371,14 +371,14 @@ class TalkingHead {
           delay: [200,5000], dt: [ 200,[2000,5000],[3000,10000,1,2] ],
           vs: {
             headMove: [ this.avatar?.hasOwnProperty('avatarIdleHeadMove') ? this.avatar.avatarIdleHeadMove : this.opt.avatarIdleHeadMove ],
-            eyesRotateY: [[-0.6,0.6]], eyesRotateX: [[-0.2,-0.1]],
+            eyesRotateY: [[-0.6,0.6]], eyesRotateX: [[-0.11,-0.09]],
             eyeContact: [null,1]
           }
         },
         {
           delay: [200,5000], dt: [ 200,[2000,5000,1,2] ], vs: {
             headMove: [ this.avatar?.hasOwnProperty('avatarIdleHeadMove') ? this.avatar.avatarIdleHeadMove : this.opt.avatarIdleHeadMove ],
-            eyesRotateY: [[-0.6,0.6]], eyesRotateX: [[-0.2,-0.1]]
+            eyesRotateY: [[-0.6,0.6]], eyesRotateX: [[-0.11,-0.09]]
           }
         }
       ]},
@@ -388,13 +388,13 @@ class TalkingHead {
           delay: [200,5000], dt: [ 0, [3000,10000,1,2], [2000,5000] ],
           vs: { eyeContact: [1,null],
             headMove: [null,( this.avatar?.hasOwnProperty('avatarSpeakingHeadMove') ? this.avatar.avatarSpeakingHeadMove : this.opt.avatarSpeakingHeadMove ),null],
-            eyesRotateY: [null,[-0.6,0.6]], eyesRotateX: [null,[-0.2,-0.1]]
+            eyesRotateY: [null,[-0.6,0.6]], eyesRotateX: [null,[-0.11,-0.09]]
           }
         },
         {
           delay: [200,5000], dt: [ 200,[2000,5000,1,2] ], vs: {
             headMove: [( this.avatar?.hasOwnProperty('avatarSpeakingHeadMove') ? this.avatar.avatarSpeakingHeadMove : this.opt.avatarSpeakingHeadMove ),null],
-            eyesRotateY: [[-0.6,0.6]], eyesRotateX: [[-0.2,-0.1]]
+            eyesRotateY: [[-0.6,0.6]], eyesRotateX: [[-0.11,-0.09]]
           }
         }
       ]}
@@ -418,8 +418,8 @@ class TalkingHead {
             { delay: [5000,30000], vs: { pose: ['straight'] } }
           ]},
           { name: 'head',
-            idle: { delay: [0,1000], dt: [ [200,5000] ], vs: { bodyRotateX: [[-0.1,0.0]], bodyRotateY: [[-0.3,0.3]], bodyRotateZ: [[-0.08,0.08]] } },
-            speaking: { dt: [ [0,1000,0] ], vs: { bodyRotateX: [[-0.1,0.0,1,2]], bodyRotateY: [[-0.1,0.1]], bodyRotateZ: [[-0.1,0.1]] } }
+            idle: { delay: [0,1000], dt: [ [200,5000] ], vs: { bodyRotateX: [[-0.01,0.0]], bodyRotateY: [[-0.2,0.2]], bodyRotateZ: [[-0.08,0.08]] } },
+            speaking: { dt: [ [0,1000,0] ], vs: { bodyRotateX: [[-0.01,0.0,1,2]], bodyRotateY: [[-0.1,0.1]], bodyRotateZ: [[-0.1,0.1]] } }
           },
           this.animTemplateEyes,
           this.animTemplateBlink,
@@ -455,8 +455,8 @@ class TalkingHead {
             }
           },
           { name: 'head',
-            idle: { dt: [ [1000,5000] ], vs: { bodyRotateX: [[-0.1,0.0]], bodyRotateY: [[-0.3,0.3]], bodyRotateZ: [[-0.08,0.08]] } },
-            speaking: { dt: [ [0,1000,0] ], vs: { bodyRotateX: [[-0.1,0.0,1,2]], bodyRotateY: [[-0.1,0.1]], bodyRotateZ: [[-0.1,0.1]] } }
+            idle: { dt: [ [1000,5000] ], vs: { bodyRotateX: [[-0.01,0.0]], bodyRotateY: [[-0.2,0.2]], bodyRotateZ: [[-0.08,0.08]] } },
+            speaking: { dt: [ [0,1000,0] ], vs: { bodyRotateX: [[-0.01,0.0,1,2]], bodyRotateY: [[-0.1,0.1]], bodyRotateZ: [[-0.1,0.1]] } }
           },
           this.animTemplateEyes,
           this.animTemplateBlink,
@@ -477,8 +477,8 @@ class TalkingHead {
             },
           ]},
           { name: 'head',
-            idle: { delay: [100,500], dt: [ [200,5000] ], vs: { bodyRotateX: [[-0.1,0.0]], bodyRotateY: [[-0.2,0.2]], bodyRotateZ: [[-0.08,0.08]] } },
-            speaking: { dt: [ [0,1000,0] ], vs: { bodyRotateX: [[-0.1,0.0,1,2]], bodyRotateY: [[-0.1,0.1]], bodyRotateZ: [[-0.1,0.1]] } }
+            idle: { delay: [100,500], dt: [ [200,5000] ], vs: { bodyRotateX: [[-0.01,0.0]], bodyRotateY: [[-0.2,0.2]], bodyRotateZ: [[-0.08,0.08]] } },
+            speaking: { dt: [ [0,1000,0] ], vs: { bodyRotateX: [[-0.01,0.0,1,2]], bodyRotateY: [[-0.1,0.1]], bodyRotateZ: [[-0.1,0.1]] } }
           },
           this.animTemplateEyes,
           this.animTemplateBlink,
@@ -499,8 +499,8 @@ class TalkingHead {
             },
           ]},
           { name: 'head',
-            idle: { delay: [100,500], dt: [ [200,5000] ], vs: { bodyRotateX: [[-0.1,0.10]], bodyRotateY: [[-0.2,0.2]], bodyRotateZ: [[-0.08,0.08]] } },
-            speaking: { dt: [ [0,1000,0] ], vs: { bodyRotateX: [[-0.1,0.1,1,2]], bodyRotateY: [[-0.1,0.1]], bodyRotateZ: [[-0.1,0.1]] } }
+            idle: { delay: [100,500], dt: [ [200,5000] ], vs: { bodyRotateX: [[-0.01,0.10]], bodyRotateY: [[-0.2,0.2]], bodyRotateZ: [[-0.08,0.08]] } },
+            speaking: { dt: [ [0,1000,0] ], vs: { bodyRotateX: [[-0.01,0.1,1,2]], bodyRotateY: [[-0.1,0.1]], bodyRotateZ: [[-0.1,0.1]] } }
           },
           this.animTemplateEyes,
           this.animTemplateBlink,
@@ -522,8 +522,8 @@ class TalkingHead {
             },
           ]},
           { name: 'head',
-            idle: { delay: [100,500], dt: [ [200,3000] ], vs: { bodyRotateX: [[-0.1,0.0]], bodyRotateY: [[-0.4,0.4]], bodyRotateZ: [[-0.1,0.1]] } },
-            speaking: { dt: [ [0,1000,0] ], vs: { bodyRotateX: [[-0.1,0.0,1,2]], bodyRotateY: [[-0.1,0.1]], bodyRotateZ: [[-0.1,0.1]] } }
+            idle: { delay: [100,500], dt: [ [200,3000] ], vs: { bodyRotateX: [[-0.01,0.0]], bodyRotateY: [[-0.4,0.4]], bodyRotateZ: [[-0.1,0.1]] } },
+            speaking: { dt: [ [0,1000,0] ], vs: { bodyRotateX: [[-0.01,0.0,1,2]], bodyRotateY: [[-0.1,0.1]], bodyRotateZ: [[-0.1,0.1]] } }
           },
           this.animTemplateEyes,
           this.animTemplateBlink,
@@ -540,8 +540,8 @@ class TalkingHead {
             { delay: [5000,20000], vs: { pose: ['side'] } },
           ]},
           { name: 'head',
-            idle: { delay: [100,500], dt: [ [200,5000] ], vs: { bodyRotateX: [[-0.1,0.0]], bodyRotateY: [[-0.2,0.2]], bodyRotateZ: [[-0.08,0.08]] } },
-            speaking: { dt: [ [0,1000,0] ], vs: { bodyRotateX: [[-0.1,0.0,1,2]], bodyRotateY: [[-0.1,0.1]], bodyRotateZ: [[-0.1,0.1]] } }
+            idle: { delay: [100,500], dt: [ [200,5000] ], vs: { bodyRotateX: [[-0.01,0.0]], bodyRotateY: [[-0.2,0.2]], bodyRotateZ: [[-0.08,0.08]] } },
+            speaking: { dt: [ [0,1000,0] ], vs: { bodyRotateX: [[-0.01,0.0,1,2]], bodyRotateY: [[-0.1,0.1]], bodyRotateZ: [[-0.1,0.1]] } }
           },
           this.animTemplateEyes,
           this.animTemplateBlink,
@@ -578,8 +578,8 @@ class TalkingHead {
             },
           ]},
           { name: 'head',
-            idle: { dt: [ [1000,5000] ], vs: { bodyRotateX: [[-0.1,0.0]], bodyRotateY: [[-0.3,0.3]], bodyRotateZ: [[-0.08,0.08]] } },
-            speaking: { dt: [ [0,1000,0] ], vs: { bodyRotateX: [[-0.1,0.0,1,2]], bodyRotateY: [[-0.1,0.1]], bodyRotateZ: [[-0.1,0.1]] } }
+            idle: { dt: [ [1000,5000] ], vs: { bodyRotateX: [[-0.01,0.0]], bodyRotateY: [[-0.2,0.2]], bodyRotateZ: [[-0.08,0.08]] } },
+            speaking: { dt: [ [0,1000,0] ], vs: { bodyRotateX: [[-0.01,0.0,1,2]], bodyRotateY: [[-0.1,0.1]], bodyRotateZ: [[-0.1,0.1]] } }
           },
           this.animTemplateEyes,
           this.deepCopy(this.animTemplateBlink,(o) => { o.alt[0].delay[0] = o.alt[1].delay[0] = 2000; }),
@@ -899,7 +899,7 @@ class TalkingHead {
     } else {
       this.audioCtx = new AudioContext();
     }
-    
+
     // Create audio nodes
     this.audioSpeechSource = this.audioCtx.createBufferSource();
     this.audioBackgroundSource = this.audioCtx.createBufferSource();
@@ -912,21 +912,21 @@ class TalkingHead {
     this.audioAnalyzerNode.minDecibels = -70;
     this.audioAnalyzerNode.maxDecibels = -10;
     this.audioReverbNode = this.audioCtx.createConvolver();
-    
+
     // Connect nodes
     this.audioBackgroundGainNode.connect(this.audioReverbNode);
     this.audioAnalyzerNode.connect(this.audioSpeechGainNode);
     this.audioSpeechGainNode.connect(this.audioReverbNode);
     this.audioStreamGainNode.connect(this.audioReverbNode);
     this.audioReverbNode.connect(this.audioCtx.destination);
-    
+
     // Apply reverb and mixer settings
     this.setReverb(this.currentReverb || null);
     this.setMixerGain(
-      this.opt.mixerGainSpeech, 
+      this.opt.mixerGainSpeech,
       this.opt.mixerGainBackground
     );
-    
+
     // Reset stream worklet loaded flag to reload with the new context
     this.workletLoaded = false;
   }
@@ -1626,7 +1626,7 @@ class TalkingHead {
       }
     }
 
-  
+
     // [Fabio] MY EDIT STARTS HERE:
     // SCALE mouthOpen BY ACTIVE VOWEL VISEMES
     const VOWEL_MOUTH_WEIGHTS = {
@@ -1644,7 +1644,7 @@ class TalkingHead {
       const vo = this.mtAvatar[viseme];
       if (!vo) continue;
 
-      // Normalized activity level for this viseme (0‒1).  
+      // Normalized activity level for this viseme (0‒1).
       // Prefer `applied` (already clamped) but fall back to `value`.
       const activity = vo.applied ?? vo.value ?? 0;
 
@@ -3315,7 +3315,7 @@ class TalkingHead {
     this.streamLipsyncLang = opt.lipsyncLang || this.streamLipsyncLang || this.avatar.lipsyncLang || this.opt.lipsyncLang;
 
     if (opt.sampleRate !== undefined) {
-      const sr = opt.sampleRate;    
+      const sr = opt.sampleRate;
       if (
         typeof sr === 'number' &&
         sr >= 8000 &&
@@ -3330,7 +3330,7 @@ class TalkingHead {
         );
       }
     }
-    
+
     if (opt.gain !== undefined) {
       this.audioStreamGainNode.gain.value = opt.gain;
     }
@@ -3338,7 +3338,7 @@ class TalkingHead {
     if (!this.workletLoaded) {
       try {
         const loadPromise = this.audioCtx.audioWorklet.addModule(workletUrl.href);
-        const timeoutPromise = new Promise((_, reject) => 
+        const timeoutPromise = new Promise((_, reject) =>
           setTimeout(() => reject(new Error("Worklet loading timed out")), 5000)
         );
         await Promise.race([loadPromise, timeoutPromise]);
@@ -3351,11 +3351,11 @@ class TalkingHead {
 
     // Create and connect worklet node
     this.streamWorkletNode = new AudioWorkletNode(this.audioCtx, 'playback-worklet');
-    
+
     // Connect worklet through stream gain node for volume control
     this.streamWorkletNode.connect(this.audioStreamGainNode);
     this.streamWorkletNode.connect(this.audioAnalyzerNode);
-  
+
     this.streamWorkletNode.port.onmessage = (event) => {
 
       if(event.data.type === 'playback-started') {
@@ -3408,9 +3408,9 @@ class TalkingHead {
       try {
         this.streamWorkletNode.disconnect();
 
-      } catch(e) { 
+      } catch(e) {
         console.error('Error disconnecting streamWorkletNode:', e);
-        /* ignore */ 
+        /* ignore */
       }
       this.streamWorkletNode = null;
     }

@@ -9,5 +9,5 @@
 - https://getfluently.app/ >> app for improving your english
 - https://replika.com/ >> for comparison with our avatar, they don't seem able to detect and control emotions and cannot even move (https://my.replika.com/)
 - https://docs.ultravox.ai/ (alternative to pipecat?)
-- so far, e2e is not really reliable: it's not good at calling functions, cannot be used with pipecat flows, it's not consistent with transcripts, it keeps failing with acknowledged issues which haven't been solved yet (e.g., https://github.com/pipecat-ai/pipecat/issues/1781)...
+- so far, e2e is not really reliable: it's not good at calling functions, cannot be used with pipecat flows, it's not consistent with transcripts, it keeps failing with acknowledged issues which haven't been solved yet (e.g., https://github.com/pipecat-ai/pipecat/issues/1781, https://discuss.ai.google.dev/t/received-1007-invalid-payload-using-gemini-live-api/83206/11)... We know e2e works faster than the classic pipeline, but we remove it for now.
 - the general session saved is not always reliable (sometimes, voices are overlapped despite they were not in reality...)
