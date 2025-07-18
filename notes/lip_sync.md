@@ -27,7 +27,7 @@
 
 - optimum-cli export onnx --model bookbot/wav2vec2-ljspeech-gruut onnx-wav2vec2/
 
-- 
+-
 
 from optimum.onnxruntime import ORTModelForCTC
 import onnxruntime as ort

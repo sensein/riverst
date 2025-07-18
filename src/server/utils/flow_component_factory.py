@@ -1,12 +1,9 @@
-import os
 import json
-import copy
-from typing import Any, Optional, Dict, List
+from typing import Any, Optional, List
 
 from loguru import logger
 from pipecat.pipeline.task import PipelineTask
 from pipecat_flows import FlowManager, ContextStrategy, ContextStrategyConfig
-from pipecat_flows.types import FlowsFunctionSchema
 
 from .flows import load_config
 from .animation_handler import AnimationHandler
@@ -14,8 +11,8 @@ from .animation_handler import AnimationHandler
 
 class FlowComponentFactory:
     """Factory class for creating and initializing flow management components.
-    
-    This class encapsulates the creation and configuration of flow-related 
+
+    This class encapsulates the creation and configuration of flow-related
     components, ensuring proper initialization and error handling.
     """
 
@@ -32,10 +29,13 @@ class FlowComponentFactory:
         enabled_animations: Optional[List[str]] = None,
         session_dir: Optional[str] = None,
         context_strategy: ContextStrategy = ContextStrategy.RESET_WITH_SUMMARY,
-        summary_prompt: str = "Summarize the key moments of learning, words, and concepts discussed in the tutoring session so far. Keep it concise and focused on vocabulary learning.",
+        summary_prompt: str = (
+            "Summarize the key moments of learning, words, and concepts discussed in the tutoring session so far. "
+            "Keep it concise and focused on vocabulary learning."
+        ),
     ):
         """Initialize the FlowComponentFactory.
-        
+
         Args:
             llm: The language model to use with the flow manager
             context_aggregator: The context aggregator component
@@ -65,7 +65,7 @@ class FlowComponentFactory:
 
     def build(self) -> Optional[FlowManager]:
         """Build and configure the flow manager.
-        
+
         Returns:
             FlowManager: The configured flow manager, or None if flows are disabled
         """
@@ -73,9 +73,13 @@ class FlowComponentFactory:
             logger.info("Advanced flows disabled, skipping flow manager initialization")
             return None
 
-        logger.info(f"Initializing flow manager with config path: {self.flow_config_path}")
+        logger.info(
+            f"Initializing flow manager with config path: {self.flow_config_path}"
+        )
         if not self.session_variables_path:
-            logger.warning("Session variables path not provided, using default within flow config file")
+            logger.warning(
+                "Session variables path not provided, using default within flow config file"
+            )
         else:
             logger.info(f"Session variables path: {self.session_variables_path}")
 
@@ -84,16 +88,16 @@ class FlowComponentFactory:
             return None
 
         try:
-            flow_config, state = load_config(self.flow_config_path, self.session_variables_path)
-            
-            
+            flow_config, state = load_config(
+                self.flow_config_path, self.session_variables_path
+            )
+
             # Modify system messages in all nodes to include user description and animation instruction, and tools
-            for node_id, node_data in flow_config.get('nodes', {}).items():
+            for node_id, node_data in flow_config.get("nodes", {}).items():
                 self._add_llm_tools_to_node(node_data)
-                if 'role_messages' in node_data:
-                    self._update_system_message(node_data['role_messages'])
-            
-                                     
+                if "role_messages" in node_data:
+                    self._update_system_message(node_data["role_messages"])
+
             flow_manager = FlowManager(
                 llm=self.llm,
                 context_aggregator=self.context_aggregator,
@@ -103,16 +107,15 @@ class FlowComponentFactory:
                 ),
                 task=self.task,
                 tts=self.tts,
-                flow_config=flow_config
+                flow_config=flow_config,
             )
-                
+
             flow_manager.state = state
-        
-            
+
             self.flow_manager = flow_manager
             logger.info("Flow manager successfully built")
             return flow_manager
-            
+
         except FileNotFoundError as e:
             logger.error(f"Flow configuration file not found: {e}")
             return None
@@ -122,11 +125,10 @@ class FlowComponentFactory:
         except Exception as e:
             logger.error(f"Error initializing flow manager: {e}")
             return None
-        
-        
+
     async def initialize(self) -> bool:
         """Initialize the flow manager asynchronously.
-        
+
         Returns:
             bool: True if initialization was successful, False otherwise
         """
@@ -135,66 +137,86 @@ class FlowComponentFactory:
             logger.warning("Flow manager not built, cannot initialize")
             return False
         try:
-            logger.info("DEBUG: Flow manager about to initialize with config: {}", 
-                       {k: v for k, v in self.flow_manager.flow_config.items() if k != 'nodes'})
-            logger.info("DEBUG: Initial node: {}", self.flow_manager.flow_config.get('initial_node'))
-            logger.info("DEBUG: Available nodes: {}", list(self.flow_manager.nodes.keys()))
-            
+            logger.info(
+                "DEBUG: Flow manager about to initialize with config: {}",
+                {
+                    k: v
+                    for k, v in self.flow_manager.flow_config.items()
+                    if k != "nodes"
+                },
+            )
+            logger.info(
+                "DEBUG: Initial node: {}",
+                self.flow_manager.flow_config.get("initial_node"),
+            )
+            logger.info(
+                "DEBUG: Available nodes: {}", list(self.flow_manager.nodes.keys())
+            )
+
             await self.flow_manager.initialize()
-            
-            logger.info("DEBUG: Flow manager state after initialization: {}", self.flow_manager.state)
-            logger.info("DEBUG: Current node after initialization: {}", self.flow_manager.current_node)
+
+            logger.info(
+                "DEBUG: Flow manager state after initialization: {}",
+                self.flow_manager.state,
+            )
+            logger.info(
+                "DEBUG: Current node after initialization: {}",
+                self.flow_manager.current_node,
+            )
             logger.info("Flow manager successfully initialized")
             return True
         except Exception as e:
             logger.error("DEBUG: Error during flow manager initialization: {}", e)
             import traceback
+
             logger.error("DEBUG: Traceback: {}", traceback.format_exc())
             return False
-        
 
     def _add_llm_tools_to_node(self, node_data):
         """Add existing LLM tools to node functions"""
         if "functions" not in node_data:
             return
-            
+
         # Create lookup for tool schemas by function name
         tool_schemas = {
-            schema.get("function", {}).get("name"): schema 
+            schema.get("function", {}).get("name"): schema
             for schema in self.context_aggregator._user.context.tools
         }
-        
+
         for func_name, tool in self.llm._functions.items():
             if func_name in tool_schemas:
                 function = tool_schemas[func_name]["function"]
                 parameters = function.get("parameters", {})
-                
-                node_data["functions"].append({
-                    "type": "function",
-                    "function": {
-                        "name": func_name,
-                        "description": function.get("description"),
-                        "parameters": {
-                            "type": "object",
-                            "properties": parameters.get("properties", {}),
-                            "required": parameters.get("required", [])
+
+                node_data["functions"].append(
+                    {
+                        "type": "function",
+                        "function": {
+                            "name": func_name,
+                            "description": function.get("description"),
+                            "parameters": {
+                                "type": "object",
+                                "properties": parameters.get("properties", {}),
+                                "required": parameters.get("required", []),
+                            },
+                            "handler": tool.handler,
                         },
-                        "handler": tool.handler
                     }
-                })
+                )
 
     def _update_system_message(self, role_messages):
         """Update first system message with user description and animation instruction"""
         system_msg = next(
-            (msg for msg in role_messages if msg.get('role') == 'system'), 
-            None
+            (msg for msg in role_messages if msg.get("role") == "system"), None
         )
-        
+
         if system_msg:
             if self.user_description:
-                system_msg['content'] += f"\nUser description: {self.user_description}"
-            
+                system_msg["content"] += f"\nUser description: {self.user_description}"
+
             if self.enabled_animations:
-                animation_instruction = AnimationHandler.get_animation_instruction(self.enabled_animations)
+                animation_instruction = AnimationHandler.get_animation_instruction(
+                    self.enabled_animations
+                )
                 if animation_instruction:
-                    system_msg['content'] += f"\n{animation_instruction}"
+                    system_msg["content"] += f"\n{animation_instruction}"

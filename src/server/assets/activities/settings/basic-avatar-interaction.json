@@ -26,21 +26,21 @@
           "default": "classic",
           "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline."
         },
-        "llm_type": {
-          "type": "string",
-          "enum": ["openai", "openai_realtime_beta", "gemini", "llama3.2"],
-          "default": "openai",
-          "description": "The LLM service to use."
-        },
         "stt_type": {
           "type": "string",
           "enum": ["whisper", "openai"],
           "default": "openai",
           "description": "The STT service to use."
         },
+        "llm_type": {
+          "type": "string",
+          "enum": ["openai", "openai_realtime_beta", "gemini", "llama3.2"],
+          "default": "openai",
+          "description": "The LLM service to use."
+        },
         "tts_type": {
           "type": "string",
-          "enum": ["openai", "piper"],
+          "enum": ["openai", "piper", "elevenlabs"],
           "default": "openai",
           "description": "The TTS service to use."
         },
@@ -48,15 +48,15 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["wave", "dance", "i_dont_know"]
+            "enum": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep"]
           },
-          "default": ["wave", "dance", "i_dont_know"],
+          "default": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep"],
           "description": "List of body animations that the avatar can perform."
         },
         "camera_settings": {
           "type": "string",
-          "enum": ["half_body", "headshot", "full_body"],
-          "default": "half_body",
+          "enum": ["full", "mid", "upper", "head"],
+          "default": "upper",
           "description": "Select the camera framing used for the avatar during the interaction."
         },
         "avatar_system_prompt": {
@@ -82,10 +82,15 @@
           "maxLength": 500,
           "description": "Optional free-text field to describe the user."
         },
+        "short_term_memory": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable or disable short-term memory. If enabled, the avatar will remember information from previous interactions with this same link and use it to guide the conversation."
+        },
         "long_term_memory": {
           "type": "boolean",
           "default": false,
-          "description": "Enable or disable long-term memory. If enabled, the avatar will remember information from previous interactions and use it to guide the conversation."
+          "description": "Enable or disable long-term memory. If enabled, the avatar will remember information from previous interactions with this same user and use it to guide the conversation."
         },
         "languages": {
           "type": "array",

@@ -1,12 +1,18 @@
 [
   {
     "id": 1,
-    "modelUrl": "https://models.readyplayer.me/67eaadeeffcddc994a40ed15.glb?morphTargets=mouthOpen,Oculus Visemes",
+    "modelUrl": "https://models.readyplayer.me/67eaadeeffcddc994a40ed15.glb?morphTargets=ARKit,Oculus+Visemes,mouthOpen,mouthSmile,eyesClosed,eyesLookUp,eyesLookDown&textureSizeLimit=1024&textureFormat=png",
     "gender": "feminine"
   },
   {
     "id": 2,
-    "modelUrl": "https://models.readyplayer.me/682b8f3c8a243067ea6996a0.glb?morphTargets=mouthOpen,Oculus Visemes",
+    "modelUrl": "https://models.readyplayer.me/687538cac75e498cdcaa668d.glb?morphTargets=ARKit,Oculus+Visemes,mouthOpen,mouthSmile,eyesClosed,eyesLookUp,eyesLookDown&textureSizeLimit=1024&textureFormat=png",
     "gender": "masculine"
+  },
+  {
+    "id": 3,
+    "modelUrl": "/avatars/fabio_avaturn.glb?morphTargets=ARKit,Oculus+Visemes,mouthOpen,mouthSmile,eyesClosed,eyesLookUp,eyesLookDown&textureSizeLimit=1024&textureFormat=png",
+    "gender": "masculine",
+    "elevenlabs_voice_id": "DpuzU7c2N5AA07HJWO9A"
   }
 ]

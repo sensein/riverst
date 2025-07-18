@@ -7,6 +7,8 @@ import uuid
 import os
 from pathlib import Path
 from typing import Dict, Optional, Any
+import uvloop
+import math
 
 import uvicorn
 from fastapi import BackgroundTasks, FastAPI, Request, Query, Body
@@ -23,13 +25,16 @@ from fastapi.staticfiles import StaticFiles
 
 # Load environment variables
 load_dotenv(override=True)
+asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 app = FastAPI()
 
 BASE_SESSION_DIR = Path(__file__).parent
 
 (BASE_SESSION_DIR / "sessions").mkdir(exist_ok=True)
-app.mount("/sessions", StaticFiles(directory=BASE_SESSION_DIR / "sessions"), name="sessions")
+app.mount(
+    "/sessions", StaticFiles(directory=BASE_SESSION_DIR / "sessions"), name="sessions"
+)
 
 # Enable CORS for all origins
 app.add_middleware(
@@ -68,8 +73,14 @@ async def create_session(config: dict = Body(...)) -> JSONResponse:
     """
     if not config.get("user_id"):
         return JSONResponse(status_code=400, content={"error": "User ID is required"})
-    user_id = config['user_id']
-    session_id = user_id + "__" + datetime.datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + str(uuid.uuid4())[:8]
+    user_id = config["user_id"]
+    session_id = (
+        user_id
+        + "__"
+        + datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        + "_"
+        + str(uuid.uuid4())[:8]
+    )
     session_dir = BASE_SESSION_DIR / Path("sessions") / session_id
     session_dir.mkdir(parents=True, exist_ok=True)
 
@@ -111,7 +122,9 @@ async def offer(
         return JSONResponse(status_code=404, content={"error": "Config file not found"})
     except json.JSONDecodeError as e:
         logger.error(f"Error decoding config file: {e}")
-        return JSONResponse(status_code=400, content={"error": "Invalid config file format"})
+        return JSONResponse(
+            status_code=400, content={"error": "Invalid config file format"}
+        )
 
     if pc_id and pc_id in pcs_map:
         pipecat_connection = pcs_map[pc_id]
@@ -130,7 +143,9 @@ async def offer(
             logger.info(f"Closing connection for pc_id: {webrtc_connection.pc_id}")
             pcs_map.pop(webrtc_connection.pc_id, None)
 
-        background_tasks.add_task(run_bot, pipecat_connection, config=config, session_dir=str(session_dir))
+        background_tasks.add_task(
+            run_bot, pipecat_connection, config=config, session_dir=str(session_dir)
+        )
 
     answer = pipecat_connection.get_answer()
     pcs_map[answer["pc_id"]] = pipecat_connection
@@ -146,6 +161,7 @@ async def health_check() -> JSONResponse:
     """
     return JSONResponse({"status": "ok"})
 
+
 @app.get("/avatars")
 async def get_avatars() -> JSONResponse:
     """Returns a list of available avatars."""
@@ -156,41 +172,47 @@ async def get_avatars() -> JSONResponse:
         return JSONResponse(content=avatars)
     except Exception as e:
         logger.error(f"Error loading avatars: {e}")
-        return JSONResponse(status_code=500, content={"error": "Unable to load avatars"})
-        
+        return JSONResponse(
+            status_code=500, content={"error": "Unable to load avatars"}
+        )
+
+
 @app.get("/books")
 async def get_books() -> JSONResponse:
     """Returns a list of available books for vocabulary tutoring."""
     books_dir = BASE_SESSION_DIR / "assets" / "books"
     if not books_dir.is_dir():
         logger.error("Books directory not found")
-        return JSONResponse(status_code=404, content={"error": "Books directory not found"})
-    
+        return JSONResponse(
+            status_code=404, content={"error": "Books directory not found"}
+        )
+
     try:
         books = []
         for book_dir in books_dir.iterdir():
             if book_dir.is_dir() and (book_dir / "paginated_story.json").exists():
                 book_name = book_dir.name
                 path = f"./assets/books/{book_name}/paginated_story.json"
-                
+
                 # Try to read the book title from the JSON file
                 try:
-                    with (book_dir / "paginated_story.json").open("r", encoding="utf-8") as f:
+                    with (book_dir / "paginated_story.json").open(
+                        "r", encoding="utf-8"
+                    ) as f:
                         book_data = json.load(f)
-                        title = book_data.get("reading_context", {}).get("book_title", book_name)
-                except:
+                        title = book_data.get("reading_context", {}).get(
+                            "book_title", book_name
+                        )
+                except Exception:
                     title = book_name.replace("_", " ").title()
-                
-                books.append({
-                    "id": book_name,
-                    "title": title,
-                    "path": path
-                })
-        
+
+                books.append({"id": book_name, "title": title, "path": path})
+
         return JSONResponse(content=books)
     except Exception as e:
         logger.error(f"Error loading books: {e}")
         return JSONResponse(status_code=500, content={"error": "Unable to load books"})
+
 
 @app.get("/activities")
 async def get_activities() -> JSONResponse:
@@ -206,7 +228,9 @@ async def get_activities() -> JSONResponse:
         return JSONResponse(content=data)
     except Exception as e:
         logger.error(f"Error loading activities: {e}")
-        return JSONResponse(status_code=500, content={"error": "Unable to load activities"})
+        return JSONResponse(
+            status_code=500, content={"error": "Unable to load activities"}
+        )
 
 
 @app.get("/activities/settings/{settings_path:path}")
@@ -223,7 +247,9 @@ async def get_activity_settings(settings_path: str) -> JSONResponse:
 
     if not file_path.is_file():
         logger.error(f"Settings file not found: {file_path}")
-        return JSONResponse(status_code=404, content={"error": "Settings file not found"})
+        return JSONResponse(
+            status_code=404, content={"error": "Settings file not found"}
+        )
 
     try:
         with file_path.open("r", encoding="utf-8") as f:
@@ -233,39 +259,45 @@ async def get_activity_settings(settings_path: str) -> JSONResponse:
         has_google = os.getenv("GOOGLE_API_KEY") is not None
 
         options_props: Dict[str, Any] = (
-            config.get("properties", {})
-                  .get("options", {})
-                  .get("properties", {})
+            config.get("properties", {}).get("options", {}).get("properties", {})
         )
 
         for key, model_list in {
             "llm_type": ["openai", "openai_realtime_beta", "gemini"],
             "stt_type": ["openai"],
-            "tts_type": ["openai"]
+            "tts_type": ["openai"],
         }.items():
             if key in options_props and "enum" in options_props[key]:
                 allowed = options_props[key]["enum"]
                 filtered = [
-                    m for m in allowed
+                    m
+                    for m in allowed
                     if not (
-                        (not has_openai and m in ["openai", "openai_realtime_beta"]) or
-                        (not has_google and m == "gemini")
+                        (not has_openai and m in ["openai", "openai_realtime_beta"])
+                        or (not has_google and m == "gemini")
                     )
                 ]
                 options_props[key]["enum"] = filtered
 
-                if "default" in options_props[key] and options_props[key]["default"] not in filtered:
+                if (
+                    "default" in options_props[key]
+                    and options_props[key]["default"] not in filtered
+                ):
                     if filtered:
                         options_props[key]["default"] = filtered[0]
                     else:
-                        logger.warning(f"No valid options left for '{key}' after filtering.")
+                        logger.warning(
+                            f"No valid options left for '{key}' after filtering."
+                        )
                         del options_props[key]
 
         return JSONResponse(content=config)
 
     except Exception as e:
         logger.error(f"Error reading or processing settings file: {e}")
-        return JSONResponse(status_code=500, content={"error": "Unable to load settings"})
+        return JSONResponse(
+            status_code=500, content={"error": "Unable to load settings"}
+        )
 
 
 @app.get("/api/sessions")
@@ -285,10 +317,13 @@ async def list_sessions() -> JSONResponse:
         wav_files = list(audio_dir.glob("*.wav"))
         if not wav_files:
             continue
-        all_json_exist = all((json_dir / (wav_file.stem + ".json")).exists() for wav_file in wav_files)
+        all_json_exist = all(
+            (json_dir / (wav_file.stem + ".json")).exists() for wav_file in wav_files
+        )
         if all_json_exist:
             valid_session_ids.append(session_dir.name)
     return JSONResponse(content=valid_session_ids)
+
 
 @app.get("/api/session_config/{session_id}")
 async def get_session_config(session_id: str) -> JSONResponse:
@@ -301,8 +336,6 @@ async def get_session_config(session_id: str) -> JSONResponse:
         config = json.load(f)
     return JSONResponse(content=config)
 
-
-import math
 
 def clean_for_json(obj):
     if isinstance(obj, dict):
@@ -323,7 +356,7 @@ async def get_session_data(session_id: str) -> JSONResponse:
 
     if not (audio_dir.is_dir() and json_dir.is_dir()):
         return JSONResponse(content={"error": "Session not found"}, status_code=404)
-    
+
     results = []
     # List all json files in the json dir
     for json_file in sorted(json_dir.glob("*.json")):
@@ -334,7 +367,7 @@ async def get_session_data(session_id: str) -> JSONResponse:
         try:
             with open(json_file, "r") as f:
                 data = json.load(f)
-        except Exception as e:
+        except Exception:
             continue  # skip unreadable files
         # Return audio file as relative path (or signed URL if preferred)
         data["audio_file"] = f"/sessions/{session_id}/audios/{base_name}.wav"
@@ -349,10 +382,10 @@ async def get_session_data(session_id: str) -> JSONResponse:
         except Exception:
             metrics = {"error": "Could not read metrics_summary.json"}
 
-    return JSONResponse(content=clean_for_json({
-        "data": results,
-        "metrics_summary": metrics
-    }))
+    return JSONResponse(
+        content=clean_for_json({"data": results, "metrics_summary": metrics})
+    )
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -369,9 +402,15 @@ async def lifespan(app: FastAPI):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="WebRTC demo server")
-    parser.add_argument("--host", default="localhost", help="Server hostname (default: localhost)")
-    parser.add_argument("--port", type=int, default=7860, help="Port number (default: 7860)")
-    parser.add_argument("--verbose", "-v", action="count", help="Enable verbose logging")
+    parser.add_argument(
+        "--host", default="localhost", help="Server hostname (default: localhost)"
+    )
+    parser.add_argument(
+        "--port", type=int, default=7860, help="Port number (default: 7860)"
+    )
+    parser.add_argument(
+        "--verbose", "-v", action="count", help="Enable verbose logging"
+    )
     args = parser.parse_args()
 
     logger.remove(0)

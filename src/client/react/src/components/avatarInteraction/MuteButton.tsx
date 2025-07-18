@@ -1,10 +1,10 @@
 // src/components/MuteButton.tsx
 import { FloatButton } from 'antd'
 import { AudioOutlined, AudioMutedOutlined } from '@ant-design/icons'
-import { useRTVIClientMicControl } from "@pipecat-ai/client-react";
+import { usePipecatClientMicControl } from "@pipecat-ai/client-react";
 
 export default function MuteButton() {
-  const { enableMic, isMicEnabled } = useRTVIClientMicControl();
+  const { enableMic, isMicEnabled } = usePipecatClientMicControl();
 
   const toggleMic = async () => {
     await enableMic(!isMicEnabled)

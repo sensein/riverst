@@ -5,7 +5,6 @@ import { PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Html } from '@react-three/drei';
-import { useRTVIClientTransportState } from '@pipecat-ai/client-react'
 
 interface CameraSettings {
   position: [number, number, number];
@@ -78,18 +77,16 @@ const numberToBlendShape: { [key: number]: string } = {
 };
 
 interface AvatarRendererProps {
-  cameraType: 'full_body' | 'half_body' | 'headshot';
+  cameraType: "full" | "mid" | "upper" | "head";
   avatarUrl: string;
   bodyAnimation?: string | null;
-  onAnimationEnd?: () => void;
   currentViseme?: number | null;
   interactionState?: 'speaking' | 'listening' | null;
 }
 
-const AvatarScene: React.FC<AvatarRendererProps> = ({ 
-    avatarUrl, 
-    bodyAnimation, 
-    onAnimationEnd,
+const AvatarScene: React.FC<AvatarRendererProps> = ({
+    avatarUrl,
+    bodyAnimation,
     cameraType,
     currentViseme,
     interactionState,
@@ -108,8 +105,6 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
   const currentBlendValuesRef = useRef<{ [key: string]: number }>({});
   const targetBlendValuesRef = useRef<{ [key: string]: number }>({});
 
-  const transportState = useRTVIClientTransportState()
-  
   const cameraSettings = useMemo(() => {
     switch (cameraType) {
       case 'half_body':
@@ -119,7 +114,7 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
       default:
         return FULL_BODY_CAMERA_SETTINGS;
     }
-  }, [cameraType]);  
+  }, [cameraType]);
 
   useEffect(() => {
     new GLTFLoader().load(avatarUrl, (gltf) => {
@@ -146,22 +141,22 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
 
   useEffect(() => {
     if (currentViseme === null) return;
-  
+
     const visemeName = numberToBlendShape[currentViseme];
     const isTeethMoving = teethMovingVisemes.includes(visemeName);
-  
+
     // Update target blendshape values
     Object.keys(blendShapeIntensities).forEach((shape) => {
       const intensity = blendShapeIntensities[shape] ?? 0.5;
       targetBlendValuesRef.current[shape] = visemeName === shape ? intensity : 0;
       // targetBlendValuesRef.current[shape] = visemeName === shape ? 0.6 : 0;
     });
-  
+
     // Control mouthOpen for teeth
     targetBlendValuesRef.current['mouthOpen'] = isTeethMoving ? 1 : 0;
   }, [currentViseme]);
-    
-  
+
+
 
   const loadIdleAnimation = useCallback((custom_number: number | null = null) => {
     const idleNumber = custom_number !== null
@@ -204,8 +199,8 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
         loadIdleAnimation();
       }
     }
-  }, [isLoaded, interactionState, loadIdleAnimation]);  
-  
+  }, [isLoaded, interactionState, loadIdleAnimation]);
+
   const playBodyAnimation = useCallback((type: string) => {
     if (!mixerRef.current) return;
     // console.log("Loading body animation: ", type);
@@ -231,7 +226,7 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
       // more available animations: https://github.com/readyplayerme/animation-library/tree/master
     }
 
-    new GLTFLoader().load(animationUrl, (gltf) => {    
+    new GLTFLoader().load(animationUrl, (gltf) => {
       const clip = gltf.animations[0];
       const newBodyAction = mixerRef.current!.clipAction(clip);
 
@@ -259,10 +254,10 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         // console.log('Tab is visible again — fixing blendshape glitch');
-        
+
         // Reset delta clock to avoid huge jump
         clockRef.current = new THREE.Clock();
-  
+
         // Reapply last known blendshape values to prevent visual glitch
         Object.values(morphTargetMeshesRef.current).forEach((mesh) => {
           const dict = mesh.morphTargetDictionary!;
@@ -276,11 +271,11 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
         });
       }
     };
-  
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
-  
+
 
   const onAnimationFinished = useCallback((e: THREE.Event) => {
     if (e.action === idleActionRef.current && !isBodyPlaying.current) {
@@ -292,39 +287,34 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
       bodyActionRef.current = null;
 
       loadIdleAnimation();
-
-      if (onAnimationEnd) {
-        // console.log('[AvatarRenderer] Animation ended — resetting trigger');
-        onAnimationEnd();
-      }
     }
-  }, [loadIdleAnimation, onAnimationEnd]);
+  }, [loadIdleAnimation]);
 
   useFrame(() => {
     const delta = clockRef.current.getDelta();
-  
+
     // Animate avatar
     mixerRef.current?.update(delta);
-  
+
     // Interpolate viseme blendshapes
     Object.entries(morphTargetMeshesRef.current).forEach(([meshName, mesh]) => {
       const dict = mesh.morphTargetDictionary!;
       const influences = mesh.morphTargetInfluences!;
-  
+
       Object.keys(targetBlendValuesRef.current).forEach((shape) => {
         const index = dict[shape];
         if (index === undefined) return;
-  
+
         const target = targetBlendValuesRef.current[shape] || 0;
         const current = currentBlendValuesRef.current[shape] || 0;
-  
+
         const newVal = THREE.MathUtils.lerp(current, target, delta * 8);
         currentBlendValuesRef.current[shape] = newVal;
         influences[index] = newVal;
       });
     });
   });
-  
+
   return (
     <>
       <PerspectiveCamera makeDefault position={cameraSettings.position} fov={cameraSettings.fov} />
@@ -333,12 +323,12 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
       <color attach="background" args={['#ececec']} />
 
       {/* Ambient light to brighten everything uniformly */}
-      <ambientLight intensity={transportState === 'ready' ? 1.2 : 0} />
+      <ambientLight intensity={1.2} />
 
       {/* Main directional light (like sunlight) */}
       <directionalLight
         position={[5, 10, 5]}
-        intensity={transportState === 'ready' ? 1 : 0}
+        intensity={1.2}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
@@ -366,14 +356,14 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
         </mesh>
       )}
 
-      {/* Ground plane with soft white material 
+      {/* Ground plane with soft white material
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1, 0]} receiveShadow>
           <planeGeometry args={[10, 10]} />
           <meshStandardMaterial color="#ffffff" />
         </mesh>
       */}
 
-      {/* 
+      {/*
         {currentViseme !== null && (
           <Html position={[0.5, 2.5, -2.5]}>
             <div style={{ background: 'white', padding: '4px 8px', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold' }}>
@@ -389,7 +379,6 @@ const AvatarScene: React.FC<AvatarRendererProps> = ({
 const AvatarRenderer: React.FC<AvatarRendererProps> = ({
   avatarUrl,
   bodyAnimation,
-  onAnimationEnd,
   cameraType,
   currentViseme,
   interactionState,
@@ -399,7 +388,6 @@ const AvatarRenderer: React.FC<AvatarRendererProps> = ({
       <AvatarScene
         avatarUrl={avatarUrl}
         bodyAnimation={bodyAnimation}
-        onAnimationEnd={onAnimationEnd}
         cameraType={cameraType}
         currentViseme={currentViseme}
         interactionState={interactionState}

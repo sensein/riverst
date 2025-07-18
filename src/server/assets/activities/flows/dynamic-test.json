@@ -214,7 +214,7 @@
             "type": "function",
             "handler": "get_variable_action_handler",
             "variable_name": "number_i_am_thinking_of",
-            "source": "session_variables" 
+            "source": "session_variables"
           }
         ]
       },

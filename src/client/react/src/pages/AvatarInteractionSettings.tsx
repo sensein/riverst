@@ -123,9 +123,9 @@ export default function AvatarInteractionSettings() {
 
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
           <div style={{ textAlign: 'center', flex: 1 }}>
-            <QRCode 
-              value={window.location.origin + sessionLink} 
-              size={160} 
+            <QRCode
+              value={window.location.origin + sessionLink}
+              size={160}
               icon={Logo}
               iconSize={60}
             />

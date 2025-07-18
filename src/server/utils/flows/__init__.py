@@ -1,29 +1,32 @@
 """
-Tools for managing flow configurations and state. Creates dynamic nodes to use in pipecat flows, which check whether tasks have been completed before moving to the next stage.
+Tools for managing flow configurations and state. Creates dynamic nodes to use in pipecat flows,
+which check whether tasks have been completed before moving to the next stage.
 
 Key functions:
 - load_config: Loads primary JSON file and handles all validation, returns a tuple of flow and state
 - load_session_variables: Loads task variables from a JSON file (ex: data regarding book for reading session)
 
 Task Configuration File:
-This is the primary configuration file that defines the flow, which exists across sessions. It contains two main sections:
+This is the primary configuration file that defines the flow, which exists across sessions.
+It contains two main sections:
 
 1. Flow Config: Node definitions and transition functions between conversation states
 2. State Config: Checklist items and information to be collected during the flow, placed in flow_manager state
 
 Session Configuration File:
-The session configuration file contains task variables that are used in the flow for a particular session. This file is loaded separately.
+The session configuration file contains task variables that are used in the flow for a particular session.
+This file is loaded separately.
 
 1. Session Variables: Task variables that are used in the flow for a particular session
-    - example: reading context, user information, etc. 
+    - example: reading context, user information, etc.
 
 
 Example structure of a config file:
 {
     "name": "example_flow",
-    
+
     "description": "Example flow description",
-    
+
     "flow_config": {
         "initial_node": "start_node",
         "nodes": {
@@ -46,7 +49,7 @@ Example structure of a config file:
                 "checklist_incomplete_message": "Missing information: {0}",
                 "checklist_complete_message": "All information collected.",
                 "next_stage": "next_stage_name"
-                
+
                 # OR with dynamic transitions:
                 "transition_logic": {
                     "conditions": [
@@ -71,7 +74,4 @@ Example structure of a config file:
 
 from .loaders import load_config, load_session_variables
 
-__all__ = [
-    'load_config',
-    'load_session_variables'
-]
+__all__ = ["load_config", "load_session_variables"]

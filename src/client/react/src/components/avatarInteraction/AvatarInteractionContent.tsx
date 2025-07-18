@@ -6,113 +6,49 @@ import React, {
     useRef,
   } from 'react'
   import {
-    useRTVIClientTransportState,
+    usePipecatClientTransportState,
     useRTVIClientEvent,
-    useRTVIClient,
-    RTVIClientAudio,
+    usePipecatClient,
+    PipecatClientAudio,
   } from '@pipecat-ai/client-react'
   import { RTVIEvent, Participant } from '@pipecat-ai/client-js'
-  
+
   // assuming you’ve moved these out into their own files:
   import FloatGroup from './FloatGroup'
-  import BotVideo from './BotVideo'
   import SubtitleOverlay from './SubtitleOverlay'
-  
+  import TalkingHeadWrapper from './TalkingHeadWrapper'
+  import axios from 'axios';
+
   interface Props {
-    cameraType: 'full_body' | 'half_body' | 'headshot'
+    cameraType: 'full' | 'mid' | 'upper' | 'head'
     videoFlag: boolean
     subtitlesEnabled: { user: boolean; bot: boolean }
   }
-  
+
   export default function AvatarInteractionContent({
     cameraType: initialCameraType,
     videoFlag,
     subtitlesEnabled: initialSubtitlesEnabled,
-  }: Props) {  
+  }: Props) {
     // ---- state derived from props ----
     const [cameraType, setCameraType] = useState(initialCameraType)
     const [subtitlesEnabled] = useState(initialSubtitlesEnabled)
-  
+
     // ---- internal interaction state ----
+    const client = usePipecatClient()
+    const transportState = usePipecatClientTransportState()
+
     const [interactionPhase, setInteractionPhase] = useState<
       'mounting' | 'ready'
     >('mounting')
-    const [animationTrigger, setAnimationTrigger] = useState<string | null>(
-      null
-    )
-    const [currentViseme, setCurrentViseme] = useState(0)
-    const [interactionState, setInteractionState] = useState<
-      'speaking' | 'listening' | null
-    >(null)
-  
+
     // ---- subtitles data ----
     const [subtitleList, setSubtitleList] = useState<
       { id: number; text: string; speaker: 'user' | 'bot' }[]
     >([])
     const subtitleIdRef = useRef(0)
     const SUBTITLE_DURATION_MS = 6000
-  
-    // ---- viseme buffering logic ----
-    const visemeTimer = useRef<NodeJS.Timeout | null>(null)
-    const startTimeRef = useRef<number | null>(null)
-    const visemeBufferRef = useRef<{ duration: number; visemes: number[] }[]>(
-      []
-    )
-    const usingRealVisemesRef = useRef(false)
-    const timeoutHandlesRef = useRef<NodeJS.Timeout[]>([])
-  
-    const client = useRTVIClient()
-    const transportState = useRTVIClientTransportState()
 
-    const clearAllTimeouts = useCallback(() => {
-      timeoutHandlesRef.current.forEach(clearTimeout)
-      timeoutHandlesRef.current = []
-    }, [])
-  
-    const scheduleVisemeBuffer = useCallback(() => {
-      const buffer = visemeBufferRef.current
-      const t0 = startTimeRef.current!
-      const elapsed = performance.now() - t0
-  
-      let acc = 0,
-        idx = 0
-      while (
-        idx < buffer.length &&
-        acc + buffer[idx].duration * 1000 < elapsed
-      ) {
-        acc += buffer[idx].duration * 1000
-        idx++
-      }
-      if (idx >= buffer.length) return
-  
-      const { duration, visemes } = buffer[idx]
-      setCurrentViseme(visemes[0])
-  
-      const timeInto = elapsed - acc
-      let offset = duration * 1000 - timeInto
-      for (let j = idx + 1; j < buffer.length; j++) {
-        const { duration: d, visemes: vs } = buffer[j]
-        const h = setTimeout(() => setCurrentViseme(vs[0]), offset)
-        timeoutHandlesRef.current.push(h)
-        offset += d * 1000
-      }
-      // reset at end
-      setCurrentViseme(0)
-    }, [])
-  
-    const startRandomVisemeLoop = useCallback(() => {
-      visemeTimer.current = setInterval(() => {
-        setCurrentViseme(Math.floor(Math.random() * 22))
-      }, 120)
-    }, [])
-  
-    const stopRandomVisemeLoop = useCallback(() => {
-      if (visemeTimer.current) {
-        clearInterval(visemeTimer.current)
-        visemeTimer.current = null
-      }
-    }, [])
-  
     const addSubtitle = useCallback(
       (text: string, speaker: 'user' | 'bot') => {
         const id = subtitleIdRef.current++
@@ -125,21 +61,28 @@ import React, {
       },
       []
     )
-  
+
     const isConnectingRef = useRef(false)
     const retryCountRef = useRef(0)
+    const hasConnectedOnceRef = useRef(false)
 
     useEffect(() => {
       let stuckTimeout: NodeJS.Timeout | null = null
 
       const connectIfReady = async () => {
-        console.log("connectIfReady", interactionPhase, transportState)
-        if (interactionPhase === 'ready' && transportState === 'disconnected' && !isConnectingRef.current) {
-          console.log("✅ connecting")
+        // Connect only ONCE when avatar is ready and never again automatically
+        if (
+          interactionPhase === 'ready' &&
+          transportState === 'disconnected' &&
+          !hasConnectedOnceRef.current &&
+          !isConnectingRef.current
+        ) {
+          // console.log("First-time connect attempt")
           isConnectingRef.current = true
           retryCountRef.current = 0
           try {
             await client?.connect()
+            hasConnectedOnceRef.current = true  // Mark as done
           } catch (err) {
             console.error("❌ Connection failed:", err)
           } finally {
@@ -150,7 +93,7 @@ import React, {
 
       connectIfReady()
 
-      // handle stuck in initializing
+      // Optional: attempt recovery from stuck 'initializing'
       if (
         interactionPhase === 'ready' &&
         transportState === 'initializing' &&
@@ -161,7 +104,8 @@ import React, {
           console.warn("🚨 Still initializing, disconnecting to trigger retry.")
           retryCountRef.current += 1
           await client?.disconnect()
-        }, 1500) 
+          hasConnectedOnceRef.current = false // Allow retry
+        }, 1500)
       }
 
       return () => {
@@ -169,62 +113,7 @@ import React, {
       }
     }, [interactionPhase, transportState, client])
 
-  
-    // event handlers
-    useRTVIClientEvent(RTVIEvent.BotStartedSpeaking, () => {
-      startTimeRef.current = performance.now()
-      usingRealVisemesRef.current = false
-      visemeBufferRef.current = []
-      clearAllTimeouts()
-      setInteractionState('speaking')
-      if (!animationTrigger) setAnimationTrigger('idle')
-      startRandomVisemeLoop()
-    })
-  
-    useRTVIClientEvent(RTVIEvent.BotStoppedSpeaking, () => {
-      startTimeRef.current = null
-      usingRealVisemesRef.current = false
-      visemeBufferRef.current = []
-      clearAllTimeouts()
-      stopRandomVisemeLoop()
-      setCurrentViseme(0)
-      setInteractionState(null)
-    })
-  
-    useRTVIClientEvent(RTVIEvent.UserStartedSpeaking, () => {
-      setInteractionState('listening')
-      if (!animationTrigger) setAnimationTrigger('idle')
-    })
-  
-    useRTVIClientEvent(RTVIEvent.UserStoppedSpeaking, () => {
-      setInteractionState(null)
-    })
-  
-    useRTVIClientEvent(
-      RTVIEvent.ServerMessage,
-      useCallback(
-        (msg) => {
-          if (msg.type === 'animation-event') {
-            setAnimationTrigger(msg.payload.animation_id)
-          }
-          if (msg.type === 'visemes-event') {
-            visemeBufferRef.current.push(
-              ...(msg.payload as { duration: number; visemes: number[] }[])
-            )
-            if (startTimeRef.current != null) {
-              if (!usingRealVisemesRef.current) {
-                usingRealVisemesRef.current = true
-                stopRandomVisemeLoop()
-              }
-              clearAllTimeouts()
-              scheduleVisemeBuffer()
-            }
-          }
-        },
-        [clearAllTimeouts, scheduleVisemeBuffer, stopRandomVisemeLoop]
-      )
-    )
-  
+
     useRTVIClientEvent(
       RTVIEvent.UserTranscript,
       useCallback(
@@ -236,9 +125,9 @@ import React, {
         [subtitlesEnabled.user, addSubtitle]
       )
     )
-  
+
     useRTVIClientEvent(
-      RTVIEvent.BotTranscript,
+      RTVIEvent.BotTtsText,
       useCallback(
         (data) => {
           if (subtitlesEnabled.bot) {
@@ -248,28 +137,102 @@ import React, {
         [subtitlesEnabled.bot, addSubtitle]
       )
     )
-  
+
+    const videoRef = useRef<HTMLVideoElement>(null)
+    const [showVideo, setShowVideo] = useState(false)
+
+    useRTVIClientEvent(
+      RTVIEvent.TrackStarted,
+      useCallback((track: MediaStreamTrack, participant?: Participant) => {
+        if (participant?.local) return
+        if (track.kind === 'video' && videoRef.current) {
+          videoRef.current.srcObject = new MediaStream([track])
+          setShowVideo(true)
+        }
+        if (track.kind === 'audio') {
+          setAudioTrack(track)
+        }
+      }, [])
+    )
+
+    useRTVIClientEvent(
+      RTVIEvent.TrackStopped,
+      useCallback((track: MediaStreamTrack, participant?: Participant) => {
+        if (participant?.local) return
+        if (track.kind === 'video' && videoRef.current) {
+          setShowVideo(false)
+        }
+      }, [])
+    )
+
+    const [myAvatar, setMyAvatar] = useState<string | null>(null);
+    const [audioTrack, setAudioTrack] = useState<MediaStreamTrack | null>(null);
+    const delay = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
+
+    useEffect(() => {
+      const fetchAvatars = async () => {
+        try {
+          const response = await axios.get('http://localhost:7860/avatars');
+          const avatars = response.data;
+          if (avatars.length > 0) {
+            setMyAvatar(avatars[0]);
+          }
+        } catch (error) {
+          console.error('Failed to fetch avatars:', error);
+        }
+      };
+
+      const stored = localStorage.getItem('selectedAvatar');
+      if (stored) {
+        try {
+          setMyAvatar(JSON.parse(stored));
+        } catch (err) {
+          console.error('Failed to parse avatar from localStorage:', err);
+        }
+      } else {
+        fetchAvatars();
+      }
+    }, []);
+
+
     return (
       <div className="app">
-        <FloatGroup 
+        <FloatGroup
           videoFlag={videoFlag} />
-        <BotVideo
+        <TalkingHeadWrapper
+          avatar={myAvatar}
           cameraType={cameraType}
-          setCameraType={setCameraType}
-          animationTrigger={animationTrigger}
-          setAnimationTrigger={setAnimationTrigger}
-          currentViseme={currentViseme}
-          interactionState={interactionState}
+          audioTrack={audioTrack}
           onAvatarMounted={() => {
             if (interactionPhase === 'mounting') {
               setInteractionPhase('ready')
             }
           }}
-          videoFlag={videoFlag}
         />
         <SubtitleOverlay subtitles={subtitleList} />
-        <RTVIClientAudio />
+        <PipecatClientAudio />
+        {videoFlag && (
+          <video
+            ref={videoRef}
+            autoPlay
+            muted
+            playsInline
+            style={{
+              position: 'absolute',
+              top: 20,
+              left: 20,
+              width: 320,
+              height: 240,
+              borderRadius: 16,
+              backgroundColor: 'black',
+              border: '1px solid black',
+              zIndex: 6,
+              boxShadow: '0 0 10px rgba(0,0,0,0.3)',
+              opacity: showVideo && !!client?.isCamEnabled ? 1 : 0,
+              transition: 'opacity 0.3s ease-in-out',
+            }}
+          />
+        )}
       </div>
     )
 }
-  

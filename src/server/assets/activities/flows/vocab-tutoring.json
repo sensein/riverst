@@ -32,7 +32,7 @@
             }
           ],
           "default_target_node": "vocab"
-          
+
         }
       },
       "vocab": {
