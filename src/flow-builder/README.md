@@ -216,7 +216,7 @@ Here is an example of a generated handler function:
   },
   "flow_config": {
     "initial_node": "warm_up",
-    "nodes": { 
+    "nodes": {
       "warm_up": {
         "task_messages": [ ... ],
         "functions": [

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Dropdown, Avatar, Spin } from 'antd';
 import {
   UserOutlined,
@@ -11,6 +11,7 @@ const UserProfileDropdown: React.FC = () => {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const fetchSessions = () => {
@@ -18,6 +19,10 @@ const UserProfileDropdown: React.FC = () => {
         .then((res) => res.json())
         .then((data) => {
           setSessions(data);
+          if (data.length > 0 && intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
         })
         .catch(() => {
           setSessions([]);
@@ -28,10 +33,12 @@ const UserProfileDropdown: React.FC = () => {
     };
 
     fetchSessions(); // Initial fetch
-    const intervalId = setInterval(fetchSessions, 5000); // Poll every 5s
+    intervalRef.current = setInterval(fetchSessions, 5000); // Poll every 5s
 
     return () => {
-      clearInterval(intervalId);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
     };
   }, []);
 

@@ -7,8 +7,14 @@ import AvatarRenderer from '../components/avatarInteraction/AvatarRenderer';
 
 const { Title } = Typography;
 
+type Avatar = {
+  id: string;
+  name: string;
+  modelUrl: string;
+};
+
 const AvatarCreatorPage = () => {
-  const [avatars, setAvatars] = useState([]);
+  const [avatars, setAvatars] = useState<Avatar[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,7 +31,7 @@ const AvatarCreatorPage = () => {
     fetchAvatars();
   }, []);
 
-  const handleAvatarSelect = (avatar) => {
+  const handleAvatarSelect = (avatar: Avatar): void => {
     localStorage.setItem('selectedAvatar', JSON.stringify(avatar));
     console.log('Selected Avatar:', localStorage.getItem('selectedAvatar'));
     message.success(`Avatar selected`);
@@ -57,8 +63,11 @@ const AvatarCreatorPage = () => {
                 onClick={() => handleAvatarSelect(avatar)}
                 style={{ cursor: 'pointer' }}
               >
-                <div style={{ height: '300px', overflow: 'hidden' }}>
-                  <AvatarRenderer avatarUrl={avatar.modelUrl} cameraType="headshot" />
+                <div style={{ height: '600px' }}>
+                  <AvatarRenderer
+                    avatarUrl={avatar.modelUrl}
+                    cameraType="full"
+                  />
                 </div>
               </Card>
             </Col>

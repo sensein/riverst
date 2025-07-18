@@ -1,0 +1,37 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-merge-conflict
+
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+      - id: black
+        language_version: python3
+
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.56.0
+    hooks:
+      - id: eslint
+        name: eslint
+        entry: eslint
+        language: node
+        types: [javascript, jsx, ts, tsx]
+        files: ^src/client/react/
+
+  - repo: local
+    hooks:
+      - id: prettier
+        name: Run Prettier
+        entry: npm run format
+        language: system
+        types: [javascript, jsx, ts, tsx, json, css, scss]
+        files: ^src/client/react/
