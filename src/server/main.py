@@ -403,7 +403,7 @@ async def lifespan(app: FastAPI):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="WebRTC demo server")
     parser.add_argument(
-        "--host", default="localhost", help="Server hostname (default: localhost)"
+        "--host", default="0.0.0.0", help="Server hostname (default: 0.0.0.0)"
     )
     parser.add_argument(
         "--port", type=int, default=7860, help="Port number (default: 7860)"

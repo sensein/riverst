@@ -2,7 +2,7 @@
 
 A FastAPI server.
 
-## Running the Server
+## Running the server
 
 1. Set up and activate your virtual environment:
 
@@ -48,5 +48,14 @@ python3 -m piper.http_server --model <path_to_voices_folder>/en_GB-alan-medium.o
 6. Run the server:
 
 ```bash
-python server.py
+python main.py
+```
+
+
+
+## Alternative approache to run the server script with Docker
+
+```bash
+docker build --no-cache -t fastapi-server .
+docker run -p 7860:7860 --env-file .env fastapi-server
 ```
