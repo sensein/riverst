@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { Spin, Alert, Modal, Button, QRCode, Typography, Divider, Tooltip } from 'antd';
 import { CopyOutlined } from '@ant-design/icons';
-import Logo from '/logo/riverst_black.svg';
 
 import axios from 'axios';
 import SettingsForm from '../components/SettingsForm';
@@ -11,20 +10,24 @@ const { Paragraph, Text } = Typography;
 
 export default function AvatarInteractionSettings() {
   const location = useLocation();
-  const settingsUrl = (location.state as any)?.settingsUrl as string | undefined;
-  const [schema, setSchema] = useState<any>(null);
+  interface LocationState {
+    settingsUrl?: string;
+  }
+  const settingsUrl = (location.state as LocationState)?.settingsUrl;
+
+  const [schema, setSchema] = useState<object | null>(null);
   const navigate = useNavigate();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [sessionLink, setSessionLink] = useState('');
-  const [sessionPayload, setSessionPayload] = useState<any>(null);
+  const [sessionPayload, setSessionPayload] = useState<object | null>(null);
 
   // fetch the form schema from the passed-in URL
   useEffect(() => {
     if (!settingsUrl) return;
     const url = settingsUrl.startsWith('http')
       ? settingsUrl
-      : `http://localhost:7860/${settingsUrl}`;
+      : `http://${window.location.hostname}:7860/${settingsUrl}`;
 
     axios
       .get(url)
@@ -32,9 +35,9 @@ export default function AvatarInteractionSettings() {
       .catch(err => console.error('Failed to load schema:', err));
   }, [settingsUrl]);
 
-  const onSubmit = async (values: any) => {
+  const onSubmit = async (values: object) => {
     try {
-      let avatar: any = null;
+      let avatar: object | null = null;
       const stored = localStorage.getItem('selectedAvatar');
 
       if (stored) {
@@ -50,7 +53,7 @@ export default function AvatarInteractionSettings() {
 
       if (!avatar) {
         try {
-          const response = await axios.get('http://localhost:7860/avatars');
+          const response = await axios.get(`http://${window.location.hostname}:7860/avatars`);
           const avatars = response.data;
           if (avatars.length > 0) {
             avatar = avatars[0];
@@ -70,7 +73,7 @@ export default function AvatarInteractionSettings() {
 
       console.log(fullPayload);
 
-      const res = await axios.post('http://localhost:7860/api/session', fullPayload);
+      const res = await axios.post(`http://${window.location.hostname}:7860/api/session`, fullPayload);
       const sessionId: string = res.data.session_id;
       const link = `/avatar-interaction/${sessionId}`;
 
@@ -126,7 +129,7 @@ export default function AvatarInteractionSettings() {
             <QRCode
               value={window.location.origin + sessionLink}
               size={160}
-              icon={Logo}
+              icon='/logo/riverst_black.svg'
               iconSize={60}
             />
           </div>

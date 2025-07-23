@@ -19,3 +19,12 @@ npm run dev
 ```
 
 4. Visit http://localhost:5173 in your browser.
+
+
+
+## Alternative approache to run the client script with Docker
+
+```bash
+docker build --no-cache -t react-frontend .
+docker run -p 3000:80 react-frontend
+```

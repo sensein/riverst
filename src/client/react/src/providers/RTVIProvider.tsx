@@ -17,7 +17,7 @@ export function RTVIProvider({
 }: PropsWithChildren<RTVIProviderProps>) {
   // keep the same transport instance
   const transport = new SmallWebRTCTransport({
-    connectionUrl: `http://localhost:7860/api/offer?session_id=${encodeURIComponent(
+    connectionUrl: `http://${window.location.hostname}:7860/api/offer?session_id=${encodeURIComponent(
       sessionId
     )}`
   });
@@ -28,8 +28,6 @@ export function RTVIProvider({
         transport,
         enableMic: true,
         enableCam: enableCam,
-        timeout: 10000,
-        customConnectHandler: () => Promise.resolve(),
         callbacks: {
           onError: (error) => {
             console.error('PipecatClient error:', error);
@@ -43,5 +41,5 @@ export function RTVIProvider({
         }
       });
 
-  return <PipecatClientProvider client={client} enableCam={enableCam}>{children}</PipecatClientProvider>
+  return <PipecatClientProvider client={client}>{children}</PipecatClientProvider>
 }

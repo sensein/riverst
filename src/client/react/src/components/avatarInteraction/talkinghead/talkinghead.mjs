@@ -2609,9 +2609,9 @@ class TalkingHead {
   /**
   * Get lip-sync processor based on language. Import module dynamically.
   * @param {string} lang Language
-  * @param {string} [path="./"] Module path
+  * @param {string} [path="https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.5/modules/"] Module path
   */
-  lipsyncGetProcessor(lang, path="./") {
+  lipsyncGetProcessor(lang, path="https://cdn.jsdelivr.net/gh/met4citizen/TalkingHead@1.5/modules/") {
     if ( !this.lipsync.hasOwnProperty(lang) ) {
       const moduleName = path + 'lipsync-' + lang.toLowerCase() + '.mjs';
       const className = 'Lipsync' + lang.charAt(0).toUpperCase() + lang.slice(1);

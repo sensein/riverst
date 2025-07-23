@@ -68,9 +68,9 @@ const AdvancedAvatarCreator: React.FC<AdvancedAvatarCreatorProps> = ({
     return () => window.removeEventListener('message', handleMessage);
   }, [onAvatarCreated, AdvancedAvatarCreatorUrl]);
 
-  const parseJson = (data: any): any => {
+  const parseJson = (data: any): any | null => {
     try {
-      return JSON.parse(data);
+      return JSON.parse(JSON.stringify(data));
     } catch {
       return null;
     }

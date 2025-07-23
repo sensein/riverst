@@ -9,13 +9,13 @@ import { useNavigate } from 'react-router-dom';
 
 const UserProfileDropdown: React.FC = () => {
   const navigate = useNavigate();
-  const [sessions, setSessions] = useState<any[]>([]);
+  const [sessions, setSessions] = useState<object[]>([]);
   const [loading, setLoading] = useState(true);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const fetchSessions = () => {
-      fetch("http://localhost:7860/api/sessions")
+      fetch(`http://${window.location.hostname}:7860/api/sessions`)
         .then((res) => res.json())
         .then((data) => {
           setSessions(data);
