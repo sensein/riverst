@@ -25,7 +25,7 @@ const Homepage: React.FC = () => {
 
   useEffect(() => {
     axios
-      .get<ActivityGroup[]>(`http://${window.location.hostname}:7860/activities`)
+      .get<ActivityGroup[]>(`http://localhost:7860/activities`)
       .then((response) => {
         setGroups(response.data);
         setError(null);

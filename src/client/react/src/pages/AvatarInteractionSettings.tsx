@@ -27,7 +27,7 @@ export default function AvatarInteractionSettings() {
     if (!settingsUrl) return;
     const url = settingsUrl.startsWith('http')
       ? settingsUrl
-      : `http://${window.location.hostname}:7860/${settingsUrl}`;
+      : `http://localhost:7860/${settingsUrl}`;
 
     axios
       .get(url)
@@ -53,7 +53,7 @@ export default function AvatarInteractionSettings() {
 
       if (!avatar) {
         try {
-          const response = await axios.get(`http://${window.location.hostname}:7860/avatars`);
+          const response = await axios.get(`http://localhost:7860/avatars`);
           const avatars = response.data;
           if (avatars.length > 0) {
             avatar = avatars[0];
@@ -73,7 +73,7 @@ export default function AvatarInteractionSettings() {
 
       console.log(fullPayload);
 
-      const res = await axios.post(`http://${window.location.hostname}:7860/api/session`, fullPayload);
+      const res = await axios.post(`http://localhost:7860/api/session`, fullPayload);
       const sessionId: string = res.data.session_id;
       const link = `/avatar-interaction/${sessionId}`;
 

@@ -17,7 +17,7 @@ export function RTVIProvider({
 }: PropsWithChildren<RTVIProviderProps>) {
   // keep the same transport instance
   const transport = new SmallWebRTCTransport({
-    connectionUrl: `http://${window.location.hostname}:7860/api/offer?session_id=${encodeURIComponent(
+    connectionUrl: `http://localhost:7860/api/offer?session_id=${encodeURIComponent(
       sessionId
     )}`
   });

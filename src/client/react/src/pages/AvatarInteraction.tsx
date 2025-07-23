@@ -36,7 +36,7 @@ export default function AvatarInteraction() {
 
     // Fetch settings from the API if not provided via state
     axios
-      .get(`http://${window.location.hostname}:7860/api/session_config/${sessionId}`)
+      .get(`http://localhost:7860/api/session_config/${sessionId}`)
       .then((res) => setSettings(res.data))
       .catch(() => setError('Failed to load session configuration.'))
       .finally(() => setLoading(false))

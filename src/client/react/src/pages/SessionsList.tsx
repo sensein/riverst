@@ -34,7 +34,7 @@ export default function SessionsList() {
   useEffect(() => {
     let isMounted = true;
     const fetchSessions = () => {
-      fetch(`http://${window.location.hostname}:7860/api/sessions`)
+      fetch(`http://localhost:7860/api/sessions`)
         .then((res) => res.json())
         .then((data) => {
           if (isMounted) setSessions(data);

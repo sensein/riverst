@@ -167,7 +167,7 @@ import {
     useEffect(() => {
       const fetchAvatars = async () => {
         try {
-          const response = await axios.get(`http://${window.location.hostname}:7860/avatars`);
+          const response = await axios.get(`http://localhost:7860/avatars`);
           const avatars = response.data;
           if (avatars.length > 0) {
             setMyAvatar(avatars[0]);
