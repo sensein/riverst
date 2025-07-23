@@ -38,15 +38,18 @@ type MetricStats = {
   max?: number | null;
 };
 
-// Usage for LLM/TTS can be a nested map of metric names
 type MetricValue = MetricStats | Record<string, MetricStats>;
 type MetricBlock = { value?: MetricValue } | MetricValue;
 type ProcessorMetrics = Record<string, MetricBlock>;
 type MetricsType = {
-  processors: Record<string, ProcessorMetrics>;
+  processors: Record<string, ProcessorMetrics> | {
+    summary?: {
+      timestamp?: string;
+      processors?: Record<string, ProcessorMetrics>;
+    };
+  };
 };
 
-// Flatten usage stats
 function flattenStats(stats: Record<string, MetricStats>) {
   return Object.entries(stats).map(([metric, value]) => ({
     metric,
@@ -93,7 +96,12 @@ const MetricModal: React.FC<{
 }> = ({ open, onClose, metrics }) => {
   const [showRaw, setShowRaw] = React.useState(false);
 
-  if (!metrics || !metrics.processors) {
+  const rawProcessors =
+    metrics?.processors?.summary?.processors ??
+    metrics?.processors ??
+    null;
+
+  if (!rawProcessors) {
     return (
       <Modal open={open} onCancel={onClose} footer={null} title="Session Metrics">
         <Paragraph>No metrics available.</Paragraph>
@@ -101,7 +109,7 @@ const MetricModal: React.FC<{
     );
   }
 
-  const processorPanels = Object.entries(metrics.processors).map(
+  const processorPanels = Object.entries(rawProcessors).map(
     ([processorName, metricGroups]) => (
       <Panel
         key={processorName}
