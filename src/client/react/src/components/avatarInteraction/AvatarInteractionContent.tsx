@@ -1,5 +1,5 @@
 // src/components/AvatarInteractionContent.tsx
-import React, {
+import {
     useState,
     useEffect,
     useCallback,
@@ -31,7 +31,7 @@ import React, {
     subtitlesEnabled: initialSubtitlesEnabled,
   }: Props) {
     // ---- state derived from props ----
-    const [cameraType, setCameraType] = useState(initialCameraType)
+    const [cameraType] = useState(initialCameraType)
     const [subtitlesEnabled] = useState(initialSubtitlesEnabled)
 
     // ---- internal interaction state ----
@@ -117,7 +117,7 @@ import React, {
     useRTVIClientEvent(
       RTVIEvent.UserTranscript,
       useCallback(
-        (data) => {
+        (data: { text: string; final: boolean }) => {
           if (data.final && subtitlesEnabled.user) {
             addSubtitle(data.text, 'user')
           }
@@ -129,7 +129,7 @@ import React, {
     useRTVIClientEvent(
       RTVIEvent.BotTtsText,
       useCallback(
-        (data) => {
+        (data: { text: string }) => {
           if (subtitlesEnabled.bot) {
             addSubtitle(data.text, 'bot')
           }
@@ -149,9 +149,6 @@ import React, {
           videoRef.current.srcObject = new MediaStream([track])
           setShowVideo(true)
         }
-        if (track.kind === 'audio') {
-          setAudioTrack(track)
-        }
       }, [])
     )
 
@@ -165,14 +162,12 @@ import React, {
       }, [])
     )
 
-    const [myAvatar, setMyAvatar] = useState<string | null>(null);
-    const [audioTrack, setAudioTrack] = useState<MediaStreamTrack | null>(null);
-    const delay = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms));
+    const [myAvatar, setMyAvatar] = useState<{ id: number; modelUrl: string; gender: string } | null>(null);
 
     useEffect(() => {
       const fetchAvatars = async () => {
         try {
-          const response = await axios.get('http://localhost:7860/avatars');
+          const response = await axios.get(`http://${window.location.hostname}:7860/avatars`);
           const avatars = response.data;
           if (avatars.length > 0) {
             setMyAvatar(avatars[0]);
@@ -199,16 +194,17 @@ import React, {
       <div className="app">
         <FloatGroup
           videoFlag={videoFlag} />
-        <TalkingHeadWrapper
-          avatar={myAvatar}
-          cameraType={cameraType}
-          audioTrack={audioTrack}
-          onAvatarMounted={() => {
-            if (interactionPhase === 'mounting') {
-              setInteractionPhase('ready')
-            }
-          }}
-        />
+        {myAvatar &&
+          <TalkingHeadWrapper
+            avatar={myAvatar}
+            cameraType={cameraType}
+            onAvatarMounted={() => {
+              if (interactionPhase === 'mounting') {
+                setInteractionPhase('ready')
+              }
+            }}
+          />}
+
         <SubtitleOverlay subtitles={subtitleList} />
         <PipecatClientAudio />
         {videoFlag && (

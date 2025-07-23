@@ -22,7 +22,6 @@ const FloatGroup: React.FC<FloatGroupProps> = ({ videoFlag }) => {
       trigger="click"
       type="default"
       className={transportState === 'ready' ? 'float-btn-group-connected' : 'float-btn-group-disconnected'}
-      disabled={transportState !== 'ready'}
       icon={
         transportState === 'ready'
           ? <UpOutlined />

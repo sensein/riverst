@@ -1,4 +1,4 @@
-import React, {
+import {
   useEffect,
   useRef,
   forwardRef,
@@ -13,23 +13,45 @@ import { RTVIEvent } from '@pipecat-ai/client-js'
 interface Props {
   avatar: { id: number; modelUrl: string; gender: string };
   cameraType: "full" | "mid" | "upper" | "head";
-  audioTrack?: MediaStreamTrack;
   onAvatarMounted?: () => void;
 }
 
-const TalkingHeadWrapper = forwardRef<any, Props>((props, ref) => {
+interface TalkingHeadAPI {
+  stop: () => void;
+  setMood: (mood: string) => void;
+  stopSpeaking: () => void;
+  playGesture: (gesture: string, duration?: number) => void;
+  playPose: (posePath: string) => void;
+  speakAudio: (args: {
+    audio: AudioBuffer;
+    words?: string[];
+    wtimes?: number[];
+    wdurations?: number[];
+    visemes?: string[];
+    vtimes?: number[];
+    vdurations?: number[];
+  }) => void;
+  setView: (view: string) => void;
+}
+
+const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
   const {
     avatar,
     cameraType,
-    audioTrack,
     onAvatarMounted,
   } = props;
 
   const divRef = useRef<HTMLDivElement>(null);
-  const headRef = useRef<any>(null);
+  const headRef = useRef<TalkingHeadAPI | null>(null);
   const readyRef = useRef(false);
 
-  useImperativeHandle(ref, () => headRef.current, []);
+  const onAvatarMountedRef = useRef(onAvatarMounted);
+
+  useEffect(() => {
+    onAvatarMountedRef.current = onAvatarMounted;
+  }, [onAvatarMounted]);
+
+  useImperativeHandle(ref, () => headRef.current!, []);
 
   /* -------------------------------------------------- mount avatar */
   useEffect(() => {
@@ -54,16 +76,17 @@ const TalkingHeadWrapper = forwardRef<any, Props>((props, ref) => {
           url: avatar.modelUrl,
           body,
           avatarMood: "neutral",
-          lipsyncLang: "en",  // Lipsync module is required for viseme support
+          lipsyncLang: "en",
         },
-        () => {}
+        () => {
+          onAvatarMountedRef.current?.(); // use the ref
+          setTimeout(() => {
+            head.setView(cameraType);
+            headRef.current = head;
+            readyRef.current = true;
+          }, 1500);
+        }
       );
-
-      setTimeout(() => head.setView(cameraType), 1500);
-
-      headRef.current = head;
-      readyRef.current = true;
-      onAvatarMounted?.();
     });
 
     return () => {
@@ -85,7 +108,7 @@ const TalkingHeadWrapper = forwardRef<any, Props>((props, ref) => {
   useRTVIClientEvent(
     RTVIEvent.ServerMessage,
     useCallback(
-      (msg) => {
+      (msg: any) => {
         const head = headRef.current;
         if (!head) return;
 

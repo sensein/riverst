@@ -9,7 +9,7 @@ export default function CameraButton() {
   // Sync with actual status on mount
   useEffect(() => {
     enableCam(isCamEnabled)
-  }, [])
+  }, [enableCam, isCamEnabled])
 
   const toggleCam = async () => {
     await enableCam(!isCamEnabled)

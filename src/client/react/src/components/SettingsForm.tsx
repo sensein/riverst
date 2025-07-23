@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { JSONSchema7, JSONSchema7Definition } from 'json-schema'; // or '@types/json-schema' if using that package
 import {
   Form,
   Input,
@@ -19,25 +20,53 @@ import { getUserId } from '../utils/userId';
 const { Title, Paragraph } = Typography;
 const { TextArea } = Input;
 
-const SettingsForm = ({ schema, onSubmit }) => {
+interface SettingsFormProps {
+  schema: JSONSchema7;
+  onSubmit: (data: any) => void;
+}
+
+const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
   const transportState = usePipecatClientTransportState();
   const [form] = Form.useForm();
   const [isValid, setIsValid] = useState(false);
-  const [dynamicEnums, setDynamicEnums] = useState({ books: [] });
-  const [userId, setUserId] = useState<string | null>(null);
+  const [dynamicEnums, setDynamicEnums] = useState<{ books: { id: string; path: string; title: string }[] }>({ books: [] });
 
-  const options = schema?.properties?.options?.properties || {};
-  const requiredFields = schema?.properties?.options?.required || [];
+  function isObjectSchema(def: JSONSchema7Definition | undefined): def is JSONSchema7 {
+    return typeof def === 'object' && def !== null;
+  }
 
-  const schemaName = schema?.properties?.name?.const;
-  const schemaDescription = schema?.properties?.description?.const;
+  const options =
+    isObjectSchema(schema?.properties?.options) && 'properties' in schema.properties.options
+      ? schema.properties.options.properties || {}
+      : {};
+
+  const requiredFields =
+    isObjectSchema(schema?.properties?.options) && 'required' in schema.properties.options
+      ? schema.properties.options.required || []
+      : [];
+
+  const schemaName =
+    isObjectSchema(schema?.properties?.name) && 'const' in schema.properties.name
+      ? schema.properties.name.const
+      : '';
+
+  const schemaDescription =
+    isObjectSchema(schema?.properties?.description) && 'const' in schema.properties.description
+      ? schema.properties.description.const
+      : '';
+
 
   const pipelineModality = Form.useWatch(['options', 'pipeline_modality'], form);
+
+  const validateSchema = useCallback(async () => {
+    const values = await form.getFieldsValue(true);
+    const result = validator.validateFormData(schema, values);
+    setIsValid(result.errors.length === 0);
+  }, [form, schema]);
 
   useEffect(() => {
     const fetchUserId = async () => {
       const id = await getUserId();
-      setUserId(id);
       form.setFieldsValue({ user_id: id });
     };
 
@@ -45,7 +74,7 @@ const SettingsForm = ({ schema, onSubmit }) => {
 
     const fetchBooks = async () => {
       try {
-        const response = await axios.get('http://localhost:7860/books');
+        const response = await axios.get(`http://${window.location.hostname}:7860/books`);
         setDynamicEnums(prev => ({
           ...prev,
           books: response.data
@@ -57,7 +86,7 @@ const SettingsForm = ({ schema, onSubmit }) => {
 
     fetchBooks();
     validateSchema();
-  }, []);
+  }, [form, validateSchema]);
 
   useEffect(() => {
     if (!pipelineModality) return;
@@ -76,15 +105,9 @@ const SettingsForm = ({ schema, onSubmit }) => {
     }
 
     form.setFieldsValue({ options: updates });
-  }, [pipelineModality]);
+  }, [pipelineModality, form]);
 
-  const validateSchema = async () => {
-    const values = await form.getFieldsValue(true);
-    const result = validator.validateFormData(schema, values);
-    setIsValid(result.errors.length === 0);
-  };
-
-  const renderLabel = (label, description) => (
+  const renderLabel = (label: string, description?: string) => (
     <span>
       {label}
       {description && (
@@ -95,7 +118,7 @@ const SettingsForm = ({ schema, onSubmit }) => {
     </span>
   );
 
-  const renderFormItem = (key, config) => {
+  const renderFormItem = (key: string, config: any) => {
     if (config.const !== undefined) return null;
     if (['stt_type', 'tts_type'].includes(key) && pipelineModality !== 'classic') return null;
     if (key === 'llm_type') {
@@ -117,7 +140,7 @@ const SettingsForm = ({ schema, onSubmit }) => {
     if (config.type === 'array' && config.items?.enum) {
       if (config.minItems) {
         rules.push({
-          validator: (_, value) => {
+          validator: (_: any, value: any) => {
             if (Array.isArray(value) && value.length < config.minItems) {
               return Promise.reject(new Error(`Please select at least ${config.minItems} item(s).`));
             }
@@ -150,7 +173,7 @@ const SettingsForm = ({ schema, onSubmit }) => {
       return (
         <Form.Item key={key} name={namePath} label={labelWithTooltip} rules={rules}>
           <Select>
-            {config.enum.map((val) => (
+            {config.enum.map((val: string) => (
               <Select.Option key={val} value={val}>
                 {val}
               </Select.Option>
@@ -173,22 +196,25 @@ const SettingsForm = ({ schema, onSubmit }) => {
             <Switch />
           </Form.Item>
         );
-      case 'string':
+      case 'string': {
         const multiline = config.maxLength && config.maxLength > 100;
         return (
           <Form.Item key={key} name={namePath} label={labelWithTooltip} rules={rules}>
             {multiline ? <TextArea autoSize /> : <Input />}
           </Form.Item>
         );
+      }
       default:
         return null;
     }
   };
 
-  const defaultOptions = Object.entries(options).reduce((acc, [key, def]) => {
+  const defaultOptions = Object.entries(options).reduce<Record<string, any>>((acc, [key, def]) => {
+    if (typeof def !== 'object' || def === null) return acc;
     acc[key] =
-      def.default ??
-      (def.type === 'boolean' ? false : def.type === 'array' ? [] : '');
+      'default' in def ? (def as any).default :
+      (def as any).type === 'boolean' ? false :
+      (def as any).type === 'array' ? [] : '';
     return acc;
   }, {});
 
@@ -199,8 +225,12 @@ const SettingsForm = ({ schema, onSubmit }) => {
       </Link>
 
       <div style={{ marginBottom: 24 }}>
-        <Title level={3} style={{ marginBottom: 4 }}>{schemaName}</Title>
-        <Paragraph type="secondary" style={{ margin: 0 }}>{schemaDescription}</Paragraph>
+        <Title level={3} style={{ marginBottom: 4 }}>
+          {schemaName ? String(schemaName) : ''}
+        </Title>
+        <Paragraph type="secondary" style={{ margin: 0 }}>
+          {schemaDescription ? String(schemaDescription) : ''}
+        </Paragraph>
       </div>
 
       <Form

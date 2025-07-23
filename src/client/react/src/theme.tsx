@@ -1,5 +1,4 @@
 import { blue } from '@ant-design/colors';
-import Panel from 'antd/es/splitter/Panel';
 
 export const appTheme = {
   token: {

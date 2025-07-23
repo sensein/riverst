@@ -1,9 +1,9 @@
 // src/components/DisconnectButton.tsx
 import { useState } from 'react'
-import { usePipecatClient, usePipecatClientTransportState } from '@pipecat-ai/client-react'
+import { usePipecatClient } from '@pipecat-ai/client-react'
 import { useNavigate } from 'react-router-dom'
 import { FloatButton, Popconfirm } from 'antd'
-import { PoweroffOutlined, LoadingOutlined } from '@ant-design/icons'
+import { PoweroffOutlined } from '@ant-design/icons'
 import './DisconnectButton.css'
 import { RTVIEvent } from '@pipecat-ai/client-js'
 

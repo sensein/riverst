@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Card,
   Typography,
@@ -6,7 +6,6 @@ import {
   List,
   Avatar,
   Button,
-  Modal,
   Alert,
   Layout,
 } from "antd";
@@ -37,7 +36,7 @@ interface Transcript {
 }
 
 interface Features {
-  [key: string]: any; // You can further specify this if you like
+  [key: string]: object;
 }
 
 interface Step {
@@ -47,27 +46,30 @@ interface Step {
   speaker_embeddings: number[];
 }
 
-function formatSessionId(id) {
-  // Expected format: 20250521_165335_2f11d904
+type MetricStats = {
+  count?: number | null;
+  sum?: number | null;
+  avg?: number | null;
+  std?: number | null;
+  min?: number | null;
+  max?: number | null;
+};
+
+function formatSessionId(id: string): { date: string; time: string; unique: string } {
   const [datePart, timePart, uniquePart] = id.split("_");
   if (!datePart || !timePart || !uniquePart) return { date: id, time: "", unique: "" };
-
-  // Format date: 20250521 -> 2025-05-21
   const date = `${datePart.slice(0, 4)}-${datePart.slice(4, 6)}-${datePart.slice(6, 8)}`;
-  // Format time: 165335 -> 16:53:35
   const time = `${timePart.slice(0, 2)}:${timePart.slice(2, 4)}:${timePart.slice(4, 6)}`;
   return { date, time, unique: uniquePart };
 }
 
-// ---- Timestamp Extraction for Step ----
 function formatTimestamp(file: string) {
   if (!file) return { date: "", time: "" };
   const fileName = file.split("/").pop() || file;
   const name = fileName.replace(/\.(wav|json)$/, "");
-  // Handles filenames like 20250610_113610_827606_AGENT
   const match = name.match(/^(\d{8})_(\d{6})/);
   if (!match) return { date: "", time: "" };
-  const [_, datePart, timePart] = match;
+  const [, datePart, timePart] = match;
   const date = `${datePart.slice(0, 4)}-${datePart.slice(4, 6)}-${datePart.slice(6, 8)}`;
   const time = `${timePart.slice(0, 2)}:${timePart.slice(2, 4)}:${timePart.slice(4, 6)}`;
   return { date, time };
@@ -82,14 +84,14 @@ export default function SessionDetail() {
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [modalFeatures, setModalFeatures] = useState<Features | null>(null);
-  const [sessionMetrics, setSessionMetrics] = useState<Features | null>(null);
+  const [sessionMetrics, setSessionMetrics] = useState<Record<string, MetricStats | null>>({});
   const [metricsModalOpen, setMetricsModalOpen] = useState(false);
 
   useEffect(() => {
     setError(null);
     setSteps(null);
 
-    fetch(`http://localhost:7860/api/session/${id}`)
+    fetch(`http://${window.location.hostname}:7860/api/session/${id}`)
       .then(async (res) => {
         const contentType = res.headers.get("content-type") || "";
         if (!res.ok || !contentType.includes("application/json")) {
@@ -98,7 +100,9 @@ export default function SessionDetail() {
             try {
               const errJson = await res.json();
               errorMsg = errJson.error || errorMsg;
-            } catch {}
+            } catch {
+              // ignore
+            }
           } else {
             const errText = await res.text();
             errorMsg = errText;
@@ -113,18 +117,14 @@ export default function SessionDetail() {
       })
       .catch((err) => {
         setError("Failed to load session data: " + err.message);
-        setSteps([]); // Prevent infinite spinner
+        setSteps([]);
       });
   }, [id]);
 
   if (error) {
     return (
       <Card style={{ maxWidth: 700, margin: "auto", marginTop: 60 }}>
-        <Button
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/sessions")}
-          style={{ marginBottom: 16 }}
-        >
+        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/sessions")} style={{ marginBottom: 16 }}>
           Back to Sessions
         </Button>
         <Alert type="error" message={error} showIcon />
@@ -142,47 +142,25 @@ export default function SessionDetail() {
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
-      <Content
-        style={{
-          padding: "32px 0",
-          margin: "0 auto",
-          width: "100%",
-        }}
-      >
-        <div
-          style={{
-            padding: "0 32px",
-            marginBottom: 32,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-          }}
-        >
-          <Button
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/sessions")}
-            style={{ marginRight: 16 }}
-          >
+      <Content style={{ padding: "32px 0", margin: "0 auto", width: "100%" }}>
+        <div style={{ padding: "0 32px", marginBottom: 32, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/sessions")} style={{ marginRight: 16 }}>
             Back to Sessions
           </Button>
           <Title level={4} style={{ margin: 0, flex: 1, textAlign: "center" }}>
             Session: {(() => {
+              if (!id) return "";
               const { date, time, unique } = formatSessionId(id);
               return `${date} ${time} ${unique ? `(${unique})` : ""}`;
             })()}
             <InfoCircleOutlined
               onClick={() => setMetricsModalOpen(true)}
-              style={{
-                fontSize: 20,
-                marginLeft: 12,
-                cursor: "pointer",
-                verticalAlign: "middle",
-              }}
+              style={{ fontSize: 20, marginLeft: 12, cursor: "pointer", verticalAlign: "middle" }}
             />
           </Title>
-          <div style={{ width: 104 }} /> {/* Spacer to match Back button width */}
+          <div style={{ width: 104 }} />
         </div>
+
         <div style={{ padding: "0 32px" }}>
           <List
             dataSource={steps}
@@ -191,23 +169,17 @@ export default function SessionDetail() {
               const isAgent = step.audio_file?.includes("AGENT");
               const avatarColor = isAgent ? "#52c41a" : "#1890ff";
               const displayName = isAgent ? "Agent" : "User";
-              const features = step
-                ? { ...step.features, embeddings: step.speaker_embeddings }
-                : {};
+              const features = step ? { ...step.features, embeddings: step.speaker_embeddings } : {};
               const text = step.transcript?.text || "(no transcript)";
-              const audioSrc =
-                "http://localhost:7860" + (step.audio_file || "");
+              const audioSrc = `http://${window.location.hostname}:7860` + (step.audio_file || "");
               const { date, time } = formatTimestamp(step.audio_file || "");
 
-              // For chat layout: grid with avatar (left/right), bubble stretches in between
               return (
                 <List.Item
                   key={idx}
                   style={{
                     display: "grid",
-                    gridTemplateColumns: isAgent
-                      ? "48px 1fr 32px"
-                      : "32px 1fr 48px",
+                    gridTemplateColumns: isAgent ? "48px 1fr 32px" : "32px 1fr 48px",
                     justifyContent: "stretch",
                     alignItems: "flex-end",
                     marginBottom: 18,
@@ -216,36 +188,23 @@ export default function SessionDetail() {
                     boxShadow: "none",
                   }}
                 >
-                  {/* Left avatar or spacer */}
                   {isAgent ? (
-                    <Avatar
-                      style={{
-                        backgroundColor: avatarColor,
-                        margin: "0 8px 0 0",
-                        gridRow: "1",
-                        gridColumn: "1",
-                        fontSize: 20,
-                      }}
-                      size={44}
-                    >
+                    <Avatar style={{ backgroundColor: avatarColor, margin: "0 8px 0 0", gridRow: "1", gridColumn: "1", fontSize: 20 }} size={44}>
                       {displayName[0]}
                     </Avatar>
                   ) : (
                     <div style={{ width: 32 }} />
                   )}
 
-                  {/* Chat bubble */}
                   <div
                     style={{
                       background: isAgent ? "#f6ffed" : "#99CCFF",
                       borderRadius: 18,
-                      padding: "14px 20px 14px 20px",
+                      padding: "14px 20px",
                       margin: isAgent ? "0 0 0 12px" : "0 12px 0 0",
                       minWidth: 120,
-                      maxWidth: "100%",
                       width: "100%",
                       boxShadow: "0 2px 10px #e7e7e7",
-                      textAlign: "left",
                       position: "relative",
                       wordBreak: "break-word",
                     }}
@@ -256,11 +215,7 @@ export default function SessionDetail() {
                     <Paragraph style={{ marginBottom: 8, marginTop: 0, fontSize: "0.85em", color: "#888" }}>
                       {date && time ? `${date} ${time}` : ""}
                     </Paragraph>
-                    <audio
-                      src={audioSrc}
-                      controls
-                      style={{ marginTop: 6, width: "100%" }}
-                    />
+                    <audio src={audioSrc} controls style={{ marginTop: 6, width: "100%" }} />
                     <Button
                       type="text"
                       icon={<InfoCircleOutlined style={{ fontSize: 20 }} />}
@@ -268,27 +223,12 @@ export default function SessionDetail() {
                         setModalFeatures(features);
                         setModalOpen(true);
                       }}
-                      style={{
-                        position: "absolute",
-                        bottom: 8,
-                        right: isAgent ? 8 : undefined,
-                        left: !isAgent ? 8 : undefined,
-                      }}
+                      style={{ position: "absolute", bottom: 8, right: isAgent ? 8 : undefined, left: !isAgent ? 8 : undefined }}
                     />
                   </div>
 
-                  {/* Right avatar or spacer */}
                   {!isAgent ? (
-                    <Avatar
-                      style={{
-                        backgroundColor: avatarColor,
-                        margin: "0 0 0 8px",
-                        gridRow: "1",
-                        gridColumn: "3",
-                        fontSize: 20,
-                      }}
-                      size={44}
-                    >
+                    <Avatar style={{ backgroundColor: avatarColor, margin: "0 0 0 8px", gridRow: "1", gridColumn: "3", fontSize: 20 }} size={44}>
                       {displayName[0]}
                     </Avatar>
                   ) : (
@@ -299,15 +239,20 @@ export default function SessionDetail() {
             }}
           />
         </div>
-        <FeatureModal
-          open={modalOpen}
-          onClose={() => setModalOpen(false)}
-          features={modalFeatures}
-        />
+
+        <FeatureModal open={modalOpen} onClose={() => setModalOpen(false)} features={modalFeatures} />
         <MetricModal
           open={metricsModalOpen}
           onClose={() => setMetricsModalOpen(false)}
-          metrics={sessionMetrics}
+          metrics={{
+            processors: {
+              summary: Object.fromEntries(
+                Object.entries(sessionMetrics)
+                  .filter(([, v]) => v !== null)
+                  .map(([k, v]) => [k, v as MetricStats]) // Cast because we've filtered out null
+              ),
+            },
+          }}
         />
       </Content>
     </Layout>

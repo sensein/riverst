@@ -25,27 +25,44 @@ const METRIC_TYPE_INFO: Record<string, string> = {
 };
 
 // Format numbers
-const pretty = (v: any) =>
+const pretty = (v: number | null) =>
   typeof v === "number" ? v.toFixed(3) : v == null ? "–" : String(v);
 
+// Table component types
+type MetricStats = {
+  count?: number | null;
+  sum?: number | null;
+  avg?: number | null;
+  std?: number | null;
+  min?: number | null;
+  max?: number | null;
+};
+
+// Usage for LLM/TTS can be a nested map of metric names
+type MetricValue = MetricStats | Record<string, MetricStats>;
+type MetricBlock = { value?: MetricValue } | MetricValue;
+type ProcessorMetrics = Record<string, MetricBlock>;
+type MetricsType = {
+  processors: Record<string, ProcessorMetrics>;
+};
+
 // Flatten usage stats
-function flattenStats(stats: Record<string, any>) {
+function flattenStats(stats: Record<string, MetricStats>) {
   return Object.entries(stats).map(([metric, value]) => ({
     metric,
-    count: pretty(value.count),
-    sum: pretty(value.sum),
-    avg: pretty(value.avg),
-    std: pretty(value.std),
-    min: pretty(value.min),
-    max: pretty(value.max),
+    count: pretty(value.count ?? null),
+    sum: pretty(value.sum ?? null),
+    avg: pretty(value.avg ?? null),
+    std: pretty(value.std ?? null),
+    min: pretty(value.min ?? null),
+    max: pretty(value.max ?? null),
   }));
 }
 
-// Table component
-const MetricTable: React.FC<{ data: any }> = ({ data }) => {
+const MetricTable: React.FC<{ data: Record<string, MetricStats> }> = ({ data }) => {
   const rows = flattenStats(data);
   const statNames = ["count", "sum", "avg", "std", "min", "max"].filter((key) =>
-    rows.some((row) => row[key] !== undefined)
+    rows.some((row) => row[key as keyof typeof row] !== undefined)
   );
 
   const columns = [
@@ -72,7 +89,7 @@ const MetricTable: React.FC<{ data: any }> = ({ data }) => {
 const MetricModal: React.FC<{
   open: boolean;
   onClose: () => void;
-  metrics: Record<string, any> | null;
+  metrics: MetricsType | null;
 }> = ({ open, onClose, metrics }) => {
   const [showRaw, setShowRaw] = React.useState(false);
 
@@ -97,13 +114,12 @@ const MetricModal: React.FC<{
         <Collapse accordion>
           {Object.entries(metricGroups).flatMap(([metricType, block]) => {
             const info = METRIC_TYPE_INFO[metricType] || null;
+            const value = (block as any).value ?? block;
 
-            // ✅ FIX: usage metrics rendered inside ONE panel
             if (
               metricType === "LLMUsageMetricsData" ||
               metricType === "TTSUsageMetricsData"
             ) {
-              const submetrics = block.value ?? block;
               return [
                 <Panel
                   key={metricType}
@@ -118,12 +134,17 @@ const MetricModal: React.FC<{
                     </span>
                   }
                 >
-                  <MetricTable data={metricType === "TTSUsageMetricsData" ? { TTSUsage: submetrics } : submetrics} />
+                  <MetricTable
+                    data={
+                      metricType === "TTSUsageMetricsData"
+                        ? { TTSUsage: value as MetricStats }
+                        : (value as Record<string, MetricStats>)
+                    }
+                  />
                 </Panel>,
               ];
             }
 
-            // Flat single-metric panels
             return [
               <Panel
                 key={metricType}
@@ -138,7 +159,7 @@ const MetricModal: React.FC<{
                   </span>
                 }
               >
-                <MetricTable data={{ [metricType]: block.value || block }} />
+                <MetricTable data={{ [metricType]: value as MetricStats }} />
               </Panel>,
             ];
           })}

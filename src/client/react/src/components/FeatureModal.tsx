@@ -2,8 +2,10 @@ import React from "react";
 import { Modal, Collapse, Tooltip, Table, Button } from "antd";
 import { InfoCircleOutlined, BarChartOutlined, CodeOutlined } from "@ant-design/icons";
 
-// Helpers for describing sections
-const SECTION_INFO = {
+// Define section info structure
+type SectionKey = "opensmile" | "praat_parselmouth" | "torchaudio_squim" | "embeddings";
+
+const SECTION_INFO: Record<SectionKey, { title: string; info: string }> = {
   opensmile: {
     title: "OpenSMILE Features",
     info: "Standard acoustic features used in voice analysis, e.g., pitch, loudness, MFCCs, etc.",
@@ -22,22 +24,28 @@ const SECTION_INFO = {
   },
 };
 
-// Utility for formatting numeric values
-const pretty = (v) =>
-  typeof v === "number" ? v.toFixed(4) : (v == null ? "–" : String(v));
+// Format number
+const pretty = (v: number | null) =>
+  typeof v === "number" ? v.toFixed(4) : v == null ? "–" : String(v);
 
-// For feature tables
-function featuresToTableData(obj) {
+// Table transformation
+function featuresToTableData(obj: Record<string, number | null | undefined>) {
   return Object.entries(obj).map(([key, value]) => ({
     key,
-    value: pretty(value),
+    value: pretty(value ?? null),
   }));
 }
 
-function FeatureModal({ open, onClose, features }) {
+// Props typing
+interface FeatureModalProps {
+  open: boolean;
+  onClose: () => void;
+  features: Partial<Record<SectionKey, Record<string, number> | number[]>> | null;
+}
+
+const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, features }) => {
   const [showEmbedding, setShowEmbedding] = React.useState(false);
 
-  // Null guard
   if (!features) {
     return (
       <Modal open={open} onCancel={onClose} footer={null} title="Audio Features" destroyOnHidden>
@@ -46,11 +54,23 @@ function FeatureModal({ open, onClose, features }) {
     );
   }
 
-  // Compose collapsible panels
-  const panels = Object.keys(SECTION_INFO).map((k) => {
+  const panels = (Object.keys(SECTION_INFO) as SectionKey[]).map((k) => {
     if (!(k in features)) return null;
+
     if (k === "embeddings") {
-      const arr = features.embeddings || [];
+      const arr = features.embeddings as number[] | undefined;
+      if (!arr) return null;
+
+      const mean =
+        arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+      const std =
+        arr.length > 0
+          ? Math.sqrt(
+              arr.reduce((a, b) => a + Math.pow(b - (mean ?? 0), 2), 0) /
+                arr.length
+            )
+          : null;
+
       return (
         <Collapse.Panel
           key={k}
@@ -66,17 +86,9 @@ function FeatureModal({ open, onClose, features }) {
           <div style={{ marginBottom: 8 }}>
             <b>Length:</b> {arr.length}
             {"  |  "}
-            <b>Mean:</b> {arr.length ? pretty(arr.reduce((a, b) => a + b, 0) / arr.length) : "–"}
+            <b>Mean:</b> {pretty(mean)}
             {"  |  "}
-            <b>Std:</b>{" "}
-            {arr.length
-              ? pretty(
-                  Math.sqrt(
-                    arr.reduce((a, b) => a + Math.pow(b - arr.reduce((a, b) => a + b, 0) / arr.length, 2), 0) /
-                      arr.length
-                  )
-                )
-              : "–"}
+            <b>Std:</b> {pretty(std)}
           </div>
           <Button
             size="small"
@@ -87,7 +99,17 @@ function FeatureModal({ open, onClose, features }) {
             {showEmbedding ? "Hide Raw Vector" : "Show Raw Vector"}
           </Button>
           {showEmbedding && (
-            <pre style={{ whiteSpace: "pre-wrap", maxHeight: 200, overflow: "auto", fontSize: 11, background: "#f8f8f8", padding: 8, borderRadius: 4 }}>
+            <pre
+              style={{
+                whiteSpace: "pre-wrap",
+                maxHeight: 200,
+                overflow: "auto",
+                fontSize: 11,
+                background: "#f8f8f8",
+                padding: 8,
+                borderRadius: 4,
+              }}
+            >
               {JSON.stringify(arr, null, 2)}
             </pre>
           )}
@@ -95,7 +117,10 @@ function FeatureModal({ open, onClose, features }) {
       );
     }
 
-    const tableData = featuresToTableData(features[k]);
+    const data = features[k] as Record<string, number> | undefined;
+    if (!data) return null;
+
+    const tableData = featuresToTableData(data);
     return (
       <Collapse.Panel
         key={k}
@@ -124,28 +149,25 @@ function FeatureModal({ open, onClose, features }) {
 
   return (
     <Modal
-        open={open}
-        onCancel={() => {
-            setShowEmbedding(false);
-            onClose();
-        }}
-        footer={null}
-        title="Audio Features & Embeddings"
-        width={1000}
-        styles={{
-            body: {
-            maxHeight: "80vh",
-            overflowY: "auto",
-            padding: 24,
-            },
-        }}
-        >
-        <Collapse accordion>
-            {panels.filter(Boolean)}
-        </Collapse>
+      open={open}
+      onCancel={() => {
+        setShowEmbedding(false);
+        onClose();
+      }}
+      footer={null}
+      title="Audio Features & Embeddings"
+      width={1000}
+      styles={{
+        body: {
+          maxHeight: "80vh",
+          overflowY: "auto",
+          padding: 24,
+        },
+      }}
+    >
+      <Collapse accordion>{panels.filter(Boolean)}</Collapse>
     </Modal>
-
   );
-}
+};
 
 export default FeatureModal;
