@@ -20,7 +20,7 @@ const AvatarCreatorPage = () => {
   useEffect(() => {
     const fetchAvatars = async () => {
       try {
-        const response = await axios.get(`http://localhost:7860/avatars`);
+        const response = await axios.get(`${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/avatars`);
         setAvatars(response.data);
       } catch (error) {
         console.error('Failed to fetch avatars:', error);
