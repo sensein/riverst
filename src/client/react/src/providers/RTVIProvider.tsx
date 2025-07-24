@@ -17,7 +17,7 @@ export function RTVIProvider({
 }: PropsWithChildren<RTVIProviderProps>) {
   // keep the same transport instance
   const transport = new SmallWebRTCTransport({
-    connectionUrl: `http://localhost:7860/api/offer?session_id=${encodeURIComponent(
+    connectionUrl: `${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/offer?session_id=${encodeURIComponent(
       sessionId
     )}`
   });

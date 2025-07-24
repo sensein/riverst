@@ -15,7 +15,7 @@ const UserProfileDropdown: React.FC = () => {
 
   useEffect(() => {
     const fetchSessions = () => {
-      fetch(`http://localhost:7860/api/sessions`)
+      fetch(`${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/sessions`)
         .then((res) => res.json())
         .then((data) => {
           setSessions(data);

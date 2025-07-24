@@ -25,7 +25,7 @@ const Homepage: React.FC = () => {
 
   useEffect(() => {
     axios
-      .get<ActivityGroup[]>(`http://localhost:7860/activities`)
+      .get<ActivityGroup[]>(`${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/activities`)
       .then((response) => {
         setGroups(response.data);
         setError(null);

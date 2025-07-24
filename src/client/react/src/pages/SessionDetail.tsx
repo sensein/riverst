@@ -91,7 +91,7 @@ export default function SessionDetail() {
     setError(null);
     setSteps(null);
 
-    fetch(`http://localhost:7860/api/session/${id}`)
+    fetch(`${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/session/${id}`)
       .then(async (res) => {
         const contentType = res.headers.get("content-type") || "";
         if (!res.ok || !contentType.includes("application/json")) {
@@ -171,7 +171,7 @@ export default function SessionDetail() {
               const displayName = isAgent ? "Agent" : "User";
               const features = step ? { ...step.features, embeddings: step.speaker_embeddings } : {};
               const text = step.transcript?.text || "(no transcript)";
-              const audioSrc = `http://localhost:7860` + (step.audio_file || "");
+              const audioSrc = `${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}` + (step.audio_file || "");
               const { date, time } = formatTimestamp(step.audio_file || "");
 
               return (
