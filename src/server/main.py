@@ -48,8 +48,26 @@ app.add_middleware(
 # Track active WebRTC connections
 pcs_map: Dict[str, SmallWebRTCConnection] = {}
 
+
+import time, hmac, hashlib, base64
+from pipecat.transports.network.webrtc_connection import IceServer
+
+username = str(int(time.time()) + 3600)  # valid for 1 hour
+secret = "YOUR_STATIC_SECRET_HERE"
+password = base64.b64encode(hmac.new(
+    secret.encode(), username.encode(), hashlib.sha1
+).digest()).decode()
+
 # ICE servers for WebRTC connection
-ice_servers = ["stun:stun.l.google.com:19302"]
+ice_servers=[
+        IceServer(urls="stun:stun.l.google.com:19302"),
+        IceServer(
+            urls="turn:3.15.146.202:3478",
+            username=username,
+            credential=password
+        )
+    ]
+
 
 # Mount the default frontend
 app.mount("/prebuilt", SmallWebRTCPrebuiltUI)
@@ -411,9 +429,21 @@ if __name__ == "__main__":
     parser.add_argument(
         "--verbose", "-v", action="count", help="Enable verbose logging"
     )
+    parser.add_argument(
+        "--ssl-certfile", type=str, default="~/certs/cert.pem", help="Path to SSL certificate"
+    )
+    parser.add_argument(
+        "--ssl-keyfile", type=str, default="~/certs/key.pem", help="Path to SSL key"
+    )
     args = parser.parse_args()
 
     logger.remove(0)
     logger.add(sys.stderr, level="TRACE" if args.verbose else "DEBUG")
 
-    uvicorn.run(app, host=args.host, port=args.port)
+    uvicorn.run(
+        app,
+        host=args.host,
+        port=args.port,
+        ssl_certfile=os.path.expanduser(args.ssl_certfile),
+        ssl_keyfile=os.path.expanduser(args.ssl_keyfile),
+    )
