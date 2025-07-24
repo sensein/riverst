@@ -61,7 +61,7 @@ password = base64.b64encode(hmac.new(
 ice_servers=[
         IceServer(urls="stun:stun.l.google.com:19302"),
         IceServer(
-            urls="turn:3.15.146.202:3478",
+            urls="turn:33.21.191.17:3478",
             username=username,
             credential=password
         )

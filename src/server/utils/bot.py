@@ -106,7 +106,8 @@ async def run_bot(
         metrics_logger = MetricsLoggerProcessor(session_dir=session_dir)
 
         # Setup WebRTC transport parameters
-        smart_turn_model_path = os.getenv("LOCAL_SMART_TURN_MODEL_PATH")
+        # smart_turn_model_path = os.getenv("LOCAL_SMART_TURN_MODEL_PATH")
+        # print("smart_turn_model_path: ", smart_turn_model_path)
         transport_params = TransportParams(
             video_in_enabled=config.get("video_flag", False),
             video_out_enabled=config.get("video_flag", False),
@@ -118,9 +119,9 @@ async def run_bot(
             audio_out_enabled=True,
             audio_in_filter=NoisereduceFilter(),
             vad_analyzer=SileroVADAnalyzer(),
-            turn_analyzer=LocalSmartTurnAnalyzerV2(
-                smart_turn_model_path=smart_turn_model_path, params=SmartTurnParams()
-            ),
+            #turn_analyzer=LocalSmartTurnAnalyzerV2(
+            #    smart_turn_model_path=smart_turn_model_path, params=SmartTurnParams()
+            #),
             audio_in_passthrough=True,
             audio_out_10ms_chunks=4,
         )
