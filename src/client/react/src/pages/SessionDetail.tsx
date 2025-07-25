@@ -171,7 +171,7 @@ export default function SessionDetail() {
               const displayName = isAgent ? "Agent" : "User";
               const features = step ? { ...step.features, embeddings: step.speaker_embeddings } : {};
               const text = step.transcript?.text || "(no transcript)";
-              const audioSrc = `${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}` + (step.audio_file || "");
+              const audioSrc = `${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api` + (step.audio_file || "");
               const { date, time } = formatTimestamp(step.audio_file || "");
 
               return (

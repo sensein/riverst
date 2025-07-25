@@ -53,7 +53,7 @@ export default function AvatarInteractionSettings() {
 
       if (!avatar) {
         try {
-          const response = await axios.get(`${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/avatars`);
+          const response = await axios.get(`${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/avatars`);
           const avatars = response.data;
           if (avatars.length > 0) {
             avatar = avatars[0];
