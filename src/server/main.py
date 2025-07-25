@@ -55,17 +55,31 @@ pcs_map: Dict[str, SmallWebRTCConnection] = {}
 
 
 username = str(int(time.time()) + 3600)  # valid for 1 hour
-secret = "YOUR_STATIC_SECRET_HERE"
-password = base64.b64encode(
-    hmac.new(secret.encode(), username.encode(), hashlib.sha1).digest()
-).decode()
+secret = "ece1392b4b92707cc0c96d837680d120"
+password = base64.b64encode(hmac.new(
+    secret.encode(), username.encode(), hashlib.sha1
+).digest()).decode()
+
+# Save to JSON
+credentials = {
+    "username": username,
+    "password": password
+}
+
+with open("turn_credentials.json", "w") as f:
+    json.dump(credentials, f, indent=2)
+
+print("TURN credentials saved to turn_credentials.json")
 
 # ICE servers for WebRTC connection
 ice_servers = [
     IceServer(urls="stun:stun.l.google.com:19302"),
-    IceServer(urls="turn:33.21.191.17:3478", username=username, credential=password),
+    IceServer(
+        urls="turn:play.kivaproject.org:3478",
+        username="testuser",
+        credential="testpass"
+    ),
 ]
-
 
 # Mount the default frontend
 app.mount("/prebuilt", SmallWebRTCPrebuiltUI)
