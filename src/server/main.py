@@ -1,27 +1,33 @@
 import argparse
 import asyncio
-import sys
-import json
+import base64
 import datetime
-import uuid
-import os
-from pathlib import Path
-from typing import Dict, Optional, Any
-import uvloop
+import hashlib
+import hmac
+import json
 import math
+import os
+import sys
+import time
+import uuid
+from contextlib import asynccontextmanager
+from pathlib import Path
+from typing import Any, Dict, Optional
 
 import uvicorn
-from fastapi import BackgroundTasks, FastAPI, Request, Query, Body
-from fastapi.responses import JSONResponse, RedirectResponse
-from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
+import uvloop
 from dotenv import load_dotenv
-from loguru import logger
-
-from utils.bot import run_bot
-from pipecat_ai_small_webrtc_prebuilt.frontend import SmallWebRTCPrebuiltUI
-from pipecat.transports.network.webrtc_connection import SmallWebRTCConnection
+from fastapi import BackgroundTasks, Body, FastAPI, Query, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from loguru import logger
+from pipecat.transports.network.webrtc_connection import (
+    IceServer,
+    SmallWebRTCConnection,
+)
+from pipecat_ai_small_webrtc_prebuilt.frontend import SmallWebRTCPrebuiltUI
+from utils.bot import run_bot
 
 # Load environment variables
 load_dotenv(override=True)
@@ -48,24 +54,17 @@ app.add_middleware(
 pcs_map: Dict[str, SmallWebRTCConnection] = {}
 
 
-import time, hmac, hashlib, base64
-from pipecat.transports.network.webrtc_connection import IceServer
-
 username = str(int(time.time()) + 3600)  # valid for 1 hour
 secret = "YOUR_STATIC_SECRET_HERE"
-password = base64.b64encode(hmac.new(
-    secret.encode(), username.encode(), hashlib.sha1
-).digest()).decode()
+password = base64.b64encode(
+    hmac.new(secret.encode(), username.encode(), hashlib.sha1).digest()
+).decode()
 
 # ICE servers for WebRTC connection
-ice_servers=[
-        IceServer(urls="stun:stun.l.google.com:19302"),
-        IceServer(
-            urls="turn:33.21.191.17:3478",
-            username=username,
-            credential=password
-        )
-    ]
+ice_servers = [
+    IceServer(urls="stun:stun.l.google.com:19302"),
+    IceServer(urls="turn:33.21.191.17:3478", username=username, credential=password),
+]
 
 
 # Mount the default frontend
@@ -429,20 +428,28 @@ if __name__ == "__main__":
         "--verbose", "-v", action="count", help="Enable verbose logging"
     )
     parser.add_argument(
-        "--ssl-certfile", type=str, default="~/certs/cert.pem", help="Path to SSL certificate"
+        "--ssl-certfile",
+        type=str,
+        default=None,
+        help="Path to SSL certificate (optional)",
     )
     parser.add_argument(
-        "--ssl-keyfile", type=str, default="~/certs/key.pem", help="Path to SSL key"
+        "--ssl-keyfile", type=str, default=None, help="Path to SSL key (optional)"
     )
     args = parser.parse_args()
 
     logger.remove(0)
     logger.add(sys.stderr, level="TRACE" if args.verbose else "DEBUG")
 
-    uvicorn.run(
-        app,
-        host=args.host,
-        port=args.port,
-        ssl_certfile=os.path.expanduser(args.ssl_certfile),
-        ssl_keyfile=os.path.expanduser(args.ssl_keyfile),
-    )
+    uvicorn_kwargs = {
+        "app": app,
+        "host": args.host,
+        "port": args.port,
+    }
+
+    # Only add SSL if both files are provided
+    if args.ssl_certfile and args.ssl_keyfile:
+        uvicorn_kwargs["ssl_certfile"] = os.path.expanduser(args.ssl_certfile)
+        uvicorn_kwargs["ssl_keyfile"] = os.path.expanduser(args.ssl_keyfile)
+
+    uvicorn.run(**uvicorn_kwargs)
