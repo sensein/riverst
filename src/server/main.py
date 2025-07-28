@@ -260,7 +260,7 @@ async def get_activities() -> JSONResponse:
         )
 
 
-@app.get("/activities/settings/{settings_path:path}")
+@app.get("/api/activities/settings/{settings_path:path}")
 async def get_activity_settings(settings_path: str) -> JSONResponse:
     """Loads activity settings JSON and filters services by available API keys.
 
