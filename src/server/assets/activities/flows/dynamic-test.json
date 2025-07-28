@@ -222,19 +222,10 @@
         "task_messages": [
           {
             "role": "system",
-            "content": "The session is now complete. Say goodbye in a friendly and encouraging way."
+            "content": "The session is now complete. Say goodbye in a friendly and encouraging way. Please call the end_conversation function now."
           }
         ],
-        "functions": [],
-        "post_actions": [
-          {
-            "type": "tts_say",
-            "text": "Goodbye! I hope you enjoyed this test. Have a great day!"
-          },
-          {
-            "type": "end_conversation"
-          }
-        ]
+        "functions": []
       }
     }
   }

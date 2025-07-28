@@ -42,6 +42,7 @@ from .bot_component_factory import BotComponentFactory
 from .flow_component_factory import FlowComponentFactory
 from .metrics import MetricsLoggerProcessor
 from .animation_handler import AnimationHandler
+from .end_conversation_handler import EndConversationHandler
 from .video_buffer_processor import VideoBufferProcessor
 
 load_dotenv(override=True)
@@ -233,6 +234,18 @@ async def run_bot(
 
         llm.register_function(
             "trigger_animation", function_call_debug_wrapper(animation_handler_wrapper)
+        )
+
+        # create a closure that provides the rtvi instance to the end conversation handler
+        async def end_conversation_handler_wrapper(params):
+            """Wrapper for the end conversation handler to include RTVI instance."""
+            return await EndConversationHandler.handle_end_conversation(
+                params, rtvi=rtvi
+            )
+
+        llm.register_function(
+            "end_conversation",
+            function_call_debug_wrapper(end_conversation_handler_wrapper),
         )
 
         async def handle_user_idle(_: UserIdleProcessor, retry_count: int) -> bool:

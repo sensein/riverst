@@ -14,6 +14,7 @@ const AvatarInteraction = lazy(() => import('./pages/AvatarInteraction'));
 const AvatarInteractionSettings = lazy(() => import('./pages/AvatarInteractionSettings'));
 const SessionsList = lazy(() => import('./pages/SessionsList'));
 const SessionDetail = lazy(() => import('./pages/SessionDetail'));
+const SessionEndPage = lazy(() => import('./pages/SessionEndPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const ErrorPage = lazy(() => import('./pages/ErrorPage'));
 
@@ -21,53 +22,53 @@ const AuthenticatedRoutes = () => (
   <AuthProvider>
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route 
-        path="/" 
+      <Route
+        path="/"
         element={
           <ProtectedRoute>
             <Homepage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/advanced-avatar-creation" 
+      <Route
+        path="/advanced-avatar-creation"
         element={
           <ProtectedRoute>
             <AdvancedAvatarCreatorPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/avatar-creation" 
+      <Route
+        path="/avatar-creation"
         element={
           <ProtectedRoute>
             <AvatarCreatorPage />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/avatar-interaction-settings" 
+      <Route
+        path="/avatar-interaction-settings"
         element={
           <ProtectedRoute>
             <AvatarInteractionSettings />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/sessions" 
+      <Route
+        path="/sessions"
         element={
           <ProtectedRoute>
             <SessionsList />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/sessions/:id" 
+      <Route
+        path="/sessions/:id"
         element={
           <ProtectedRoute>
             <SessionDetail />
           </ProtectedRoute>
-        } 
+        }
       />
     </Routes>
   </AuthProvider>
@@ -81,7 +82,8 @@ const App = () => {
           <Routes>
             {/* Completely unauthenticated routes - NO AuthProvider */}
             <Route path="/avatar-interaction/:sessionId" element={<AvatarInteraction />} />
-            
+            <Route path="/session-ended/:sessionId" element={<SessionEndPage />} />
+
             {/* All other routes - WITH AuthProvider (including login) */}
             <Route path="/*" element={<AuthenticatedRoutes />} />
             <Route path="*" element={<ErrorPage />} />

@@ -97,6 +97,7 @@ def get_flow_config(config: FlowConfigurationFile) -> FlowConfig:
 
         # Process functions to assign actual handler references
         if "functions" in node_dict:
+
             for func_def in node_dict["functions"]:
                 if func_def.get("function", {}).get("handler") == "general_handler":
                     func_def["function"]["handler"] = general_handler

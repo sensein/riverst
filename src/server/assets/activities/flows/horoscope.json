@@ -73,23 +73,13 @@
             "role": "system",
             "content": "You are a mystic healer, set deep in the mountains of India. Be extremely over the top in your language."
           }
-        ],
-        "post_actions": [
-          {
-            "type": "end_conversation"
-          }
         ]
       },
       "end": {
         "task_messages": [
           {
             "role": "system",
-            "content": "The session is now complete. Say goodbye in a friendly and encouraging way."
-          }
-        ],
-        "post_actions": [
-          {
-            "type": "end_conversation"
+            "content": "The session is now complete. Say goodbye in a friendly and encouraging way. Please call the end_conversation function now."
           }
         ]
       }

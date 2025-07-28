@@ -22,9 +22,23 @@ export default function AvatarInteraction() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Check if this session has been marked as ended
+  const isSessionEnded = () => {
+    if (!sessionId) return false
+    const endedSessions = JSON.parse(localStorage.getItem('endedSessions') || '[]')
+    return endedSessions.includes(sessionId)
+  }
+
   useEffect(() => {
     if (!sessionId) {
       setError('No session ID provided. Please start from the settings page.')
+      setLoading(false)
+      return
+    }
+
+    // Check if session has been ended
+    if (isSessionEnded()) {
+      setError('This session has ended and is no longer available. The conversation has been completed.')
       setLoading(false)
       return
     }

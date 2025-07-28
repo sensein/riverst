@@ -17,11 +17,11 @@ from pipecat.services.piper.tts import PiperTTSService
 from pipecat.services.gemini_multimodal_live import GeminiMultimodalLiveLLMService
 from pipecat.services.whisper.stt import WhisperSTTService
 from pipecat.adapters.schemas.tools_schema import ToolsSchema
-from pipecat.adapters.schemas.function_schema import FunctionSchema
 from pipecat.processors.aggregators.openai_llm_context import OpenAILLMContext
 from pipecat.services.elevenlabs.tts import ElevenLabsTTSService
 import json
 from .animation_handler import AnimationHandler
+from .end_conversation_handler import EndConversationHandler
 from .lipsync_processor import LipsyncProcessor
 import shutil
 
@@ -108,6 +108,14 @@ class BotComponentFactory:
         )
         if self.animation_instruction:
             instruction += self.animation_instruction
+
+        # Add end conversation instruction
+        end_conversation_instruction = (
+            EndConversationHandler.get_end_conversation_instruction()
+        )
+        if end_conversation_instruction:
+            instruction += end_conversation_instruction
+
         if self.languages:
             print(f"Supported languages: {self.languages}")
             instruction += (
@@ -135,22 +143,15 @@ class BotComponentFactory:
         animation_schema = AnimationHandler.build_animation_tools_schema(
             self.body_animations
         )
-        self.used_animations = (
-            animation_schema.get("properties", {})
-            .get("animation_id", {})
-            .get("enum", [])
+        self.used_animations = animation_schema.properties.get("animation_id", {}).get(
+            "enum", []
         )
 
-        return ToolsSchema(
-            standard_tools=[
-                FunctionSchema(
-                    name=animation_schema["name"],
-                    description=animation_schema["description"],
-                    properties=animation_schema["properties"],
-                    required=animation_schema["required"],
-                )
-            ]
+        end_conversation_schema = (
+            EndConversationHandler.build_end_conversation_tools_schema()
         )
+
+        return ToolsSchema(standard_tools=[animation_schema, end_conversation_schema])
 
     async def build(self) -> Tuple[
         Optional[object],  # STT
