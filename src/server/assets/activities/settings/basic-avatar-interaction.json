@@ -68,7 +68,7 @@
         "avatar_personality_description": {
           "type": "string",
           "maxLength": 500,
-          "default": "You are the Riverst avatar, a friendly, helpful robot.",
+          "default": "You are the 'River street' avatar, a friendly, helpful robot.",
           "description": "Text describing the avatar’s personality and role."
         },
         "task_description": {

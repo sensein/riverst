@@ -65,7 +65,7 @@ const LoginPage: React.FC = () => {
   const initializeGoogleSignIn = () => {
     console.log('Google Client ID:', import.meta.env.VITE_GOOGLE_CLIENT_ID);
     console.log('Window.google available:', !!window.google);
-    
+
     if (window.google) {
       window.google.accounts.id.initialize({
         client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
@@ -121,7 +121,7 @@ const LoginPage: React.FC = () => {
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
           <div>
             <Title level={2} style={{ marginBottom: '8px' }}>
-              Welcome to RiverSt
+              Welcome to Riverst
             </Title>
             <Paragraph type="secondary">
               Sign in with your Google account to continue
@@ -129,14 +129,14 @@ const LoginPage: React.FC = () => {
           </div>
 
           {!isScriptLoaded ? (
-            <Spin 
+            <Spin
               indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />}
               tip="Loading Google Sign-In..."
             />
           ) : (
-            <div>
-              <div id="google-signin-button" style={{ margin: '0 auto' }} />
-              
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div id="google-signin-button" />
+
               {isGoogleLoading && (
                 <div style={{ marginTop: '16px' }}>
                   <Spin tip="Signing in..." />

@@ -19,16 +19,7 @@ export function RTVIProvider({
   const transport = new SmallWebRTCTransport({
     connectionUrl: `${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/offer?session_id=${encodeURIComponent(
       sessionId
-    )}`,
-    iceServers: [
-      { urls: "stun:stun.l.google.com:19302" },
-      {
-        urls: "turn:play.kivaproject.org:3478",
-        username: "testuser",
-        credential: "testpass"
-      }
-    ],
-    // iceServers: ["stun:stun.l.google.com:19302", "turn:3.21.191.176:3478"],
+    )}`
   });
   const navigate = useNavigate()
 

@@ -66,7 +66,7 @@ class EndConversationHandler:
             frame = RTVIServerMessageFrame(
                 data={
                     "type": "conversation-ended",
-                    "message": "The conversation has ended. Thank you for talking with Riverst!",
+                    "message": "The conversation has ended. Thank you for talking with 'River street'!",
                 }
             )
             await rtvi.push_frame(frame)
