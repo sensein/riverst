@@ -47,8 +47,7 @@ const fetchSessions = async () => {
   } finally {
     if (isMounted) setLoading(false);
   }
-};
-    };
+}
     
     fetchSessions();
     const intervalId = setInterval(fetchSessions, 5000);
