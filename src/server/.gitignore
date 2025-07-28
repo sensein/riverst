@@ -26,3 +26,4 @@ en_GB-alba-medium.onnx.json
 
 # smart_turn model files
 smart-turn-v2/
+turn_credentials.json
