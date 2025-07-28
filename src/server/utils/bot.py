@@ -29,8 +29,6 @@ from pipecat.processors.filters.stt_mute_filter import (
     STTMuteFilter,
     STTMuteStrategy,
 )
-from pipecat.audio.turn.smart_turn.local_smart_turn_v2 import LocalSmartTurnAnalyzerV2
-from pipecat.audio.turn.smart_turn.base_smart_turn import SmartTurnParams
 import types
 import torch
 import torchaudio
@@ -119,9 +117,9 @@ async def run_bot(
             audio_out_enabled=True,
             audio_in_filter=NoisereduceFilter(),
             vad_analyzer=SileroVADAnalyzer(),
-            #turn_analyzer=LocalSmartTurnAnalyzerV2(
+            # turn_analyzer=LocalSmartTurnAnalyzerV2(
             #    smart_turn_model_path=smart_turn_model_path, params=SmartTurnParams()
-            #),
+            # ),
             audio_in_passthrough=True,
             audio_out_10ms_chunks=4,
         )
@@ -375,7 +373,6 @@ async def run_bot(
             llm=llm,
             context_aggregator=context_aggregator,
             task=task,
-            tts=tts,
             advanced_flows=config.get("advanced_flows", False),
             flow_config_path=config.get("advanced_flows_config_path"),
             session_variables_path=config.get("session_variables_path"),
