@@ -1,28 +1,35 @@
 import argparse
 import asyncio
-import sys
-import json
+import base64
 import datetime
-import uuid
-import os
-from pathlib import Path
-from typing import Dict, Optional, Any
-import uvloop
+import hashlib
+import hmac
+import json
 import math
+import os
+import sys
+import time
+import uuid
+from contextlib import asynccontextmanager
+from pathlib import Path
+from typing import Any, Dict, Optional
+from datetime import timedelta
 
 import uvicorn
+import uvloop
+from dotenv import load_dotenv
 from fastapi import BackgroundTasks, FastAPI, Request, Query, Body, Depends, HTTPException, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
-from dotenv import load_dotenv
+from fastapi.staticfiles import StaticFiles
 from loguru import logger
-from datetime import timedelta
 
 from utils.bot import run_bot
 from pipecat_ai_small_webrtc_prebuilt.frontend import SmallWebRTCPrebuiltUI
-from pipecat.transports.network.webrtc_connection import SmallWebRTCConnection
-from fastapi.staticfiles import StaticFiles
+from pipecat.transports.network.webrtc_connection import (
+    IceServer,
+    SmallWebRTCConnection,
+)
 from auth import (
     verify_google_token, 
     load_authorized_users, 
@@ -42,14 +49,15 @@ BASE_SESSION_DIR = Path(__file__).parent
 
 (BASE_SESSION_DIR / "sessions").mkdir(exist_ok=True)
 app.mount(
-    "/sessions", StaticFiles(directory=BASE_SESSION_DIR / "sessions"), name="sessions"
+    "/api/sessions",
+    StaticFiles(directory=BASE_SESSION_DIR / "sessions"),
+    name="sessions",
 )
 
 # Enable CORS for all origins
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -57,11 +65,33 @@ app.add_middleware(
 # Track active WebRTC connections
 pcs_map: Dict[str, SmallWebRTCConnection] = {}
 
+
+username = str(int(time.time()) + 3600)  # valid for 1 hour
+secret = "ece1392b4b92707cc0c96d837680d120"
+password = base64.b64encode(
+    hmac.new(secret.encode(), username.encode(), hashlib.sha1).digest()
+).decode()
+
+# Save to JSON
+credentials = {"username": username, "password": password}
+
+with open("turn_credentials.json", "w") as f:
+    json.dump(credentials, f, indent=2)
+
+print("TURN credentials saved to turn_credentials.json")
+
 # ICE servers for WebRTC connection
-ice_servers = ["stun:stun.l.google.com:19302"]
+ice_servers = [
+    IceServer(urls="stun:stun.l.google.com:19302"),
+    IceServer(
+        urls="turn:play.kivaproject.org:3478",
+        username="testuser",
+        credential="testpass",
+    ),
+]
 
 # Mount the default frontend
-app.mount("/prebuilt", SmallWebRTCPrebuiltUI)
+# app.mount("/prebuilt", SmallWebRTCPrebuiltUI)
 
 
 # Authentication routes
@@ -219,7 +249,7 @@ async def offer(
     return JSONResponse(answer)
 
 
-@app.get("/health")
+@app.get("/api/health")
 async def health_check() -> JSONResponse:
     """Health check endpoint.
 
@@ -229,7 +259,7 @@ async def health_check() -> JSONResponse:
     return JSONResponse({"status": "ok"})
 
 
-@app.get("/avatars")
+@app.get("/api/avatars")
 async def get_avatars() -> JSONResponse:
     """Returns a list of available avatars."""
     file_path = BASE_SESSION_DIR / "assets" / "avatars.json"
@@ -244,7 +274,7 @@ async def get_avatars() -> JSONResponse:
         )
 
 
-@app.get("/books")
+@app.get("/api/books")
 async def get_books() -> JSONResponse:
     """Returns a list of available books for vocabulary tutoring."""
     books_dir = BASE_SESSION_DIR / "assets" / "books"
@@ -281,7 +311,7 @@ async def get_books() -> JSONResponse:
         return JSONResponse(status_code=500, content={"error": "Unable to load books"})
 
 
-@app.get("/activities")
+@app.get("/api/activities")
 async def get_activities() -> JSONResponse:
     """Fetches predefined activity groups from file.
 
@@ -300,7 +330,7 @@ async def get_activities() -> JSONResponse:
         )
 
 
-@app.get("/activities/settings/{settings_path:path}")
+@app.get("/api/activities/settings/{settings_path:path}")
 async def get_activity_settings(settings_path: str) -> JSONResponse:
     """Loads activity settings JSON and filters services by available API keys.
 
@@ -481,9 +511,29 @@ if __name__ == "__main__":
     parser.add_argument(
         "--verbose", "-v", action="count", help="Enable verbose logging"
     )
+    parser.add_argument(
+        "--ssl-certfile",
+        type=str,
+        default=None,
+        help="Path to SSL certificate (optional)",
+    )
+    parser.add_argument(
+        "--ssl-keyfile", type=str, default=None, help="Path to SSL key (optional)"
+    )
     args = parser.parse_args()
 
     logger.remove(0)
     logger.add(sys.stderr, level="TRACE" if args.verbose else "DEBUG")
 
-    uvicorn.run(app, host=args.host, port=args.port)
+    uvicorn_kwargs = {
+        "app": app,
+        "host": args.host,
+        "port": args.port,
+    }
+
+    # Only add SSL if both files are provided
+    if args.ssl_certfile and args.ssl_keyfile:
+        uvicorn_kwargs["ssl_certfile"] = os.path.expanduser(args.ssl_certfile)
+        uvicorn_kwargs["ssl_keyfile"] = os.path.expanduser(args.ssl_keyfile)
+
+    uvicorn.run(**uvicorn_kwargs)

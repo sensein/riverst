@@ -29,7 +29,7 @@ export default function AvatarInteractionSettings() {
     if (!settingsUrl) return;
     const url = settingsUrl.startsWith('http')
       ? settingsUrl
-      : `http://localhost:7860/${settingsUrl}`;
+      : `${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/${settingsUrl}`;
 
     axios
       .get(url)
@@ -55,7 +55,7 @@ export default function AvatarInteractionSettings() {
 
       if (!avatar) {
         try {
-          const response = await axios.get(`http://localhost:7860/avatars`);
+          const response = await axios.get(`${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/avatars`);
           const avatars = response.data;
           if (avatars.length > 0) {
             avatar = avatars[0];
@@ -75,7 +75,7 @@ export default function AvatarInteractionSettings() {
 
       console.log(fullPayload);
 
-      const res = await authRequest.post(`http://localhost:7860/api/session`, fullPayload);
+      const res = await authRequest.post(`${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/session`, fullPayload);
       const sessionId: string = res.data.session_id;
       const link = `/avatar-interaction/${sessionId}`;
 

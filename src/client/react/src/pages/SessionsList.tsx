@@ -36,15 +36,18 @@ export default function SessionsList() {
 
   useEffect(() => {
     let isMounted = true;
-    const fetchSessions = async () => {
-      try {
-        const response = await authRequest.get(`http://localhost:7860/api/sessions`);
-        if (isMounted) setSessions(response.data);
-      } catch (error) {
-        console.error('Failed to fetch sessions:', error);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
+    
+const fetchSessions = async () => {
+  try {
+    const apiUrl = `${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/sessions`;
+    const response = await authRequest.get(apiUrl);
+    if (isMounted) setSessions(response.data);
+  } catch (error) {
+    console.error('Failed to fetch sessions:', error);
+  } finally {
+    if (isMounted) setLoading(false);
+  }
+};
     };
     
     fetchSessions();

@@ -74,7 +74,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
 
     const fetchBooks = async () => {
       try {
-        const response = await axios.get(`http://localhost:7860/books`);
+        const response = await axios.get(`${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/books`);
         setDynamicEnums(prev => ({
           ...prev,
           books: response.data

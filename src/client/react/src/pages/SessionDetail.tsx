@@ -94,34 +94,35 @@ export default function SessionDetail() {
     setError(null);
     setSteps(null);
 
-    const fetchSessionData = async () => {
-      try {
-        const response = await authRequest.get(`http://localhost:7860/api/session/${id}`);
-        setSteps(response.data.data || []);
-        setSessionMetrics(response.data.metrics_summary || {});
-      } catch (err: any) {
-        let errorMsg = "Failed to load session data";
-        
-        if (err.response) {
-          // Server responded with error status
-          const contentType = err.response.headers['content-type'] || "";
-          if (contentType.includes("application/json") && err.response.data?.error) {
-            errorMsg += ": " + err.response.data.error;
-          } else if (err.response.data && typeof err.response.data === 'string') {
-            errorMsg += ": " + err.response.data;
-          } else {
-            errorMsg += `: Unexpected response (${err.response.status})`;
-          }
-        } else if (err.message) {
-          errorMsg += ": " + err.message;
-        }
-        
-        setError(errorMsg);
-        setSteps([]);
+const fetchSessionData = async () => {
+  try {
+    const apiUrl = `${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/session/${id}`;
+    const response = await authRequest.get(apiUrl);
+    setSteps(response.data.data || []);
+    setSessionMetrics(response.data.metrics_summary || {});
+  } catch (err: any) {
+    let errorMsg = "Failed to load session data";
+    
+    if (err.response) {
+      // Server responded with error status
+      const contentType = err.response.headers['content-type'] || "";
+      if (contentType.includes("application/json") && err.response.data?.error) {
+        errorMsg += ": " + err.response.data.error;
+      } else if (err.response.data && typeof err.response.data === 'string') {
+        errorMsg += ": " + err.response.data;
+      } else {
+        errorMsg += `: Unexpected response (${err.response.status})`;
       }
-    };
+    } else if (err.message) {
+      errorMsg += ": " + err.message;
+    }
+    
+    setError(errorMsg);
+    setSteps([]);
+  }
+};
 
-    fetchSessionData();
+fetchSessionData();
   }, [id]);
 
   if (error) {
@@ -174,7 +175,7 @@ export default function SessionDetail() {
               const displayName = isAgent ? "Agent" : "User";
               const features = step ? { ...step.features, embeddings: step.speaker_embeddings } : {};
               const text = step.transcript?.text || "(no transcript)";
-              const audioSrc = `http://localhost:7860` + (step.audio_file || "");
+              const audioSrc = `${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api` + (step.audio_file || "");
               const { date, time } = formatTimestamp(step.audio_file || "");
 
               return (
