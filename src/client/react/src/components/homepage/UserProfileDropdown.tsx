@@ -1,41 +1,65 @@
-import React, { useEffect, useState } from 'react';
-import { Dropdown, Avatar, Spin } from 'antd';
+import React, { useEffect, useState, useRef } from 'react';
+import { Dropdown, Avatar, Spin, message } from 'antd';
 import {
   UserOutlined,
   SettingOutlined,
-  HistoryOutlined
+  HistoryOutlined,
+  LogoutOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import axios from 'axios';
 
 const UserProfileDropdown: React.FC = () => {
   const navigate = useNavigate();
-  const [sessions, setSessions] = useState<any[]>([]);
+  const { user, logout, authRequest } = useAuth();
+  const [sessions, setSessions] = useState<object[]>([]);
   const [loading, setLoading] = useState(true);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    const fetchSessions = () => {
-      fetch("http://localhost:7860/api/sessions")
-        .then((res) => res.json())
-        .then((data) => {
-          setSessions(data);
-        })
-        .catch(() => {
-          setSessions([]);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
+    const fetchSessions = async () => {
+      try {
+        const response = await authRequest.get(`${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/sessions`);
+        setSessions(response.data);
+        if (response.data.length > 0 && intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+      } catch (error) {
+        console.error('Failed to fetch sessions:', error);
+        setSessions([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchSessions(); // Initial fetch
-    const intervalId = setInterval(fetchSessions, 5000); // Poll every 5s
+    intervalRef.current = setInterval(fetchSessions, 5000); // Poll every 5s
 
     return () => {
-      clearInterval(intervalId);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
     };
   }, []);
 
+  const handleLogout = () => {
+    logout();
+    message.success('Successfully logged out');
+    navigate('/login');
+  };
+
   const menuItems = [
+    {
+      key: 'user-info',
+      label: user?.name || 'User',
+      icon: <UserOutlined />,
+      disabled: true
+    },
+    {
+      type: 'divider' as const
+    },
     {
       key: 'history',
       label: 'History',
@@ -50,6 +74,15 @@ const UserProfileDropdown: React.FC = () => {
       label: 'Settings',
       icon: <SettingOutlined />,
       disabled: true
+    },
+    {
+      type: 'divider' as const
+    },
+    {
+      key: 'logout',
+      label: 'Logout',
+      icon: <LogoutOutlined />,
+      onClick: handleLogout
     }
   ];
 

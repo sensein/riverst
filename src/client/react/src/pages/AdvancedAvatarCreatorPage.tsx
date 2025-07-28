@@ -14,7 +14,7 @@ const AdvancedAvatarCreatorPage = () => {
     console.log("Avatar URL:", url);
     console.log("Avatar gender:", gender);
     setAvatarUrl(url);
-    localStorage.setItem('selectedAvatar', JSON.stringify({ 
+    localStorage.setItem('selectedAvatar', JSON.stringify({
       'modelUrl': url,
       'gender': gender
      }));

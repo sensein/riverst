@@ -7,7 +7,7 @@ import AvatarInteractionContent from '../components/avatarInteraction/AvatarInte
 import axios from 'axios'
 
 interface SettingsState {
-  camera_settings: 'full_body' | 'half_body' | 'headshot'
+  camera_settings: 'full' | 'mid' | 'upper' | 'head'
   video_flag: boolean
   user_transcript: boolean
   bot_transcript: boolean
@@ -36,7 +36,7 @@ export default function AvatarInteraction() {
 
     // Fetch settings from the API if not provided via state
     axios
-      .get(`http://localhost:7860/api/session_config/${sessionId}`)
+      .get(`${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/session_config/${sessionId}`)
       .then((res) => setSettings(res.data))
       .catch(() => setError('Failed to load session configuration.'))
       .finally(() => setLoading(false))

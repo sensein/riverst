@@ -1,15 +1,15 @@
 import { useEffect } from 'react'
 import { FloatButton } from 'antd'
 import { VideoCameraOutlined, VideoCameraAddOutlined } from '@ant-design/icons'
-import { useRTVIClientCamControl } from "@pipecat-ai/client-react";
+import { usePipecatClientCamControl } from "@pipecat-ai/client-react";
 
 export default function CameraButton() {
-  const { enableCam, isCamEnabled } = useRTVIClientCamControl();
+  const { enableCam, isCamEnabled } = usePipecatClientCamControl();
 
   // Sync with actual status on mount
   useEffect(() => {
     enableCam(isCamEnabled)
-  }, [])
+  }, [enableCam, isCamEnabled])
 
   const toggleCam = async () => {
     await enableCam(!isCamEnabled)

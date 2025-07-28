@@ -23,3 +23,6 @@ en_GB-alba-medium.onnx
 en_GB-alba-medium.onnx.json
 
 *.pt
+
+# smart_turn model files
+smart-turn-v2/

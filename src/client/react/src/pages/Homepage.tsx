@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Layout, Spin, Alert, Divider } from 'antd';
+import { Layout, Spin, Alert } from 'antd';
 import axios from 'axios';
 import Navbar from '../components/homepage/Navbar';
 import GroupedActivitySection from '../components/homepage/GroupedActivitySection';
@@ -25,7 +25,7 @@ const Homepage: React.FC = () => {
 
   useEffect(() => {
     axios
-      .get<ActivityGroup[]>('http://localhost:7860/activities')
+      .get<ActivityGroup[]>(`${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/activities`)
       .then((response) => {
         setGroups(response.data);
         setError(null);

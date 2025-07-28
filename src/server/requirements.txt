@@ -1,20 +1,21 @@
 python-dotenv
-fastapi[all]
-uvicorn
-aiortc
-opencv-python
-pipecat-ai[google,silero,webrtc,whisper] @ git+https://github.com/pipecat-ai/pipecat@v0.0.69
-pipecat-ai-small-webrtc-prebuilt
 aiofiles
+uvicorn
+fastapi[all]
+pipecat-ai[google,elevenlabs,silero,webrtc,whisper] @ git+https://github.com/pipecat-ai/pipecat
+pipecat-ai-small-webrtc-prebuilt
 noisereduce
-transformers
+pipecat-ai-flows
+senselab[audio]>=0.36
+huggingface-hub<=0.32
+transformers<=4.52
 torch
-torchvision
+torchaudio
+opencv-python
 ultralytics
 deepface
 tf-keras
-optimum[onnxruntime]
-senselab[audio]
-pipecat-ai-flows
-loguru
-aiohttp
+google-auth
+google-auth-oauthlib
+python-jose[cryptography]
+python-multipart

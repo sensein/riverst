@@ -2,3 +2,4 @@
 __pycache__/
 .qodo
 piper/
+src/server/config/authorized_users.json

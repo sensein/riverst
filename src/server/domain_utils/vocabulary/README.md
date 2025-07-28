@@ -75,7 +75,7 @@ After processing, vocabulary will be added:
 ```json
 {
   "reading_context": {
-    "book_title": "The Great Adventure", 
+    "book_title": "The Great Adventure",
     "chapters": [
       {
         "text": "Chapter content goes here...",
@@ -83,7 +83,7 @@ After processing, vocabulary will be added:
         "vocab_words": {
           "grade_4": ["word1", "word2"],
           "grade_5": ["word1", "word2"],
-          "grade_6": ["word1", "word2"] 
+          "grade_6": ["word1", "word2"]
         }
       }
     ]
@@ -106,7 +106,7 @@ Choose the approach that best fits your needs:
 - ❌ Slower for large collections
 - ❌ Subject to rate limits
 
-### Option 2: Batch Processing (Recommended for Large Collections)  
+### Option 2: Batch Processing (Recommended for Large Collections)
 **Best for:** Large collections (500+ chapters), cost optimization, production use
 
 - ✅ 50% lower cost through batch pricing
@@ -258,7 +258,7 @@ The system implements research-based quality controls following Beck & McKeown's
 
 ### Evidence-Based Filtering
 - **Tier 1 Exclusion**: Removes high-frequency conversational words (first 2,000 most common spoken words)
-- **Tier 3 Exclusion**: Filters out technical discipline-specific terminology  
+- **Tier 3 Exclusion**: Filters out technical discipline-specific terminology
 - **Cross-Domain Validation**: Prioritizes words useful across multiple academic and literary contexts
 - **Frequency Analysis**: Targets words that appear often enough in school texts to merit instruction
 
@@ -287,7 +287,7 @@ The system implements research-based quality controls following Beck & McKeown's
 - Approximate cost: $0.01-0.03 per chapter (depending on chapter length)
 - For 1000 chapters: ~$10-30
 
-### Batch Processing  
+### Batch Processing
 - Approximate cost: $0.005-0.015 per chapter (50% discount)
 - For 1000 chapters: ~$5-15
 

@@ -7,7 +7,7 @@ import MuteButton from './MuteButton';
 import CameraButton from './CameraButton';
 import './FloatGroup.css'
 
-import { useRTVIClientTransportState } from '@pipecat-ai/client-react'
+import { usePipecatClientTransportState } from '@pipecat-ai/client-react'
 
 
 interface FloatGroupProps {
@@ -15,14 +15,13 @@ interface FloatGroupProps {
 }
 
 const FloatGroup: React.FC<FloatGroupProps> = ({ videoFlag }) => {
-  const transportState = useRTVIClientTransportState()
+  const transportState = usePipecatClientTransportState()
 
   return (
     <FloatButton.Group
       trigger="click"
       type="default"
       className={transportState === 'ready' ? 'float-btn-group-connected' : 'float-btn-group-disconnected'}
-      disabled={transportState !== 'ready'}
       icon={
         transportState === 'ready'
           ? <UpOutlined />
