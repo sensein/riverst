@@ -9,6 +9,8 @@ import {
 } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { Link, useNavigate } from "react-router-dom";
+import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
 
 const { Title, Text } = Typography;
 
@@ -30,19 +32,21 @@ export default function SessionsList() {
   const [sessions, setSessions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { authRequest } = useAuth();
 
   useEffect(() => {
     let isMounted = true;
-    const fetchSessions = () => {
-      fetch(`http://localhost:7860/api/sessions`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (isMounted) setSessions(data);
-        })
-        .finally(() => {
-          if (isMounted) setLoading(false);
-        });
+    const fetchSessions = async () => {
+      try {
+        const response = await authRequest.get(`http://localhost:7860/api/sessions`);
+        if (isMounted) setSessions(response.data);
+      } catch (error) {
+        console.error('Failed to fetch sessions:', error);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
     };
+    
     fetchSessions();
     const intervalId = setInterval(fetchSessions, 5000);
     return () => {

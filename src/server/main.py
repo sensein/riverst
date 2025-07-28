@@ -11,17 +11,26 @@ import uvloop
 import math
 
 import uvicorn
-from fastapi import BackgroundTasks, FastAPI, Request, Query, Body
+from fastapi import BackgroundTasks, FastAPI, Request, Query, Body, Depends, HTTPException, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from loguru import logger
+from datetime import timedelta
 
 from utils.bot import run_bot
 from pipecat_ai_small_webrtc_prebuilt.frontend import SmallWebRTCPrebuiltUI
 from pipecat.transports.network.webrtc_connection import SmallWebRTCConnection
 from fastapi.staticfiles import StaticFiles
+from auth import (
+    verify_google_token, 
+    load_authorized_users, 
+    log_rejected_login, 
+    create_access_token, 
+    get_current_user,
+    ACCESS_TOKEN_EXPIRE_MINUTES
+)
 
 # Load environment variables
 load_dotenv(override=True)
@@ -55,6 +64,61 @@ ice_servers = ["stun:stun.l.google.com:19302"]
 app.mount("/prebuilt", SmallWebRTCPrebuiltUI)
 
 
+# Authentication routes
+@app.post("/api/auth/google")
+async def google_auth(request: Request) -> JSONResponse:
+    """Authenticate with Google OAuth token."""
+    data = await request.json()
+    google_token = data.get("token")
+    
+    if not google_token:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Google token required"
+        )
+    
+    # Verify Google token
+    user_info = verify_google_token(google_token)
+    email = user_info.get("email")
+    name = user_info.get("name", "Unknown")
+    
+    # Check if user is authorized
+    authorized_users = load_authorized_users()
+    if email not in authorized_users:
+        log_rejected_login(email, name, "User not in authorized list")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Your account is not authorized to access this application."
+        )
+    
+    # Create JWT token
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": email, "name": name}, 
+        expires_delta=access_token_expires
+    )
+    
+    logger.info(f"Successful login: {email}")
+    
+    return JSONResponse({
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "email": email,
+            "name": name
+        }
+    })
+
+
+@app.get("/api/auth/me")
+async def get_me(current_user: dict = Depends(get_current_user)) -> JSONResponse:
+    """Get current user information."""
+    return JSONResponse({
+        "email": current_user.get("sub"),
+        "name": current_user.get("name")
+    })
+
+
 @app.get("/", include_in_schema=False)
 async def root_redirect() -> RedirectResponse:
     """Redirects to the default frontend UI."""
@@ -62,7 +126,10 @@ async def root_redirect() -> RedirectResponse:
 
 
 @app.post("/api/session")
-async def create_session(config: dict = Body(...)) -> JSONResponse:
+async def create_session(
+    config: dict = Body(...), 
+    current_user: dict = Depends(get_current_user)
+) -> JSONResponse:
     """Creates a new session and stores its config.
 
     Args:
@@ -96,7 +163,7 @@ async def create_session(config: dict = Body(...)) -> JSONResponse:
 async def offer(
     request: Request,
     background_tasks: BackgroundTasks,
-    session_id: str = Query(default=None),
+    session_id: str = Query(default=None)
 ) -> JSONResponse:
     """Handles WebRTC offers and initializes connections.
 
@@ -301,7 +368,7 @@ async def get_activity_settings(settings_path: str) -> JSONResponse:
 
 
 @app.get("/api/sessions")
-async def list_sessions() -> JSONResponse:
+async def list_sessions(current_user: dict = Depends(get_current_user)) -> JSONResponse:
     """Lists all available sessions."""
     session_root = BASE_SESSION_DIR / "sessions"
     if not session_root.is_dir():
@@ -348,7 +415,10 @@ def clean_for_json(obj):
 
 
 @app.get("/api/session/{session_id}")
-async def get_session_data(session_id: str) -> JSONResponse:
+async def get_session_data(
+    session_id: str, 
+    current_user: dict = Depends(get_current_user)
+) -> JSONResponse:
     """Fetches the data for a specific session."""
     session_dir = BASE_SESSION_DIR / "sessions" / session_id
     audio_dir = session_dir / "audios"
