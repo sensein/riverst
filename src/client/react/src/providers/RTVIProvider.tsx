@@ -59,6 +59,9 @@ export function RTVIProvider({
                 localStorage.setItem('endedSessions', JSON.stringify(endedSessions));
               }
 
+              // Disconnect client to trigger on_client_disconnected on server
+              client.disconnect();
+
               // Navigate to session end page
               navigate(`/session-ended/${sessionId}`);
             }

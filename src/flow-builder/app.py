@@ -291,11 +291,13 @@ def generate_json():
                 "task_messages": [
                     {
                         "role": "system",
-                        "content": "The session is now complete. Say goodbye in a friendly and encouraging way.",
+                        "content": (
+                            "The session is now complete. Say goodbye in a friendly and "
+                            "encouraging way. Please call the end_conversation function now."
+                        ),
                     }
                 ],
                 "functions": [],  # Empty functions array for end node
-                "post_actions": [{"type": "end_conversation"}],
             }
 
         # Create necessary directories

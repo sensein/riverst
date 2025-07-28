@@ -79,12 +79,7 @@
         "task_messages": [
           {
             "role": "system",
-            "content": "The session is now complete. Say goodbye in a friendly and encouraging way."
-          }
-        ],
-        "post_actions": [
-          {
-            "type": "end_conversation"
+            "content": "The session is now complete. Say goodbye in a friendly and encouraging way. Please call the end_conversation function now."
           }
         ]
       }

@@ -7,6 +7,7 @@ from pipecat_flows import FlowManager, ContextStrategy, ContextStrategyConfig
 
 from .flows import load_config
 from .animation_handler import AnimationHandler
+from .end_conversation_handler import EndConversationHandler
 
 
 class FlowComponentFactory:
@@ -216,3 +217,10 @@ class FlowComponentFactory:
                 )
                 if animation_instruction:
                     system_msg["content"] += f"\n{animation_instruction}"
+
+            # Add end conversation instruction
+            end_conversation_instruction = (
+                EndConversationHandler.get_end_conversation_instruction()
+            )
+            if end_conversation_instruction:
+                system_msg["content"] += f"\n{end_conversation_instruction}"

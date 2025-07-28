@@ -11,7 +11,6 @@ from .handlers import (
     get_info_variable_handler,
     get_variable_action_handler,
 )
-from ..end_conversation_handler import end_conversation_handler
 
 
 def load_config(
@@ -98,6 +97,7 @@ def get_flow_config(config: FlowConfigurationFile) -> FlowConfig:
 
         # Process functions to assign actual handler references
         if "functions" in node_dict:
+
             for func_def in node_dict["functions"]:
                 if func_def.get("function", {}).get("handler") == "general_handler":
                     func_def["function"]["handler"] = general_handler
@@ -111,23 +111,17 @@ def get_flow_config(config: FlowConfigurationFile) -> FlowConfig:
                     == "get_info_variable_handler"
                 ):
                     func_def["function"]["handler"] = get_info_variable_handler
-                elif func_def.get("function", {}).get("handler") == "end_conversation":
-                    func_def["function"]["handler"] = end_conversation_handler
 
         # Actions also need to resolve handlers
         if "pre_actions" in node_dict:
             for action in node_dict["pre_actions"]:
                 if action.get("handler") == "get_variable_action_handler":
                     action["handler"] = get_variable_action_handler
-                elif action.get("handler") == "end_conversation":
-                    action["handler"] = end_conversation_handler
 
         if "post_actions" in node_dict:
             for action in node_dict["post_actions"]:
                 if action.get("handler") == "get_variable_action_handler":
                     action["handler"] = get_variable_action_handler
-                elif action.get("handler") == "end_conversation":
-                    action["handler"] = end_conversation_handler
 
         # Store the processed node
         flow_config_dict["nodes"][node_id] = NodeConfig(**node_dict)

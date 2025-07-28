@@ -9,6 +9,7 @@ from typing import Dict, Any, List, Optional
 
 from pipecat.services.llm_service import FunctionCallParams
 from pipecat.processors.frameworks.rtvi import RTVIServerMessageFrame, RTVIProcessor
+from pipecat.adapters.schemas.function_schema import FunctionSchema
 
 VALID_ANIMATIONS = [
     {
@@ -100,7 +101,7 @@ class AnimationHandler:
         )
 
     @staticmethod
-    def build_animation_tools_schema(enabled_animations: List[str]) -> Dict[str, Any]:
+    def build_animation_tools_schema(enabled_animations: List[str]) -> "FunctionSchema":
         """Build JSON schema for animation tool.
 
         Args:
@@ -112,18 +113,18 @@ class AnimationHandler:
         animations = [
             anim_id for anim_id in enabled_animations if anim_id in VALID_ANIMATION_IDS
         ]
-        return {
-            "name": "trigger_animation",
-            "description": "Trigger an avatar animation (only one at a time).",
-            "properties": {
+        return FunctionSchema(
+            name="trigger_animation",
+            description="Trigger an avatar animation (only one at a time).",
+            properties={
                 "animation_id": {
                     "type": "string",
                     "enum": animations,
                     "description": "The animation ID to trigger.",
                 }
             },
-            "required": ["animation_id"],
-        }
+            required=["animation_id"],
+        )
 
     @staticmethod
     async def handle_animation(
