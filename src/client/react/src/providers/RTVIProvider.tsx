@@ -46,6 +46,22 @@ export function RTVIProvider({
                 status: '500',
               }
             });
+          },
+          onServerMessage: (message) => {
+            // Handle conversation ended message from server
+            if (message.type === 'conversation-ended') {
+              console.log('Conversation ended by server:', message.message);
+
+              // Mark session as ended in localStorage
+              const endedSessions = JSON.parse(localStorage.getItem('endedSessions') || '[]');
+              if (!endedSessions.includes(sessionId)) {
+                endedSessions.push(sessionId);
+                localStorage.setItem('endedSessions', JSON.stringify(endedSessions));
+              }
+
+              // Navigate to session end page
+              navigate(`/session-ended/${sessionId}`);
+            }
           }
         }
       });

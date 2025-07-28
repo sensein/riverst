@@ -42,6 +42,10 @@ from .bot_component_factory import BotComponentFactory
 from .flow_component_factory import FlowComponentFactory
 from .metrics import MetricsLoggerProcessor
 from .animation_handler import AnimationHandler
+from .end_conversation_handler import (
+    create_end_conversation_handler,
+    END_CONVERSATION_FUNCTION_DEFINITION,
+)
 from .video_buffer_processor import VideoBufferProcessor
 
 load_dotenv(override=True)
@@ -384,6 +388,18 @@ async def run_bot(
             ),
         )
         flow_manager = flow_factory.build()
+
+        # Register end conversation function (after task is created)
+        end_conversation_handler = create_end_conversation_handler(
+            task=task, session_dir=session_dir
+        )
+
+        llm.register_function(
+            "end_conversation",
+            function_call_debug_wrapper(end_conversation_handler),
+            description=END_CONVERSATION_FUNCTION_DEFINITION["description"],
+            parameters=END_CONVERSATION_FUNCTION_DEFINITION["parameters"],
+        )
 
         # Event handlers for data, transcripts, and UI events
         @transcript.event_handler("on_transcript_update")
