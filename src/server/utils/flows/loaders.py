@@ -9,7 +9,6 @@ from .handlers import (
     get_session_variable_handler,
     general_handler,
     get_info_variable_handler,
-    general_transition_callback,
     get_variable_action_handler,
 )
 
@@ -99,13 +98,6 @@ def get_flow_config(config: FlowConfigurationFile) -> FlowConfig:
         # Process functions to assign actual handler references
         if "functions" in node_dict:
             for func_def in node_dict["functions"]:
-                if (
-                    func_def.get("function", {}).get("transition_callback")
-                    == "general_transition_callback"
-                ):
-                    func_def["function"][
-                        "transition_callback"
-                    ] = general_transition_callback
                 if func_def.get("function", {}).get("handler") == "general_handler":
                     func_def["function"]["handler"] = general_handler
                 elif (
