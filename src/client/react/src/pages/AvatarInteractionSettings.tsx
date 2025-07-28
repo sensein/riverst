@@ -6,10 +6,12 @@ import { CopyOutlined } from '@ant-design/icons';
 
 import axios from 'axios';
 import SettingsForm from '../components/SettingsForm';
+import { useAuth } from '../contexts/AuthContext';
 const { Paragraph, Text } = Typography;
 
 export default function AvatarInteractionSettings() {
   const location = useLocation();
+  const { authRequest } = useAuth();
   interface LocationState {
     settingsUrl?: string;
   }
@@ -73,7 +75,7 @@ export default function AvatarInteractionSettings() {
 
       console.log(fullPayload);
 
-      const res = await axios.post(`${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/session`, fullPayload);
+      const res = await authRequest.post(`${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/session`, fullPayload);
       const sessionId: string = res.data.session_id;
       const link = `/avatar-interaction/${sessionId}`;
 

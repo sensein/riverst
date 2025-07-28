@@ -11,6 +11,8 @@ import {
 } from "antd";
 import { InfoCircleOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 import { useParams, useNavigate } from "react-router-dom";
+import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
 
 const { Title, Paragraph } = Typography;
 const { Content } = Layout;
@@ -79,6 +81,7 @@ function formatTimestamp(file: string) {
 export default function SessionDetail() {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
+  const { authRequest } = useAuth();
 
   const [steps, setSteps] = useState<Step[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -91,34 +94,35 @@ export default function SessionDetail() {
     setError(null);
     setSteps(null);
 
-    fetch(`${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/session/${id}`)
-      .then(async (res) => {
-        const contentType = res.headers.get("content-type") || "";
-        if (!res.ok || !contentType.includes("application/json")) {
-          let errorMsg = `Unexpected response (${res.status})`;
-          if (contentType.includes("application/json")) {
-            try {
-              const errJson = await res.json();
-              errorMsg = errJson.error || errorMsg;
-            } catch {
-              // ignore
-            }
-          } else {
-            const errText = await res.text();
-            errorMsg = errText;
-          }
-          throw new Error(errorMsg);
-        }
-        return res.json();
-      })
-      .then((data) => {
-        setSteps(data.data || []);
-        setSessionMetrics(data.metrics_summary || {});
-      })
-      .catch((err) => {
-        setError("Failed to load session data: " + err.message);
-        setSteps([]);
-      });
+const fetchSessionData = async () => {
+  try {
+    const apiUrl = `${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/session/${id}`;
+    const response = await authRequest.get(apiUrl);
+    setSteps(response.data.data || []);
+    setSessionMetrics(response.data.metrics_summary || {});
+  } catch (err: any) {
+    let errorMsg = "Failed to load session data";
+    
+    if (err.response) {
+      // Server responded with error status
+      const contentType = err.response.headers['content-type'] || "";
+      if (contentType.includes("application/json") && err.response.data?.error) {
+        errorMsg += ": " + err.response.data.error;
+      } else if (err.response.data && typeof err.response.data === 'string') {
+        errorMsg += ": " + err.response.data;
+      } else {
+        errorMsg += `: Unexpected response (${err.response.status})`;
+      }
+    } else if (err.message) {
+      errorMsg += ": " + err.message;
+    }
+    
+    setError(errorMsg);
+    setSteps([]);
+  }
+};
+
+fetchSessionData();
   }, [id]);
 
   if (error) {

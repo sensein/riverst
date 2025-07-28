@@ -70,6 +70,7 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
       });
 
       const body = avatar.gender === "feminine" ? "F" : "M";
+      
 
       head.showAvatar(
         {
@@ -149,7 +150,6 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
           }
         }
         if (msg.type === 'visemes-event') {
-          // console.log("[XXX] Visemes Event:", msg.payload)
           if (msg.payload && msg.payload.words) {
             const { words, wtimes, wdurations, duration } = msg.payload;
             // console.log("Words", words);
