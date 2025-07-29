@@ -116,13 +116,13 @@ async def run_bot(
             video_out_framerate=config.get("video_out_framerate", 0),
             audio_in_enabled=True,
             audio_out_enabled=True,
-            audio_in_filter=NoisereduceFilter(),
+            #audio_in_filter=NoisereduceFilter(),
             vad_analyzer=SileroVADAnalyzer(),
             # turn_analyzer=LocalSmartTurnAnalyzerV2(
             #    smart_turn_model_path=smart_turn_model_path, params=SmartTurnParams()
             # ),
             audio_in_passthrough=True,
-            audio_out_10ms_chunks=4,
+            audio_out_10ms_chunks=2,
         )
 
         pipecat_transport = SmallWebRTCTransport(
@@ -344,8 +344,8 @@ async def run_bot(
         else:
             steps = [
                 pipecat_transport.input(),
-                rtvi,
                 context_aggregator.user(),
+                rtvi,
                 video_buffer if config.get("video_flag", False) else None,
                 (
                     VideoProcessor(
@@ -398,6 +398,7 @@ async def run_bot(
         )
         flow_manager = flow_factory.build()
 
+        
         # Event handlers for data, transcripts, and UI events
         @transcript.event_handler("on_transcript_update")
         async def on_transcript_update(processor, frame):
@@ -431,7 +432,7 @@ async def run_bot(
                 i += 1
             session_wav = os.path.join(session_dir, f"session_{i}.wav")
             await save_audio_file(audio, session_wav, sr, ch)
-
+        
         @rtvi.event_handler("on_client_ready")
         async def on_client_ready(rtvi):
             await rtvi.set_bot_ready()
@@ -450,14 +451,13 @@ async def run_bot(
             await audiobuffer.stop_recording()
             await task.cancel()
             await metrics_logger.aggregate_and_save()
-
+            
             async def trigger_analysis_on_audios(audios_dir: str):
                 try:
                     # Trigger analysis on all files in audios_dir without waiting for them
                     for filename in os.listdir(audios_dir):
                         if filename.endswith(".wav"):
                             filepath = os.path.join(audios_dir, filename)
-                            # asyncio.create_task(AudioAnalyzer.analyze_audio(filepath))
                             await AudioAnalyzer.analyze_audio(filepath)
                 except Exception as e:
                     logger.error(f"Error triggering analysis on audios: {e}")
@@ -466,6 +466,7 @@ async def run_bot(
             asyncio.create_task(trigger_analysis_on_audios(audios_dir))
 
             video_buffer.save_video()
+            
 
         runner = PipelineRunner(handle_sigint=False)
         await runner.run(task)

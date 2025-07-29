@@ -74,6 +74,7 @@ class LipsyncProcessor(FrameProcessor):
 
     def _warm_up(self):
         """Load and warm up the ASR pipeline."""
+        print("_warm_up")
         dummy_audio = np.random.rand(16000).astype(np.int16) * 2 - 1
         if self.strategy == "timestamped_asr":
             if self.device == "mps":
@@ -82,7 +83,8 @@ class LipsyncProcessor(FrameProcessor):
                 self.asr_model.transcribe(dummy_audio, word_timestamps=True)
         else:
             self.asr_pipeline(dummy_audio)
-
+        print("_warm_up done")
+        
     async def process_frame(self, frame: Frame, direction: FrameDirection):
         """Process incoming frames, handling TTS audio buffering and ASR."""
         await super().process_frame(frame, direction)
@@ -165,7 +167,7 @@ class LipsyncProcessor(FrameProcessor):
 
             # Emit RTVIServerMessageFrame before the buffered audio
             await self.push_frame(output_frame, direction)
-
+            
             # Emit the TTSStartedFrame, then buffered audio, then TTSStoppedFrame
             if self.start:
                 print("Delay in s:", (time.time() - self.start))
@@ -174,6 +176,7 @@ class LipsyncProcessor(FrameProcessor):
             await self.push_frame(started_frame, direction)
 
             for audio_frame in self.audio_buffer:
+                print("emitting audio_fame:", audio_frame)
                 await self.push_frame(audio_frame, direction)
 
             await self.push_frame(frame, direction)
