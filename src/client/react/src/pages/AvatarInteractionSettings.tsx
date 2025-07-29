@@ -27,12 +27,12 @@ export default function AvatarInteractionSettings() {
   // fetch the form schema from the passed-in URL
   useEffect(() => {
     if (!settingsUrl) return;
-    const url = settingsUrl.startsWith('http')
-      ? settingsUrl
-      : `${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/${settingsUrl}`;
-
+    // const url = settingsUrl.startsWith('http')
+    //  ? settingsUrl
+    //  : `${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/${settingsUrl}`;
+    
     axios
-      .get(url)
+      .get(settingsUrl)
       .then(res => setSchema(res.data))
       .catch(err => console.error('Failed to load schema:', err));
   }, [settingsUrl]);
