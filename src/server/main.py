@@ -491,7 +491,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    logger.remove(0)
+    logger.remove()
     logger.add(sys.stderr, level="TRACE" if args.verbose else "DEBUG")
 
     uvicorn_kwargs = {

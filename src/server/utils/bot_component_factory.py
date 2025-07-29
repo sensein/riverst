@@ -23,12 +23,14 @@ import json
 from .animation_handler import AnimationHandler
 from .end_conversation_handler import EndConversationHandler
 from .lipsync_processor import LipsyncProcessor
+from .kokoro import KokoroTTSService
+from .utils import get_best_device
 import shutil
 
 ModalityType = Literal["classic", "e2e"]
 LLMType = Literal["openai", "openai_realtime_beta", "gemini", "llama3.2"]
 STTType = Literal["openai", "whisper"]
-TTSType = Literal["openai", "elevenlabs", "piper"]
+TTSType = Literal["openai", "elevenlabs", "piper", "kokoro"]
 
 ALLOWED_LLM = {
     "classic": {"openai", "llama3.2"},
@@ -227,6 +229,14 @@ class BotComponentFactory:
                     voice_id=voice_id,
                     model="eleven_flash_v2_5",
                 )
+            elif self.tts_type == "kokoro":
+                voice_id = (
+                    "af_heart"
+                    if "gender" in self.avatar and self.avatar["gender"] == "feminine"
+                    else "am_puck"
+                )
+                device = get_best_device()
+                tts = KokoroTTSService(voice=voice_id, device=device)
 
         elif self.modality == "e2e":
             if self.llm_type == "openai_realtime_beta":

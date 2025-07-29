@@ -4,6 +4,7 @@ uvicorn
 fastapi[all]
 pipecat-ai[google,elevenlabs,silero,webrtc,whisper] @ git+https://github.com/pipecat-ai/pipecat
 pipecat-ai-small-webrtc-prebuilt
+kokoro
 noisereduce
 pipecat-ai-flows
 senselab[audio]>=0.36
