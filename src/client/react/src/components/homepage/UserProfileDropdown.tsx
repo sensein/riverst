@@ -20,7 +20,7 @@ const UserProfileDropdown: React.FC = () => {
   useEffect(() => {
     const fetchSessions = async () => {
       try {
-        const response = await authRequest.get(`${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/sessions`);
+        const response = await authRequest.get(`/api/sessions`);
         setSessions(response.data);
         if (response.data.length > 0 && intervalRef.current) {
           clearInterval(intervalRef.current);

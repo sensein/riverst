@@ -55,7 +55,7 @@ export default function AvatarInteractionSettings() {
 
       if (!avatar) {
         try {
-          const response = await axios.get(`${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/avatars`);
+          const response = await axios.get(`/api/avatars`);
           const avatars = response.data;
           if (avatars.length > 0) {
             avatar = avatars[0];
@@ -75,7 +75,7 @@ export default function AvatarInteractionSettings() {
 
       console.log(fullPayload);
 
-      const res = await authRequest.post(`${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/session`, fullPayload);
+      const res = await authRequest.post(`/api/session`, fullPayload);
       const sessionId: string = res.data.session_id;
       const link = `/avatar-interaction/${sessionId}`;
 

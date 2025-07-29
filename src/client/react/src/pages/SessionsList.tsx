@@ -36,10 +36,10 @@ export default function SessionsList() {
 
   useEffect(() => {
     let isMounted = true;
-    
+
 const fetchSessions = async () => {
   try {
-    const apiUrl = `${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/sessions`;
+    const apiUrl = `/api/sessions`;
     const response = await authRequest.get(apiUrl);
     if (isMounted) setSessions(response.data);
   } catch (error) {
@@ -48,7 +48,7 @@ const fetchSessions = async () => {
     if (isMounted) setLoading(false);
   }
 }
-    
+
     fetchSessions();
     const intervalId = setInterval(fetchSessions, 5000);
     return () => {
