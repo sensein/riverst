@@ -63,9 +63,6 @@ const LoginPage: React.FC = () => {
   }, [isScriptLoaded]);
 
   const initializeGoogleSignIn = () => {
-    console.log('Google Client ID:', import.meta.env.VITE_GOOGLE_CLIENT_ID);
-    console.log('Window.google available:', !!window.google);
-
     if (window.google) {
       window.google.accounts.id.initialize({
         client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
@@ -74,14 +71,12 @@ const LoginPage: React.FC = () => {
 
       // Render the sign-in button
       const buttonElement = document.getElementById('google-signin-button');
-      console.log('Button element found:', !!buttonElement);
       if (buttonElement) {
         window.google.accounts.id.renderButton(buttonElement, {
           theme: 'outline',
           size: 'large',
           width: 300,
         });
-        console.log('Google button rendered');
       }
     } else {
       console.error('Google object not available');

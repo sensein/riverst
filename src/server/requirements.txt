@@ -20,3 +20,4 @@ google-auth
 google-auth-oauthlib
 python-jose[cryptography]
 python-multipart
+faster-whisper

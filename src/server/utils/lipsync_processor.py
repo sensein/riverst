@@ -17,6 +17,8 @@ import json
 import os
 from dataclasses import dataclass
 import string
+import time
+from faster_whisper import WhisperModel
 
 
 class LipsyncProcessor(FrameProcessor):
@@ -30,16 +32,24 @@ class LipsyncProcessor(FrameProcessor):
         self.is_buffering = False
         self.strategy = strategy
         self.device = get_best_device()
+        print("Using device:", self.device)
         self.forced_alignment_flag = (
             False  # Set to True if you want to use forced alignment
         )
         if self.strategy == "timestamped_asr":
-            self.asr_pipeline = transformers_pipeline(
-                "automatic-speech-recognition",
-                model="openai/whisper-tiny",
-                device=self.device,
-                torch_dtype=torch.float16,
-            )
+            if self.device == "mps":
+                self.asr_pipeline = transformers_pipeline(
+                    "automatic-speech-recognition",
+                    model="openai/whisper-tiny",
+                    device=self.device,
+                    torch_dtype=torch.float16,
+                )
+            else:
+                self.asr_model = WhisperModel(
+                    "tiny",
+                    device=self.device,
+                    compute_type="float16" if self.device == "cuda" else "int8",
+                )
             if self.forced_alignment_flag:
                 bundle = torchaudio.pipelines.WAV2VEC2_ASR_BASE_960H
                 self.labels = bundle.get_labels()
@@ -65,13 +75,20 @@ class LipsyncProcessor(FrameProcessor):
     def _warm_up(self):
         """Load and warm up the ASR pipeline."""
         dummy_audio = np.random.rand(16000).astype(np.int16) * 2 - 1
-        _ = self.asr_pipeline(dummy_audio)
+        if self.strategy == "timestamped_asr":
+            if self.device == "mps":
+                self.asr_pipeline(dummy_audio)
+            else:
+                self.asr_model.transcribe(dummy_audio, word_timestamps=True)
+        else:
+            self.asr_pipeline(dummy_audio)
 
     async def process_frame(self, frame: Frame, direction: FrameDirection):
         """Process incoming frames, handling TTS audio buffering and ASR."""
         await super().process_frame(frame, direction)
 
         if isinstance(frame, TTSStartedFrame):
+            self.start = time.time()
             self.is_buffering = True
             self.audio_buffer.clear()
             return  # do not push immediately
@@ -118,10 +135,21 @@ class LipsyncProcessor(FrameProcessor):
                         audio_data, transcript["text"]
                     )
                 else:
-                    prediction = self.asr_pipeline(audio_data, return_timestamps="word")
-                    formatted_output = self._format_prediction(
-                        prediction, audio_duration_sec
-                    )
+                    if self.device == "mps":
+                        prediction = self.asr_pipeline(
+                            audio_data, return_timestamps="word"
+                        )
+                        formatted_output = self._format_prediction(
+                            prediction, audio_duration_sec
+                        )
+                    else:
+                        segments, _ = self.asr_model.transcribe(
+                            audio_data, word_timestamps=True
+                        )
+                        formatted_output = self._format_faster_whisper_segments(
+                            segments, audio_duration_sec
+                        )
+
             elif self.strategy == "timestamped_phoneme_recognition":
                 # Handle phoneme-based ASR output
                 prediction = self.asr_pipeline(audio_data, return_timestamps="char")
@@ -139,6 +167,9 @@ class LipsyncProcessor(FrameProcessor):
             await self.push_frame(output_frame, direction)
 
             # Emit the TTSStartedFrame, then buffered audio, then TTSStoppedFrame
+            if self.start:
+                print("Delay in s:", (time.time() - self.start))
+                self.start = None
             started_frame = TTSStartedFrame()
             await self.push_frame(started_frame, direction)
 
@@ -176,6 +207,29 @@ class LipsyncProcessor(FrameProcessor):
             "wtimes": wtimes,
             "wdurations": wdurations,
             "duration": float(audio_duration_sec),  # total duration in s
+        }
+
+    def _format_faster_whisper_segments(
+        self, segments, audio_duration_sec: float
+    ) -> dict:
+        words = []
+        wtimes = []
+        wdurations = []
+
+        for segment in segments:
+            if not segment.words:
+                continue
+            for word in segment.words:
+                words.append(word.word)
+                wtimes.append(int(word.start * 1000))
+                end_time = word.end if word.end is not None else audio_duration_sec
+                wdurations.append(int((end_time - word.start) * 1000))
+
+        return {
+            "words": words,
+            "wtimes": wtimes,
+            "wdurations": wdurations,
+            "duration": float(audio_duration_sec),
         }
 
     def _format_phoneme_chunks(self, chunks: list, audio_duration_sec: float) -> dict:
