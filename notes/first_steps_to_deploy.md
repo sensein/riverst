@@ -1,0 +1,238 @@
+# First steps to deploy riverst
+
+This guide explains step-by-step how to deploy the Riverst project on AWS using a Linux EC2 machine.
+
+---
+
+## 1. Create an AWS EC2 instance
+
+- Choose `g4dn.xlarge` as the instance type or more powerful (we need a GPU for efficient lip sync).
+- Use a Linux (Ubuntu) machine.
+- Set the storage volume to **64 GB** (or larger).
+- Open these ports in the security group:
+  - **22** (SSH)
+  - **80** (HTTP)
+  - **443** (HTTPS - this is crucial for webrtc connection to work)
+  - **3478 and 10000-65535** (UDP for webrtc connection)
+
+---
+
+## 2. Create and assign an Elastic IP
+
+- Go to the AWS console.
+- Create a new **Elastic IP**.
+- Associate it with your EC2 instance.
+- (Optional) If you have a domain or subdomain (like our `kivaproject.org` and `play.kivaproject.org`), connect it to the Elastic IP.
+
+---
+
+## 3. Connect to the EC2 instance
+
+Use SSH:
+```bash
+ssh -i your-key.pem ubuntu@your-elastic-ip
+```
+
+---
+
+## 4. Install NVIDIA drivers
+
+```bash
+sudo apt update
+sudo apt install ubuntu-drivers-common
+sudo ubuntu-drivers autoinstall
+sudo reboot
+```
+
+---
+
+## 5. Install ollama
+
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+```
+
+---
+
+## 6. Install conda
+
+```bash
+mkdir -p ~/miniconda3
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
+bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
+rm ~/miniconda3/miniconda.sh
+source ~/miniconda3/bin/activate
+conda init --all
+```
+
+---
+
+## 7. Install NVM (Node version manager)
+
+```bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+. "$HOME/.nvm/nvm.sh"
+nvm install 22
+```
+
+---
+
+## 8. Install more system dependencies (required by riverst)
+
+```bash
+sudo apt install -y build-essential python3-dev ffmpeg git
+sudo apt install -y libsndfile1-dev pkg-config
+```
+
+---
+
+## 9. SSL certificates with certbot
+
+```bash
+sudo apt install certbot
+sudo apt install python3-certbot-nginx
+sudo certbot certonly --standalone -d play.kivaproject.org
+```
+
+Set up automatic renewal:
+
+```bash
+sudo crontab -e
+# Add this line:
+0 0 * * * certbot renew --quiet
+```
+
+---
+
+## 10. Install and configure NGINX
+
+```bash
+sudo apt install nginx
+sudo vim /etc/nginx/sites-available/play.kivaproject.org
+```
+
+Paste this config:
+
+```nginx
+server {
+    listen 80;
+    server_name play.kivaproject.org;
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    server_name play.kivaproject.org;
+
+    ssl_certificate /etc/letsencrypt/live/play.kivaproject.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/play.kivaproject.org/privkey.pem;
+
+    location / {
+        proxy_pass http://localhost:5173;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    location /api/ {
+        proxy_pass https://localhost:7860/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_ssl_verify off;
+    }
+}
+```
+
+Enable the config:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/play.kivaproject.org /etc/nginx/sites-enabled/
+sudo systemctl start nginx
+sudo systemctl status nginx
+```
+
+---
+
+## 11. Clone and setup riverst
+
+```bash
+git clone https://github.com/fabiocat93/riverst.git
+```
+
+### Frontend
+
+```bash
+cd riverst/src/client/react/
+npm install
+cp .env.example .env
+# Edit `.env` to configure your settings following .env.example
+
+# [In a tmux tab]
+npm run dev -- --host 0.0.0.0
+```
+
+### Backend
+
+```bash
+conda create -n riverst python=3.11
+conda activate riverst
+cd riverst/src/server
+pip install -r requirements.txt
+git clone https://huggingface.co/pipecat-ai/smart-turn-v2
+cp .env.example .env
+# Edit `.env` to configure your settings following .env.example
+
+# [In a tmux tab]
+sudo /home/ubuntu/miniconda3/envs/riverst/bin/python main.py \
+  --ssl-certfile /etc/letsencrypt/live/play.kivaproject.org/fullchain.pem \
+  --ssl-keyfile /etc/letsencrypt/live/play.kivaproject.org/privkey.pem
+```
+
+---
+
+## 12. Setup Piper (open-source text-to-speech)
+
+```bash
+pip install --no-deps piper-tts
+pip install piper_phonemize
+git clone https://github.com/rhasspy/piper.git
+cd piper/src/python_run
+mkdir voices
+cd voices
+
+# Download voices
+wget -O en_GB-alba-medium.onnx "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_GB/alba/medium/en_GB-alba-medium.onnx?download=true"
+wget -O en_GB-alba-medium.onnx.json "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_GB/alba/medium/en_GB-alba-medium.onnx.json?download=true"
+wget -O en_GB-alan-medium.onnx "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_GB/alan/medium/en_GB-alan-medium.onnx?download=true"
+wget -O en_GB-alan-medium.onnx.json "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_GB/alan/medium/en_GB-alan-medium.onnx.json?download=true"
+```
+
+Run Piper [in 2 tmux tabs]:
+
+```bash
+python3 -m piper.http_server --model voices/en_GB-alba-medium.onnx --port 5001
+python3 -m piper.http_server --model voices/en_GB-alan-medium.onnx --port 5002
+```
+
+---
+
+## 13. Run ollama models
+
+Run [in 2 tmux tabs]:
+
+```bash
+ollama run qwen3:30b-a3b-instruct-2507-q4_K_M
+ollama run llama3.2
+```
+
+---
+
+**You are all set!**
