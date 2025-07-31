@@ -9,9 +9,9 @@ import logging
 from pipecat.processors.frame_processor import FrameProcessor, FrameDirection
 from pipecat.frames.frames import Frame, InputImageRawFrame, OutputImageRawFrame
 
+import torch
 from ultralytics import YOLO
 from ultralytics.utils import LOGGER
-from deepface import DeepFace
 from loguru import logger
 
 from .utils import get_best_device
@@ -48,6 +48,13 @@ class VideoProcessor(FrameProcessor):
 
         if self.enable_pose:
             logger.info("Initializing YOLO pose model...")
+
+            # force PyTorch to grab the GPU before TensorFlow does
+            # this is because otherwise yolo cannot find any gpu device and fails
+            torch.cuda.is_available()
+            _ = torch.cuda.current_device()
+            _ = torch.cuda.get_device_properties(0)
+
             yolo_model = YOLO("yolo11n-pose.pt")
             yolo_model.export(format="onnx")  # Creates 'yolo11n-pose.onnx'
             self.pose_inferencer = YOLO("yolo11n-pose.onnx")
@@ -91,6 +98,7 @@ class VideoProcessor(FrameProcessor):
             return
         async with self._deepface_lock:
             try:
+                from deepface import DeepFace
                 loop = asyncio.get_running_loop()
                 results = await loop.run_in_executor(
                     None,

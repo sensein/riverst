@@ -132,7 +132,7 @@ export default function AvatarInteractionSettings() {
               value={window.location.origin + sessionLink}
               size={160}
               icon='/logo/riverst_black.svg'
-              iconSize={60}
+              iconSize={40}
             />
           </div>
           <div style={{ flex: 2, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>

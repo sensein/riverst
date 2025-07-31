@@ -193,11 +193,14 @@ class BotComponentFactory:
                     api_key=os.getenv("OPENAI_API_KEY"),
                     model=(self.llm_params or {}).get("model", "gpt-4o-mini"),
                 )
-            elif (
-                self.llm_type == "llama3.2"
-                or self.llm_type == "qwen3:30b-a3b-instruct-2507-q4_K_M"
-            ):
-                llm = OLLamaLLMService(model=self.llm_type)
+            elif self.llm_type == "llama3.2":
+                # this assumes llama3.2 is served on port 11434
+                llm = OLLamaLLMService(model=self.llm_type,
+                                       base_url="http://localhost:11434/v1")
+            elif self.llm_type == "qwen3:30b-a3b-instruct-2507-q4_K_M":
+                # this assumes llama3.2 is served on port 11435
+                llm = OLLamaLLMService(model=self.llm_type,
+                                       base_url="http://localhost:11435/v1")
 
             if self.tts_type == "openai":
                 voice = (

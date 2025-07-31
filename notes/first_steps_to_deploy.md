@@ -226,11 +226,33 @@ python3 -m piper.http_server --model voices/en_GB-alan-medium.onnx --port 5002
 
 ## 13. Run ollama models
 
-Run [in 2 tmux tabs]:
+Run (only one at a time because `ollama run` by default connects to a single Ollama server running at localhost:11434):
 
 ```bash
 ollama run qwen3:30b-a3b-instruct-2507-q4_K_M
 ollama run llama3.2
+```
+
+or both at the same time [in 2 tmux tabs]:
+
+```bash
+docker run -d \
+  --name ollama-qwen \
+  -p 11435:11434 \
+  -v ollama-qwen:/root/.ollama \
+  ollama/ollama
+
+# Then inside the container:
+docker exec -it ollama-qwen ollama run qwen3:30b-a3b-instruct-2507-q4_K_M
+
+docker run -d \
+  --name ollama-llama3 \
+  -p 11434:11434 \
+  -v ollama-llama3:/root/.ollama \
+  ollama/ollama
+
+# Then inside the container:
+docker exec -it ollama-llama3 ollama run llama3.2
 ```
 
 ---

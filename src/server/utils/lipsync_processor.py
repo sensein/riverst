@@ -17,7 +17,6 @@ import json
 import os
 from dataclasses import dataclass
 import string
-import time
 from faster_whisper import WhisperModel
 
 
@@ -94,7 +93,6 @@ class LipsyncProcessor(FrameProcessor):
         await super().process_frame(frame, direction)
 
         if isinstance(frame, TTSStartedFrame):
-            self.start = time.time()
             self.is_buffering = True
             self.audio_buffer.clear()
             return  # do not push immediately
@@ -106,33 +104,6 @@ class LipsyncProcessor(FrameProcessor):
         elif isinstance(frame, TTSStoppedFrame) and self.is_buffering:
             self.is_buffering = False
 
-            '''
-            audio_tensor = torch.cat(
-                [
-                    torch.frombuffer(frame.audio, dtype=torch.int16).float() / 32768.0
-                    for frame in self.audio_buffer
-                ]
-            )
-
-            # Reshape to (1, N) for torchaudio (mono channel)
-            audio_tensor = audio_tensor.unsqueeze(0)  # shape: (1, N)
-
-            # Resample to 16kHz if necessary
-            sample_rate = self.audio_buffer[0].sample_rate
-            if sample_rate == 16000:
-                resampled_audio = audio_tensor
-            else:
-                resampler = torchaudio.transforms.Resample(
-                    orig_freq=sample_rate, new_freq=16000
-                )
-                resampled_audio = resampler(audio_tensor)
-            audio_duration_sec = (
-                resampled_audio.shape[1] / 16000
-            )  # since resampled to 16kHz
-
-            # Convert to NumPy array for ASR processing
-            audio_data = resampled_audio.squeeze(0).numpy()
-            '''
             # 1. Pre-allocate a buffer and concatenate bytes first
             raw_audio_bytes = b"".join(frame.audio for frame in self.audio_buffer)
 
@@ -200,9 +171,6 @@ class LipsyncProcessor(FrameProcessor):
 
             # Emit RTVIServerMessageFrame before the buffered audio
             await self.push_frame(output_frame, direction)
-            if self.start:
-                print("delay: ", time.time() - self.start)
-                self.start = 0
             # Emit the TTSStartedFrame, then buffered audio, then TTSStoppedFrame
             started_frame = TTSStartedFrame()
             await self.push_frame(started_frame, direction)
