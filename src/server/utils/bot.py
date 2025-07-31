@@ -409,9 +409,6 @@ async def run_bot(
             audios_dir = os.path.join(session_dir, "audios")
             os.makedirs(audios_dir, exist_ok=True)
             path = f"{audios_dir}/{datetime.datetime.now():%Y%m%d_%H%M%S_%f}_USER.wav"
-            print(
-                "[YYY] Saving user audio to:", path, "Sample Rate:", sr, "Channels:", ch
-            )
             await save_audio_file(audio, path, sr, ch)
 
         @audiobuffer.event_handler("on_bot_turn_audio_data")
@@ -419,9 +416,6 @@ async def run_bot(
             audios_dir = os.path.join(session_dir, "audios")
             os.makedirs(audios_dir, exist_ok=True)
             path = f"{audios_dir}/{datetime.datetime.now():%Y%m%d_%H%M%S_%f}_AGENT.wav"
-            print(
-                "[YYY] Saving bot audio to:", path, "Sample Rate:", sr, "Channels:", ch
-            )
             await save_audio_file(audio, path, sr, ch)
 
         @audiobuffer.event_handler("on_audio_data")

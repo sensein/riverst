@@ -492,7 +492,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     logger.remove()
-    logger.add(sys.stderr, level="TRACE" if args.verbose else "DEBUG")
 
     uvicorn_kwargs = {
         "app": app,
@@ -504,5 +503,8 @@ if __name__ == "__main__":
     if args.ssl_certfile and args.ssl_keyfile:
         uvicorn_kwargs["ssl_certfile"] = os.path.expanduser(args.ssl_certfile)
         uvicorn_kwargs["ssl_keyfile"] = os.path.expanduser(args.ssl_keyfile)
+        logger.add(sys.stderr, level="ERROR")
+    else:
+        logger.add(sys.stderr, level="TRACE" if args.verbose else "DEBUG")
 
     uvicorn.run(**uvicorn_kwargs)

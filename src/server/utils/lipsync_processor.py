@@ -32,7 +32,6 @@ class LipsyncProcessor(FrameProcessor):
         self.is_buffering = False
         self.strategy = strategy
         self.device = get_best_device()
-        print("Using device:", self.device)
         self.forced_alignment_flag = (
             False  # Set to True if you want to use forced alignment
         )
@@ -47,8 +46,8 @@ class LipsyncProcessor(FrameProcessor):
             else:
                 self.asr_model = WhisperModel(
                     "tiny",
-                    device=self.device,
-                    compute_type="float16" if self.device == "cuda" else "int8",
+                    device=str(self.device),
+                    compute_type="float16" if str(self.device) == "cuda" else "int8",
                 )
             if self.forced_alignment_flag:
                 bundle = torchaudio.pipelines.WAV2VEC2_ASR_BASE_960H
@@ -74,13 +73,18 @@ class LipsyncProcessor(FrameProcessor):
 
     def _warm_up(self):
         """Load and warm up the ASR pipeline."""
-        print("_warm_up")
         dummy_audio = np.random.rand(16000).astype(np.int16) * 2 - 1
         if self.strategy == "timestamped_asr":
             if self.device == "mps":
                 self.asr_pipeline(dummy_audio)
             else:
-                self.asr_model.transcribe(dummy_audio, word_timestamps=True)
+                self.asr_model.transcribe(dummy_audio, 
+                                          word_timestamps=True, 
+                                          beam_size=1, 
+                                          temperature=[0.0], 
+                                          suppress_tokens=[], 
+                                          condition_on_previous_text=False, 
+                                          vad_filter=False)
         else:
             self.asr_pipeline(dummy_audio)
         print("_warm_up done")
@@ -102,6 +106,7 @@ class LipsyncProcessor(FrameProcessor):
         elif isinstance(frame, TTSStoppedFrame) and self.is_buffering:
             self.is_buffering = False
 
+            '''
             audio_tensor = torch.cat(
                 [
                     torch.frombuffer(frame.audio, dtype=torch.int16).float() / 32768.0
@@ -127,6 +132,30 @@ class LipsyncProcessor(FrameProcessor):
 
             # Convert to NumPy array for ASR processing
             audio_data = resampled_audio.squeeze(0).numpy()
+            '''
+            # 1. Pre-allocate a buffer and concatenate bytes first
+            raw_audio_bytes = b"".join(frame.audio for frame in self.audio_buffer)
+
+            # 2. Convert all at once to int16 tensor
+            audio_tensor = torch.frombuffer(raw_audio_bytes, dtype=torch.int16)
+
+            # 3. Normalize to float32 in one go
+            audio_tensor = audio_tensor.to(torch.float32).div_(32768.0)
+
+            # 4. Reshape to (1, N)
+            audio_tensor = audio_tensor.unsqueeze(0)
+
+            # 5. Conditional resampling only if needed
+            sample_rate = self.audio_buffer[0].sample_rate
+            if sample_rate != 16000:
+                resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)
+                audio_tensor = resampler(audio_tensor)
+
+            # 6. Duration in seconds
+            audio_duration_sec = audio_tensor.shape[1] / 16000.0
+
+            # 7. Only convert to numpy if absolutely needed
+            audio_data = audio_tensor.squeeze(0).numpy()
             if self.strategy == "timestamped_asr":
                 # Note: Unfortunately, the timestamps returned by the ASR pipeline are not always accurate.
                 # For this reason, we explored forced alignment to get precise(r-ish) word timings.
@@ -145,9 +174,13 @@ class LipsyncProcessor(FrameProcessor):
                             prediction, audio_duration_sec
                         )
                     else:
-                        segments, _ = self.asr_model.transcribe(
-                            audio_data, word_timestamps=True
-                        )
+                        segments, _ = self.asr_model.transcribe(audio_data, 
+                                          word_timestamps=True, 
+                                          beam_size=1, 
+                                          temperature=[0.0], 
+                                          suppress_tokens=[], 
+                                          condition_on_previous_text=False, 
+                                          vad_filter=False)
                         formatted_output = self._format_faster_whisper_segments(
                             segments, audio_duration_sec
                         )
@@ -167,16 +200,14 @@ class LipsyncProcessor(FrameProcessor):
 
             # Emit RTVIServerMessageFrame before the buffered audio
             await self.push_frame(output_frame, direction)
-            
-            # Emit the TTSStartedFrame, then buffered audio, then TTSStoppedFrame
             if self.start:
-                print("Delay in s:", (time.time() - self.start))
-                self.start = None
+                print("delay: ", time.time() - self.start)
+                self.start = 0
+            # Emit the TTSStartedFrame, then buffered audio, then TTSStoppedFrame
             started_frame = TTSStartedFrame()
             await self.push_frame(started_frame, direction)
 
             for audio_frame in self.audio_buffer:
-                print("emitting audio_fame:", audio_frame)
                 await self.push_frame(audio_frame, direction)
 
             await self.push_frame(frame, direction)
