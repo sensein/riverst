@@ -12,6 +12,7 @@ from loguru import logger
 from pipecat.services.llm_service import FunctionCallParams
 from pipecat.processors.frameworks.rtvi import RTVIServerMessageFrame, RTVIProcessor
 from pipecat.adapters.schemas.function_schema import FunctionSchema
+from pipecat.frames.frames import TTSSpeakFrame
 
 
 class EndConversationHandler:
@@ -62,6 +63,11 @@ class EndConversationHandler:
         logger.info("End conversation requested by LLM")
 
         try:
+            print("End conversation requested by LLM 1")
+            await rtvi.push_frame(
+                TTSSpeakFrame("It was nice talking to you. Have a nice day!")
+            )
+
             # Send conversation ended message to client
             frame = RTVIServerMessageFrame(
                 data={

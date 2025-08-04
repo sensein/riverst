@@ -35,7 +35,7 @@ class LipsyncProcessor(FrameProcessor):
             False  # Set to True if you want to use forced alignment
         )
         if self.strategy == "timestamped_asr":
-            if self.device == "mps":
+            if str(self.device) == "mps":
                 self.asr_pipeline = transformers_pipeline(
                     "automatic-speech-recognition",
                     model="openai/whisper-tiny",
@@ -74,20 +74,22 @@ class LipsyncProcessor(FrameProcessor):
         """Load and warm up the ASR pipeline."""
         dummy_audio = np.random.rand(16000).astype(np.int16) * 2 - 1
         if self.strategy == "timestamped_asr":
-            if self.device == "mps":
+            if str(self.device) == "mps":
                 self.asr_pipeline(dummy_audio)
             else:
-                self.asr_model.transcribe(dummy_audio, 
-                                          word_timestamps=True, 
-                                          beam_size=1, 
-                                          temperature=[0.0], 
-                                          suppress_tokens=[], 
-                                          condition_on_previous_text=False, 
-                                          vad_filter=False)
+                self.asr_model.transcribe(
+                    dummy_audio,
+                    word_timestamps=True,
+                    beam_size=1,
+                    temperature=[0.0],
+                    suppress_tokens=[],
+                    condition_on_previous_text=False,
+                    vad_filter=False,
+                )
         else:
             self.asr_pipeline(dummy_audio)
         print("_warm_up done")
-        
+
     async def process_frame(self, frame: Frame, direction: FrameDirection):
         """Process incoming frames, handling TTS audio buffering and ASR."""
         await super().process_frame(frame, direction)
@@ -119,7 +121,9 @@ class LipsyncProcessor(FrameProcessor):
             # 5. Conditional resampling only if needed
             sample_rate = self.audio_buffer[0].sample_rate
             if sample_rate != 16000:
-                resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)
+                resampler = torchaudio.transforms.Resample(
+                    orig_freq=sample_rate, new_freq=16000
+                )
                 audio_tensor = resampler(audio_tensor)
 
             # 6. Duration in seconds
@@ -137,7 +141,7 @@ class LipsyncProcessor(FrameProcessor):
                         audio_data, transcript["text"]
                     )
                 else:
-                    if self.device == "mps":
+                    if str(self.device) == "mps":
                         prediction = self.asr_pipeline(
                             audio_data, return_timestamps="word"
                         )
@@ -145,13 +149,15 @@ class LipsyncProcessor(FrameProcessor):
                             prediction, audio_duration_sec
                         )
                     else:
-                        segments, _ = self.asr_model.transcribe(audio_data, 
-                                          word_timestamps=True, 
-                                          beam_size=1, 
-                                          temperature=[0.0], 
-                                          suppress_tokens=[], 
-                                          condition_on_previous_text=False, 
-                                          vad_filter=False)
+                        segments, _ = self.asr_model.transcribe(
+                            audio_data,
+                            word_timestamps=True,
+                            beam_size=1,
+                            temperature=[0.0],
+                            suppress_tokens=[],
+                            condition_on_previous_text=False,
+                            vad_filter=False,
+                        )
                         formatted_output = self._format_faster_whisper_segments(
                             segments, audio_duration_sec
                         )

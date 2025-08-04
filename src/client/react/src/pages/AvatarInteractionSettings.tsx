@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { Spin, Alert, Modal, Button, QRCode, Typography, Divider, Tooltip } from 'antd';
 import { CopyOutlined } from '@ant-design/icons';
+import { LoadingOutlined } from '@ant-design/icons';
 
 import axios from 'axios';
 import SettingsForm from '../components/SettingsForm';
@@ -27,10 +28,6 @@ export default function AvatarInteractionSettings() {
   // fetch the form schema from the passed-in URL
   useEffect(() => {
     if (!settingsUrl) return;
-    // const url = settingsUrl.startsWith('http')
-    //  ? settingsUrl
-    //  : `${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/${settingsUrl}`;
-    
     axios
       .get(settingsUrl)
       .then(res => setSchema(res.data))
@@ -106,8 +103,18 @@ export default function AvatarInteractionSettings() {
 
   if (!schema) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: 100 }}>
-        <Spin size="large" />
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: 'white',
+          zIndex: 10000,
+        }}
+      >
+        <Spin indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />} />
       </div>
     );
   }

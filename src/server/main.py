@@ -72,6 +72,15 @@ pcs_map: Dict[str, SmallWebRTCConnection] = {}
 # ICE servers for WebRTC connection
 ice_servers = [
     IceServer(urls="stun:stun.l.google.com:19302"),
+    IceServer(urls="stun:stun.l.google.com:5349"),
+    IceServer(urls="stun:stun1.l.google.com:3478"),
+    IceServer(urls="stun:stun1.l.google.com:5349"),
+    IceServer(urls="stun:stun2.l.google.com:19302"),
+    IceServer(urls="stun:stun2.l.google.com:5349"),
+    IceServer(urls="stun:stun3.l.google.com:3478"),
+    IceServer(urls="stun:stun3.l.google.com:5349"),
+    IceServer(urls="stun:stun4.l.google.com:19302"),
+    IceServer(urls="stun:stun4.l.google.com:5349"),
 ]
 
 
@@ -392,6 +401,50 @@ async def list_sessions(current_user: dict = Depends(get_current_user)) -> JSONR
     return JSONResponse(content=valid_session_ids)
 
 
+@app.post("/api/session/add_device_fingerprint")
+async def add_device_fingerprint(data: dict = Body(...)) -> JSONResponse:
+    """
+    Adds a device fingerprint to the session's config.json.
+    Expects JSON body: { "sessionid": ..., "devicefingerprint": ... }
+    """
+    session_id = data.get("sessionid")
+    device_fingerprint = data.get("devicefingerprint")
+    if not session_id or not device_fingerprint:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "sessionid and devicefingerprint are required"},
+        )
+
+    session_dir = BASE_SESSION_DIR / "sessions" / session_id
+    config_path = session_dir / "config.json"
+    if not config_path.is_file():
+        return JSONResponse(content={"error": "Config file not found"}, status_code=404)
+
+    try:
+        with config_path.open("r", encoding="utf-8") as f:
+            config = json.load(f)
+    except Exception as e:
+        return JSONResponse(
+            status_code=500, content={"error": f"Failed to read config: {str(e)}"}
+        )
+
+    # Add deviceFingerprint to array
+    fingerprints = config.get("deviceFingerprints", [])
+    if device_fingerprint not in fingerprints:
+        fingerprints.append(device_fingerprint)
+        config["deviceFingerprints"] = fingerprints
+        try:
+            with config_path.open("w", encoding="utf-8") as f:
+                json.dump(config, f, indent=2)
+        except Exception as e:
+            print("error", e)
+            return JSONResponse(
+                status_code=500, content={"error": f"Failed to write config: {str(e)}"}
+            )
+
+    return JSONResponse(content={"success": True})
+
+
 @app.get("/api/session_config/{session_id}")
 async def get_session_config(session_id: str) -> JSONResponse:
     """Fetches the configuration for a specific session."""
@@ -412,6 +465,67 @@ def clean_for_json(obj):
     elif isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
         return None
     return obj
+
+
+@app.get("/api/check_session_ended/{session_id}")
+def check_session_ended(session_id: str):
+    """
+    Checks if a session is ended by looking for 'prolific_id' in the session's config.json.
+    Returns {"ended": True} if prolific_id is present, else {"ended": False}.
+    """
+    session_dir = BASE_SESSION_DIR / "sessions" / session_id
+    config_path = session_dir / "config.json"
+
+    if not config_path.is_file():
+        raise HTTPException(
+            status_code=404, detail=f"Config file not found: {config_path}"
+        )
+
+    try:
+        with config_path.open("r", encoding="utf-8") as f:
+            config = json.load(f)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load config: {str(e)}")
+
+    prolific_id = config.get("prolific_id")
+    if config.get("short_term_memory", False):
+        return JSONResponse(
+            content={"ended": prolific_id is not None, "prolific_id": prolific_id}
+        )
+    return JSONResponse(content={"ended": False})
+
+
+@app.get("/api/end_session/{session_id}")
+def end_session(session_id: str):
+    """
+    Ends a session by generating a prolific_id (UUID), adding it to the session's config.json, and saving it.
+    Returns the prolific_id as JSON.
+    Raises 404 if the config file does not exist.
+    """
+    session_dir = BASE_SESSION_DIR / "sessions" / session_id
+    config_path = session_dir / "config.json"
+
+    if not config_path.is_file():
+        raise HTTPException(
+            status_code=404, detail=f"Config file not found: {config_path}"
+        )
+
+    try:
+        with config_path.open("r", encoding="utf-8") as f:
+            config = json.load(f)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load config: {str(e)}")
+
+    prolific_id = str(uuid.uuid4())
+    config["prolific_id"] = prolific_id
+
+    try:
+        with config_path.open("w", encoding="utf-8") as f:
+            json.dump(config, f, indent=2)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to write config: {str(e)}")
+
+    return JSONResponse(content={"prolific_id": prolific_id})
 
 
 @app.get("/api/session/{session_id}")

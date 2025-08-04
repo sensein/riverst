@@ -15,7 +15,7 @@ import { Link } from 'react-router-dom';
 import validator from '@rjsf/validator-ajv8';
 import { usePipecatClientTransportState } from '@pipecat-ai/client-react';
 import axios from 'axios';
-import { getUserId } from '../utils/userId';
+import { getRandomUserId } from '../utils/userId';
 
 const { Title, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -30,6 +30,12 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
   const [form] = Form.useForm();
   const [isValid, setIsValid] = useState(false);
   const [dynamicEnums, setDynamicEnums] = useState<{ books: { id: string; path: string; title: string }[] }>({ books: [] });
+
+  const defaultAnimations =
+    (schema.properties?.options as any)?.properties?.body_animations?.default ?? [];
+  const defaultCamera =
+    (schema.properties?.options as any)?.properties?.camera_settings?.default ?? 'upper';
+
 
   function isObjectSchema(def: JSONSchema7Definition | undefined): def is JSONSchema7 {
     return typeof def === 'object' && def !== null;
@@ -57,6 +63,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
 
 
   const pipelineModality = Form.useWatch(['options', 'pipeline_modality'], form);
+  const embodiment = Form.useWatch(['options', 'embodiment'], form);
 
   const validateSchema = useCallback(async () => {
     const values = await form.getFieldsValue(true);
@@ -66,7 +73,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
 
   useEffect(() => {
     const fetchUserId = async () => {
-      const id = await getUserId();
+      const id = getRandomUserId();
       form.setFieldsValue({ user_id: id });
     };
 
@@ -91,13 +98,16 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
   useEffect(() => {
     if (!pipelineModality) return;
 
+    const optionsSchema = (schema.properties?.options as JSONSchema7)?.properties || {};
+    const getDefault = (key: string) => (optionsSchema[key] as any)?.default;
+
     const currentValues = form.getFieldValue('options') || {};
     const updates = { ...currentValues };
 
     if (pipelineModality === 'classic') {
-      updates.llm_type = 'openai';
-      updates.stt_type = 'openai';
-      updates.tts_type = 'openai';
+      updates.llm_type = getDefault('llm_type');
+      updates.stt_type = getDefault('stt_type');
+      updates.tts_type = getDefault('tts_type');
     } else if (pipelineModality === 'e2e') {
       updates.llm_type = 'openai_realtime_beta';
       updates.stt_type = undefined;
@@ -105,7 +115,33 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
     }
 
     form.setFieldsValue({ options: updates });
-  }, [pipelineModality, form]);
+  }, [pipelineModality, form, schema]);
+
+  useEffect(() => {
+    validateSchema();
+  }, [validateSchema, embodiment]);
+
+  useEffect(() => {
+    const currentOptions = form.getFieldValue('options') || {};
+
+    if (embodiment !== 'humanoid_avatar') {
+      form.setFieldsValue({
+        options: {
+          ...currentOptions,
+          body_animations: [],
+          camera_settings: undefined,
+        },
+      });
+    } else {
+      form.setFieldsValue({
+        options: {
+          ...currentOptions,
+          body_animations: defaultAnimations,
+          camera_settings: defaultCamera,
+        },
+      });
+    }
+  }, [embodiment, form]);
 
   const renderLabel = (label: string, description?: string) => (
     <span>
@@ -120,6 +156,12 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
 
   const renderFormItem = (key: string, config: any) => {
     if (config.const !== undefined) return null;
+    if (
+      ['body_animations', 'camera_settings'].includes(key) &&
+      form.getFieldValue(['options', 'embodiment']) !== 'humanoid_avatar'
+    ) {
+      return null;
+    }
     if (['stt_type', 'tts_type'].includes(key) && pipelineModality !== 'classic') return null;
     if (key === 'llm_type') {
       const filteredEnums =

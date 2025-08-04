@@ -134,7 +134,9 @@ const LoginPage: React.FC = () => {
 
               {isGoogleLoading && (
                 <div style={{ marginTop: '16px' }}>
-                  <Spin tip="Signing in..." />
+                  <Spin
+                    indicator={<LoadingOutlined style={{ fontSize: 24 }} spin  />}
+                    tip="Signing in..." />
                 </div>
               )}
             </div>

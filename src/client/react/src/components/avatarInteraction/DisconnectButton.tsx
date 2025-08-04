@@ -1,21 +1,17 @@
 // src/components/DisconnectButton.tsx
 import { useState } from 'react'
 import { usePipecatClient } from '@pipecat-ai/client-react'
-import { useNavigate } from 'react-router-dom'
 import { FloatButton, Popconfirm } from 'antd'
 import { PoweroffOutlined } from '@ant-design/icons'
 import './DisconnectButton.css'
-import { RTVIEvent } from '@pipecat-ai/client-js'
 
-export default function DisconnectButton() {
+interface DisconnectButtonProps {
+  onSessionEnd: (delay: number) => Promise<void>
+}
+
+export default function DisconnectButton({ onSessionEnd }: DisconnectButtonProps) {
   const client = usePipecatClient()
-  const navigate = useNavigate()
   const [visible, setVisible] = useState(false)
-
-  client?.on(RTVIEvent.Disconnected, () => {
-    // console.log("[EVENT] User disconnected");
-    navigate('/')
-  });
 
   return (
     <>
@@ -33,6 +29,7 @@ export default function DisconnectButton() {
             open={visible}
             onOpenChange={(newOpen) => setVisible(newOpen)}
             onConfirm={async () => {
+              await onSessionEnd(0)
               await client?.disconnect()
             }}
             onCancel={() => setVisible(false)}

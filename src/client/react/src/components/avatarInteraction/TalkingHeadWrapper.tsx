@@ -9,6 +9,10 @@ import {
   useRTVIClientEvent,
 } from '@pipecat-ai/client-react'
 import { RTVIEvent } from '@pipecat-ai/client-js'
+import {
+  usePipecatClientTransportState,
+} from '@pipecat-ai/client-react'
+
 
 interface Props {
   avatar: { id: number; modelUrl: string; gender: string };
@@ -46,6 +50,7 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
   const readyRef = useRef(false);
 
   const onAvatarMountedRef = useRef(onAvatarMounted);
+  const transportState = usePipecatClientTransportState()
 
   useEffect(() => {
     onAvatarMountedRef.current = onAvatarMounted;
@@ -66,11 +71,10 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
         cameraView: "full",
         lightAmbientIntensity: 0,
         lightDirectIntensity: 0,
-        lightDirectColor: "#000",
+        lightDirectColor: "#fff",
       });
 
       const body = avatar.gender === "feminine" ? "F" : "M";
-      
 
       head.showAvatar(
         {
@@ -81,11 +85,8 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
         },
         () => {
           onAvatarMountedRef.current?.(); // use the ref
-          setTimeout(() => {
-            head.setView(cameraType);
-            headRef.current = head;
-            readyRef.current = true;
-          }, 1500);
+          headRef.current = head;
+          readyRef.current = true;
         }
       );
     });
@@ -96,6 +97,14 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
       headRef.current = null;
     };
   }, [avatar, cameraType]);
+
+  useEffect(() => {
+    if (transportState === "ready" && readyRef.current) {
+      setTimeout(() => {
+        headRef.current?.setView(cameraType);
+      }, 2000);
+    }
+  }, [transportState, cameraType]);
 
   /* ------------------------------------------------ state effect */
   useRTVIClientEvent(RTVIEvent.UserStartedSpeaking, () => {

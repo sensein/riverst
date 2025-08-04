@@ -11,7 +11,7 @@ import {
 } from "antd";
 import { InfoCircleOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from 'axios';
+import { LoadingOutlined } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 
 const { Title, Paragraph } = Typography;
@@ -138,8 +138,18 @@ fetchSessionData();
 
   if (!steps) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", marginTop: 100 }}>
-        <Spin size="large" />
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: 'white',
+          zIndex: 10000,
+        }}
+      >
+        <Spin indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />} />
       </div>
     );
   }
