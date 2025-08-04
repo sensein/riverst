@@ -1,5 +1,16 @@
+/**
+ * SettingsForm.tsx
+ * Renders a form based on a JSON schema.
+ * - Handles form validation and submission.
+ * - Renders form inputs based on the schema.
+ */
+
 import { useCallback, useEffect, useState } from 'react';
-import { JSONSchema7, JSONSchema7Definition } from 'json-schema'; // or '@types/json-schema' if using that package
+import { Link } from 'react-router-dom';
+import axios from 'axios';
+import validator from '@rjsf/validator-ajv8';
+import { JSONSchema7, JSONSchema7Definition } from 'json-schema';
+
 import {
   Form,
   Input,
@@ -8,38 +19,36 @@ import {
   Button,
   Typography,
   Checkbox,
-  Tooltip
+  Tooltip,
 } from 'antd';
 import { InfoCircleOutlined, CloseOutlined } from '@ant-design/icons';
-import { Link } from 'react-router-dom';
-import validator from '@rjsf/validator-ajv8';
+
 import { usePipecatClientTransportState } from '@pipecat-ai/client-react';
-import axios from 'axios';
 import { getRandomUserId } from '../utils/userId';
 
 const { Title, Paragraph } = Typography;
 const { TextArea } = Input;
 
+// Props
 interface SettingsFormProps {
   schema: JSONSchema7;
   onSubmit: (data: any) => void;
 }
 
 const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
-  const transportState = usePipecatClientTransportState();
   const [form] = Form.useForm();
+  const transportState = usePipecatClientTransportState();
   const [isValid, setIsValid] = useState(false);
   const [dynamicEnums, setDynamicEnums] = useState<{ books: { id: string; path: string; title: string }[] }>({ books: [] });
 
+  // Defaults extracted from schema
   const defaultAnimations =
     (schema.properties?.options as any)?.properties?.body_animations?.default ?? [];
   const defaultCamera =
     (schema.properties?.options as any)?.properties?.camera_settings?.default ?? 'upper';
 
-
-  function isObjectSchema(def: JSONSchema7Definition | undefined): def is JSONSchema7 {
-    return typeof def === 'object' && def !== null;
-  }
+  const isObjectSchema = (def: JSONSchema7Definition | undefined): def is JSONSchema7 =>
+    typeof def === 'object' && def !== null;
 
   const options =
     isObjectSchema(schema?.properties?.options) && 'properties' in schema.properties.options
@@ -61,31 +70,24 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
       ? schema.properties.description.const
       : '';
 
-
   const pipelineModality = Form.useWatch(['options', 'pipeline_modality'], form);
   const embodiment = Form.useWatch(['options', 'embodiment'], form);
 
+  // Schema validator
   const validateSchema = useCallback(async () => {
     const values = await form.getFieldsValue(true);
     const result = validator.validateFormData(schema, values);
     setIsValid(result.errors.length === 0);
   }, [form, schema]);
 
+  // Fetch user ID and dynamic enum options
   useEffect(() => {
-    const fetchUserId = async () => {
-      const id = getRandomUserId();
-      form.setFieldsValue({ user_id: id });
-    };
-
-    fetchUserId();
+    form.setFieldsValue({ user_id: getRandomUserId() });
 
     const fetchBooks = async () => {
       try {
         const response = await axios.get(`/api/books`);
-        setDynamicEnums(prev => ({
-          ...prev,
-          books: response.data
-        }));
+        setDynamicEnums(prev => ({ ...prev, books: response.data }));
       } catch (error) {
         console.error('Failed to fetch books:', error);
       }
@@ -95,6 +97,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
     validateSchema();
   }, [form, validateSchema]);
 
+  // Update field values based on pipeline modality
   useEffect(() => {
     if (!pipelineModality) return;
 
@@ -117,32 +120,24 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
     form.setFieldsValue({ options: updates });
   }, [pipelineModality, form, schema]);
 
+  // Revalidate schema on embodiment change
   useEffect(() => {
     validateSchema();
   }, [validateSchema, embodiment]);
 
+  // Update dependent animation/camera fields
   useEffect(() => {
     const currentOptions = form.getFieldValue('options') || {};
-
-    if (embodiment !== 'humanoid_avatar') {
-      form.setFieldsValue({
-        options: {
-          ...currentOptions,
-          body_animations: [],
-          camera_settings: undefined,
-        },
-      });
-    } else {
-      form.setFieldsValue({
-        options: {
-          ...currentOptions,
-          body_animations: defaultAnimations,
-          camera_settings: defaultCamera,
-        },
-      });
-    }
+    form.setFieldsValue({
+      options: {
+        ...currentOptions,
+        body_animations: embodiment === 'humanoid_avatar' ? defaultAnimations : [],
+        camera_settings: embodiment === 'humanoid_avatar' ? defaultCamera : undefined,
+      },
+    });
   }, [embodiment, form]);
 
+  // Label with optional tooltip
   const renderLabel = (label: string, description?: string) => (
     <span>
       {label}
@@ -154,6 +149,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
     </span>
   );
 
+  // Render form input based on config
   const renderFormItem = (key: string, config: any) => {
     if (config.const !== undefined) return null;
     if (
@@ -163,12 +159,11 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
       return null;
     }
     if (['stt_type', 'tts_type'].includes(key) && pipelineModality !== 'classic') return null;
+
     if (key === 'llm_type') {
-      const filteredEnums =
-        pipelineModality === 'classic'
-          ? ['openai', 'llama3.2', 'qwen3:30b-a3b-instruct-2507-q4_K_M']
-          : ['openai_realtime_beta', 'gemini'];
-      config.enum = filteredEnums;
+      config.enum = pipelineModality === 'classic'
+        ? ['openai', 'llama3.2', 'qwen3:30b-a3b-instruct-2507-q4_K_M']
+        : ['openai_realtime_beta', 'gemini'];
     }
 
     const rules = [];
@@ -179,15 +174,14 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
     const namePath = ['options', key];
     const labelWithTooltip = renderLabel(label, config.description);
 
+    // Enum list (array of checkboxes)
     if (config.type === 'array' && config.items?.enum) {
       if (config.minItems) {
         rules.push({
-          validator: (_: any, value: any) => {
-            if (Array.isArray(value) && value.length < config.minItems) {
-              return Promise.reject(new Error(`Please select at least ${config.minItems} item(s).`));
-            }
-            return Promise.resolve();
-          },
+          validator: (_: any, value: any) =>
+            Array.isArray(value) && value.length < config.minItems
+              ? Promise.reject(new Error(`Please select at least ${config.minItems} item(s).`))
+              : Promise.resolve(),
         });
       }
       return (
@@ -197,6 +191,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
       );
     }
 
+    // Enum select (from schema or API)
     if ((config.enum || config.dynamicEnum) && config.type !== 'array') {
       if (config.dynamicEnum === 'books') {
         return (
@@ -225,32 +220,35 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
       );
     }
 
-    switch (config.type) {
-      case 'boolean':
-        return (
-          <Form.Item
-            key={key}
-            name={namePath}
-            label={labelWithTooltip}
-            valuePropName="checked"
-            rules={rules}
-          >
-            <Switch />
-          </Form.Item>
-        );
-      case 'string': {
-        const multiline = config.maxLength && config.maxLength > 100;
-        return (
-          <Form.Item key={key} name={namePath} label={labelWithTooltip} rules={rules}>
-            {multiline ? <TextArea autoSize /> : <Input />}
-          </Form.Item>
-        );
-      }
-      default:
-        return null;
+    // Boolean field
+    if (config.type === 'boolean') {
+      return (
+        <Form.Item
+          key={key}
+          name={namePath}
+          label={labelWithTooltip}
+          valuePropName="checked"
+          rules={rules}
+        >
+          <Switch />
+        </Form.Item>
+      );
     }
+
+    // String (text or textarea)
+    if (config.type === 'string') {
+      const multiline = config.maxLength && config.maxLength > 100;
+      return (
+        <Form.Item key={key} name={namePath} label={labelWithTooltip} rules={rules}>
+          {multiline ? <TextArea autoSize /> : <Input />}
+        </Form.Item>
+      );
+    }
+
+    return null;
   };
 
+  // Extract default values from schema
   const defaultOptions = Object.entries(options).reduce<Record<string, any>>((acc, [key, def]) => {
     if (typeof def !== 'object' || def === null) return acc;
     acc[key] =
@@ -267,12 +265,8 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
       </Link>
 
       <div style={{ marginBottom: 24 }}>
-        <Title level={3} style={{ marginBottom: 4 }}>
-          {schemaName ? String(schemaName) : ''}
-        </Title>
-        <Paragraph type="secondary" style={{ margin: 0 }}>
-          {schemaDescription ? String(schemaDescription) : ''}
-        </Paragraph>
+        <Title level={3} style={{ marginBottom: 4 }}>{String(schemaName)}</Title>
+        <Paragraph type="secondary" style={{ margin: 0 }}>{String(schemaDescription)}</Paragraph>
       </div>
 
       <Form
@@ -290,9 +284,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
           <Input />
         </Form.Item>
 
-        {Object.entries(options).map(([key, config]) =>
-          renderFormItem(key, config)
-        )}
+        {Object.entries(options).map(([key, config]) => renderFormItem(key, config))}
 
         <Form.Item>
           <Button
@@ -302,8 +294,9 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
             onClick={async () => {
               const values = await form.getFieldsValue(true);
               const result = validator.validateFormData(schema, values);
-              if (result.errors.length > 0) return;
-              onSubmit({ ...values.options, user_id: values.user_id });
+              if (result.errors.length === 0) {
+                onSubmit({ ...values.options, user_id: values.user_id });
+              }
             }}
           >
             Confirm session settings

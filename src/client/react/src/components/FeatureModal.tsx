@@ -1,9 +1,30 @@
-import React from "react";
-import { Modal, Collapse, Tooltip, Table, Button } from "antd";
-import { InfoCircleOutlined, BarChartOutlined, CodeOutlined } from "@ant-design/icons";
+/**
+ * FeatureModal.tsx
+ * Modal component for displaying session features.
+ */
 
-// Define section info structure
-type SectionKey = "opensmile" | "praat_parselmouth" | "torchaudio_squim" | "embeddings";
+import React from "react";
+import {
+  Modal,
+  Collapse,
+  Tooltip,
+  Table,
+  Button,
+} from "antd";
+import {
+  InfoCircleOutlined,
+  BarChartOutlined,
+  CodeOutlined,
+} from "@ant-design/icons";
+
+const { Panel } = Collapse;
+
+// Section definitions
+type SectionKey =
+  | "opensmile"
+  | "praat_parselmouth"
+  | "torchaudio_squim"
+  | "embeddings";
 
 const SECTION_INFO: Record<SectionKey, { title: string; info: string }> = {
   opensmile: {
@@ -24,11 +45,11 @@ const SECTION_INFO: Record<SectionKey, { title: string; info: string }> = {
   },
 };
 
-// Format number
+// Format number values
 const pretty = (v: number | null) =>
   typeof v === "number" ? v.toFixed(4) : v == null ? "–" : String(v);
 
-// Table transformation
+// Convert feature object to table data
 function featuresToTableData(obj: Record<string, number | null | undefined>) {
   return Object.entries(obj).map(([key, value]) => ({
     key,
@@ -36,7 +57,7 @@ function featuresToTableData(obj: Record<string, number | null | undefined>) {
   }));
 }
 
-// Props typing
+// Component props
 interface FeatureModalProps {
   open: boolean;
   onClose: () => void;
@@ -48,7 +69,13 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, features }) 
 
   if (!features) {
     return (
-      <Modal open={open} onCancel={onClose} footer={null} title="Audio Features" destroyOnHidden>
+      <Modal
+        open={open}
+        onCancel={onClose}
+        footer={null}
+        title="Audio Features"
+        destroyOnHidden
+      >
         <p>No feature data available.</p>
       </Modal>
     );
@@ -57,26 +84,23 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, features }) 
   const panels = (Object.keys(SECTION_INFO) as SectionKey[]).map((k) => {
     if (!(k in features)) return null;
 
+    // Embedding-specific display logic
     if (k === "embeddings") {
       const arr = features.embeddings as number[] | undefined;
       if (!arr) return null;
 
-      const mean =
-        arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+      const mean = arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
       const std =
         arr.length > 0
-          ? Math.sqrt(
-              arr.reduce((a, b) => a + Math.pow(b - (mean ?? 0), 2), 0) /
-                arr.length
-            )
+          ? Math.sqrt(arr.reduce((a, b) => a + Math.pow(b - (mean ?? 0), 2), 0) / arr.length)
           : null;
 
       return (
-        <Collapse.Panel
+        <Panel
           key={k}
           header={
             <span>
-              <BarChartOutlined /> {SECTION_INFO[k].title}{" "}
+              <BarChartOutlined /> {SECTION_INFO[k].title}
               <Tooltip title={SECTION_INFO[k].info}>
                 <InfoCircleOutlined style={{ marginLeft: 8 }} />
               </Tooltip>
@@ -84,10 +108,8 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, features }) 
           }
         >
           <div style={{ marginBottom: 8 }}>
-            <b>Length:</b> {arr.length}
-            {"  |  "}
-            <b>Mean:</b> {pretty(mean)}
-            {"  |  "}
+            <b>Length:</b> {arr.length}{"  |  "}
+            <b>Mean:</b> {pretty(mean)}{"  |  "}
             <b>Std:</b> {pretty(std)}
           </div>
           <Button
@@ -113,20 +135,22 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, features }) 
               {JSON.stringify(arr, null, 2)}
             </pre>
           )}
-        </Collapse.Panel>
+        </Panel>
       );
     }
 
+    // Regular tabular feature set
     const data = features[k] as Record<string, number> | undefined;
     if (!data) return null;
 
     const tableData = featuresToTableData(data);
+
     return (
-      <Collapse.Panel
+      <Panel
         key={k}
         header={
           <span>
-            <BarChartOutlined /> {SECTION_INFO[k].title}{" "}
+            <BarChartOutlined /> {SECTION_INFO[k].title}
             <Tooltip title={SECTION_INFO[k].info}>
               <InfoCircleOutlined style={{ marginLeft: 8 }} />
             </Tooltip>
@@ -143,7 +167,7 @@ const FeatureModal: React.FC<FeatureModalProps> = ({ open, onClose, features }) 
           pagination={false}
           scroll={{ y: 250 }}
         />
-      </Collapse.Panel>
+      </Panel>
     );
   });
 

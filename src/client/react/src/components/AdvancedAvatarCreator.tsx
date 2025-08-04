@@ -1,4 +1,7 @@
-// AdvancedAvatarCreator.tsx
+/**
+ * AdvancedAvatarCreator.tsx
+ * Component for rendering the advanced avatar creator iframe.
+ */
 
 import React, { useEffect, useRef } from 'react';
 
@@ -28,7 +31,7 @@ const AdvancedAvatarCreator: React.FC<AdvancedAvatarCreatorProps> = ({
       // Check if the message contains the avatar URL
       if (typeof event.data === 'string' && event.data.startsWith('https://models.readyplayer.me/')) {
         const avatarUrl = event.data;
-        const modifiedUrl = `${avatarUrl}?morphTargets=mouthOpen,Oculus Visemes`;
+        const modifiedUrl = `${avatarUrl}?morphTargets=ARKit,Oculus+Visemes,mouthOpen,mouthSmile,eyesClosed,eyesLookUp,eyesLookDown&textureSizeLimit=1024&textureFormat=png`;
 
         // Extract avatar ID from the URL
         const avatarIdMatch = avatarUrl.match(/\/([^/]+)\.glb$/);

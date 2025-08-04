@@ -1,3 +1,8 @@
+/**
+ * TalkingHeadWrapper.tsx
+ * Component for rendering a talking avatar.
+ */
+
 import {
   useEffect,
   useRef,
@@ -7,12 +12,9 @@ import {
 } from "react";
 import {
   useRTVIClientEvent,
-} from '@pipecat-ai/client-react'
-import { RTVIEvent } from '@pipecat-ai/client-js'
-import {
   usePipecatClientTransportState,
-} from '@pipecat-ai/client-react'
-
+} from "@pipecat-ai/client-react";
+import { RTVIEvent } from "@pipecat-ai/client-js";
 
 interface Props {
   avatar: { id: number; modelUrl: string; gender: string };
@@ -39,18 +41,13 @@ interface TalkingHeadAPI {
 }
 
 const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
-  const {
-    avatar,
-    cameraType,
-    onAvatarMounted,
-  } = props;
+  const { avatar, cameraType, onAvatarMounted } = props;
 
   const divRef = useRef<HTMLDivElement>(null);
   const headRef = useRef<TalkingHeadAPI | null>(null);
   const readyRef = useRef(false);
-
   const onAvatarMountedRef = useRef(onAvatarMounted);
-  const transportState = usePipecatClientTransportState()
+  const transportState = usePipecatClientTransportState();
 
   useEffect(() => {
     onAvatarMountedRef.current = onAvatarMounted;
@@ -58,7 +55,7 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
 
   useImperativeHandle(ref, () => headRef.current!, []);
 
-  /* -------------------------------------------------- mount avatar */
+  // Load and mount the avatar model
   useEffect(() => {
     let isMounted = true;
 
@@ -66,8 +63,8 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
       if (!isMounted || !divRef.current) return;
 
       const head = new mod.TalkingHead(divRef.current, {
-        ttsEndpoint: "N/A",  // TTS endpoint is not used in this component
-        lipsyncModules: ["en"],  // Lipsync module is required for viseme support
+        ttsEndpoint: "N/A",
+        lipsyncModules: ["en"],
         cameraView: "full",
         lightAmbientIntensity: 0,
         lightDirectIntensity: 0,
@@ -84,20 +81,21 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
           lipsyncLang: "en",
         },
         () => {
-          onAvatarMountedRef.current?.(); // use the ref
           headRef.current = head;
           readyRef.current = true;
+          onAvatarMountedRef.current?.();
         }
       );
     });
 
     return () => {
       isMounted = false;
-      if (headRef.current?.stop) headRef.current.stop();
+      headRef.current?.stop?.();
       headRef.current = null;
     };
-  }, [avatar, cameraType]);
+  }, [avatar]);
 
+  // Set the camera view once transport is ready
   useEffect(() => {
     if (transportState === "ready" && readyRef.current) {
       setTimeout(() => {
@@ -106,122 +104,94 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
     }
   }, [transportState, cameraType]);
 
-  /* ------------------------------------------------ state effect */
+  // Handle when the user starts speaking
   useRTVIClientEvent(RTVIEvent.UserStartedSpeaking, () => {
     const head = headRef.current;
     if (!head) return;
     head.setMood("neutral");
     head.stopSpeaking();
-  })
+  });
 
-  /* ---------------------------------------------- animation effect */
+  // Helper to play animations or mood changes
+  const handleAnimationEvent = (animation: string) => {
+    const head = headRef.current;
+    if (!head) return;
+
+    const gestureMap: Record<string, string | { gesture: string; duration?: number }> = {
+      wave: { gesture: "handup", duration: 2 },
+      dance: "/animations/dance/dance.fbx",
+      i_have_a_question: "index",
+      thank_you: "namaste",
+      i_dont_know: "shrug",
+      ok: "ok",
+      thumbup: "thumbup",
+      thumbdown: "thumbdown",
+    };
+
+    const moodList = ["happy", "angry", "sad", "fear", "disgust", "love", "sleep"];
+
+    if (gestureMap[animation]) {
+      const val = gestureMap[animation];
+      if (typeof val === "string") {
+        head.playGesture(val);
+      } else if (typeof val === "object") {
+        head.playGesture(val.gesture, val.duration);
+      } else {
+        head.playPose(val); // for dance
+      }
+    } else if (moodList.includes(animation)) {
+      head.setMood(animation);
+      setTimeout(() => head.setMood("neutral"), 4000);
+    }
+  };
+
+  // Helper to play viseme or word timings
+  const handleVisemeEvent = (payload: any) => {
+    const head = headRef.current;
+    if (!head) return;
+
+    const { duration = 0 } = payload;
+    if (duration <= 0) return;
+
+    const dummyAudio = new AudioBuffer({
+      length: duration * 16000,
+      sampleRate: 16000,
+    });
+
+    head.speakAudio({
+      audio: dummyAudio,
+      ...(payload.words && {
+        words: payload.words,
+        wtimes: payload.wtimes,
+        wdurations: payload.wdurations,
+      }),
+      ...(payload.visemes && {
+        visemes: payload.visemes,
+        vtimes: payload.vtimes,
+        vdurations: payload.vdurations,
+      }),
+    });
+  };
+
+  // Listen to server messages for animations and visemes
   useRTVIClientEvent(
     RTVIEvent.ServerMessage,
-    useCallback(
-      (msg: any) => {
-        const head = headRef.current;
-        if (!head) return;
+    useCallback((msg: any) => {
+      if (msg.type === "animation-event") {
+        handleAnimationEvent(msg.payload.animation_id);
+      } else if (msg.type === "visemes-event") {
+        if (msg.payload) handleVisemeEvent(msg.payload);
+        else console.warn("Invalid viseme payload:", msg.payload);
+      }
+    }, [])
+  );
 
-        if (msg.type === 'animation-event') {
-          const animation = msg.payload.animation_id;
-          switch (animation) {
-            case "wave":
-              head.playGesture("handup", 2);
-              break;
-            case "dance":
-              head.playPose("/animations/dance/dance.fbx");
-              break;
-            case 'i_have_a_question':
-              head.playGesture('index');
-              break;
-            case 'thank_you':
-              head.playGesture('namaste');
-              break;
-            case 'i_dont_know':
-              head.playGesture('shrug');
-              break;
-            case 'ok':
-            case 'thumbup':
-            case 'thumbdown':
-              head.playGesture(animation);
-              break;
-            case "happy":
-            case "angry":
-            case "sad":
-            case "fear":
-            case "disgust":
-            case "love":
-            case "sleep":
-              head.setMood(animation);
-              setTimeout(() => head.setMood("neutral"), 4000);
-              break;
-            default:
-          }
-        }
-        if (msg.type === 'visemes-event') {
-          if (msg.payload && msg.payload.words) {
-            const { words, wtimes, wdurations, duration } = msg.payload;
-            // console.log("Words", words);
-            // console.log("Durations", wdurations);
-            // console.log("Wtimes", wtimes);
-            // console.log("Duration", duration);
-            if (duration && duration > 0) {
-              // TODO: i need to replace the dummy audio with the actual audio
-              const dummyAudio = new AudioBuffer({
-                length: duration * 16000,  // duration is in seconds
-                sampleRate: 16000,
-              });
-              // console.log("Audio", dummyAudio);
-
-              head.speakAudio(
-                {
-                  audio: dummyAudio,
-                  words: words,
-                  wtimes: wtimes,
-                  wdurations: wdurations,
-                }
-              );
-            }
-          } else if (msg.payload && msg.payload.visemes) {
-            const { visemes, vtimes, vdurations, duration } = msg.payload;
-            // console.log("Visemes", visemes);
-            // console.log("Durations", vdurations);
-            // console.log("Vtimes", vtimes);
-            // console.log("Duration", duration);
-            if (duration && duration > 0) {
-              // TODO: i need to replace the dummy audio with the actual audio
-              const dummyAudio = new AudioBuffer({
-                length: duration * 16000,  // duration is in seconds
-                sampleRate: 16000,
-              });
-              // console.log("Audio", dummyAudio);
-
-              head.speakAudio(
-                {
-                  audio: dummyAudio,
-                  visemes: visemes,
-                  vtimes: vtimes,
-                  vdurations: vdurations,
-                }
-              );
-            }
-          }
-          else {
-            console.warn("Invalid message payload:", msg.payload);
-          }
-        }
-      },
-      []
-    )
-  )
-
-  /* ------------------------------------------------------- render */
   return (
     <div
       ref={divRef}
       style={{
-        width: `${100}%`,
-        height: `${100}vh`,
+        width: "100%",
+        height: "100vh",
         background: "#BAE0FF1A",
         overflow: "hidden",
       }}
