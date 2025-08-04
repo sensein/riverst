@@ -119,7 +119,7 @@ async def run_bot(
             video_out_framerate=config.get("video_out_framerate", 0),
             audio_in_enabled=True,
             audio_out_enabled=True,
-            audio_in_filter=NoisereduceFilter(),
+            #audio_in_filter=NoisereduceFilter(),
             vad_analyzer=SileroVADAnalyzer(),
             turn_analyzer=LocalSmartTurnAnalyzerV2(
                 smart_turn_model_path=smart_turn_model_path, params=SmartTurnParams()

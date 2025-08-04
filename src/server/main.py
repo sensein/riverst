@@ -80,9 +80,22 @@ ice_servers = [
     IceServer(urls="stun:stun3.l.google.com:3478"),
     IceServer(urls="stun:stun3.l.google.com:5349"),
     IceServer(urls="stun:stun4.l.google.com:19302"),
-    IceServer(urls="stun:stun4.l.google.com:5349"),
+    IceServer(urls="stun:stun4.l.google.com:5349")
 ]
 
+# Optionally add TURN server if env vars are present
+turn_url = os.getenv("TURN_URL")
+turn_username = os.getenv("TURN_USERNAME")
+turn_credential = os.getenv("TURN_CREDENTIAL")
+
+if turn_url and turn_username and turn_credential:
+    ice_servers.append(
+        IceServer(
+            urls=turn_url,
+            username=turn_username,
+            credential=turn_credential
+        )
+    )
 
 # Authentication routes
 @app.post("/api/auth/google")
