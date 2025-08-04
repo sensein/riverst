@@ -2617,7 +2617,6 @@ class TalkingHead {
       const className = 'Lipsync' + lang.charAt(0).toUpperCase() + lang.slice(1);
       import(/* @vite-ignore */ moduleName).then( module => {
         this.lipsync[lang] = new module[className];
-        console.log(`[TalkingHead] Successfully loaded lipsync module for ${lang}`);
       }).catch(error => {
         console.error(`[TalkingHead] Failed to load lipsync module for ${lang}:`, error);
         console.error(`[TalkingHead] Attempted to load from: ${moduleName}`);

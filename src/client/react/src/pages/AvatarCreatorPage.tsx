@@ -33,7 +33,7 @@ const AvatarCreatorPage = () => {
 
   const handleAvatarSelect = (avatar: Avatar): void => {
     localStorage.setItem('selectedAvatar', JSON.stringify(avatar));
-    console.log('Selected Avatar:', localStorage.getItem('selectedAvatar'));
+    // console.log('Selected Avatar:', localStorage.getItem('selectedAvatar'));
     message.success(`Avatar selected`);
     navigate('/');
   };

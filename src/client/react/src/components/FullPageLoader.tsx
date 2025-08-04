@@ -16,7 +16,7 @@ const loaderStyle: React.CSSProperties = {
   left: 0,
   width: '100vw',
   height: '100vh',
-  backgroundColor: 'rgba(230, 244, 255, 0.8)', // soft blue
+  backgroundColor: 'white',
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',

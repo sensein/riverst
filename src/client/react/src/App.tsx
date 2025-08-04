@@ -14,7 +14,6 @@ const AvatarInteraction = lazy(() => import('./pages/AvatarInteraction'));
 const AvatarInteractionSettings = lazy(() => import('./pages/AvatarInteractionSettings'));
 const SessionsList = lazy(() => import('./pages/SessionsList'));
 const SessionDetail = lazy(() => import('./pages/SessionDetail'));
-const SessionEndPage = lazy(() => import('./pages/SessionEndPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const ErrorPage = lazy(() => import('./pages/ErrorPage'));
 
@@ -82,7 +81,6 @@ const App = () => {
           <Routes>
             {/* Completely unauthenticated routes - NO AuthProvider */}
             <Route path="/avatar-interaction/:sessionId" element={<AvatarInteraction />} />
-            <Route path="/session-ended/:sessionId" element={<SessionEndPage />} />
 
             {/* All other routes - WITH AuthProvider (including login) */}
             <Route path="/*" element={<AuthenticatedRoutes />} />

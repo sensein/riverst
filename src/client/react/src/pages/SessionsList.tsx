@@ -9,7 +9,7 @@ import {
 } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { Link, useNavigate } from "react-router-dom";
-import axios from 'axios';
+import { LoadingOutlined } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 
 const { Title, Text } = Typography;
@@ -57,7 +57,21 @@ const fetchSessions = async () => {
     };
   }, []);
 
-  if (loading) return <Spin />;
+  if (loading) return (
+    <div
+      style={{
+        position: 'absolute',
+        inset: 0,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'white',
+        zIndex: 10000,
+      }}
+    >
+      <Spin indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />} />
+    </div>
+  );
 
   // Group by user_id
   const grouped = sessions.reduce((acc, id) => {

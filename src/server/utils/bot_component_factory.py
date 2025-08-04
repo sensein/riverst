@@ -125,7 +125,7 @@ class BotComponentFactory:
             instruction += end_conversation_instruction
 
         if self.languages:
-            print(f"Supported languages: {self.languages}")
+            # print(f"Supported languages: {self.languages}")
             instruction += (
                 f"You are restricted to understanding and responding in the following languages only: "
                 f"{', '.join(self.languages)}.\n"
@@ -195,12 +195,14 @@ class BotComponentFactory:
                 )
             elif self.llm_type == "llama3.2":
                 # this assumes llama3.2 is served on port 11434
-                llm = OLLamaLLMService(model=self.llm_type,
-                                       base_url="http://localhost:11434/v1")
+                llm = OLLamaLLMService(
+                    model=self.llm_type, base_url="http://localhost:11434/v1"
+                )
             elif self.llm_type == "qwen3:30b-a3b-instruct-2507-q4_K_M":
                 # this assumes llama3.2 is served on port 11435
-                llm = OLLamaLLMService(model=self.llm_type,
-                                       base_url="http://localhost:11435/v1")
+                llm = OLLamaLLMService(
+                    model=self.llm_type, base_url="http://localhost:11435/v1"
+                )
 
             if self.tts_type == "openai":
                 voice = (
@@ -387,9 +389,9 @@ class BotComponentFactory:
                         {
                             "role": "system",
                             "content": (
-                                "Please continue the conversation from where you left. "
+                                "Please continue the current conversation from where you left. "
                                 "There has been an interruption. "
-                                "Make a summary of the conversation so far before continuing."
+                                "Make a summary of the current conversation so far before continuing. "
                             ),
                         }
                     )
@@ -435,6 +437,9 @@ class BotComponentFactory:
                             "Please make a summary of the previous conversations so far "
                             "(stressing goals and achievements), "
                             "and then continue the conversation from where you left."
+                            "Use expressions like 'I remember' or 'I recall' or 'Last time' "
+                            "or 'Another time' to reference previous conversations."
+                            "You can also specify the date of the previous conversation if necessary."
                         ),
                     }
                 )

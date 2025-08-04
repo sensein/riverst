@@ -59,7 +59,12 @@ class AudioAnalyzer:
             )[0]
 
             # Transcription
-            asr_model = HFModel(path_or_uri="openai/whisper-large-v3-turbo", revision="main")
+            asr_model = HFModel(
+                path_or_uri=os.getenv(
+                    "ASR_POST_SESSION_ANALYSIS_MODEL", "openai/whisper-tiny"
+                ),
+                revision="main",
+            )
             transcript = transcribe_audios(resampled, model=asr_model)[0]
 
             # Speaker embedding
