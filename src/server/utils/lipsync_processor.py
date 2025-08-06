@@ -281,7 +281,7 @@ class LipsyncProcessor(FrameProcessor):
             self.token_to_group,
             device=self.device,
         )
-        print("[LipsyncProcessor] Warm-up done.")
+        # print("[LipsyncProcessor] Warm-up done.")
 
     async def process_frame(self, frame: Frame, direction: FrameDirection):
         await super().process_frame(frame, direction)
@@ -313,9 +313,6 @@ class LipsyncProcessor(FrameProcessor):
             start = time.time()
             await self._run_lipsync(chunk.squeeze(0), direction)
             end = time.time()
-            print(
-                f"[LipsyncProcessor] Processed {chunk.shape[-1]} samples in {end - start:.2f} seconds."
-            )
             total_samples = remaining.shape[-1]
 
     async def _flush_remaining(self, direction: FrameDirection):
