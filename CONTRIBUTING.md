@@ -6,7 +6,7 @@ Note that a code of conduct applies to all spaces managed by the `riverst` proje
 ## Workflow
 Please use the following workflow when contributing:
 
-1. **Create an issue**: Use GitHub to create an issuel, assign it to yourself (and any collaborators) and, if you have access, add it to the [Project board](https://github.com/orgs/sensein/projects/55).
+1. **Create an issue**: Use GitHub to create an issue, assign it to yourself (and any collaborators) and, if you have access, add it to the [Project board](https://github.com/orgs/sensein/projects/55).
 2. **Create a branch**: Use GitHub's "Create a branch" button from the issue page to generate a branch associated with the issue.
 3. **Clone the repo locally**:
    ```git clone https://github.com/sensein/riverst.git```
