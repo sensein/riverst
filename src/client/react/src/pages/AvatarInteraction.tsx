@@ -112,55 +112,75 @@ const onSessionEnd = async (delay: number) => {
 
   if (error || !settings) {
     return (
-      <div style={{ maxWidth: 600, margin: '40px auto' }}>
-        <Alert
-          type="error"
-          message={error || 'Invalid session settings. Please return to the setup page.'}
-          showIcon
-        />
+      <div
+        style={{
+          minHeight: '100vh',
+          width: '100%',
+          backgroundColor: '#e6f4ff',
+          display: 'flex',
+          padding: 24,
+        }}
+      >
+        <div style={{ maxWidth: 600, width: '100%' }}>
+          <Alert
+            type="error"
+            message={error || 'Invalid session settings. Please return to the setup page.'}
+            showIcon
+          />
+        </div>
       </div>
     )
   } else if (prolificId) {
     return (
-      <div style={{ maxWidth: 600, margin: '40px auto' }}>
-        <Alert
-          type="success"
-          showIcon
-          message="Thank you! Your session has ended."
-          description={
-            settings.prolific_campaign ? (
-              <div>
-                <p>Please copy the following ID and paste it into Prolific to complete your participation:</p>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  marginTop: '8px',
-                  padding: '8px',
-                  backgroundColor: '#f6f8fa',
-                  border: '1px solid #d9d9d9',
-                  borderRadius: '4px',
-                  wordBreak: 'break-all'
-                }}>
-                  <code style={{ flex: 1 }}>{prolificId}</code>
-                  <button
-                    onClick={() => navigator.clipboard.writeText(prolificId)}
-                    style={{
-                      background: '#1677ff',
-                      color: 'white',
-                      border: 'none',
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Copy
-                  </button>
+      <div
+        style={{
+          minHeight: '100vh',
+          width: '100%',
+          backgroundColor: '#e6f4ff',
+          display: 'flex',
+          padding: 24,
+        }}
+      >
+        <div style={{ maxWidth: 600, margin: '40px auto' }}>
+          <Alert
+            type="success"
+            showIcon
+            message="Thank you! Your session has ended."
+            description={
+              settings.prolific_campaign ? (
+                <div>
+                  <p>Please copy the following ID and paste it into Prolific to complete your participation:</p>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginTop: '8px',
+                    padding: '8px',
+                    backgroundColor: '#f6f8fa',
+                    border: '1px solid #d9d9d9',
+                    borderRadius: '4px',
+                    wordBreak: 'break-all'
+                  }}>
+                    <code style={{ flex: 1 }}>{prolificId}</code>
+                    <button
+                      onClick={() => navigator.clipboard.writeText(prolificId)}
+                      style={{
+                        background: '#1677ff',
+                        color: 'white',
+                        border: 'none',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Copy
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ) : null
-          }
-        />
+              ) : null
+            }
+          />
+        </div>
       </div>
     )
   } else {

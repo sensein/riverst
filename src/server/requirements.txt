@@ -2,14 +2,13 @@ python-dotenv
 aiofiles
 uvicorn
 fastapi[all]
-pipecat-ai[google,elevenlabs,silero,webrtc,whisper]
+pipecat-ai[google,elevenlabs,silero,webrtc,whisper,mlx-whisper]
 pipecat-ai-small-webrtc-prebuilt
 kokoro
 noisereduce
 pipecat-ai-flows==0.0.17
 senselab[audio]
 huggingface-hub
-transformers
 torch
 torchaudio
 opencv-python
@@ -20,4 +19,3 @@ google-auth
 google-auth-oauthlib
 python-jose[cryptography]
 python-multipart
-faster-whisper

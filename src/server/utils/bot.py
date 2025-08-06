@@ -7,8 +7,10 @@ from typing import Any
 from dotenv import load_dotenv
 from loguru import logger
 import os
+from pathlib import Path
 from pipecat.audio.vad.silero import SileroVADAnalyzer
-from pipecat.audio.filters.noisereduce_filter import NoisereduceFilter
+
+# from pipecat.audio.filters.noisereduce_filter import NoisereduceFilter
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.runner import PipelineRunner
 from pipecat.pipeline.task import PipelineParams, PipelineTask
@@ -107,8 +109,17 @@ async def run_bot(
         ) = await factory.build()
         metrics_logger = MetricsLoggerProcessor(session_dir=session_dir)
 
+        print("allowed_animations:", allowed_animations)
+        print("animation_instruction:", animation_instruction)
+
         # Setup WebRTC transport parameters
-        smart_turn_model_path = os.getenv("LOCAL_SMART_TURN_MODEL_PATH")
+        raw = os.environ.get("LOCAL_SMART_TURN_MODEL_PATH")
+        if not raw:
+            raise EnvironmentError("LOCAL_SMART_TURN_MODEL_PATH not set")
+
+        smart_turn_model_path = Path(raw).expanduser().resolve()  # absolute path
+        if not smart_turn_model_path.exists():
+            raise FileNotFoundError(f"Path not found: {smart_turn_model_path}")
         # print("smart_turn_model_path: ", smart_turn_model_path)
         transport_params = TransportParams(
             video_in_enabled=config.get("video_flag", False),
@@ -119,7 +130,7 @@ async def run_bot(
             video_out_framerate=config.get("video_out_framerate", 0),
             audio_in_enabled=True,
             audio_out_enabled=True,
-            #audio_in_filter=NoisereduceFilter(),
+            # audio_in_filter=NoisereduceFilter(),
             vad_analyzer=SileroVADAnalyzer(),
             turn_analyzer=LocalSmartTurnAnalyzerV2(
                 smart_turn_model_path=smart_turn_model_path, params=SmartTurnParams()

@@ -100,7 +100,7 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
     if (transportState === "ready" && readyRef.current) {
       setTimeout(() => {
         headRef.current?.setView(cameraType);
-      }, 2000);
+      }, 5000);
     }
   }, [transportState, cameraType]);
 
@@ -147,6 +147,7 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
 
   // Helper to play viseme or word timings
   const handleVisemeEvent = (payload: any) => {
+    console.log("Viseme payload:", payload);
     const head = headRef.current;
     if (!head) return;
 

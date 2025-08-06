@@ -83,10 +83,7 @@ class VideoProcessor(FrameProcessor):
             return
         async with self._pose_lock:
             try:
-                loop = asyncio.get_running_loop()
-                results = await loop.run_in_executor(
-                    None, lambda: self.pose_inferencer(img)
-                )
+                results = await asyncio.to_thread(self.pose_inferencer, img)
                 if results:
                     plotted = results[0].plot()
                     self.last_pose_results = cv2.cvtColor(plotted, cv2.COLOR_BGR2RGB)
@@ -103,14 +100,11 @@ class VideoProcessor(FrameProcessor):
             try:
                 from deepface import DeepFace
 
-                loop = asyncio.get_running_loop()
-                results = await loop.run_in_executor(
-                    None,
-                    lambda: DeepFace.analyze(
-                        img_path=img,
-                        actions=["emotion"],
-                        enforce_detection=False,
-                    ),
+                results = await asyncio.to_thread(
+                    DeepFace.analyze,
+                    img_path=img,
+                    actions=["emotion"],
+                    enforce_detection=False,
                 )
                 if isinstance(results, list):
                     self.last_face_results = results[0]  # TODO: handle multiple faces
