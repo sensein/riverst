@@ -27,6 +27,16 @@ The code has a client-server architecture. You find instructions on how to run t
 - 3rd party services API KEYs
 - Modern web browser with WebRTC support (e.g., Chrome 134)
 
+## 🙏 Acknowledgments
+
+This project stands on the shoulders of some fantastic open-source work. Huge thanks to:
+
+- **[TalkingHead](https://github.com/met4citizen/TalkingHead)** — a slick WebGL/Three.js talking-head renderer that makes avatars animations practical.
+- **[Contextless Phonemes (CUPE)](https://github.com/tabahi/contexless-phonemes-CUPE)** — phoneme modeling utilities that help with time-stamped phoneme recognition efficiently.
+- **[Pipecat](https://github.com/pipecat-ai/pipecat)** — a real-time, multimodal agent framework powering low-latency streaming and interactions.
+- **[senselab](https://github.com/sensein/senselab)** — a python package for speech processing and analysis (e.g., behavior characterization, feature extraction, automatic speech recognition)
+
+
 ## Project board
 
-You can follow [the project plan here](https://github.com/users/fabiocat93/projects/3/views/1).
+You can follow [the project plan here](https://github.com/orgs/sensein/projects/55).

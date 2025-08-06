@@ -20,7 +20,7 @@ VALID_ANIMATIONS = [
         "id": "wave",
         "description": (
             "When you welcome the user or greet them or introduce yourself, "
-            "you generally trigger the 'wave' animation."
+            "you trigger the 'wave' animation."
         ),
     },
     {

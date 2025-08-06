@@ -103,7 +103,7 @@ async def save_audio_file(
     return True
 
 
-def get_best_device() -> TorchDevice:
+def get_best_device(options=["cuda", "mps", "cpu"]) -> TorchDevice:
     """Returns the "best" available torch device according to the following strategy:
 
     1. Use CUDA if available.
@@ -113,9 +113,14 @@ def get_best_device() -> TorchDevice:
     Returns:
         torch.device: The best available torch device ('cuda', 'mps', or 'cpu').
     """
-    if torch.cuda.is_available():
+    if torch.cuda.is_available() and "cuda" in options:
         return torch.device("cuda")
-    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+    elif (
+        hasattr(torch.backends, "mps")
+        and torch.backends.mps.is_available()
+        and "mps" in options
+    ):
         return torch.device("mps")
     else:
+        # Fallback to CPU
         return torch.device("cpu")

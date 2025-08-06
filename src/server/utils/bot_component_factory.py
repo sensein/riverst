@@ -448,7 +448,7 @@ class BotComponentFactory:
 
         context = OpenAILLMContext(messages=messages, tools=tools, tool_choice="auto")
         context_aggregator = llm.create_context_aggregator(context=context)
-        lipsync_processor = LipsyncProcessor(strategy="timestamped_asr")
+        lipsync_processor = LipsyncProcessor()
 
         return (
             stt,

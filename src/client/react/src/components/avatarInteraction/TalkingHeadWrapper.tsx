@@ -100,7 +100,7 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
     if (transportState === "ready" && readyRef.current) {
       setTimeout(() => {
         headRef.current?.setView(cameraType);
-      }, 2000);
+      }, 5000);
     }
   }, [transportState, cameraType]);
 
