@@ -109,9 +109,6 @@ async def run_bot(
         ) = await factory.build()
         metrics_logger = MetricsLoggerProcessor(session_dir=session_dir)
 
-        print("allowed_animations:", allowed_animations)
-        print("animation_instruction:", animation_instruction)
-
         # Setup WebRTC transport parameters
         raw = os.environ.get("LOCAL_SMART_TURN_MODEL_PATH")
         if not raw:
