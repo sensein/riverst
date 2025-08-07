@@ -82,89 +82,15 @@ nvm install 22
 ```bash
 sudo apt install -y build-essential python3-dev ffmpeg git
 sudo apt install -y libsndfile1-dev pkg-config
+sudo apt install -y nginx
 ```
 
 ---
 
-## 9. SSL certificates with certbot
+## 9. Clone and setup riverst
 
 ```bash
-sudo apt install certbot
-sudo apt install python3-certbot-nginx
-sudo certbot certonly --standalone -d play.kivaproject.org
-```
-
-Set up automatic renewal:
-
-```bash
-sudo crontab -e
-# Add this line:
-0 0 * * * certbot renew --quiet
-```
-
----
-
-## 10. Install and configure NGINX
-
-```bash
-sudo apt install nginx
-sudo vim /etc/nginx/sites-available/play.kivaproject.org
-```
-
-Paste this config:
-
-```nginx
-server {
-    listen 80;
-    server_name play.kivaproject.org;
-
-    location / {
-        return 301 https://$host$request_uri;
-    }
-}
-
-server {
-    listen 443 ssl;
-    server_name play.kivaproject.org;
-
-    ssl_certificate /etc/letsencrypt/live/play.kivaproject.org/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/play.kivaproject.org/privkey.pem;
-
-    location / {
-        proxy_pass http://localhost:5173;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-
-    location /api/ {
-        proxy_pass https://localhost:7860/api/;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-        proxy_ssl_verify off;
-    }
-}
-```
-
-Enable the config:
-
-```bash
-sudo ln -s /etc/nginx/sites-available/play.kivaproject.org /etc/nginx/sites-enabled/
-sudo systemctl start nginx
-sudo systemctl status nginx
-```
-
----
-
-## 11. Clone and setup riverst
-
-```bash
-git clone https://github.com/fabiocat93/riverst.git
+git clone https://github.com/sensein/riverst.git
 ```
 
 ### Frontend
@@ -174,9 +100,9 @@ cd riverst/src/client/react/
 npm install
 cp .env.example .env
 # Edit `.env` to configure your settings following .env.example
-
-# [In a tmux tab]
-npm run dev -- --host 0.0.0.0
+npm run build
+sudo mkdir -p /var/www
+sudo ln -s /home/ubuntu/riverst/src/client/react/dist /var/www/play.kivaproject.org
 ```
 
 ### Backend
@@ -186,9 +112,12 @@ conda create -n riverst python=3.11
 conda activate riverst
 cd riverst/src/server
 pip install -r requirements.txt
-git clone https://huggingface.co/pipecat-ai/smart-turn-v2
+sudo apt-get install git-lfs
+git lfs install
+git clone https://huggingface.co/pipecat-ai/smart-turn-v2 smart_turn_v2
 cp .env.example .env
 # Edit `.env` to configure your settings following .env.example
+# Edit the src/server/config/authorized_users.json
 
 # [In a tmux tab]
 sudo /home/ubuntu/miniconda3/envs/riverst/bin/python main.py \
@@ -196,9 +125,51 @@ sudo /home/ubuntu/miniconda3/envs/riverst/bin/python main.py \
   --ssl-keyfile /etc/letsencrypt/live/play.kivaproject.org/privkey.pem
 ```
 
+or automatically run the server on boot (with a systemd service):
+
+- Run:
+```
+sudo vim /etc/systemd/system/riverst-server.service
+```
+
+- Paste:
+
+```
+[Unit]
+Description=Riverst Python Server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/ubuntu/riverst/src/server
+ExecStart=/home/ubuntu/miniconda3/envs/riverst/bin/python main.py \
+  --ssl-certfile /etc/letsencrypt/live/play.kivaproject.org/fullchain.pem \
+  --ssl-keyfile /etc/letsencrypt/live/play.kivaproject.org/privkey.pem
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+Then enable and start the service:
+```
+
+- Run:
+```
+sudo systemctl daemon-reexec
+sudo systemctl daemon-reload
+sudo systemctl enable riverst-server.service
+sudo systemctl start riverst-server.service
+```
+
+- Check logs:
+```
+journalctl -u riverst-server.service -f
+```
+
 ---
 
-## 12. Setup Piper (open-source text-to-speech)
+## 10. Setup Piper (open-source text-to-speech)
 
 ```bash
 pip install --no-deps piper-tts
@@ -224,7 +195,7 @@ python3 -m piper.http_server --model voices/en_GB-alan-medium.onnx --port 5002
 
 ---
 
-## 13. Run ollama models
+## 11. Run ollama models
 
 Run (only one at a time because `ollama run` by default connects to a single Ollama server running at localhost:11434):
 
@@ -258,7 +229,7 @@ docker exec -it ollama-qwen ollama run qwen3:4b-instruct-2507-q4_K_M
 
 ---
 
-## (Optional) COTURN Server Setup
+## 12. (Optional) COTURN Server Setup
 To ensure reliable WebRTC connections, especially when clients are behind firewalls or NATs, you may want to install and configure a TURN server using coturn.
 
 - Install and Configure COTURN
@@ -302,6 +273,91 @@ sudo systemctl status coturn
 
 - Test your TURN server
 Use [Trickle ICE](https://webrtc.github.io/samples/src/content/peerconnection/trickle-ice/) to verify connectivity
+
+
+---
+
+## 13. SSL certificates with certbot
+
+```bash
+sudo apt install certbot
+sudo apt install python3-certbot-nginx
+sudo certbot certonly --standalone -d play.kivaproject.org
+```
+
+Set up automatic renewal:
+
+```bash
+sudo crontab -e
+# Add this line:
+0 0 * * * certbot renew --quiet
+```
+
+---
+
+## 14. Configure NGINX
+
+```bash
+sudo vim /etc/nginx/sites-available/play.kivaproject.org
+```
+
+Paste this config:
+
+```nginx
+server {
+    listen 80;
+    server_name play.kivaproject.org;
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    server_name play.kivaproject.org;
+
+    ssl_certificate /etc/letsencrypt/live/play.kivaproject.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/play.kivaproject.org/privkey.pem;
+
+    root /var/www/play.kivaproject.org;
+    index index.html;
+
+    #location / {
+    #    proxy_pass http://localhost:5173;
+    #    proxy_http_version 1.1;
+    #    proxy_set_header Upgrade $http_upgrade;
+    #    proxy_set_header Connection "upgrade";
+    #    proxy_set_header Host $host;
+    #    proxy_cache_bypass $http_upgrade;
+    #}
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api/ {
+        proxy_pass https://localhost:7860/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+
+        # Because it's a self-signed or custom cert:
+        proxy_ssl_verify off;
+    }
+}
+```
+
+Enable the config:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/play.kivaproject.org /etc/nginx/sites-enabled/
+sudo systemctl start nginx
+sudo systemctl status nginx
+```
+
 
 ---
 
