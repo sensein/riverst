@@ -22,7 +22,7 @@
         },
         "prolific_campaign": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Wheather the activity is part of a Prolific campaign."
         },
         "pipeline_modality": {
