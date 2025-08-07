@@ -158,7 +158,7 @@ export default function AvatarInteractionContent({
   )
 
   useRTVIClientEvent(
-    RTVIEvent.BotTtsText,
+    RTVIEvent.BotTranscript,
     useCallback(
       (data: { text: string }) => {
         if (subtitlesEnabled.bot) {

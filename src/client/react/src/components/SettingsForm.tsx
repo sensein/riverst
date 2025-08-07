@@ -162,7 +162,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
 
     if (key === 'llm_type') {
       config.enum = pipelineModality === 'classic'
-        ? ['openai', 'llama3.2', 'qwen3:30b-a3b-instruct-2507-q4_K_M']
+        ? ['openai', 'ollama/llama3.2', 'ollama/qwen3:4b-instruct-2507-q4_K_M']
         : ['openai_realtime_beta', 'gemini'];
     }
 
