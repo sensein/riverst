@@ -12,7 +12,8 @@ from pipecat.services.openai_realtime_beta import (
     SemanticTurnDetection,
     SessionProperties,
 )
-from pipecat.services.ollama.llm import OLLamaLLMService
+
+# from pipecat.services.ollama.llm import OLLamaLLMService
 from pipecat.services.piper.tts import PiperTTSService
 from pipecat.services.gemini_multimodal_live import GeminiMultimodalLiveLLMService
 from pipecat.services.whisper.stt import WhisperSTTService
@@ -25,6 +26,7 @@ from .end_conversation_handler import EndConversationHandler
 from .lipsync_processor import LipsyncProcessor
 from .kokoro import KokoroTTSService
 from .utils import get_best_device
+from .custom_ollama import CustomOLLamaLLMService
 import shutil
 
 ModalityType = Literal["classic", "e2e"]
@@ -32,14 +34,14 @@ LLMType = Literal[
     "openai",
     "openai_realtime_beta",
     "gemini",
-    "llama3.2",
-    "qwen3:30b-a3b-instruct-2507-q4_K_M",
+    "ollama/llama3.2",
+    "ollama/qwen3:4b-instruct-2507-q4_K_M",
 ]
 STTType = Literal["openai", "whisper"]
 TTSType = Literal["openai", "elevenlabs", "piper", "kokoro"]
 
 ALLOWED_LLM = {
-    "classic": {"openai", "llama3.2", "qwen3:30b-a3b-instruct-2507-q4_K_M"},
+    "classic": {"openai", "ollama/llama3.2", "ollama/qwen3:4b-instruct-2507-q4_K_M"},
     "e2e": {"openai_realtime_beta", "gemini"},
 }
 
@@ -193,15 +195,9 @@ class BotComponentFactory:
                     api_key=os.getenv("OPENAI_API_KEY"),
                     model=(self.llm_params or {}).get("model", "gpt-4o-mini"),
                 )
-            elif self.llm_type == "llama3.2":
-                # this assumes llama3.2 is served on port 11434
-                llm = OLLamaLLMService(
-                    model=self.llm_type, base_url="http://localhost:11434/v1"
-                )
-            elif self.llm_type == "qwen3:30b-a3b-instruct-2507-q4_K_M":
-                # this assumes llama3.2 is served on port 11435
-                llm = OLLamaLLMService(
-                    model=self.llm_type, base_url="http://localhost:11435/v1"
+            elif self.llm_type.startswith("ollama/"):
+                llm = CustomOLLamaLLMService(
+                    model=self.llm_type.replace("ollama/", ""),
                 )
 
             if self.tts_type == "openai":

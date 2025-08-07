@@ -229,22 +229,13 @@ python3 -m piper.http_server --model voices/en_GB-alan-medium.onnx --port 5002
 Run (only one at a time because `ollama run` by default connects to a single Ollama server running at localhost:11434):
 
 ```bash
-ollama run qwen3:30b-a3b-instruct-2507-q4_K_M
+ollama run qwen3:4b-instruct-2507-q4_K_M
 ollama run llama3.2
 ```
 
-or both at the same time [in 2 tmux tabs]:
+or with Docker (this may be helpful to run both at the same time [in 2 tmux tabs]):
 
 ```bash
-docker run -d \
-  --name ollama-qwen \
-  -p 11435:11434 \
-  -v ollama-qwen:/root/.ollama \
-  ollama/ollama
-
-# Then inside the container:
-docker exec -it ollama-qwen ollama run qwen3:30b-a3b-instruct-2507-q4_K_M
-
 docker run -d \
   --name ollama-llama3 \
   -p 11434:11434 \
@@ -253,8 +244,66 @@ docker run -d \
 
 # Then inside the container:
 docker exec -it ollama-llama3 ollama run llama3.2
+
+# This way you specify a different port!!!
+docker run -d \
+  --name ollama-qwen \
+  -p 11435:11434 \
+  -v ollama-qwen:/root/.ollama \
+  ollama/ollama
+
+# Then inside the container:
+docker exec -it ollama-qwen ollama run qwen3:4b-instruct-2507-q4_K_M
 ```
 
 ---
+
+## (Optional) COTURN Server Setup
+To ensure reliable WebRTC connections, especially when clients are behind firewalls or NATs, you may want to install and configure a TURN server using coturn.
+
+- Install and Configure COTURN
+```
+sudo apt-get update
+sudo apt-get install coturn -y
+turnserver -v  # Verify installation
+```
+
+- Edit the TURN server config
+```
+sudo vim /etc/turnserver.conf
+```
+
+- Here is a minimal example configuration (edit with your domain and credentials):
+
+```
+listening-port=3478
+fingerprint
+lt-cred-mech
+realm=mydomain.org
+user=testuser:testpass
+no-multicast-peers
+no-loopback-peers
+min-port=10000
+max-port=65535
+external-ip=public_id/private_ip
+cert=/etc/letsencrypt/live/mydomain.org/fullchain.pem
+pkey=/etc/letsencrypt/live/mydomain.org/privkey.pem
+verbose
+log-file=/var/log/turnserver.log
+```
+
+
+- Enable and start the coturn service
+```
+sudo systemctl enable coturn
+sudo systemctl start coturn
+sudo systemctl status coturn
+```
+
+- Test your TURN server
+Use [Trickle ICE](https://webrtc.github.io/samples/src/content/peerconnection/trickle-ice/) to verify connectivity
+
+---
+
 
 **You are all set!**
