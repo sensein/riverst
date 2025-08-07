@@ -22,6 +22,7 @@ const FloatGroup: React.FC<FloatGroupProps> = ({ onSessionEnd, videoFlag }) => {
     <FloatButton.Group
       trigger="click"
       type="default"
+      // @ts-expect-error: disabled works but is not typed
       disabled={transportState !== 'ready'}
       className={transportState === 'ready' ? 'float-btn-group-connected' : 'float-btn-group-disconnected'}
       icon={

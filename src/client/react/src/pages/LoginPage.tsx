@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Card, Typography, message, Spin, Space } from 'antd';
-import { GoogleOutlined, LoadingOutlined } from '@ant-design/icons';
+import { Card, Typography, message, Spin, Space } from 'antd';
+import { LoadingOutlined } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 

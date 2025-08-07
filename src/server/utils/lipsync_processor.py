@@ -336,7 +336,7 @@ class LipsyncProcessor(FrameProcessor):
                 self.resampler = torchaudio.transforms.Resample(
                     orig_freq=frame.sample_rate, new_freq=self.SAMPLE_RATE
                 ).to(self.device)
-            waveform = self.resampler(waveform)
+            waveform = self.resampler(waveform.to(self.device))
         return waveform.to(self.device)
 
     async def _run_lipsync(self, waveform: torch.Tensor, direction: FrameDirection):

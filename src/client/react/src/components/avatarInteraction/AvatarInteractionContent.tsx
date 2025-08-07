@@ -21,7 +21,6 @@ import { usePipecatClientMicControl } from "@pipecat-ai/client-react";
 import FloatGroup from './FloatGroup'
 import SubtitleOverlay from './SubtitleOverlay'
 import TalkingHeadWrapper from './TalkingHeadWrapper'
-import axios from 'axios';
 
 interface Props {
   embodiment: 'humanoid_avatar' | 'waveform'
