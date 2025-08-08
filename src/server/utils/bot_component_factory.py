@@ -188,7 +188,9 @@ class BotComponentFactory:
                     prompt=(self.stt_params or {}).get("prompt", None),
                 )
             elif self.stt_type == "whisper":
-                stt = WhisperSTTService(audio_passthrough=True)
+                stt = WhisperSTTService(audio_passthrough=True,
+                                        device=str(get_best_device(options=["mps", "cpu"])),
+                                        model="tiny")
 
             if self.llm_type == "openai":
                 llm = OpenAILLMService(
@@ -198,6 +200,7 @@ class BotComponentFactory:
             elif self.llm_type.startswith("ollama/"):
                 llm = CustomOLLamaLLMService(
                     model=self.llm_type.replace("ollama/", ""),
+                    base_url="http://localhost:11434/v1",  # Default Ollama endpoint
                 )
 
             if self.tts_type == "openai":
