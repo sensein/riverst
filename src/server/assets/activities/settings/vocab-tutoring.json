@@ -52,13 +52,13 @@
         },
         "llm_type": {
           "type": "string",
-          "enum": ["openai", "openai_realtime_beta", "gemini", "ollama/llama3.2", "ollama/qwen3:4b-instruct-2507-q4_K_M"],
+          "enum": ["openai", "openai_realtime_beta", "ollama/qwen3:4b-instruct-2507-q4_K_M"],
           "default": "openai",
           "description": "The LLM service to use."
         },
         "tts_type": {
           "type": "string",
-          "enum": ["openai", "piper", "elevenlabs", "kokoro"],
+          "enum": ["openai", "piper", "kokoro"],
           "default": "openai",
           "description": "The TTS service to use."
         },

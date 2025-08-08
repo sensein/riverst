@@ -33,16 +33,14 @@ ModalityType = Literal["classic", "e2e"]
 LLMType = Literal[
     "openai",
     "openai_realtime_beta",
-    "gemini",
-    "ollama/llama3.2",
     "ollama/qwen3:4b-instruct-2507-q4_K_M",
 ]
 STTType = Literal["openai", "whisper"]
-TTSType = Literal["openai", "elevenlabs", "piper", "kokoro"]
+TTSType = Literal["openai", "piper", "kokoro"]
 
 ALLOWED_LLM = {
-    "classic": {"openai", "ollama/llama3.2", "ollama/qwen3:4b-instruct-2507-q4_K_M"},
-    "e2e": {"openai_realtime_beta", "gemini"},
+    "classic": {"openai", "ollama/qwen3:4b-instruct-2507-q4_K_M"},
+    "e2e": {"openai_realtime_beta"},
 }
 
 
