@@ -12,25 +12,7 @@
         "checklist_incomplete_message": "Please complete the following warm-up items: {}.",
         "checklist_complete_message": "Great job completing the warm-up stage. Now let's move on to the first vocabulary word.",
         "transition_logic" : {
-          "conditions": [
-            {
-              "parameters": {
-                "variable_path": "has_listened_to_book",
-                "operator": "==",
-                "value": true
-              },
-              "target_node": "vocab"
-            },
-            {
-              "parameters": {
-                "variable_path": "has_listened_to_book",
-                "operator": "==",
-                "value": false
-
-              },
-              "target_node": "closing"
-            }
-          ],
+          "conditions": [],
           "default_target_node": "vocab"
 
         }
@@ -45,7 +27,10 @@
         },
         "checklist_incomplete_message": "You made an error with and did not accomplish the following things, please read the task instructions thoroughly and the conversation thus far, and naturally fix this: {}.",
         "checklist_complete_message": "Great job teaching the vocab, now let's move on to a review phase to check mastery.",
-        "next_stage": "review"
+        "transition_logic": {
+          "conditions": [],
+          "default_target_node": "review"
+        }
       },
       "review": {
         "checklist": {
@@ -55,7 +40,10 @@
         },
         "checklist_incomplete_message": "Please complete the following review items: {}.",
         "checklist_complete_message": "Great job reviewing the vocab words. Now let's start to wrap up",
-        "next_stage": "closing"
+        "transition_logic": {
+          "conditions": [],
+          "default_target_node": "closing"
+        }
       },
       "closing": {
         "checklist": {
@@ -66,7 +54,10 @@
         },
         "checklist_incomplete_message": "Please complete the following closing items: {}.",
         "checklist_complete_message": "Great job wrapping up the session. You're all set for the next reading!",
-        "next_stage": "end"
+        "transition_logic": {
+          "conditions": [],
+          "default_target_node": "end"
+        }
       }
     },
     "info": {
@@ -136,7 +127,6 @@
                   "has_listened_to_book"
                 ]
               },
-              "transition_callback": "general_transition_callback",
               "handler": "general_handler"
             }
           },
@@ -228,7 +218,6 @@
                   "vocab_words_known"
                 ]
               },
-              "transition_callback": "general_transition_callback",
               "handler": "general_handler"
             }
           },
@@ -318,7 +307,6 @@
                   "vocab_words_taught+not_mastered"
                 ]
               },
-              "transition_callback": "general_transition_callback",
               "handler": "general_handler"
             }
           }
@@ -370,7 +358,6 @@
                   "summarized_learning"
                 ]
               },
-              "transition_callback": "general_transition_callback",
               "handler": "general_handler"
             }
           },
