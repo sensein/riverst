@@ -17,8 +17,8 @@ import sys
 import os
 from .utils import get_best_device
 import asyncio
-import time
 import re
+import numpy as np
 
 
 def predict_phonemes_from_waveform(
@@ -310,9 +310,7 @@ class LipsyncProcessor(FrameProcessor):
             chunk = full_waveform[:, : self.MIN_SAMPLES_TO_PROCESS]
             remaining = full_waveform[:, self.MIN_SAMPLES_TO_PROCESS :]  # noqa: E203
             self.audio_waveform_buffer = [remaining] if remaining.numel() > 0 else []
-            start = time.time()
             await self._run_lipsync(chunk.squeeze(0), direction)
-            end = time.time()
             total_samples = remaining.shape[-1]
 
     async def _flush_remaining(self, direction: FrameDirection):
@@ -326,7 +324,7 @@ class LipsyncProcessor(FrameProcessor):
 
     def _preprocess_audio(self, frame: TTSAudioRawFrame) -> torch.Tensor:
         waveform = (
-            torch.frombuffer(frame.audio, dtype=torch.int16)
+            torch.tensor(np.frombuffer(frame.audio, dtype=np.int16).copy())
             .float()
             .div_(32768.0)
             .unsqueeze(0)

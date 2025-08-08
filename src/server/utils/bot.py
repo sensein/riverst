@@ -37,6 +37,7 @@ from pipecat.audio.turn.smart_turn.local_smart_turn_v2 import LocalSmartTurnAnal
 import types
 import torch
 import torchaudio
+import numpy as np
 
 import asyncio
 from .video_processor import VideoProcessor
@@ -154,7 +155,8 @@ async def run_bot(
                 return frame.audio
 
             audio_tensor = (
-                torch.frombuffer(frame.audio, dtype=torch.int16).float() / 32768.0
+                torch.tensor(np.frombuffer(frame.audio, dtype=np.int16).copy()).float()
+                / 32768.0
             )
             audio_tensor = audio_tensor.unsqueeze(0)  # shape: (1, N)
 
