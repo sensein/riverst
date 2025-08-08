@@ -91,7 +91,7 @@
         "task_messages": [
           {
             "role": "system",
-            "content": "TOOLS:\nYou may silently call the check_warm_up_progress() function only after all warm-up conversation steps have been completed and you are ready to begin vocabulary instruction. Do not mention that you are doing this.\nSilently call the get_reading_context function to get the content of the book is. Do not mention that you are doing this, and only use the details as they naturally relate to the conversation.\n\nPROCEDURE:\nBegin with a friendly, natural greeting as if you're reconnecting with a child after a week apart. Keep the tone warm and familiar, and ask a bit about their week, wait for their response, and then quickly transition to the task at hand.\nSilently call the get_reading_context to get the current context, then ask the child if they had a chance to listen to their audiobook this week based on the information you get from calling that function.\nIf they have listened, ask one thoughtful and age-appropriate follow-up question about the story or a literary theme from the book. Wait for their replies, follow-up appropriately, but keep it this exchange brief and make sure to push the conversation forwards.\nIf they have not listened, gently encourage them to start soon, and ask what time of day might be best for them to listen.\n\nDo not teach vocab in this section, call check_warm_up_progress silently to proceed to the vocabulary phase after all steps are complete, but do not mention you are using that function, simply call it and don't mention you are checking anything at all!"
+            "content": "TOOLS:\nYou may silently call the check_warm_up_progress() function only after all warm-up conversation steps have been completed and you are ready to begin vocabulary instruction. Do not mention that you are doing this.\nThe reading context has been automatically provided to you and contains the content of the book. Use the details as they naturally relate to the conversation.\n\nPROCEDURE:\nBegin with a friendly, natural greeting as if you're reconnecting with a child after a week apart. Keep the tone warm and familiar, and ask a bit about their week, wait for their response, and then quickly transition to the task at hand.\nUsing the reading context that has been provided, ask the child if they had a chance to listen to their audiobook this week based on the book information you have.\nIf they have listened, ask one thoughtful and age-appropriate follow-up question about the story or a literary theme from the book. Wait for their replies, follow-up appropriately, but keep it this exchange brief and make sure to push the conversation forwards.\nIf they have not listened, gently encourage them to start soon, and ask what time of day might be best for them to listen.\n\nDo not teach vocab in this section, call check_warm_up_progress silently to proceed to the vocabulary phase after all steps are complete, but do not mention you are using that function, simply call it and don't mention you are checking anything at all!"
           }
         ],
         "functions": [
@@ -129,33 +129,13 @@
               },
               "handler": "general_handler"
             }
-          },
+          }
+        ],
+        "pre_actions": [
           {
-            "type": "function",
-            "function": {
-              "name": "get_reading_context",
-              "description": "Get the reading context for the vocabulary words",
-              "parameters": {
-                "type": "object",
-                "properties": {
-                  "variable_name": {
-                    "type": "string",
-                    "description": "The name of the session variable to retrieve",
-                    "enum": [
-                      "reading_context"
-                    ]
-                  },
-                  "current_index": {
-                    "type": "integer",
-                    "description": "The current index of the reading context"
-                  }
-                },
-                "required": [
-                  "variable_name"
-                ]
-              },
-              "handler": "get_session_variable_handler"
-            }
+            "type": "get_variable",
+            "variable_name": "reading_context",
+            "handler": "get_variable_action_handler"
           }
         ],
         "role_messages": [
@@ -169,7 +149,7 @@
         "task_messages": [
           {
             "role": "system",
-            "content": "TOOLS:\nYou may silently use the get_reading_context() function to retrieve the text and associated vocabulary words. Do not mention the function or its contents. Use details from the reading only as they naturally fit into the conversation.\nYou may silently call the check_vocabulary_progress() function only after completing all teaching steps for the current word. Do not mention that you are doing this.\nCRITICAL INSTRUCTION:\nDO NOT teach words the child already knows. If a child demonstrates they know a word, immediately move to the next word. This is essential for efficient learning.\nPROCEDURE:\nBegin by silently calling get_reading_context() to retrieve the current vocabulary list and text.\nStart with the first vocabulary word. Ask the child:\n\"Do you know what [word] means?\"\nBased on their response:\nIf they say yes but don't explain, ask:\n\"Can you tell me what it means?\"\nIf they give a correct explanation implying that they do know it, MOVE ON TO ANOTHER WORD. This is very important! You do not need to teach words they already know.\nIf they don't know the word or explain it incorrectly, then and only then, continue teaching the word through natural conversation.\nTEACHING STEPS (only if the child does not know the word):\nIn a warm and conversational way (without listing steps), guide the child through the following:\nDefine the word using simple, child-friendly language.\nConnect it to the story:\nFind in the story where the word is used, and provide the child the sentence, ask them what they think the word means in this context. The word MUST be in the sentence you provide.\nProvide feedback to their response as needed.\nConnect it to their life:\nAsk the child to relate the word to their own experience (e.g.,\n\"What's something [word] in your own life?\")\nGive clear feedback.\nPractice using the word:\nAsk the child to make up a new sentence using the word.\nOffer support and correction as needed.\nOnce you have taught a vocab word that the student didn't already know, silently call check_vocabulary_progress() to move on. Do not keep going with words, and do not mention you are calling or checking anything at all!"
+            "content": "TOOLS:\nThe reading context with the text and associated vocabulary words has been automatically provided to you. Use details from the reading only as they naturally fit into the conversation.\nYou may silently call the check_vocabulary_progress() function only after completing all teaching steps for the current word. Do not mention that you are doing this.\nCRITICAL INSTRUCTION:\nDO NOT teach words the child already knows. If a child demonstrates they know a word, immediately move to the next word. This is essential for efficient learning.\nPROCEDURE:\nUsing the reading context that has been provided, you have access to the current vocabulary list and text.\nStart with the first vocabulary word. Ask the child:\n\"Do you know what [word] means?\"\nBased on their response:\nIf they say yes but don't explain, ask:\n\"Can you tell me what it means?\"\nIf they give a correct explanation implying that they do know it, MOVE ON TO ANOTHER WORD. This is very important! You do not need to teach words they already know.\nIf they don't know the word or explain it incorrectly, then and only then, continue teaching the word through natural conversation.\nTEACHING STEPS (only if the child does not know the word):\nIn a warm and conversational way (without listing steps), guide the child through the following:\nDefine the word using simple, child-friendly language.\nConnect it to the story:\nFind in the story where the word is used, and provide the child the sentence, ask them what they think the word means in this context. The word MUST be in the sentence you provide.\nProvide feedback to their response as needed.\nConnect it to their life:\nAsk the child to relate the word to their own experience (e.g.,\n\"What's something [word] in your own life?\")\nGive clear feedback.\nPractice using the word:\nAsk the child to make up a new sentence using the word.\nOffer support and correction as needed.\nOnce you have taught a vocab word that the student didn't already know, silently call check_vocabulary_progress() to move on. Do not keep going with words, and do not mention you are calling or checking anything at all!"
           }
         ],
         "functions": [
@@ -220,36 +200,14 @@
               },
               "handler": "general_handler"
             }
-          },
-          {
-            "type": "function",
-            "function": {
-              "name": "get_reading_context",
-              "description": "Get the reading context for the vocabulary words",
-              "parameters": {
-                "type": "object",
-                "properties": {
-                  "variable_name": {
-                    "type": "string",
-                    "description": "The name of the session variable to retrieve",
-                    "enum": [
-                      "reading_context"
-                    ]
-                  },
-                  "current_index": {
-                    "type": "integer",
-                    "description": "The current index of the reading context"
-                  }
-                },
-                "required": [
-                  "variable_name"
-                ]
-              },
-              "handler": "get_session_variable_handler"
-            }
           }
         ],
         "pre_actions": [
+          {
+            "type": "get_variable",
+            "variable_name": "reading_context",
+            "handler": "get_variable_action_handler"
+          },
           {
             "type": "tts_say",
             "text": "Okay, now let's move on to some vocabulary work."
@@ -360,33 +318,13 @@
               },
               "handler": "general_handler"
             }
-          },
+          }
+        ],
+        "pre_actions": [
           {
-            "type": "function",
-            "function": {
-              "name": "get_reading_context",
-              "description": "Get the reading context for the vocabulary words",
-              "parameters": {
-                "type": "object",
-                "properties": {
-                  "variable_name": {
-                    "type": "string",
-                    "description": "The name of the session variable to retrieve",
-                    "enum": [
-                      "reading_context"
-                    ]
-                  },
-                  "current_index": {
-                    "type": "integer",
-                    "description": "The current index of the reading context"
-                  }
-                },
-                "required": [
-                  "variable_name"
-                ]
-              },
-              "handler": "get_session_variable_handler"
-            }
+            "type": "get_variable",
+            "variable_name": "reading_context",
+            "handler": "get_variable_action_handler"
           }
         ]
       },
