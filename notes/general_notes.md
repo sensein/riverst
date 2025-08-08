@@ -13,3 +13,4 @@
 - the general session saved is not always reliable (sometimes, voices are overlapped despite they were not in reality...)
 - full-duplex architeture notes: https://arxiv.org/pdf/2405.19487
 - interesting study that used talkinghead: https://www.youtube.com/watch?v=Hv-ItCZ0qc4
+- https://www.metered.ca/blog/coturn/: coturn server setup guidelines
