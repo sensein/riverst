@@ -44,6 +44,22 @@ ALLOWED_LLM = {
 }
 
 
+class FixedOpenAIRealtimeBetaLLMService(OpenAIRealtimeBetaLLMService):
+    """This class overrides the _calculate_audio_duration_ms method to add a 85ms safety buffer.
+
+    https://github.com/pipecat-ai/pipecat/issues/2106#issuecomment-3168228292
+    """
+
+    def _calculate_audio_duration_ms(
+        self, total_bytes: int, sample_rate: int = 24000, bytes_per_sample: int = 2
+    ) -> int:
+        samples = total_bytes / bytes_per_sample
+        duration_seconds = samples / sample_rate
+
+        # Add a 85ms safety buffer by subtracting from the calculated duration
+        return int((duration_seconds * 1000) - 85)
+
+
 @dataclass
 class BotComponentFactory:
     session_dir: str
@@ -186,9 +202,11 @@ class BotComponentFactory:
                     prompt=(self.stt_params or {}).get("prompt", None),
                 )
             elif self.stt_type == "whisper":
-                stt = WhisperSTTService(audio_passthrough=True,
-                                        device=str(get_best_device(options=["mps", "cpu"])),
-                                        model="tiny")
+                stt = WhisperSTTService(
+                    audio_passthrough=True,
+                    device=str(get_best_device(options=["mps", "cpu"])),
+                    model="tiny",
+                )
 
             if self.llm_type == "openai":
                 llm = OpenAILLMService(
@@ -271,7 +289,7 @@ class BotComponentFactory:
                     instructions=instruction,
                     voice=voice,
                 )
-                llm = OpenAIRealtimeBetaLLMService(
+                llm = FixedOpenAIRealtimeBetaLLMService(
                     api_key=os.getenv("OPENAI_API_KEY"),
                     model=(self.llm_params or {}).get(
                         "model", "gpt-4o-realtime-preview-2025-06-03"
