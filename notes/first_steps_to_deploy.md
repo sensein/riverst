@@ -6,7 +6,7 @@ This guide explains step-by-step how to deploy the Riverst project on AWS using 
 
 ## 1. Create an AWS EC2 instance
 
-- Choose `g4dn.xlarge` as the instance type or more powerful (we need a GPU for efficient lip sync).
+- Choose `g4dn.xlarge` as the instance type or more powerful (you may need a more powerful gpu if you want to run models locally without experiencing any unpleasant delay).
 - Use a Linux (Ubuntu) machine.
 - Set the storage volume to **64 GB** (or larger).
 - Open these ports in the security group:
@@ -52,6 +52,52 @@ sudo reboot
 curl -fsSL https://ollama.com/install.sh | sh
 ```
 
+You can run ollama backend with:
+```bash
+ollama run
+```
+
+Alternatively, you can run it as a daemon:
+
+- Create the service file:
+```bash
+sudo vim /etc/systemd/system/ollama-server.service
+```
+
+- Paste:
+
+```bash
+[Unit]
+Description=Ollama Backend Server
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+ExecStart=/usr/local/bin/ollama serve
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+Enable and start the service:
+```
+
+- Run:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable ollama-server.service
+sudo systemctl start ollama-server.service
+```
+
+- Check logs:
+
+```bash
+journalctl -u ollama-server.service -n 20 -f
+```
+
+
 ---
 
 ## 6. Install conda
@@ -77,7 +123,7 @@ nvm install 22
 
 ---
 
-## 8. Install more system dependencies (required by riverst)
+## 8. Install more system dependencies (required by riverst and for serving web apps - a.k.a. nginx)
 
 ```bash
 sudo apt install -y build-essential python3-dev ffmpeg git
@@ -125,19 +171,20 @@ sudo /home/ubuntu/miniconda3/envs/riverst/bin/python main.py \
   --ssl-keyfile /etc/letsencrypt/live/play.kivaproject.org/privkey.pem
 ```
 
-or automatically run the server on boot (with a systemd service):
 
-- Run:
+Instead of starting the backend manually, you can run it as a service.
+
+- Run Riverst backend as a daemon
 ```
 sudo vim /etc/systemd/system/riverst-server.service
 ```
 
 - Paste:
-
 ```
 [Unit]
 Description=Riverst Python Server
-After=network.target
+After=network.target ollama-server.service ollama-qwen3.service piper-alba.service piper-alan.service
+Requires=ollama-server.service ollama-qwen3.service piper-alba.service piper-alan.service
 
 [Service]
 Type=simple
@@ -151,26 +198,23 @@ RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
-Then enable and start the service:
+Then enable and start:
 ```
 
 - Run:
 ```
-sudo systemctl daemon-reexec
 sudo systemctl daemon-reload
 sudo systemctl enable riverst-server.service
 sudo systemctl start riverst-server.service
+journalctl -u riverst-server.service -n 20 -f
 ```
 
-- Check logs:
-```
-journalctl -u riverst-server.service -f
-```
 
 ---
 
 ## 10. Setup Piper (open-source text-to-speech)
 
+Run:
 ```bash
 pip install --no-deps piper-tts
 pip install piper_phonemize
@@ -193,11 +237,46 @@ python3 -m piper.http_server --model voices/en_GB-alba-medium.onnx --port 5001
 python3 -m piper.http_server --model voices/en_GB-alan-medium.onnx --port 5002
 ```
 
+Alternatively, you can run Piper servers as daemons. Here is an example with Alan:
+
+- Run:
+```bash
+sudo vim /etc/systemd/system/piper-alan.service
+```
+
+- Paste:
+
+```bash
+[Unit]
+Description=Piper HTTP Server - Alan
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/piper/src/python_run
+ExecStart=/home/ubuntu/miniconda3/envs/riverst/bin/python -m piper.http_server --model voices/en_GB-alan-medium.onnx --port 5002
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+- Enable and start:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable piper-alan.service
+sudo systemctl start piper-alan.service
+journalctl -u piper-alan.service -n 20 -f
+```
+
 ---
 
 ## 11. Run ollama models
 
-Run (only one at a time because `ollama run` by default connects to a single Ollama server running at localhost:11434):
+Run interactively (only one at a time because `ollama run` by default connects to a single Ollama server running at localhost:11434):
 
 ```bash
 ollama run qwen3:4b-instruct-2507-q4_K_M
@@ -225,6 +304,45 @@ docker run -d \
 
 # Then inside the container:
 docker exec -it ollama-qwen ollama run qwen3:4b-instruct-2507-q4_K_M
+```
+
+
+Alternatively, you can run Ollama model (e.g., Qwen3) as a daemon:
+
+- Create a service to automatically run Qwen3 on boot:
+
+```
+sudo vim /etc/systemd/system/ollama-qwen3.service
+```
+
+- Paste:
+```
+[Unit]
+Description=Ollama Model Qwen3 Loader (Interactive)
+After=ollama-server.service
+Requires=ollama-server.service
+
+[Service]
+ExecStart=/usr/bin/script -q -c "/usr/local/bin/ollama run qwen3:4b-instruct-2507-q4_K_M" /dev/null
+Restart=always
+RestartSec=5
+User=ubuntu
+
+[Install]
+WantedBy=multi-user.target
+```
+
+- Then run:
+
+```
+sudo systemctl daemon-reload
+sudo systemctl enable ollama-qwen3.service
+sudo systemctl start ollama-qwen3.service
+```
+
+- Check logs:
+```
+journalctl -u ollama-qwen3.service -n 20 -f
 ```
 
 ---
