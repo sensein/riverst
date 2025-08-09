@@ -1,7 +1,5 @@
 import datetime
 import aiohttp
-import json
-import traceback
 from typing import Any
 
 from dotenv import load_dotenv
@@ -23,7 +21,6 @@ from pipecat.processors.transcript_processor import TranscriptProcessor
 from pipecat.transports.base_transport import TransportParams
 from pipecat.transports.network.small_webrtc import SmallWebRTCTransport
 from pipecat.frames.frames import EndFrame
-from pipecat.services.llm_service import FunctionCallParams
 from pipecat.processors.filters.stt_mute_filter import (
     STTMuteConfig,
     STTMuteFilter,
@@ -41,8 +38,8 @@ from .audio_analyzer import AudioAnalyzer
 from .bot_component_factory import BotComponentFactory
 from .flow_component_factory import FlowComponentFactory
 from .metrics import MetricsLoggerProcessor
-from .animation_handler import AnimationHandler
-from .end_conversation_handler import EndConversationHandler
+
+# Function handlers are now managed by BotComponentFactory
 from .video_buffer_processor import VideoBufferProcessor
 
 load_dotenv(override=True)
@@ -185,68 +182,14 @@ async def run_bot(
 
         rtvi = RTVIProcessor(config=RTVIConfig(config=[]))
 
-        def function_call_debug_wrapper(fn):
-            async def wrapper(params: FunctionCallParams):
-                args = (
-                    params.arguments
-                    if isinstance(params, FunctionCallParams)
-                    else params
-                )
-                logger.info(
-                    "FUNCTION_DEBUG: Function '{}' called with args: {}",
-                    fn.__name__,
-                    json.dumps(args),
-                )
-                try:
-                    result = await fn(params)
-                    logger.info(
-                        "FUNCTION_DEBUG: Function '{}' completed successfully with result: {}",
-                        fn.__name__,
-                        json.dumps(result) if result else "None",
-                    )
-                    return result
-                except Exception as e:
-                    logger.error(
-                        "FUNCTION_DEBUG: Error in function '{}': {}",
-                        fn.__name__,
-                        str(e),
-                    )
-                    logger.error("FUNCTION_DEBUG: {}", traceback.format_exc())
-
-                    result = {
-                        "status": "error",
-                        "message": f"Execution error in '{fn.__name__}': {str(e)}",
-                    }
-
-                    if isinstance(params, FunctionCallParams):
-                        await params.result_callback(result)
-                    else:
-                        return result
-
-            return wrapper
-
-        # create a closure that provides the rtvi instance and allowed animations to the handler
-        async def animation_handler_wrapper(params):
-            """Wrapper for the animation handler to include RTVI instance."""
-            return await AnimationHandler.handle_animation(
-                params, rtvi=rtvi, allowed_animations=allowed_animations
-            )
-
-        llm.register_function(
-            "trigger_animation", function_call_debug_wrapper(animation_handler_wrapper)
+        # Register functions using the factory's modular approach
+        use_advanced_flows = config.get("advanced_flows", False)
+        function_registrations = factory.get_function_registrations(
+            rtvi_processor=rtvi, use_flows=use_advanced_flows
         )
 
-        # create a closure that provides the rtvi instance to the end conversation handler
-        async def end_conversation_handler_wrapper(params):
-            """Wrapper for the end conversation handler to include RTVI instance."""
-            return await EndConversationHandler.handle_end_conversation(
-                params, rtvi=rtvi
-            )
-
-        llm.register_function(
-            "end_conversation",
-            function_call_debug_wrapper(end_conversation_handler_wrapper),
-        )
+        for function_name, handler in function_registrations:
+            llm.register_function(function_name, handler)
 
         async def handle_user_idle(_: UserIdleProcessor, retry_count: int) -> bool:
             """Handle user inactivity by escalating reminders and ending the session if needed.
@@ -395,6 +338,7 @@ async def run_bot(
                 "Summarize the key moments of the session and concepts discussed so far. "
                 "Keep it concise and focused on the activity goal and achievements."
             ),
+            rtvi_processor=rtvi,
         )
         flow_manager = flow_factory.build()
 

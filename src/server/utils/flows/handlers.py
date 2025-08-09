@@ -352,10 +352,42 @@ async def get_variable_action_handler(action: dict, flow_manager: FlowManager) -
         )
         return
 
-    value = flow_manager.state[source][variable_name]
-    if value is None:
+    root_data = flow_manager.state[source][variable_name]
+    if root_data is None:
         logger.error(f"Variable '{variable_name}' has None value in {source}")
         return
+
+    # Check if this is an indexable variable (similar to get_session_variable_handler)
+    index_field = isinstance(root_data, dict) and root_data.get("indexable_by", None)
+
+    if not index_field:
+        # Simple variable - use as is
+        value = root_data
+    else:
+        # Indexable variable - apply indexing logic
+        indexable_items = root_data.get(index_field, [])
+        stored_index = root_data.get("current_index", None)
+
+        if stored_index is not None and 0 <= stored_index < len(indexable_items):
+            # Get the indexed item: root[root["indexable_by"]][index]
+            indexed_data = indexable_items[stored_index]
+
+            # Create the data structure similar to get_session_variable_handler
+            value = {
+                k: v
+                for k, v in root_data.items()
+                if k != "indexable_by" and k != index_field
+            }
+            # Special handling for warm_up stage
+            if flow_manager.current_node == "warm_up":
+                indexed_data_copy = indexed_data.copy()
+                indexed_data_copy.pop("vocab_words", None)
+                value[f"current_{index_field}"] = indexed_data_copy
+            else:
+                value[f"current_{index_field}"] = indexed_data
+        else:
+            # No valid index, use the raw data
+            value = root_data
 
     # Format the content based on the variable type
     if isinstance(value, dict):
@@ -415,8 +447,6 @@ async def get_variable_action_handler(action: dict, flow_manager: FlowManager) -
         logger.info(
             f"Successfully added {variable_name} to {context_class_name} context"
         )
-
-        logger.error("Current context messages:\n{}", pformat(context.get_messages()))
 
     except Exception as e:
         logger.error(f"Error adding message to context: {e}")

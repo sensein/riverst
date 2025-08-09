@@ -19,11 +19,14 @@ from pipecat.services.whisper.stt import WhisperSTTService
 from pipecat.adapters.schemas.tools_schema import ToolsSchema
 from pipecat.processors.aggregators.openai_llm_context import OpenAILLMContext
 from pipecat.services.elevenlabs.tts import ElevenLabsTTSService
+from pipecat.services.llm_service import FunctionCallParams
+
 import json
 from .animation_handler import AnimationHandler
 from .end_conversation_handler import EndConversationHandler
 from .lipsync_processor import LipsyncProcessor
 import shutil
+from loguru import logger
 
 ModalityType = Literal["classic", "e2e"]
 LLMType = Literal["openai", "openai_realtime_beta", "gemini", "llama3.2"]
@@ -47,7 +50,6 @@ class BotComponentFactory:
     stt_params: Optional[Dict[str, Any]] = None
     tts_type: Optional[TTSType] = None
     tts_params: Optional[Dict[str, Any]] = None
-    advanced_flows: bool = False
     flow_params: Optional[Dict[str, Any]] = None
     short_term_memory: bool = False
     long_term_memory: bool = False
@@ -152,6 +154,94 @@ class BotComponentFactory:
         )
 
         return ToolsSchema(standard_tools=[animation_schema, end_conversation_schema])
+
+    def get_function_registrations(self, rtvi_processor, use_flows: bool = False):
+        """Get the function registrations for the LLM based on configuration.
+
+        Args:
+            rtvi_processor: The RTVI processor instance
+            use_flows: Whether advanced flows are being used
+
+        Returns:
+            List of tuples (function_name, handler_function) to register
+        """
+
+        def function_call_debug_wrapper(fn):
+            """Debug wrapper for function calls with logging."""
+
+            async def wrapper(params: FunctionCallParams):
+                args = (
+                    params.arguments
+                    if isinstance(params, FunctionCallParams)
+                    else params
+                )
+                logger.info(
+                    "FUNCTION_DEBUG: Function '{}' called with args: {}",
+                    fn.__name__,
+                    json.dumps(args),
+                )
+                try:
+                    result = await fn(params)
+                    logger.info(
+                        "FUNCTION_DEBUG: Function '{}' completed successfully with result: {}",
+                        fn.__name__,
+                        json.dumps(result) if result else "None",
+                    )
+
+                    # Handle result callback if present
+                    if isinstance(params, FunctionCallParams):
+                        await params.result_callback(result)
+                        return None
+                    else:
+                        return result
+
+                except Exception as e:
+                    logger.error(
+                        "FUNCTION_DEBUG: Function '{}' failed with error: {}",
+                        fn.__name__,
+                        str(e),
+                    )
+                    # Re-raise the exception after logging
+                    raise
+
+            return wrapper
+
+        registrations = []
+
+        # Always register animation handler
+        async def animation_handler_wrapper(params):
+            """Wrapper for the animation handler to include RTVI and allowed animations."""
+            return await AnimationHandler.handle_animation(
+                params,
+                rtvi=rtvi_processor,
+                allowed_animations=self.body_animations or [],
+            )
+
+        registrations.append(
+            (
+                "trigger_animation",
+                function_call_debug_wrapper(animation_handler_wrapper),
+            )
+        )
+
+        # Only register end_conversation when NOT using flows
+        # When using flows, end_conversation is handled through pre-actions
+        if not use_flows:
+
+            async def end_conversation_handler_wrapper(params):
+                """Wrapper for the end conversation handler to include RTVI instance."""
+                return await EndConversationHandler.handle_end_conversation(
+                    params, rtvi=rtvi_processor
+                )
+
+            registrations.append(
+                (
+                    "end_conversation",
+                    function_call_debug_wrapper(end_conversation_handler_wrapper),
+                )
+            )
+
+        return registrations
 
     async def build(self) -> Tuple[
         Optional[object],  # STT
