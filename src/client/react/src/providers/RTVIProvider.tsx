@@ -1,5 +1,5 @@
 // src/providers/RTVIProvider.tsx
-import { PropsWithChildren } from 'react'
+import { PropsWithChildren, useEffect } from 'react'
 import { PipecatClient } from '@pipecat-ai/client-js'
 import { SmallWebRTCTransport } from '@pipecat-ai/small-webrtc-transport'
 import { PipecatClientProvider } from '@pipecat-ai/client-react'
@@ -62,6 +62,26 @@ export function RTVIProvider({
           }
         }
       });
+
+  // Handle user navigation away to prevent incorrect session end detection
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // When the user leaves, we mark the session as "ended" from the client-side
+      // so that the onDisconnected handler doesn't mistake it for a server-initiated
+      // session end and redirect to the session-ended page.
+      const endedSessions = JSON.parse(localStorage.getItem('endedSessions') || '[]');
+      if (!endedSessions.includes(sessionId)) {
+        endedSessions.push(sessionId);
+        localStorage.setItem('endedSessions', JSON.stringify(endedSessions));
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [sessionId]);
 
   return <PipecatClientProvider client={client}>{children}</PipecatClientProvider>
 }
