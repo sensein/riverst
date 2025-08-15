@@ -343,7 +343,7 @@
         "pre_actions": [
           {
             "type": "function",
-            "handler": "handle_end_conversation"
+            "handler": "end_conversation_handler"
           }
         ],
         "post_actions": [
