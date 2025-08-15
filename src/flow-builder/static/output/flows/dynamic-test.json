@@ -242,9 +242,10 @@
           }
         ],
         "functions": [],
-        "post_actions": [
+        "pre_actions": [
           {
-            "type": "end_conversation"
+            "type": "function",
+            "handler": "handle_end_conversation"
           }
         ]
       }
