@@ -329,7 +329,7 @@ async def get_variable_action_handler(action: dict, flow_manager: FlowManager) -
     directly to the LLM context as a system message. It supports multiple LLM
     providers including OpenAI, Anthropic, Google/Gemini, and AWS Bedrock.
 
-    Checks if variables is indexable and retrieves the indexed item if the index is set.
+    Checks if variable is indexable and retrieves the indexed item if the index is set.
     It will not prompt the user for an index!
 
 
