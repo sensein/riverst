@@ -212,7 +212,27 @@ async def general_handler(
             return found_func
         return False
 
-    logger.info(f"DEBUG: Checking result for function objects: {result}")
+    if DEBUG_MODE:
+        # Debug: Check if result contains any function objects
+        def check_for_functions(obj, path=""):
+            if callable(obj):
+                logger.error(f"FOUND FUNCTION OBJECT in result at {path}: {obj}")
+                return True
+            elif isinstance(obj, dict):
+                found_func = False
+                for key, value in obj.items():
+                    if check_for_functions(value, f"{path}.{key}"):
+                        found_func = True
+                return found_func
+            elif isinstance(obj, (list, tuple)):
+                found_func = False
+                for i, item in enumerate(obj):
+                    if check_for_functions(item, f"{path}[{i}]"):
+                        found_func = True
+                return found_func
+            return False
+
+        logger.info(f"DEBUG: Checking result for function objects: {result}")
     if check_for_functions(result):
         logger.error("CRITICAL: Result contains function objects!")
     else:
