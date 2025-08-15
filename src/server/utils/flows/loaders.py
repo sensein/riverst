@@ -125,6 +125,8 @@ def get_flow_config(
                 if action.get("handler") == "get_variable_action_handler":
                     action["handler"] = get_variable_action_handler
                 if action.get("handler") == "end_conversation_handler":
+                    if end_conversation_handler is None:
+                        raise ValueError("Configuration requests 'end_conversation_handler', but no handler was provided.")
                     action["handler"] = end_conversation_handler.handle_end_conversation
 
         if "post_actions" in node_dict:
