@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { Spin, Alert, Modal, Button, QRCode, Typography, Divider, Tooltip } from 'antd';
 import { CopyOutlined } from '@ant-design/icons';
+import { LoadingOutlined } from '@ant-design/icons';
 
 import axios from 'axios';
 import SettingsForm from '../components/SettingsForm';
@@ -27,12 +28,8 @@ export default function AvatarInteractionSettings() {
   // fetch the form schema from the passed-in URL
   useEffect(() => {
     if (!settingsUrl) return;
-    const url = settingsUrl.startsWith('http')
-      ? settingsUrl
-      : `${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/${settingsUrl}`;
-
     axios
-      .get(url)
+      .get(settingsUrl)
       .then(res => setSchema(res.data))
       .catch(err => console.error('Failed to load schema:', err));
   }, [settingsUrl]);
@@ -55,7 +52,7 @@ export default function AvatarInteractionSettings() {
 
       if (!avatar) {
         try {
-          const response = await axios.get(`${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/avatars`);
+          const response = await axios.get(`/api/avatars`);
           const avatars = response.data;
           if (avatars.length > 0) {
             avatar = avatars[0];
@@ -75,7 +72,7 @@ export default function AvatarInteractionSettings() {
 
       console.log(fullPayload);
 
-      const res = await authRequest.post(`${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/session`, fullPayload);
+      const res = await authRequest.post(`/api/session`, fullPayload);
       const sessionId: string = res.data.session_id;
       const link = `/avatar-interaction/${sessionId}`;
 
@@ -106,8 +103,18 @@ export default function AvatarInteractionSettings() {
 
   if (!schema) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', marginTop: 100 }}>
-        <Spin size="large" />
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: 'white',
+          zIndex: 10000,
+        }}
+      >
+        <Spin indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />} />
       </div>
     );
   }
@@ -132,7 +139,7 @@ export default function AvatarInteractionSettings() {
               value={window.location.origin + sessionLink}
               size={160}
               icon='/logo/riverst_black.svg'
-              iconSize={60}
+              iconSize={40}
             />
           </div>
           <div style={{ flex: 2, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>

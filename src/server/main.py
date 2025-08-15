@@ -1,14 +1,10 @@
 import argparse
 import asyncio
-import base64
 import datetime
-import hashlib
-import hmac
 import json
 import math
 import os
 import sys
-import time
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -18,25 +14,33 @@ from datetime import timedelta
 import uvicorn
 import uvloop
 from dotenv import load_dotenv
-from fastapi import BackgroundTasks, FastAPI, Request, Query, Body, Depends, HTTPException, status
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi import (
+    BackgroundTasks,
+    FastAPI,
+    Request,
+    Query,
+    Body,
+    Depends,
+    HTTPException,
+    status,
+)
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
 
 from utils.bot import run_bot
-from pipecat_ai_small_webrtc_prebuilt.frontend import SmallWebRTCPrebuiltUI
 from pipecat.transports.network.webrtc_connection import (
     IceServer,
     SmallWebRTCConnection,
 )
 from auth import (
-    verify_google_token, 
-    load_authorized_users, 
-    log_rejected_login, 
-    create_access_token, 
+    verify_google_token,
+    load_authorized_users,
+    log_rejected_login,
+    create_access_token,
     get_current_user,
-    ACCESS_TOKEN_EXPIRE_MINUTES
+    ACCESS_TOKEN_EXPIRE_MINUTES,
 )
 
 # Load environment variables
@@ -65,34 +69,33 @@ app.add_middleware(
 # Track active WebRTC connections
 pcs_map: Dict[str, SmallWebRTCConnection] = {}
 
-
-username = str(int(time.time()) + 3600)  # valid for 1 hour
-secret = "ece1392b4b92707cc0c96d837680d120"
-password = base64.b64encode(
-    hmac.new(secret.encode(), username.encode(), hashlib.sha1).digest()
-).decode()
-
-# Save to JSON
-credentials = {"username": username, "password": password}
-
-with open("turn_credentials.json", "w") as f:
-    json.dump(credentials, f, indent=2)
-
-print("TURN credentials saved to turn_credentials.json")
-
 # ICE servers for WebRTC connection
 ice_servers = [
     IceServer(urls="stun:stun.l.google.com:19302"),
-    IceServer(
-        urls="turn:play.kivaproject.org:3478",
-        username="testuser",
-        credential="testpass",
-    ),
+    IceServer(urls="stun:stun.l.google.com:5349"),
+    IceServer(urls="stun:stun1.l.google.com:3478"),
+    IceServer(urls="stun:stun1.l.google.com:5349"),
+    IceServer(urls="stun:stun2.l.google.com:19302"),
+    IceServer(urls="stun:stun2.l.google.com:5349"),
+    IceServer(urls="stun:stun3.l.google.com:3478"),
+    IceServer(urls="stun:stun3.l.google.com:5349"),
+    IceServer(urls="stun:stun4.l.google.com:19302"),
+    IceServer(urls="stun:stun4.l.google.com:5349")
 ]
 
-# Mount the default frontend
-# app.mount("/prebuilt", SmallWebRTCPrebuiltUI)
+# Optionally add TURN server if env vars are present
+turn_url = os.getenv("TURN_URL")
+turn_username = os.getenv("TURN_USERNAME")
+turn_credential = os.getenv("TURN_CREDENTIAL")
 
+if turn_url and turn_username and turn_credential:
+    ice_servers.append(
+        IceServer(
+            urls=turn_url,
+            username=turn_username,
+            credential=turn_credential
+        )
+    )
 
 # Authentication routes
 @app.post("/api/auth/google")
@@ -100,65 +103,54 @@ async def google_auth(request: Request) -> JSONResponse:
     """Authenticate with Google OAuth token."""
     data = await request.json()
     google_token = data.get("token")
-    
+
     if not google_token:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Google token required"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Google token required"
         )
-    
+
     # Verify Google token
     user_info = verify_google_token(google_token)
     email = user_info.get("email")
     name = user_info.get("name", "Unknown")
-    
+
     # Check if user is authorized
     authorized_users = load_authorized_users()
     if email not in authorized_users:
         log_rejected_login(email, name, "User not in authorized list")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied. Your account is not authorized to access this application."
+            detail="Access denied. Your account is not authorized to access this application.",
         )
-    
+
     # Create JWT token
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": email, "name": name}, 
-        expires_delta=access_token_expires
+        data={"sub": email, "name": name}, expires_delta=access_token_expires
     )
-    
+
     logger.info(f"Successful login: {email}")
-    
-    return JSONResponse({
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": {
-            "email": email,
-            "name": name
+
+    return JSONResponse(
+        {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": {"email": email, "name": name},
         }
-    })
+    )
 
 
 @app.get("/api/auth/me")
 async def get_me(current_user: dict = Depends(get_current_user)) -> JSONResponse:
     """Get current user information."""
-    return JSONResponse({
-        "email": current_user.get("sub"),
-        "name": current_user.get("name")
-    })
-
-
-@app.get("/", include_in_schema=False)
-async def root_redirect() -> RedirectResponse:
-    """Redirects to the default frontend UI."""
-    return RedirectResponse(url="/prebuilt/")
+    return JSONResponse(
+        {"email": current_user.get("sub"), "name": current_user.get("name")}
+    )
 
 
 @app.post("/api/session")
 async def create_session(
-    config: dict = Body(...), 
-    current_user: dict = Depends(get_current_user)
+    config: dict = Body(...), current_user: dict = Depends(get_current_user)
 ) -> JSONResponse:
     """Creates a new session and stores its config.
 
@@ -193,7 +185,7 @@ async def create_session(
 async def offer(
     request: Request,
     background_tasks: BackgroundTasks,
-    session_id: str = Query(default=None)
+    session_id: str = Query(default=None),
 ) -> JSONResponse:
     """Handles WebRTC offers and initializes connections.
 
@@ -422,6 +414,50 @@ async def list_sessions(current_user: dict = Depends(get_current_user)) -> JSONR
     return JSONResponse(content=valid_session_ids)
 
 
+@app.post("/api/session/add_device_fingerprint")
+async def add_device_fingerprint(data: dict = Body(...)) -> JSONResponse:
+    """
+    Adds a device fingerprint to the session's config.json.
+    Expects JSON body: { "sessionid": ..., "devicefingerprint": ... }
+    """
+    session_id = data.get("sessionid")
+    device_fingerprint = data.get("devicefingerprint")
+    if not session_id or not device_fingerprint:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "sessionid and devicefingerprint are required"},
+        )
+
+    session_dir = BASE_SESSION_DIR / "sessions" / session_id
+    config_path = session_dir / "config.json"
+    if not config_path.is_file():
+        return JSONResponse(content={"error": "Config file not found"}, status_code=404)
+
+    try:
+        with config_path.open("r", encoding="utf-8") as f:
+            config = json.load(f)
+    except Exception as e:
+        return JSONResponse(
+            status_code=500, content={"error": f"Failed to read config: {str(e)}"}
+        )
+
+    # Add deviceFingerprint to array
+    fingerprints = config.get("deviceFingerprints", [])
+    if device_fingerprint not in fingerprints:
+        fingerprints.append(device_fingerprint)
+        config["deviceFingerprints"] = fingerprints
+        try:
+            with config_path.open("w", encoding="utf-8") as f:
+                json.dump(config, f, indent=2)
+        except Exception as e:
+            print("error", e)
+            return JSONResponse(
+                status_code=500, content={"error": f"Failed to write config: {str(e)}"}
+            )
+
+    return JSONResponse(content={"success": True})
+
+
 @app.get("/api/session_config/{session_id}")
 async def get_session_config(session_id: str) -> JSONResponse:
     """Fetches the configuration for a specific session."""
@@ -444,10 +480,70 @@ def clean_for_json(obj):
     return obj
 
 
+@app.get("/api/check_session_ended/{session_id}")
+def check_session_ended(session_id: str):
+    """
+    Checks if a session is ended by looking for 'prolific_id' in the session's config.json.
+    Returns {"ended": True} if prolific_id is present, else {"ended": False}.
+    """
+    session_dir = BASE_SESSION_DIR / "sessions" / session_id
+    config_path = session_dir / "config.json"
+
+    if not config_path.is_file():
+        raise HTTPException(
+            status_code=404, detail=f"Config file not found: {config_path}"
+        )
+
+    try:
+        with config_path.open("r", encoding="utf-8") as f:
+            config = json.load(f)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load config: {str(e)}")
+
+    prolific_id = config.get("prolific_id")
+    if config.get("short_term_memory", False):
+        return JSONResponse(
+            content={"ended": prolific_id is not None, "prolific_id": prolific_id}
+        )
+    return JSONResponse(content={"ended": False})
+
+
+@app.get("/api/end_session/{session_id}")
+def end_session(session_id: str):
+    """
+    Ends a session by generating a prolific_id (UUID), adding it to the session's config.json, and saving it.
+    Returns the prolific_id as JSON.
+    Raises 404 if the config file does not exist.
+    """
+    session_dir = BASE_SESSION_DIR / "sessions" / session_id
+    config_path = session_dir / "config.json"
+
+    if not config_path.is_file():
+        raise HTTPException(
+            status_code=404, detail=f"Config file not found: {config_path}"
+        )
+
+    try:
+        with config_path.open("r", encoding="utf-8") as f:
+            config = json.load(f)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load config: {str(e)}")
+
+    prolific_id = str(uuid.uuid4())
+    config["prolific_id"] = prolific_id
+
+    try:
+        with config_path.open("w", encoding="utf-8") as f:
+            json.dump(config, f, indent=2)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to write config: {str(e)}")
+
+    return JSONResponse(content={"prolific_id": prolific_id})
+
+
 @app.get("/api/session/{session_id}")
 async def get_session_data(
-    session_id: str, 
-    current_user: dict = Depends(get_current_user)
+    session_id: str, current_user: dict = Depends(get_current_user)
 ) -> JSONResponse:
     """Fetches the data for a specific session."""
     session_dir = BASE_SESSION_DIR / "sessions" / session_id
@@ -522,8 +618,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    logger.remove(0)
-    logger.add(sys.stderr, level="TRACE" if args.verbose else "DEBUG")
+    logger.remove()
 
     uvicorn_kwargs = {
         "app": app,
@@ -535,5 +630,9 @@ if __name__ == "__main__":
     if args.ssl_certfile and args.ssl_keyfile:
         uvicorn_kwargs["ssl_certfile"] = os.path.expanduser(args.ssl_certfile)
         uvicorn_kwargs["ssl_keyfile"] = os.path.expanduser(args.ssl_keyfile)
+        logger.add(sys.stderr, level="TRACE" if args.verbose else "DEBUG")
+        #logger.add(sys.stderr, level="ERROR")
+    else:
+        logger.add(sys.stderr, level="TRACE" if args.verbose else "DEBUG")
 
     uvicorn.run(**uvicorn_kwargs)

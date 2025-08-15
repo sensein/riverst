@@ -17,18 +17,9 @@ export function RTVIProvider({
 }: PropsWithChildren<RTVIProviderProps>) {
   // keep the same transport instance
   const transport = new SmallWebRTCTransport({
-    connectionUrl: `${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/offer?session_id=${encodeURIComponent(
+    connectionUrl: `/api/offer?session_id=${encodeURIComponent(
       sessionId
-    )}`,
-    iceServers: [
-      { urls: "stun:stun.l.google.com:19302" },
-      {
-        urls: "turn:play.kivaproject.org:3478",
-        username: "testuser",
-        credential: "testpass"
-      }
-    ],
-    // iceServers: ["stun:stun.l.google.com:19302", "turn:3.21.191.176:3478"],
+    )}`
   });
   const navigate = useNavigate()
 
@@ -59,6 +50,7 @@ export function RTVIProvider({
               console.log('Session ended naturally via EndFrame, navigating to end page');
               navigate(`/session-ended/${sessionId}`);
             }
+
           }
         }
       });

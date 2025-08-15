@@ -8,7 +8,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import axios from 'axios';
+import { LoadingOutlined } from '@ant-design/icons';
 
 const UserProfileDropdown: React.FC = () => {
   const navigate = useNavigate();
@@ -20,7 +20,7 @@ const UserProfileDropdown: React.FC = () => {
   useEffect(() => {
     const fetchSessions = async () => {
       try {
-        const response = await authRequest.get(`${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/sessions`);
+        const response = await authRequest.get(`/api/sessions`);
         setSessions(response.data);
         if (response.data.length > 0 && intervalRef.current) {
           clearInterval(intervalRef.current);
@@ -92,7 +92,7 @@ const UserProfileDropdown: React.FC = () => {
       trigger={['click']}
       placement="bottomRight"
     >
-      <Spin spinning={loading} size="small">
+      <Spin indicator={<LoadingOutlined spin />} size='small' spinning={loading} >
         <Avatar
           style={{
             backgroundColor: '#E69F00',

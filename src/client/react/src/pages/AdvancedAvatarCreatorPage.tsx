@@ -18,8 +18,7 @@ const AdvancedAvatarCreatorPage = () => {
       'modelUrl': url,
       'gender': gender
      }));
-     // TODO: is it possible to get the avatar gender from the url?
-    console.log("localStorage:", localStorage.getItem('selectedAvatar'));
+    // console.log("localStorage:", localStorage.getItem('selectedAvatar'));
     message.success(`Avatar selected`);
     navigate('/');
   };

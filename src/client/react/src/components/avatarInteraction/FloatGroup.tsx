@@ -11,16 +11,19 @@ import { usePipecatClientTransportState } from '@pipecat-ai/client-react'
 
 
 interface FloatGroupProps {
+  onSessionEnd: (delay: number) => Promise<void>
   videoFlag: boolean
 }
 
-const FloatGroup: React.FC<FloatGroupProps> = ({ videoFlag }) => {
+const FloatGroup: React.FC<FloatGroupProps> = ({ onSessionEnd, videoFlag }) => {
   const transportState = usePipecatClientTransportState()
 
   return (
     <FloatButton.Group
       trigger="click"
       type="default"
+      // @ts-expect-error: disabled works but is not typed
+      disabled={transportState !== 'ready'}
       className={transportState === 'ready' ? 'float-btn-group-connected' : 'float-btn-group-disconnected'}
       icon={
         transportState === 'ready'
@@ -28,7 +31,7 @@ const FloatGroup: React.FC<FloatGroupProps> = ({ videoFlag }) => {
           : <LoadingOutlined style={{ color: '#ff4d4f' }} />
       }
     >
-      <DisconnectButton />
+      <DisconnectButton onSessionEnd={onSessionEnd}/>
       { videoFlag && <CameraButton /> }
       <MuteButton />
 

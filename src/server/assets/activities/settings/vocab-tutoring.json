@@ -33,6 +33,11 @@
           "default": "./assets/books/the_tale_of_peter_rabbit/paginated_story.json",
           "description": "Select the book to use for vocabulary tutoring."
         },
+        "prolific_campaign": {
+          "type": "boolean",
+          "default": false,
+          "description": "Wheather the activity is part of a Prolific campaign."
+        },
         "pipeline_modality": {
           "type": "string",
           "enum": ["classic"],
@@ -47,15 +52,21 @@
         },
         "llm_type": {
           "type": "string",
-          "enum": ["openai", "openai_realtime_beta", "gemini", "llama3.2"],
+          "enum": ["openai", "openai_realtime_beta", "ollama/qwen3:4b-instruct-2507-q4_K_M"],
           "default": "openai",
           "description": "The LLM service to use."
         },
         "tts_type": {
           "type": "string",
-          "enum": ["openai", "piper", "elevenlabs"],
+          "enum": ["openai", "piper", "kokoro"],
           "default": "openai",
           "description": "The TTS service to use."
+        },
+        "embodiment": {
+          "type": "string",
+          "enum": ["humanoid_avatar", "waveform"],
+          "default": "humanoid_avatar",
+          "description": "The embodiment of the agent to use. This is used to determine the agent's appearance."
         },
         "body_animations": {
           "type": "array",
@@ -82,7 +93,7 @@
         "short_term_memory": {
           "type": "boolean",
           "default": false,
-          "description": "Enable or disable short-term memory. If enabled, the avatar will remember information from previous interactions with this same link and use it to guide the conversation."
+          "description": "Enable or disable short-term memory. If enabled, the avatar will remember information from previous interactions with this same link and use it to guide the conversation. If false, a session data is deleted after a new session with the same link is started."
         },
         "long_term_memory": {
           "type": "boolean",

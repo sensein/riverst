@@ -9,9 +9,9 @@ import logging
 from pipecat.processors.frame_processor import FrameProcessor, FrameDirection
 from pipecat.frames.frames import Frame, InputImageRawFrame, OutputImageRawFrame
 
+import torch
 from ultralytics import YOLO
 from ultralytics.utils import LOGGER
-from deepface import DeepFace
 from loguru import logger
 
 from .utils import get_best_device
@@ -48,6 +48,14 @@ class VideoProcessor(FrameProcessor):
 
         if self.enable_pose:
             logger.info("Initializing YOLO pose model...")
+
+            # force PyTorch to grab the GPU before TensorFlow does
+            # this is because otherwise yolo cannot find any gpu device and fails
+            if torch.cuda.is_available():
+                torch.cuda.is_available()
+                _ = torch.cuda.current_device()
+                _ = torch.cuda.get_device_properties(0)
+
             yolo_model = YOLO("yolo11n-pose.pt")
             yolo_model.export(format="onnx")  # Creates 'yolo11n-pose.onnx'
             self.pose_inferencer = YOLO("yolo11n-pose.onnx")
@@ -63,6 +71,8 @@ class VideoProcessor(FrameProcessor):
             dummy_img = np.random.randint(
                 0, 255, (camera_out_height, camera_out_width, 3), dtype=np.uint8
             )
+            from deepface import DeepFace
+
             _ = DeepFace.analyze(
                 img_path=dummy_img, actions=["emotion"], enforce_detection=False
             )
@@ -73,10 +83,7 @@ class VideoProcessor(FrameProcessor):
             return
         async with self._pose_lock:
             try:
-                loop = asyncio.get_running_loop()
-                results = await loop.run_in_executor(
-                    None, lambda: self.pose_inferencer(img)
-                )
+                results = await asyncio.to_thread(self.pose_inferencer, img)
                 if results:
                     plotted = results[0].plot()
                     self.last_pose_results = cv2.cvtColor(plotted, cv2.COLOR_BGR2RGB)
@@ -91,14 +98,13 @@ class VideoProcessor(FrameProcessor):
             return
         async with self._deepface_lock:
             try:
-                loop = asyncio.get_running_loop()
-                results = await loop.run_in_executor(
-                    None,
-                    lambda: DeepFace.analyze(
-                        img_path=img,
-                        actions=["emotion"],
-                        enforce_detection=False,
-                    ),
+                from deepface import DeepFace
+
+                results = await asyncio.to_thread(
+                    DeepFace.analyze,
+                    img_path=img,
+                    actions=["emotion"],
+                    enforce_detection=False,
                 )
                 if isinstance(results, list):
                     self.last_face_results = results[0]  # TODO: handle multiple faces

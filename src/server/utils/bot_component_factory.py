@@ -12,7 +12,8 @@ from pipecat.services.openai_realtime_beta import (
     SemanticTurnDetection,
     SessionProperties,
 )
-from pipecat.services.ollama.llm import OLLamaLLMService
+
+# from pipecat.services.ollama.llm import OLLamaLLMService
 from pipecat.services.piper.tts import PiperTTSService
 from pipecat.services.gemini_multimodal_live import GeminiMultimodalLiveLLMService
 from pipecat.services.whisper.stt import WhisperSTTService
@@ -25,18 +26,41 @@ import json
 from .animation_handler import AnimationHandler
 from .end_conversation_handler import EndConversationHandler
 from .lipsync_processor import LipsyncProcessor
+from .kokoro import KokoroTTSService
+from .utils import get_best_device
+from .custom_ollama import CustomOLLamaLLMService
 import shutil
 from loguru import logger
 
 ModalityType = Literal["classic", "e2e"]
-LLMType = Literal["openai", "openai_realtime_beta", "gemini", "llama3.2"]
+LLMType = Literal[
+    "openai",
+    "openai_realtime_beta",
+    "ollama/qwen3:4b-instruct-2507-q4_K_M",
+]
 STTType = Literal["openai", "whisper"]
-TTSType = Literal["openai", "elevenlabs", "piper"]
+TTSType = Literal["openai", "piper", "kokoro"]
 
 ALLOWED_LLM = {
-    "classic": {"openai", "llama3.2"},
-    "e2e": {"openai_realtime_beta", "gemini"},
+    "classic": {"openai", "ollama/qwen3:4b-instruct-2507-q4_K_M"},
+    "e2e": {"openai_realtime_beta"},
 }
+
+
+class FixedOpenAIRealtimeBetaLLMService(OpenAIRealtimeBetaLLMService):
+    """This class overrides the _calculate_audio_duration_ms method to add a 85ms safety buffer.
+
+    https://github.com/pipecat-ai/pipecat/issues/2106#issuecomment-3168228292
+    """
+
+    def _calculate_audio_duration_ms(
+        self, total_bytes: int, sample_rate: int = 24000, bytes_per_sample: int = 2
+    ) -> int:
+        samples = total_bytes / bytes_per_sample
+        duration_seconds = samples / sample_rate
+
+        # Add a 85ms safety buffer by subtracting from the calculated duration
+        return int((duration_seconds * 1000) - 85)
 
 
 @dataclass
@@ -119,7 +143,7 @@ class BotComponentFactory:
             instruction += end_conversation_instruction
 
         if self.languages:
-            print(f"Supported languages: {self.languages}")
+            # print(f"Supported languages: {self.languages}")
             instruction += (
                 f"You are restricted to understanding and responding in the following languages only: "
                 f"{', '.join(self.languages)}.\n"
@@ -249,15 +273,22 @@ class BotComponentFactory:
                     prompt=(self.stt_params or {}).get("prompt", None),
                 )
             elif self.stt_type == "whisper":
-                stt = WhisperSTTService(audio_passthrough=True)
+                stt = WhisperSTTService(
+                    audio_passthrough=True,
+                    device=str(get_best_device(options=["mps", "cpu"])),
+                    model="tiny",
+                )
 
             if self.llm_type == "openai":
                 llm = OpenAILLMService(
                     api_key=os.getenv("OPENAI_API_KEY"),
                     model=(self.llm_params or {}).get("model", "gpt-4o-mini"),
                 )
-            elif self.llm_type == "llama3.2":
-                llm = OLLamaLLMService(model=self.llm_type)
+            elif self.llm_type.startswith("ollama/"):
+                llm = CustomOLLamaLLMService(
+                    model=self.llm_type.replace("ollama/", ""),
+                    base_url="http://localhost:11434/v1",  # Default Ollama endpoint
+                )
 
             if self.tts_type == "openai":
                 voice = (
@@ -298,6 +329,14 @@ class BotComponentFactory:
                     voice_id=voice_id,
                     model="eleven_flash_v2_5",
                 )
+            elif self.tts_type == "kokoro":
+                voice_id = (
+                    "af_heart"
+                    if "gender" in self.avatar and self.avatar["gender"] == "feminine"
+                    else "am_puck"
+                )
+                device = get_best_device()
+                tts = KokoroTTSService(voice=voice_id, device=device)
 
         elif self.modality == "e2e":
             if self.llm_type == "openai_realtime_beta":
@@ -321,7 +360,7 @@ class BotComponentFactory:
                     instructions=instruction,
                     voice=voice,
                 )
-                llm = OpenAIRealtimeBetaLLMService(
+                llm = FixedOpenAIRealtimeBetaLLMService(
                     api_key=os.getenv("OPENAI_API_KEY"),
                     model=(self.llm_params or {}).get(
                         "model", "gpt-4o-realtime-preview-2025-06-03"
@@ -436,9 +475,9 @@ class BotComponentFactory:
                         {
                             "role": "system",
                             "content": (
-                                "Please continue the conversation from where you left. "
+                                "Please continue the current conversation from where you left. "
                                 "There has been an interruption. "
-                                "Make a summary of the conversation so far before continuing."
+                                "Make a summary of the current conversation so far before continuing. "
                             ),
                         }
                     )
@@ -484,6 +523,9 @@ class BotComponentFactory:
                             "Please make a summary of the previous conversations so far "
                             "(stressing goals and achievements), "
                             "and then continue the conversation from where you left."
+                            "Use expressions like 'I remember' or 'I recall' or 'Last time' "
+                            "or 'Another time' to reference previous conversations."
+                            "You can also specify the date of the previous conversation if necessary."
                         ),
                     }
                 )
@@ -492,7 +534,7 @@ class BotComponentFactory:
 
         context = OpenAILLMContext(messages=messages, tools=tools, tool_choice="auto")
         context_aggregator = llm.create_context_aggregator(context=context)
-        lipsync_processor = LipsyncProcessor(strategy="timestamped_asr")
+        lipsync_processor = LipsyncProcessor()
 
         return (
             stt,

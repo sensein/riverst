@@ -1,3 +1,8 @@
+/**
+ * MetricModal.tsx
+ * Modal component for displaying session metrics.
+ */
+
 import React from "react";
 import {
   Modal,
@@ -16,7 +21,7 @@ import {
 const { Paragraph } = Typography;
 const { Panel } = Collapse;
 
-// Tooltip info
+// Tooltip info descriptions per metric type
 const METRIC_TYPE_INFO: Record<string, string> = {
   TTFBMetricsData: "Time to first byte (TTFB) — time until the service starts responding.",
   ProcessingMetricsData: "Processing time — total time taken to fully process the input.",
@@ -24,11 +29,11 @@ const METRIC_TYPE_INFO: Record<string, string> = {
   TTSUsageMetricsData: "Character count usage for text-to-speech generation.",
 };
 
-// Format numbers
+// Format numeric values
 const pretty = (v: number | null) =>
   typeof v === "number" ? v.toFixed(3) : v == null ? "–" : String(v);
 
-// Table component types
+// Metric table data structure
 type MetricStats = {
   count?: number | null;
   sum?: number | null;
@@ -41,15 +46,14 @@ type MetricStats = {
 type MetricValue = MetricStats | Record<string, MetricStats>;
 type MetricBlock = { value?: MetricValue } | MetricValue;
 type ProcessorMetrics = Record<string, MetricBlock>;
+
 type MetricsType = {
-  processors: Record<string, ProcessorMetrics> | {
-    summary?: {
-      timestamp?: string;
-      processors?: Record<string, ProcessorMetrics>;
-    };
-  };
+  processors:
+    | Record<string, ProcessorMetrics>
+    | { summary?: { timestamp?: string; processors?: Record<string, ProcessorMetrics> } };
 };
 
+// Convert stats into table rows
 function flattenStats(stats: Record<string, MetricStats>) {
   return Object.entries(stats).map(([metric, value]) => ({
     metric,
@@ -62,15 +66,17 @@ function flattenStats(stats: Record<string, MetricStats>) {
   }));
 }
 
+// Metric table component
 const MetricTable: React.FC<{ data: Record<string, MetricStats> }> = ({ data }) => {
   const rows = flattenStats(data);
-  const statNames = ["count", "sum", "avg", "std", "min", "max"].filter((key) =>
+  const statKeys = ["count", "sum", "avg", "std", "min", "max"];
+  const visibleStats = statKeys.filter((key) =>
     rows.some((row) => row[key as keyof typeof row] !== undefined)
   );
 
   const columns = [
     { title: "Metric", dataIndex: "metric", key: "metric" },
-    ...statNames.map((s) => ({
+    ...visibleStats.map((s) => ({
       title: s.charAt(0).toUpperCase() + s.slice(1),
       dataIndex: s,
       key: s,
@@ -89,6 +95,7 @@ const MetricTable: React.FC<{ data: Record<string, MetricStats> }> = ({ data }) 
   );
 };
 
+// Main modal component
 const MetricModal: React.FC<{
   open: boolean;
   onClose: () => void;
@@ -98,7 +105,7 @@ const MetricModal: React.FC<{
 
   const rawProcessors =
     metrics?.processors?.summary?.processors ??
-    metrics?.processors ??
+    (metrics?.processors as Record<string, ProcessorMetrics>) ??
     null;
 
   if (!rawProcessors) {
@@ -109,6 +116,7 @@ const MetricModal: React.FC<{
     );
   }
 
+  // Render each processor panel
   const processorPanels = Object.entries(rawProcessors).map(
     ([processorName, metricGroups]) => (
       <Panel
@@ -120,40 +128,21 @@ const MetricModal: React.FC<{
         }
       >
         <Collapse accordion>
-          {Object.entries(metricGroups).flatMap(([metricType, block]) => {
-            const info = METRIC_TYPE_INFO[metricType] || null;
+          {Object.entries(metricGroups).map(([metricType, block]) => {
             const value = (block as any).value ?? block;
+            const info = METRIC_TYPE_INFO[metricType];
 
-            if (
-              metricType === "LLMUsageMetricsData" ||
-              metricType === "TTSUsageMetricsData"
-            ) {
-              return [
-                <Panel
-                  key={metricType}
-                  header={
-                    <span>
-                      {metricType.replace("MetricsData", "")}
-                      {info && (
-                        <Tooltip title={info}>
-                          <InfoCircleOutlined style={{ marginLeft: 8 }} />
-                        </Tooltip>
-                      )}
-                    </span>
-                  }
-                >
-                  <MetricTable
-                    data={
-                      metricType === "TTSUsageMetricsData"
-                        ? { TTSUsage: value as MetricStats }
-                        : (value as Record<string, MetricStats>)
-                    }
-                  />
-                </Panel>,
-              ];
+            let tableData: Record<string, MetricStats>;
+
+            if (metricType === "TTSUsageMetricsData") {
+              tableData = { TTSUsage: value as MetricStats };
+            } else if (metricType === "LLMUsageMetricsData") {
+              tableData = value as Record<string, MetricStats>;
+            } else {
+              tableData = { [metricType]: value as MetricStats };
             }
 
-            return [
+            return (
               <Panel
                 key={metricType}
                 header={
@@ -167,9 +156,9 @@ const MetricModal: React.FC<{
                   </span>
                 }
               >
-                <MetricTable data={{ [metricType]: value as MetricStats }} />
-              </Panel>,
-            ];
+                <MetricTable data={tableData} />
+              </Panel>
+            );
           })}
         </Collapse>
       </Panel>

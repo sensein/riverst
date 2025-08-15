@@ -14,13 +14,13 @@
   "dependencies": {
     "@ant-design/v5-patch-for-react-19": "~1.0.3",
     "@fingerprintjs/fingerprintjs": "~4.6.2",
-    "@pipecat-ai/client-js": "~1.0.0",
-    "@pipecat-ai/client-react": "~1.0.0",
-    "@pipecat-ai/small-webrtc-transport": "~1.0.0",
+    "@pipecat-ai/client-js": "~1.2",
+    "@pipecat-ai/client-react": "~1.0",
+    "@pipecat-ai/small-webrtc-transport": "~1.2",
     "@react-three/drei": "~10.5.0",
     "@react-three/fiber": "~9.1.4",
     "@rjsf/validator-ajv8": "~6.0.0-beta.6",
-    
+
     "antd": "~5.26.4",
     "axios": "~1.10.0",
     "react": "~19.1.0",

@@ -10,51 +10,259 @@ from pipecat.frames.frames import (
 from pipecat.processors.frameworks.rtvi import RTVIServerMessageFrame
 import torch
 import torchaudio
-from transformers import pipeline as transformers_pipeline
-from .utils import get_best_device
-import numpy as np
 import json
+from huggingface_hub import hf_hub_download
+import importlib.util
+import sys
 import os
-from dataclasses import dataclass
-import string
+from .utils import get_best_device
+import asyncio
+import re
+import numpy as np
+
+
+def predict_phonemes_from_waveform(
+    waveform,
+    extractor,
+    windowing,
+    token_to_phoneme,
+    token_to_group,
+    sample_rate=16000,
+    device="cpu",
+):
+    """
+    Predict phonemes from a waveform tensor using CUPE model.
+
+    Returns:
+        dict with keys:
+            - phoneme_probabilities
+            - phoneme_predictions
+            - group_probabilities
+            - group_predictions
+            - phonemes_sequence
+            - groups_sequence
+            - phoneme_segments
+            - model_info
+    """
+    window_size_ms = 120
+    stride_ms = 80
+
+    if waveform.ndim == 1:
+        waveform = waveform.unsqueeze(0)
+    if waveform.shape[0] > 1:
+        waveform = waveform.mean(dim=0, keepdim=True)
+
+    waveform = waveform.to(device)
+    audio_batch = waveform.unsqueeze(0)  # [1, 1, time]
+
+    windowed_audio = windowing.slice_windows(
+        audio_batch, sample_rate, window_size_ms, stride_ms
+    )
+
+    batch_size, num_windows, window_size = windowed_audio.shape
+
+    if num_windows == 0:
+        return {
+            "phoneme_probabilities": [],
+            "phoneme_predictions": [],
+            "group_probabilities": [],
+            "group_predictions": [],
+            "phonemes_sequence": [],
+            "groups_sequence": [],
+            "phoneme_segments": [],
+            "model_info": {
+                "sample_rate": sample_rate,
+                "frames_per_second": 1000 / 16,
+                "num_phoneme_classes": 0,
+                "num_group_classes": 0,
+            },
+        }
+
+    windows_flat = windowed_audio.reshape(-1, window_size)
+
+    logits_phonemes, logits_groups = extractor.predict(
+        windows_flat, return_embeddings=False, groups_only=False
+    )
+
+    frames_per_window = logits_phonemes.shape[1]
+    logits_phonemes = logits_phonemes.reshape(
+        batch_size, num_windows, frames_per_window, -1
+    )
+    logits_groups = logits_groups.reshape(
+        batch_size, num_windows, frames_per_window, -1
+    )
+
+    phoneme_logits = windowing.stich_window_predictions(
+        logits_phonemes,
+        original_audio_length=audio_batch.size(2),
+        cnn_output_size=frames_per_window,
+        sample_rate=sample_rate,
+        window_size_ms=window_size_ms,
+        stride_ms=stride_ms,
+    )
+    group_logits = windowing.stich_window_predictions(
+        logits_groups,
+        original_audio_length=audio_batch.size(2),
+        cnn_output_size=frames_per_window,
+        sample_rate=sample_rate,
+        window_size_ms=window_size_ms,
+        stride_ms=stride_ms,
+    )
+
+    phoneme_probs = torch.softmax(phoneme_logits.squeeze(0), dim=-1)
+    group_probs = torch.softmax(group_logits.squeeze(0), dim=-1)
+
+    phoneme_preds = torch.argmax(phoneme_probs, dim=-1)
+    group_preds = torch.argmax(group_probs, dim=-1)
+
+    phonemes_sequence = [token_to_phoneme[int(p)] for p in phoneme_preds.cpu().numpy()]
+    groups_sequence = [token_to_group[int(g)] for g in group_preds.cpu().numpy()]
+
+    # Remove 'noise'
+    valid_indices = [i for i, p in enumerate(phonemes_sequence) if p != "noise"]
+    phoneme_preds = phoneme_preds[valid_indices]
+    group_preds = group_preds[valid_indices]
+    phoneme_probs = phoneme_probs[valid_indices]
+    group_probs = group_probs[valid_indices]
+    phonemes_sequence = [phonemes_sequence[i] for i in valid_indices]
+    groups_sequence = [groups_sequence[i] for i in valid_indices]
+
+    # Recover valid_indices from full prediction
+    full_phoneme_ids = (
+        torch.argmax(torch.softmax(phoneme_logits.squeeze(0), dim=-1), dim=-1)
+        .cpu()
+        .numpy()
+    )
+    full_phonemes = [token_to_phoneme[int(p)] for p in full_phoneme_ids]
+    valid_indices = [i for i, p in enumerate(full_phonemes) if p != "noise"]
+    phonemes_sequence = [full_phonemes[i] for i in valid_indices]
+
+    # Build timestamped phoneme sequence using valid_indices
+    frame_duration = 0.016  # 16ms per frame
+    phoneme_segments = []
+    if phonemes_sequence:
+        current_phoneme = phonemes_sequence[0]
+        start_idx = valid_indices[0]
+
+        for i in range(1, len(phonemes_sequence)):
+            current_idx = valid_indices[i]
+            if phonemes_sequence[i] != current_phoneme:
+                phoneme_segments.append(
+                    {
+                        "phoneme": current_phoneme,
+                        "start": round(start_idx * frame_duration, 2),
+                        "end": round(current_idx * frame_duration, 2),
+                    }
+                )
+                current_phoneme = phonemes_sequence[i]
+                start_idx = current_idx
+
+        # Final segment
+        phoneme_segments.append(
+            {
+                "phoneme": current_phoneme,
+                "start": round(start_idx * frame_duration, 2),
+                "end": round((valid_indices[-1] + 1) * frame_duration, 2),
+            }
+        )
+
+    return {
+        "phoneme_probabilities": phoneme_probs.cpu().numpy(),
+        "phoneme_predictions": phoneme_preds.cpu().numpy(),
+        "group_probabilities": group_probs.cpu().numpy(),
+        "group_predictions": group_preds.cpu().numpy(),
+        "phonemes_sequence": phonemes_sequence,
+        "groups_sequence": groups_sequence,
+        "phoneme_segments": phoneme_segments,
+        "model_info": {
+            "sample_rate": sample_rate,
+            "frames_per_second": 1000 / 16,
+            "num_phoneme_classes": phoneme_probs.shape[-1],
+            "num_group_classes": group_probs.shape[-1],
+        },
+    }
+
+
+def load_cupe_model(model_name="english", device="cpu"):
+    model_files = {
+        "english": "en_libri1000_uj01d_e199_val_GER=0.2307.ckpt",
+        "multilingual-mls": "multi_MLS8_uh02_e36_val_GER=0.2334.ckpt",
+        "multilingual-mswc": "multi_mswc38_ug20_e59_val_GER=0.5611.ckpt",
+    }
+
+    if model_name not in model_files:
+        raise ValueError(
+            f"Model {model_name} not available. Choose from: {list(model_files.keys())}"
+        )
+
+    repo_id = "Tabahi/CUPE-2i"
+
+    # Download files from the Hub
+    model_file = hf_hub_download(repo_id=repo_id, filename="model2i.py")
+    windowing_file = hf_hub_download(repo_id=repo_id, filename="windowing.py")
+    mapper_file = hf_hub_download(repo_id=repo_id, filename="mapper.py")
+    model_utils_file = hf_hub_download(repo_id=repo_id, filename="model_utils.py")
+    checkpoint_file = hf_hub_download(
+        repo_id=repo_id, filename=f"ckpt/{model_files[model_name]}"
+    )
+
+    # Fix model2i.py (they have a bug with loading weights on CPU, I opened a PR to fix it)
+    def patch_model_file(path, device):
+        with open(path, "r", encoding="utf-8") as f:
+            content = f.read()
+        patched_content = re.sub(
+            r"torch\.load\(([^,]+),\s*weights_only=True\)",
+            rf'torch.load(\1, map_location=torch.device("{device}"), weights_only=True)',
+            content,
+        )
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(patched_content)
+
+    patch_model_file(model_file, device)
+
+    def import_module_from_file(module_name, file_path):
+        spec = importlib.util.spec_from_file_location(module_name, file_path)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[module_name] = module
+        spec.loader.exec_module(module)
+        return module
+
+    # Import modules
+    _ = import_module_from_file("model_utils", model_utils_file)
+    model2i = import_module_from_file("model2i", model_file)
+    windowing = import_module_from_file("windowing", windowing_file)
+    mapper = import_module_from_file("mapper", mapper_file)
+
+    # Build mappings
+    phoneme_to_token = mapper.phoneme_mapped_index
+    token_to_phoneme = {v: k for k, v in phoneme_to_token.items()}
+    group_to_token = mapper.phoneme_groups_index
+    token_to_group = {v: k for k, v in group_to_token.items()}
+
+    # Init extractor
+    extractor = model2i.CUPEEmbeddingsExtractor(checkpoint_file, device=device)
+
+    return extractor, windowing, token_to_phoneme, token_to_group
 
 
 class LipsyncProcessor(FrameProcessor):
     """Processor for handling lipsync animations based on audio input."""
 
     PHONEME_VISEME_MAP_PATH = os.path.abspath("assets/phoneme_oculusviseme_map.json")
+    MIN_DURATION_TO_PROCESS = 1.0  # seconds
+    SAMPLE_RATE = 16000
+    MIN_SAMPLES_TO_PROCESS = int(SAMPLE_RATE * MIN_DURATION_TO_PROCESS)
 
-    def __init__(self, strategy="timestamped_asr"):
+    def __init__(self):
         super().__init__()
-        self.audio_buffer = []
-        self.is_buffering = False
-        self.strategy = strategy
-        self.device = get_best_device()
-        self.forced_alignment_flag = (
-            False  # Set to True if you want to use forced alignment
+        self.device = get_best_device(options=["cuda", "cpu"])
+        self.audio_waveform_buffer = []  # list of waveform tensors
+        self.resampler = None
+        self.viseme_map = self._load_viseme_map()
+
+        self.extractor, self.windowing, self.token_to_phoneme, self.token_to_group = (
+            load_cupe_model(model_name="multilingual-mls", device=self.device)
         )
-        if self.strategy == "timestamped_asr":
-            self.asr_pipeline = transformers_pipeline(
-                "automatic-speech-recognition",
-                model="openai/whisper-tiny",
-                device=self.device,
-                torch_dtype=torch.float16,
-            )
-            if self.forced_alignment_flag:
-                bundle = torchaudio.pipelines.WAV2VEC2_ASR_BASE_960H
-                self.labels = bundle.get_labels()
-                self.model = bundle.get_model().to(self.device)
-                self.dictionary = {c: i for i, c in enumerate(self.labels)}
-        elif self.strategy == "timestamped_phoneme_recognition":
-            self.asr_pipeline = transformers_pipeline(
-                "automatic-speech-recognition",
-                model="bookbot/wav2vec2-ljspeech-gruut",
-                device=self.device,
-                torch_dtype=torch.float16,
-            )
-            self.phoneme_viseme_map = self._load_viseme_map()
-        else:
-            raise ValueError(f"Unknown strategy: {self.strategy}")
         self._warm_up()
 
     def _load_viseme_map(self):
@@ -63,297 +271,144 @@ class LipsyncProcessor(FrameProcessor):
             return json.load(f)
 
     def _warm_up(self):
-        """Load and warm up the ASR pipeline."""
-        dummy_audio = np.random.rand(16000).astype(np.int16) * 2 - 1
-        _ = self.asr_pipeline(dummy_audio)
+        """Warm-up CUPE for reduced initial latency."""
+        dummy_audio = torch.randn(16000).to(self.device)
+        predict_phonemes_from_waveform(
+            dummy_audio,
+            self.extractor,
+            self.windowing,
+            self.token_to_phoneme,
+            self.token_to_group,
+            device=self.device,
+        )
+        # print("[LipsyncProcessor] Warm-up done.")
 
     async def process_frame(self, frame: Frame, direction: FrameDirection):
-        """Process incoming frames, handling TTS audio buffering and ASR."""
         await super().process_frame(frame, direction)
 
         if isinstance(frame, TTSStartedFrame):
-            self.is_buffering = True
-            self.audio_buffer.clear()
-            return  # do not push immediately
+            self._reset_buffers()
 
-        elif isinstance(frame, TTSAudioRawFrame) and self.is_buffering:
-            self.audio_buffer.append(frame)
-            return  # do not push immediately
+        elif isinstance(frame, TTSAudioRawFrame):
+            await self._handle_audio_frame(frame, direction)
+            return
 
-        elif isinstance(frame, TTSStoppedFrame) and self.is_buffering:
-            self.is_buffering = False
+        elif isinstance(frame, TTSStoppedFrame):
+            await self._flush_remaining(direction)
 
-            audio_tensor = torch.cat(
-                [
-                    torch.frombuffer(frame.audio, dtype=torch.int16).float() / 32768.0
-                    for frame in self.audio_buffer
-                ]
-            )
-
-            # Reshape to (1, N) for torchaudio (mono channel)
-            audio_tensor = audio_tensor.unsqueeze(0)  # shape: (1, N)
-
-            # Resample to 16kHz if necessary
-            sample_rate = self.audio_buffer[0].sample_rate
-            if sample_rate == 16000:
-                resampled_audio = audio_tensor
-            else:
-                resampler = torchaudio.transforms.Resample(
-                    orig_freq=sample_rate, new_freq=16000
-                )
-                resampled_audio = resampler(audio_tensor)
-            audio_duration_sec = (
-                resampled_audio.shape[1] / 16000
-            )  # since resampled to 16kHz
-
-            # Convert to NumPy array for ASR processing
-            audio_data = resampled_audio.squeeze(0).numpy()
-            if self.strategy == "timestamped_asr":
-                # Note: Unfortunately, the timestamps returned by the ASR pipeline are not always accurate.
-                # For this reason, we explored forced alignment to get precise(r-ish) word timings.
-                # However, this takes a lot of time and memory, so it's not ideal anyway.
-                if self.forced_alignment_flag:
-                    transcript = self.asr_pipeline(audio_data)
-                    formatted_output = self._run_forced_alignment(
-                        audio_data, transcript["text"]
-                    )
-                else:
-                    prediction = self.asr_pipeline(audio_data, return_timestamps="word")
-                    formatted_output = self._format_prediction(
-                        prediction, audio_duration_sec
-                    )
-            elif self.strategy == "timestamped_phoneme_recognition":
-                # Handle phoneme-based ASR output
-                prediction = self.asr_pipeline(audio_data, return_timestamps="char")
-                formatted_output = self._format_phoneme_chunks(
-                    prediction["chunks"], audio_duration_sec
-                )
-            else:
-                raise ValueError(f"Unknown strategy: {self.strategy}")
-
-            output_frame = RTVIServerMessageFrame(
-                data={"type": "visemes-event", "payload": formatted_output}
-            )
-
-            # Emit RTVIServerMessageFrame before the buffered audio
-            await self.push_frame(output_frame, direction)
-
-            # Emit the TTSStartedFrame, then buffered audio, then TTSStoppedFrame
-            started_frame = TTSStartedFrame()
-            await self.push_frame(started_frame, direction)
-
-            for audio_frame in self.audio_buffer:
-                await self.push_frame(audio_frame, direction)
-
-            await self.push_frame(frame, direction)
-
-            self.audio_buffer.clear()
-            return  # already emitted all frames
-
-        # Default case (non-TTS frames or TTS frames outside buffering state)
         await self.push_frame(frame, direction)
 
-    def _format_prediction(self, prediction: dict, audio_duration_sec: float) -> dict:
-        words = []
-        wtimes = []
-        wdurations = []
+    async def _handle_audio_frame(
+        self, frame: TTSAudioRawFrame, direction: FrameDirection
+    ):
+        waveform = self._preprocess_audio(frame)
+        self.audio_waveform_buffer.append(waveform)
 
-        for chunk in prediction["chunks"]:
-            word = chunk["text"]
-            start = chunk["timestamp"][0]
-            end = chunk["timestamp"][1]
+        total_samples = sum(w.shape[-1] for w in self.audio_waveform_buffer)
+        while total_samples >= self.MIN_SAMPLES_TO_PROCESS:
+            full_waveform = torch.cat(self.audio_waveform_buffer, dim=-1)
+            chunk = full_waveform[:, : self.MIN_SAMPLES_TO_PROCESS]
+            remaining = full_waveform[:, self.MIN_SAMPLES_TO_PROCESS :]  # noqa: E203
+            self.audio_waveform_buffer = [remaining] if remaining.numel() > 0 else []
+            await self._run_lipsync(chunk.squeeze(0), direction)
+            total_samples = remaining.shape[-1]
 
-            # If the end is None, use the total duration
-            if end is None:
-                end = audio_duration_sec
+    async def _flush_remaining(self, direction: FrameDirection):
+        if self.audio_waveform_buffer:
+            full_waveform = torch.cat(self.audio_waveform_buffer, dim=-1)
+            await self._run_lipsync(full_waveform.squeeze(0), direction)
+        self._reset_buffers()
 
-            words.append(word)
-            wtimes.append(int(start * 1000))  # convert to ms
-            wdurations.append(int((end - start) * 1000))  # convert to ms
+    def _reset_buffers(self):
+        self.audio_waveform_buffer.clear()
 
-        return {
-            "words": words,
-            "wtimes": wtimes,
-            "wdurations": wdurations,
-            "duration": float(audio_duration_sec),  # total duration in s
-        }
+    def _preprocess_audio(self, frame: TTSAudioRawFrame) -> torch.Tensor:
+        waveform = (
+            torch.tensor(np.frombuffer(frame.audio, dtype=np.int16).copy())
+            .float()
+            .div_(32768.0)
+            .unsqueeze(0)
+        )
+        if frame.sample_rate != self.SAMPLE_RATE:
+            if self.resampler is None:
+                self.resampler = torchaudio.transforms.Resample(
+                    orig_freq=frame.sample_rate, new_freq=self.SAMPLE_RATE
+                ).to(self.device)
+            waveform = self.resampler(waveform.to(self.device))
+        return waveform.to(self.device)
 
-    def _format_phoneme_chunks(self, chunks: list, audio_duration_sec: float) -> dict:
+    async def _run_lipsync(self, waveform: torch.Tensor, direction: FrameDirection):
+        result = await asyncio.to_thread(
+            predict_phonemes_from_waveform,
+            waveform,
+            self.extractor,
+            self.windowing,
+            self.token_to_phoneme,
+            self.token_to_group,
+            device=self.device,
+        )
+        # print("phonemes:", result["phoneme_segments"])
+        viseme_events = self._phoneme_segments_to_viseme_events(
+            result["phoneme_segments"]
+        )
+        if (
+            viseme_events
+            and "visemes" in viseme_events
+            and len(viseme_events["visemes"]) > 0
+        ):
+            viseme_events["vdurations"][-1] = (
+                waveform.shape[-1] / self.SAMPLE_RATE - viseme_events["vtimes"][-1]
+            )
+            viseme_events["duration"] = waveform.shape[-1] / self.SAMPLE_RATE
+            # print("viseme_events:", viseme_events)
+            await self.push_frame(
+                RTVIServerMessageFrame(
+                    data={"type": "visemes-event", "payload": viseme_events}
+                ),
+                direction,
+            )
+
+        # Send audio
+        audio_int16 = (
+            waveform.clamp(-1, 1).cpu() * 32768.0
+        ).short()  # Convert to int16
+        audio_bytes = (
+            audio_int16.squeeze(0).numpy().tobytes()
+        )  # Remove channel dim and convert
+
+        await self.push_frame(
+            TTSAudioRawFrame(
+                audio=audio_bytes,
+                sample_rate=self.SAMPLE_RATE,
+                num_channels=1,
+            ),
+            direction,
+        )
+
+    def _phoneme_segments_to_viseme_events(self, phoneme_segments):
+        """Map phonemes to visemes with durations and return structured arrays."""
         visemes = []
         vtimes = []
         vdurations = []
 
-        i = 0
-        while i < len(chunks):
-            chunk = chunks[i]
-            text = chunk["text"]
-            start, end = chunk["timestamp"]
+        for segment in phoneme_segments:
+            phoneme = segment["phoneme"].lower()
+            viseme_id = self.viseme_map.get(phoneme, [None])[
+                -1
+            ]  # Default to neutral viseme "sil"
+            start = segment["start"] * 1000
+            end = segment["end"] * 1000
+            duration = end - start
 
-            if start is None or end is None:
-                i += 1
+            if viseme_id is None or duration <= 0:
                 continue
 
-            # Handle space
-            if text == " ":
-                pause_start = start
-                pause_end = end
-                count = 1
-
-                # Check for multiple consecutive spaces
-                while (i + 1 < len(chunks)) and (chunks[i + 1]["text"] == " "):
-                    i += 1
-                    next_chunk = chunks[i]
-                    pause_end = next_chunk["timestamp"][1]
-                    count += 1
-
-                pause_duration = pause_end - pause_start
-
-                if count == 1 and len(visemes) > 0:
-                    # Merge single space with previous viseme
-                    vdurations[-1] += int(pause_duration * 1000)
-                else:
-                    # Treat multiple spaces as separate viseme
-                    visemes.append("sil")
-                    vtimes.append(int(pause_start * 1000))
-                    vdurations.append(int(pause_duration * 1000))
-
-            else:
-                # This logic handles phonemes and maps them to visemes
-                # taking into account phonemes represented by multiple visemes.
-                mapped_visemes = self.phoneme_viseme_map.get(text, ["sil"])
-                num_visemes = len(mapped_visemes)
-                duration_ms = int((end - start) * 1000)
-                sub_duration = duration_ms // num_visemes
-                start_ms = int(start * 1000)
-
-                for i, viseme in enumerate(mapped_visemes):
-                    visemes.append(viseme)
-                    vtimes.append(start_ms + i * sub_duration)
-                    # If last viseme, assign any remainder to preserve total duration
-                    if i == num_visemes - 1:
-                        vdurations.append(
-                            duration_ms - sub_duration * (num_visemes - 1)
-                        )
-                    else:
-                        vdurations.append(sub_duration)
-
-            i += 1
+            visemes.append(viseme_id)
+            vtimes.append(start)
+            vdurations.append(duration)
 
         return {
             "visemes": visemes,
             "vtimes": vtimes,
             "vdurations": vdurations,
-            "duration": float(audio_duration_sec),  # total duration in s
         }
-
-    def _run_forced_alignment(self, waveform, transcript):
-        """Run forced alignment to get precise word timings."""
-        waveform_tensor = torch.from_numpy(waveform).to(self.device)
-        if waveform_tensor.ndim == 1:
-            waveform_tensor = waveform_tensor.unsqueeze(0)  # shape: [1, time]
-        emissions, _ = self.model(waveform_tensor)
-        emissions = torch.log_softmax(emissions, dim=-1)[0].cpu().detach()
-        transcript = transcript.translate(str.maketrans("", "", string.punctuation))
-        transcript = "|" + "|".join(transcript.strip().upper()) + "|"
-        transcript = transcript.replace(" ", "")
-        tokens = [self.dictionary[c] for c in transcript]
-
-        trellis = self._get_trellis(emissions, tokens)
-        path = self._backtrack(trellis, emissions, tokens)
-        segments = self._merge_repeats(path, transcript)
-        words = self._merge_words(segments)
-        return {
-            "words": [w.label for w in words],
-            "wtimes": [w.start * 20 for w in words],
-            "wdurations": [(w.end - w.start) * 20 for w in words],
-            "duration": waveform_tensor.shape[1] // 16,
-        }
-
-    def _get_trellis(self, emission, tokens, blank_id=0):
-        """Compute the trellis for the given emissions and tokens (for forced alignment)."""
-        T, N = emission.size(0), len(tokens)
-        trellis = torch.full((T, N), -float("inf"))
-        trellis[1:, 0] = torch.cumsum(emission[1:, blank_id], 0)
-        trellis[0, 1:] = -float("inf")
-        for t in range(T - 1):
-            trellis[t + 1, 1:] = torch.maximum(
-                trellis[t, 1:] + emission[t, blank_id],
-                trellis[t, :-1] + emission[t, tokens[1:]],
-            )
-        return trellis
-
-    def _backtrack(self, trellis, emission, tokens, blank_id=0):
-        """Backtrack the trellis to compute the best path (for forced alignment)."""
-
-        @dataclass
-        class Point:
-            token_index: int
-            time_index: int
-            score: float
-
-        t, j = trellis.size(0) - 1, trellis.size(1) - 1
-        path = [Point(j, t, emission[t, blank_id].exp().item())]
-        while j > 0 and t > 0:
-            p_stay = emission[t - 1, blank_id]
-            p_change = emission[t - 1, tokens[j]]
-            stayed = trellis[t - 1, j] + p_stay
-            changed = trellis[t - 1, j - 1] + p_change
-            t -= 1
-            if changed > stayed:
-                j -= 1
-            prob = (p_change if changed > stayed else p_stay).exp().item()
-            path.append(Point(j, t, prob))
-        return path[::-1]
-
-    def _merge_repeats(self, path, transcript):
-        """Merge repeated tokens in the path to create segments."""
-
-        @dataclass
-        class Segment:
-            label: str
-            start: int
-            end: int
-            score: float
-
-        i1, i2 = 0, 0
-        segments = []
-        while i1 < len(path):
-            while i2 < len(path) and path[i1].token_index == path[i2].token_index:
-                i2 += 1
-            seg_score = sum(path[k].score for k in range(i1, i2)) / (i2 - i1)
-            segments.append(
-                Segment(
-                    label=transcript[path[i1].token_index],
-                    start=path[i1].time_index,
-                    end=path[i2 - 1].time_index + 1,
-                    score=seg_score,
-                )
-            )
-            i1 = i2
-        return segments
-
-    def _merge_words(self, segments, sep="|"):
-        """Merge segments into words based on the separator (for forced alignment)."""
-
-        @dataclass
-        class Segment:
-            label: str
-            start: int
-            end: int
-            score: float
-
-        words = []
-        i1 = 0
-        while i1 < len(segments):
-            i2 = i1
-            while i2 < len(segments) and segments[i2].label != sep:
-                i2 += 1
-            if i1 != i2:
-                segs = segments[i1:i2]
-                label = "".join([s.label for s in segs])
-                score = sum(s.score * (s.end - s.start) for s in segs) / sum(
-                    s.end - s.start for s in segs
-                )
-                words.append(Segment(label, segs[0].start, segs[-1].end, score))
-            i1 = i2 + 1
-        return words

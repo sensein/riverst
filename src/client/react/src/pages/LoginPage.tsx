@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Card, Typography, message, Spin, Space } from 'antd';
-import { GoogleOutlined, LoadingOutlined } from '@ant-design/icons';
+import { Card, Typography, message, Spin, Space } from 'antd';
+import { LoadingOutlined } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -63,9 +63,6 @@ const LoginPage: React.FC = () => {
   }, [isScriptLoaded]);
 
   const initializeGoogleSignIn = () => {
-    console.log('Google Client ID:', import.meta.env.VITE_GOOGLE_CLIENT_ID);
-    console.log('Window.google available:', !!window.google);
-    
     if (window.google) {
       window.google.accounts.id.initialize({
         client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
@@ -74,14 +71,12 @@ const LoginPage: React.FC = () => {
 
       // Render the sign-in button
       const buttonElement = document.getElementById('google-signin-button');
-      console.log('Button element found:', !!buttonElement);
       if (buttonElement) {
         window.google.accounts.id.renderButton(buttonElement, {
           theme: 'outline',
           size: 'large',
           width: 300,
         });
-        console.log('Google button rendered');
       }
     } else {
       console.error('Google object not available');
@@ -121,7 +116,7 @@ const LoginPage: React.FC = () => {
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
           <div>
             <Title level={2} style={{ marginBottom: '8px' }}>
-              Welcome to RiverSt
+              Welcome to Riverst
             </Title>
             <Paragraph type="secondary">
               Sign in with your Google account to continue
@@ -129,17 +124,19 @@ const LoginPage: React.FC = () => {
           </div>
 
           {!isScriptLoaded ? (
-            <Spin 
+            <Spin
               indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />}
               tip="Loading Google Sign-In..."
             />
           ) : (
-            <div>
-              <div id="google-signin-button" style={{ margin: '0 auto' }} />
-              
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div id="google-signin-button" />
+
               {isGoogleLoading && (
                 <div style={{ marginTop: '16px' }}>
-                  <Spin tip="Signing in..." />
+                  <Spin
+                    indicator={<LoadingOutlined style={{ fontSize: 24 }} spin  />}
+                    tip="Signing in..." />
                 </div>
               )}
             </div>

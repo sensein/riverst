@@ -5,8 +5,10 @@ from typing import Any
 from dotenv import load_dotenv
 from loguru import logger
 import os
+from pathlib import Path
 from pipecat.audio.vad.silero import SileroVADAnalyzer
-from pipecat.audio.filters.noisereduce_filter import NoisereduceFilter
+
+# from pipecat.audio.filters.noisereduce_filter import NoisereduceFilter
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.runner import PipelineRunner
 from pipecat.pipeline.task import PipelineParams, PipelineTask
@@ -26,9 +28,13 @@ from pipecat.processors.filters.stt_mute_filter import (
     STTMuteFilter,
     STTMuteStrategy,
 )
+
+from pipecat.audio.turn.smart_turn.base_smart_turn import SmartTurnParams
+from pipecat.audio.turn.smart_turn.local_smart_turn_v2 import LocalSmartTurnAnalyzerV2
 import types
 import torch
 import torchaudio
+import numpy as np
 
 import asyncio
 from .video_processor import VideoProcessor
@@ -102,7 +108,13 @@ async def run_bot(
         metrics_logger = MetricsLoggerProcessor(session_dir=session_dir)
 
         # Setup WebRTC transport parameters
-        # smart_turn_model_path = os.getenv("LOCAL_SMART_TURN_MODEL_PATH")
+        raw = os.environ.get("LOCAL_SMART_TURN_MODEL_PATH")
+        if not raw:
+            raise EnvironmentError("LOCAL_SMART_TURN_MODEL_PATH not set")
+
+        smart_turn_model_path = Path(raw).expanduser().resolve()  # absolute path
+        if not smart_turn_model_path.exists():
+            raise FileNotFoundError(f"Path not found: {smart_turn_model_path}")
         # print("smart_turn_model_path: ", smart_turn_model_path)
         transport_params = TransportParams(
             video_in_enabled=config.get("video_flag", False),
@@ -113,13 +125,13 @@ async def run_bot(
             video_out_framerate=config.get("video_out_framerate", 0),
             audio_in_enabled=True,
             audio_out_enabled=True,
-            audio_in_filter=NoisereduceFilter(),
+            # audio_in_filter=NoisereduceFilter(),
             vad_analyzer=SileroVADAnalyzer(),
-            # turn_analyzer=LocalSmartTurnAnalyzerV2(
-            #    smart_turn_model_path=smart_turn_model_path, params=SmartTurnParams()
-            # ),
+            turn_analyzer=LocalSmartTurnAnalyzerV2(
+                smart_turn_model_path=smart_turn_model_path, params=SmartTurnParams()
+            ),
             audio_in_passthrough=True,
-            audio_out_10ms_chunks=4,
+            audio_out_10ms_chunks=2,
         )
 
         pipecat_transport = SmallWebRTCTransport(
@@ -140,7 +152,8 @@ async def run_bot(
                 return frame.audio
 
             audio_tensor = (
-                torch.frombuffer(frame.audio, dtype=torch.int16).float() / 32768.0
+                torch.tensor(np.frombuffer(frame.audio, dtype=np.int16).copy()).float()
+                / 32768.0
             )
             audio_tensor = audio_tensor.unsqueeze(0)  # shape: (1, N)
 
@@ -265,7 +278,11 @@ async def run_bot(
                 context_aggregator.user(),
                 llm,
                 tts,
-                lipsync_processor,
+                (
+                    lipsync_processor
+                    if config.get("embodiment", "humanoid_avatar") == "humanoid_avatar"
+                    else None
+                ),
                 video_buffer if config.get("video_flag", False) else None,
                 (
                     VideoProcessor(
@@ -285,8 +302,8 @@ async def run_bot(
         else:
             steps = [
                 pipecat_transport.input(),
-                rtvi,
                 context_aggregator.user(),
+                rtvi,
                 video_buffer if config.get("video_flag", False) else None,
                 (
                     VideoProcessor(
@@ -298,7 +315,11 @@ async def run_bot(
                 ),
                 stt_mute_processor,  # Add the mute processor before LLM
                 llm,  # LLM
-                lipsync_processor,
+                (
+                    lipsync_processor
+                    if config.get("embodiment", "humanoid_avatar") == "humanoid_avatar"
+                    else None
+                ),
                 transcript.user(),
                 pipecat_transport.output(),
                 audiobuffer,
@@ -360,9 +381,6 @@ async def run_bot(
             audios_dir = os.path.join(session_dir, "audios")
             os.makedirs(audios_dir, exist_ok=True)
             path = f"{audios_dir}/{datetime.datetime.now():%Y%m%d_%H%M%S_%f}_USER.wav"
-            print(
-                "[YYY] Saving user audio to:", path, "Sample Rate:", sr, "Channels:", ch
-            )
             await save_audio_file(audio, path, sr, ch)
 
         @audiobuffer.event_handler("on_bot_turn_audio_data")
@@ -370,9 +388,6 @@ async def run_bot(
             audios_dir = os.path.join(session_dir, "audios")
             os.makedirs(audios_dir, exist_ok=True)
             path = f"{audios_dir}/{datetime.datetime.now():%Y%m%d_%H%M%S_%f}_AGENT.wav"
-            print(
-                "[YYY] Saving bot audio to:", path, "Sample Rate:", sr, "Channels:", ch
-            )
             await save_audio_file(audio, path, sr, ch)
 
         @audiobuffer.event_handler("on_audio_data")
@@ -409,7 +424,6 @@ async def run_bot(
                     for filename in os.listdir(audios_dir):
                         if filename.endswith(".wav"):
                             filepath = os.path.join(audios_dir, filename)
-                            # asyncio.create_task(AudioAnalyzer.analyze_audio(filepath))
                             await AudioAnalyzer.analyze_audio(filepath)
                 except Exception as e:
                     logger.error(f"Error triggering analysis on audios: {e}")
