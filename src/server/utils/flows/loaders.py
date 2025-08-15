@@ -14,10 +14,12 @@ from .handlers import (
 
 
 def load_config(
-    flow_config_path: str, session_variables_path: Optional[str] = None
+    flow_config_path: str,
+    session_variables_path: Optional[str] = None,
+    end_conversation_handler=None,
 ) -> Tuple[FlowConfig, Dict[str, Any]]:
     """
-    [Your existing docstring]
+    Loads and validates the flow configuration from a JSON file.
     """
     flow_config_file = Path(flow_config_path)
 
@@ -43,7 +45,9 @@ def load_config(
 
     # Extract state and flow configurations
     state = get_flow_state(config_data)
-    flow_config = get_flow_config(config_data)
+    flow_config = get_flow_config(
+        config_data, end_conversation_handler=end_conversation_handler
+    )
 
     return flow_config, state
 
@@ -72,7 +76,9 @@ def load_session_variables(session_variables_path: Optional[str]) -> Dict[str, A
     return session_variables
 
 
-def get_flow_config(config: FlowConfigurationFile) -> FlowConfig:
+def get_flow_config(
+    config: FlowConfigurationFile, end_conversation_handler=None
+) -> FlowConfig:
     """
     Extracts and processes the flow configuration from a validated configuration object.
 
@@ -81,6 +87,7 @@ def get_flow_config(config: FlowConfigurationFile) -> FlowConfig:
 
     Args:
         config: A validated FlowConfigurationFile object containing the complete configuration
+        end_conversation_handler: Optional handler for ending conversations
 
     Returns:
         FlowConfig: A validated flow configuration with function references resolved
@@ -117,6 +124,8 @@ def get_flow_config(config: FlowConfigurationFile) -> FlowConfig:
             for action in node_dict["pre_actions"]:
                 if action.get("handler") == "get_variable_action_handler":
                     action["handler"] = get_variable_action_handler
+                if action.get("handler") == "end_conversation_handler":
+                    action["handler"] = end_conversation_handler.handle_end_conversation
 
         if "post_actions" in node_dict:
             for action in node_dict["post_actions"]:

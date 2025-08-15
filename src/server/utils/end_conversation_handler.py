@@ -9,7 +9,6 @@ regular bot mode and advanced flows.
 from typing import Dict, Any, Optional
 from loguru import logger
 
-from pipecat.services.llm_service import FunctionCallParams
 from pipecat.processors.frameworks.rtvi import RTVIServerMessageFrame, RTVIProcessor
 from pipecat.adapters.schemas.function_schema import FunctionSchema
 from pipecat.frames.frames import TTSSpeakFrame
@@ -17,6 +16,10 @@ from pipecat.frames.frames import TTSSpeakFrame
 
 class EndConversationHandler:
     """Handles conversation termination, providing a unified interface for ending sessions."""
+
+    def __init__(self, rtvi: RTVIProcessor):
+        """Initialize the handler with RTVI processor for real-time updates."""
+        self.rtvi = rtvi
 
     @staticmethod
     def get_end_conversation_instruction() -> str:
@@ -47,24 +50,23 @@ class EndConversationHandler:
             required=[],
         )
 
-    @staticmethod
     async def handle_end_conversation(
-        params: Any, rtvi: RTVIProcessor
+        self, action: Dict[str, Any], flow_manager: Any
     ) -> Optional[Dict[str, Any]]:
         """Handle conversation termination request.
 
         Args:
-            params: FunctionCallParams or dict (no parameters needed for end_conversation).
-            rtvi: RTVIProcessor to send the termination event.
+            action: Action configuration dict from flow system
+            flow_manager: FlowManager instance
 
         Returns:
-            Response dict if not using result_callback.
+            Response dict for action system.
         """
         logger.info("End conversation requested by LLM")
 
         try:
             print("End conversation requested by LLM 1")
-            await rtvi.push_frame(
+            await self.rtvi.push_frame(
                 TTSSpeakFrame("It was nice talking to you. Have a nice day!")
             )
 
@@ -75,7 +77,7 @@ class EndConversationHandler:
                     "message": "The conversation has ended. Thank you for talking with 'River street'!",
                 }
             )
-            await rtvi.push_frame(frame)
+            await self.rtvi.push_frame(frame)
             result = {"status": "conversation_ended"}
             logger.info("Conversation ended successfully")
 
@@ -85,9 +87,5 @@ class EndConversationHandler:
                 "status": "error",
                 "error": f"Failed to end conversation: {str(e)}",
             }
-
-        if isinstance(params, FunctionCallParams):
-            await params.result_callback(result)
-            return None
 
         return result

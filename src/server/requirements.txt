@@ -7,7 +7,7 @@ pipecat-ai[mlx-whisper]; sys_platform == "darwin" and platform_machine == "arm64
 pipecat-ai-small-webrtc-prebuilt
 kokoro
 noisereduce
-pipecat-ai-flows==0.0.17
+pipecat-ai-flows
 senselab[audio]
 huggingface-hub
 torch
