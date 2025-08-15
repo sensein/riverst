@@ -65,7 +65,7 @@ export function RTVIProvider({
       if (!endedSessions.includes(sessionId)) {
         endedSessions.push(sessionId);
         localStorage.setItem('endedSessions', JSON.stringify(endedSessions));
-      }
+      markSessionEnded(sessionId);
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
