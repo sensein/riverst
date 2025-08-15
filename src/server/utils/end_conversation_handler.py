@@ -65,7 +65,6 @@ class EndConversationHandler:
         logger.info("End conversation requested by LLM")
 
         try:
-            print("End conversation requested by LLM 1")
             await self.rtvi.push_frame(
                 TTSSpeakFrame("It was nice talking to you. Have a nice day!")
             )
