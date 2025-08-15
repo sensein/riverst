@@ -11,3 +11,6 @@
 - https://docs.ultravox.ai/ (alternative to pipecat?)
 - so far, e2e is not really reliable: it's not good at calling functions, cannot be used with pipecat flows, it's not consistent with transcripts, it keeps failing with acknowledged issues which haven't been solved yet (e.g., https://github.com/pipecat-ai/pipecat/issues/1781, https://discuss.ai.google.dev/t/received-1007-invalid-payload-using-gemini-live-api/83206/11)... We know e2e works faster than the classic pipeline, but we do not recommend it much for now.
 - the general session saved is not always reliable (sometimes, voices are overlapped despite they were not in reality...)
+- full-duplex architeture notes: https://arxiv.org/pdf/2405.19487
+- interesting study that used talkinghead: https://www.youtube.com/watch?v=Hv-ItCZ0qc4
+- https://www.metered.ca/blog/coturn/: coturn server setup guidelines

@@ -9,7 +9,7 @@ import {
 } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { Link, useNavigate } from "react-router-dom";
-import axios from 'axios';
+import { LoadingOutlined } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 
 const { Title, Text } = Typography;
@@ -36,10 +36,10 @@ export default function SessionsList() {
 
   useEffect(() => {
     let isMounted = true;
-    
+
 const fetchSessions = async () => {
   try {
-    const apiUrl = `${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/sessions`;
+    const apiUrl = `/api/sessions`;
     const response = await authRequest.get(apiUrl);
     if (isMounted) setSessions(response.data);
   } catch (error) {
@@ -48,7 +48,7 @@ const fetchSessions = async () => {
     if (isMounted) setLoading(false);
   }
 }
-    
+
     fetchSessions();
     const intervalId = setInterval(fetchSessions, 5000);
     return () => {
@@ -57,7 +57,21 @@ const fetchSessions = async () => {
     };
   }, []);
 
-  if (loading) return <Spin />;
+  if (loading) return (
+    <div
+      style={{
+        position: 'absolute',
+        inset: 0,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'white',
+        zIndex: 10000,
+      }}
+    >
+      <Spin indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />} />
+    </div>
+  );
 
   // Group by user_id
   const grouped = sessions.reduce((acc, id) => {

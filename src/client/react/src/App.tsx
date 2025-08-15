@@ -1,3 +1,9 @@
+/**
+ * App.tsx
+ * Main entry point for the React application.
+ * Sets up global providers, routing, and code-splitting.
+ */
+
 import { ConfigProvider } from 'antd';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Homepage from './pages/Homepage';
@@ -8,20 +14,30 @@ import { AuthProvider } from './contexts/AuthContext';
 
 import { Suspense, lazy } from 'react';
 
+/**
+ * Lazy-loaded pages for code-splitting and faster initial load.
+ */
 const AdvancedAvatarCreatorPage = lazy(() => import('./pages/AdvancedAvatarCreatorPage'));
 const AvatarCreatorPage = lazy(() => import('./pages/AvatarCreatorPage'));
 const AvatarInteraction = lazy(() => import('./pages/AvatarInteraction'));
 const AvatarInteractionSettings = lazy(() => import('./pages/AvatarInteractionSettings'));
 const SessionsList = lazy(() => import('./pages/SessionsList'));
 const SessionDetail = lazy(() => import('./pages/SessionDetail'));
-const SessionEndPage = lazy(() => import('./pages/SessionEndPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const ErrorPage = lazy(() => import('./pages/ErrorPage'));
 
+/**
+ * AuthenticatedRoutes
+ * Wraps all routes that require authentication and the AuthProvider.
+ * ProtectedRoute ensures only authenticated users can access these pages.
+ */
 const AuthenticatedRoutes = () => (
   <AuthProvider>
     <Routes>
+      {/* Login route (no protection) */}
       <Route path="/login" element={<LoginPage />} />
+
+      {/* Protected routes */}
       <Route
         path="/"
         element={
@@ -74,18 +90,24 @@ const AuthenticatedRoutes = () => (
   </AuthProvider>
 );
 
+/**
+ * App
+ * Sets up the global Ant Design theme, router, and suspense fallback.
+ * - /avatar-interaction/:sessionId is accessible without authentication.
+ * - All other routes are wrapped in AuthProvider and may require authentication.
+ */
 const App = () => {
   return (
     <ConfigProvider theme={appTheme}>
       <Router>
         <Suspense fallback={<FullPageLoader />}>
           <Routes>
-            {/* Completely unauthenticated routes - NO AuthProvider */}
+            {/* Completely unauthenticated route - NO AuthProvider */}
             <Route path="/avatar-interaction/:sessionId" element={<AvatarInteraction />} />
-            <Route path="/session-ended/:sessionId" element={<SessionEndPage />} />
 
             {/* All other routes - WITH AuthProvider (including login) */}
             <Route path="/*" element={<AuthenticatedRoutes />} />
+            {/* Catch-all for unknown routes */}
             <Route path="*" element={<ErrorPage />} />
           </Routes>
         </Suspense>

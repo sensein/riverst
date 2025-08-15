@@ -1,3 +1,11 @@
+/**
+ * main.tsx
+ * React application entry point.
+ * - Sets up Ant Design's App context for consistent theming and message handling.
+ * - Uses React.StrictMode for highlighting potential problems.
+ * - Renders the main App component into the root DOM node.
+ */
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';

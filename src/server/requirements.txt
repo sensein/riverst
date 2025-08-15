@@ -2,13 +2,14 @@ python-dotenv
 aiofiles
 uvicorn
 fastapi[all]
-pipecat-ai[google,elevenlabs,silero,webrtc,whisper] @ git+https://github.com/pipecat-ai/pipecat
+pipecat-ai[google,elevenlabs,silero,webrtc,whisper]
+pipecat-ai[mlx-whisper]; sys_platform == "darwin" and platform_machine == "arm64"
 pipecat-ai-small-webrtc-prebuilt
+kokoro
 noisereduce
-pipecat-ai-flows
-senselab[audio]>=0.36
-huggingface-hub<=0.32
-transformers<=4.52
+pipecat-ai-flows==0.0.17
+senselab[audio]
+huggingface-hub
 torch
 torchaudio
 opencv-python

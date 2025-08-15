@@ -11,7 +11,7 @@ import {
 } from "antd";
 import { InfoCircleOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from 'axios';
+import { LoadingOutlined } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 
 const { Title, Paragraph } = Typography;
@@ -96,13 +96,13 @@ export default function SessionDetail() {
 
 const fetchSessionData = async () => {
   try {
-    const apiUrl = `${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/session/${id}`;
+    const apiUrl = `/api/session/${id}`;
     const response = await authRequest.get(apiUrl);
     setSteps(response.data.data || []);
     setSessionMetrics(response.data.metrics_summary || {});
   } catch (err: any) {
     let errorMsg = "Failed to load session data";
-    
+
     if (err.response) {
       // Server responded with error status
       const contentType = err.response.headers['content-type'] || "";
@@ -116,7 +116,7 @@ const fetchSessionData = async () => {
     } else if (err.message) {
       errorMsg += ": " + err.message;
     }
-    
+
     setError(errorMsg);
     setSteps([]);
   }
@@ -138,8 +138,18 @@ fetchSessionData();
 
   if (!steps) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", marginTop: 100 }}>
-        <Spin size="large" />
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: 'white',
+          zIndex: 10000,
+        }}
+      >
+        <Spin indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />} />
       </div>
     );
   }
@@ -175,7 +185,7 @@ fetchSessionData();
               const displayName = isAgent ? "Agent" : "User";
               const features = step ? { ...step.features, embeddings: step.speaker_embeddings } : {};
               const text = step.transcript?.text || "(no transcript)";
-              const audioSrc = `${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api` + (step.audio_file || "");
+              const audioSrc = `/api` + (step.audio_file || "");
               const { date, time } = formatTimestamp(step.audio_file || "");
 
               return (

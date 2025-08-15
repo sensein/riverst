@@ -20,6 +20,11 @@
           "default": false,
           "description": "This activity only supports basic flows. Advanced flows are not allowed for the basic avatar interaction activity and must be set to false."
         },
+        "prolific_campaign": {
+          "type": "boolean",
+          "default": false,
+          "description": "Wheather the activity is part of a Prolific campaign."
+        },
         "pipeline_modality": {
           "type": "string",
           "enum": ["classic"],
@@ -36,7 +41,7 @@
         },
         "llm_type": {
           "type": "string",
-          "enum": ["openai", "llama3.2"],
+          "enum": ["openai", "ollama/qwen3:4b-instruct-2507-q4_K_M"],
           "default": "openai",
           "const": "openai",
           "description": "The LLM service to use."
@@ -47,6 +52,12 @@
           "default": "openai",
           "const": "openai",
           "description": "The TTS service to use."
+        },
+        "embodiment": {
+          "type": "string",
+          "enum": ["humanoid_avatar", "waveform"],
+          "default": "humanoid_avatar",
+          "description": "The embodiment of the agent to use. This is used to determine the agent's appearance."
         },
         "body_animations": {
           "type": "array",
@@ -68,15 +79,15 @@
         "avatar_system_prompt": {
           "type": "string",
           "maxLength": 500,
-          "default": "You are an interactive robot. Keep your responses brief (one or two sentences at most). Your output will be converted to audio so don't include special characters in your answers. Respond to what the user said in a creative and helpful way. Start the conversation by introducing yourself and trigger the 'wave' animation.",
-          "const": "You are an interactive robot. Keep your responses brief (one or two sentences at most). Your output will be converted to audio so don't include special characters in your answers. Respond to what the user said in a creative and helpful way. Start the conversation by introducing yourself and trigger the 'wave' animation.",
+          "default": "You are an interactive robot. Keep your responses brief (one or two sentences at most). Your output will be converted to audio so don't include special characters in your answers. Respond to what the user said in a creative and helpful way. Start the conversation by introducing yourself.",
+          "const": "You are an interactive robot. Keep your responses brief (one or two sentences at most). Your output will be converted to audio so don't include special characters in your answers. Respond to what the user said in a creative and helpful way. Start the conversation by introducing yourself.",
           "description": "Instructions defining how the avatar should behave during the interaction."
         },
         "avatar_personality_description": {
           "type": "string",
           "maxLength": 500,
-          "default": "You are the Riverst avatar, a friendly, helpful robot.",
-          "const": "You are the Riverst avatar, a friendly, helpful robot.",
+          "default": "You are the 'River street' avatar, a friendly, helpful robot.",
+          "const": "You are the 'River street' avatar, a friendly, helpful robot.",
           "description": "Text describing the avatar’s personality and role."
         },
         "task_description": {
@@ -97,7 +108,7 @@
           "type": "boolean",
           "default": false,
           "const": false,
-          "description": "Enable or disable short-term memory. If enabled, the avatar will remember information from previous interactions with this same link and use it to guide the conversation."
+          "description": "Enable or disable short-term memory. If enabled, the avatar will remember information from previous interactions with this same link and use it to guide the conversation. If false, a session data is deleted after a new session with the same link is started."
         },
         "long_term_memory": {
           "type": "boolean",

@@ -64,6 +64,7 @@ class EndConversationHandler:
         try:
             # Queue EndFrame to gracefully terminate the pipeline
             await task.queue_frame(EndFrame())
+
             result = {"status": "conversation_ended"}
             logger.info("Conversation ended successfully with EndFrame")
 

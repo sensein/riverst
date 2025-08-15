@@ -4,6 +4,7 @@ import axios from 'axios';
 import Navbar from '../components/homepage/Navbar';
 import GroupedActivitySection from '../components/homepage/GroupedActivitySection';
 import { Content } from 'antd/es/layout/layout';
+import { LoadingOutlined } from '@ant-design/icons';
 
 interface Activity {
   title: string;
@@ -25,7 +26,7 @@ const Homepage: React.FC = () => {
 
   useEffect(() => {
     axios
-      .get<ActivityGroup[]>(`${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}/api/activities`)
+      .get<ActivityGroup[]>(`/api/activities`)
       .then((response) => {
         setGroups(response.data);
         setError(null);
@@ -43,7 +44,21 @@ const Homepage: React.FC = () => {
     <Layout style={{ minHeight: '100vh' }}>
       <Navbar />
       <Content style={{ padding: '1% 1%' }}>
-        {loading && <Spin />}
+        {loading && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: 'white',
+              zIndex: 10000,
+            }}
+          >
+            <Spin indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />} />
+          </div>
+        )}
         {error && <Alert type="error" message={error} showIcon />}
         {groups && (
           <div>

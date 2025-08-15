@@ -55,7 +55,7 @@
                    "/figures/avatar_interaction_white.svg"],
         "description": "Discover new words through fun, guided play with your avatar.",
         "route": "/avatar-interaction-settings",
-        "disabled": false,
+        "disabled": true,
         "settings_options_filepath": "api/activities/settings/vocab-tutoring.json"
       },
       {
