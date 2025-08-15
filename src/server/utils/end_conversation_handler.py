@@ -10,8 +10,9 @@ from typing import Dict, Any, Optional
 from loguru import logger
 
 from pipecat.services.llm_service import FunctionCallParams
-from pipecat.processors.frameworks.rtvi import RTVIServerMessageFrame, RTVIProcessor
 from pipecat.adapters.schemas.function_schema import FunctionSchema
+from pipecat.frames.frames import EndFrame
+from pipecat.pipeline.task import PipelineTask
 
 
 class EndConversationHandler:
@@ -48,13 +49,12 @@ class EndConversationHandler:
 
     @staticmethod
     async def handle_end_conversation(
-        params: Any, rtvi: RTVIProcessor
+        params: FunctionCallParams, task: Optional[PipelineTask] = None
     ) -> Optional[Dict[str, Any]]:
         """Handle conversation termination request.
 
         Args:
-            params: FunctionCallParams or dict (no parameters needed for end_conversation).
-            rtvi: RTVIProcessor to send the termination event.
+            params: FunctionCallParams containing the task and other context.
 
         Returns:
             Response dict if not using result_callback.
@@ -62,16 +62,10 @@ class EndConversationHandler:
         logger.info("End conversation requested by LLM")
 
         try:
-            # Send conversation ended message to client
-            frame = RTVIServerMessageFrame(
-                data={
-                    "type": "conversation-ended",
-                    "message": "The conversation has ended. Thank you for talking with Riverst!",
-                }
-            )
-            await rtvi.push_frame(frame)
+            # Queue EndFrame to gracefully terminate the pipeline
+            await task.queue_frame(EndFrame())
             result = {"status": "conversation_ended"}
-            logger.info("Conversation ended successfully")
+            logger.info("Conversation ended successfully with EndFrame")
 
         except Exception as e:
             logger.error(f"Error ending conversation: {e}")
@@ -80,8 +74,5 @@ class EndConversationHandler:
                 "error": f"Failed to end conversation: {str(e)}",
             }
 
-        if isinstance(params, FunctionCallParams):
-            await params.result_callback(result)
-            return None
-
-        return result
+        await params.result_callback(result)
+        return None

@@ -184,9 +184,7 @@ async def run_bot(
 
         # Register functions using the factory's modular approach
         use_advanced_flows = config.get("advanced_flows", False)
-        function_registrations = factory.get_function_registrations(
-            rtvi_processor=rtvi, use_flows=use_advanced_flows
-        )
+        function_registrations = factory.get_function_registrations(rtvi_processor=rtvi)
 
         for function_name, handler in function_registrations:
             llm.register_function(function_name, handler)
@@ -324,6 +322,17 @@ async def run_bot(
             cancel_on_idle_timeout=False,  # Don't auto-cancel, just notify
         )
 
+        # Register end_conversation function now that task is available (only for non-flows mode)
+        if not use_advanced_flows:
+            from .end_conversation_handler import EndConversationHandler
+
+            async def end_conversation_wrapper(params):
+                return await EndConversationHandler.handle_end_conversation(
+                    params, task
+                )
+
+            llm.register_function("end_conversation", end_conversation_wrapper)
+
         # Will initialize flow manager if advanced flows are enabled
         flow_factory = FlowComponentFactory(
             llm=llm,
@@ -338,7 +347,6 @@ async def run_bot(
                 "Summarize the key moments of the session and concepts discussed so far. "
                 "Keep it concise and focused on the activity goal and achievements."
             ),
-            rtvi_processor=rtvi,
         )
         flow_manager = flow_factory.build()
 

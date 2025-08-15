@@ -47,22 +47,16 @@ export function RTVIProvider({
               }
             });
           },
-          onServerMessage: (message) => {
-            // Handle conversation ended message from server
-            if (message.type === 'conversation-ended') {
-              console.log('Conversation ended by server:', message.message);
+          onDisconnected: () => {
+            console.log('Client disconnected - checking if session ended naturally');
 
-              // Mark session as ended in localStorage
-              const endedSessions = JSON.parse(localStorage.getItem('endedSessions') || '[]');
-              if (!endedSessions.includes(sessionId)) {
-                endedSessions.push(sessionId);
-                localStorage.setItem('endedSessions', JSON.stringify(endedSessions));
-              }
-
-              // Disconnect client to trigger on_client_disconnected on server
-              client.disconnect();
-
-              // Navigate to session end page
+            // Check if this is a natural session end (from EndFrame) vs user leaving
+            const endedSessions = JSON.parse(localStorage.getItem('endedSessions') || '[]');
+            if (!endedSessions.includes(sessionId)) {
+              // Mark as ended and navigate to end page
+              endedSessions.push(sessionId);
+              localStorage.setItem('endedSessions', JSON.stringify(endedSessions));
+              console.log('Session ended naturally via EndFrame, navigating to end page');
               navigate(`/session-ended/${sessionId}`);
             }
           }

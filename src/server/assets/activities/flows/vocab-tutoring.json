@@ -88,6 +88,7 @@
     "initial_node": "warm_up",
     "nodes": {
       "warm_up": {
+        "name": "warm_up",
         "task_messages": [
           {
             "role": "system",
@@ -146,6 +147,7 @@
         ]
       },
       "vocab": {
+        "name": "vocab",
         "task_messages": [
           {
             "role": "system",
@@ -215,6 +217,7 @@
         ]
       },
       "review": {
+        "name": "review",
         "task_messages": [
           {
             "role": "system",
@@ -277,10 +280,11 @@
         ]
       },
       "closing": {
+        "name": "closing",
         "task_messages": [
           {
             "role": "system",
-            "content": "Close the session by covering all four elements in a warm, encouraging manner:\n1. Praise the child specifically for their hard work learning the new vocabulary words\n2. Encourage them to continue listening to their audiobook\n3. Suggest they try to notice these new words when reading or use them in conversations with family/friends\n4. Briefly summarize what vocabulary words they learned today and what each one means\n\nKeep this friendly, upbeat, and encouraging! Make the child feel proud of their accomplishments.\n\nOnly call the check_closing_progress function after you have completed ALL four closing elements and are completely finished with the session."
+            "content": "Close the session by praising the child that they've done a great job today. VERY BRIEFLY encourage continued reading, suggested word usage, and summarize the learning. \n\nCRITICALLY IMPORTANT: After completing these steps silently call the check_closing_progress() function. Do not mention that you are doing this."
           }
         ],
         "functions": [
@@ -329,17 +333,17 @@
         ]
       },
       "end": {
+        "name": "end",
         "task_messages": [
           {
             "role": "system",
-            "content": "The session is now complete. Say goodbye in a friendly and encouraging way. Please call the end_conversation function now."
+            "content": "The session is now complete. Say goodbye in a friendly and encouraging way."
           }
         ],
         "functions": [],
         "pre_actions": [
           {
-            "type": "end_conversation",
-            "handler": "handle_end_conversation"
+            "type": "end_conversation"
           }
         ]
       }

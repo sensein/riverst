@@ -329,6 +329,10 @@ async def get_variable_action_handler(action: dict, flow_manager: FlowManager) -
     directly to the LLM context as a system message. It supports multiple LLM
     providers including OpenAI, Anthropic, Google/Gemini, and AWS Bedrock.
 
+    Checks if variables is indexable and retrieves the indexed item if the index is set.
+    It will not prompt the user for an index!
+
+
     Args:
         action: Action configuration with variable_name field
         flow_manager: Flow manager instance
@@ -370,21 +374,7 @@ async def get_variable_action_handler(action: dict, flow_manager: FlowManager) -
 
         if stored_index is not None and 0 <= stored_index < len(indexable_items):
             # Get the indexed item: root[root["indexable_by"]][index]
-            indexed_data = indexable_items[stored_index]
-
-            # Create the data structure similar to get_session_variable_handler
-            value = {
-                k: v
-                for k, v in root_data.items()
-                if k != "indexable_by" and k != index_field
-            }
-            # Special handling for warm_up stage
-            if flow_manager.current_node == "warm_up":
-                indexed_data_copy = indexed_data.copy()
-                indexed_data_copy.pop("vocab_words", None)
-                value[f"current_{index_field}"] = indexed_data_copy
-            else:
-                value[f"current_{index_field}"] = indexed_data
+            value = indexable_items[stored_index]
         else:
             # No valid index, use the raw data
             value = root_data
@@ -398,15 +388,6 @@ async def get_variable_action_handler(action: dict, flow_manager: FlowManager) -
         content = f"Available information - {variable_name}: {value}"
 
     logger.info(f"Adding {variable_name} from {source} to context: {value}")
-
-    # Add to context
-    if (
-        not hasattr(flow_manager, "_context_aggregator")
-        or not flow_manager._context_aggregator
-    ):
-        logger.error("Flow manager has no context aggregator")
-        return
-
     context = flow_manager._context_aggregator.user()._context
 
     # Handle different LLM providers based on context class type

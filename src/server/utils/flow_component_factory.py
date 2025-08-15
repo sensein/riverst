@@ -4,7 +4,6 @@ from typing import Any, Optional, List
 from loguru import logger
 from pipecat.pipeline.task import PipelineTask
 from pipecat_flows import FlowManager, ContextStrategy, ContextStrategyConfig
-from pipecat.processors.frameworks.rtvi import RTVIProcessor
 
 from .flows import load_config
 from .animation_handler import AnimationHandler
@@ -28,12 +27,11 @@ class FlowComponentFactory:
         user_description: Optional[str] = None,
         enabled_animations: Optional[List[str]] = None,
         session_dir: Optional[str] = None,
-        context_strategy: ContextStrategy = ContextStrategy.RESET_WITH_SUMMARY,
+        context_strategy: ContextStrategy = ContextStrategy.RESET,
         summary_prompt: str = (
             "Summarize the key moments of learning, words, and concepts discussed in the tutoring session so far. "
             "Keep it concise and focused on vocabulary learning."
         ),
-        rtvi_processor: Optional[RTVIProcessor] = None,
     ):
         """Initialize the FlowComponentFactory.
 
@@ -49,7 +47,6 @@ class FlowComponentFactory:
             session_dir: Directory for session data
             context_strategy: Strategy for managing context
             summary_prompt: Prompt for summarizing conversation
-            rtvi_processor: RTVI processor for flow pre-actions
         """
         self.llm = llm
         self.context_aggregator = context_aggregator
@@ -59,7 +56,6 @@ class FlowComponentFactory:
         self.session_variables_path = session_variables_path
         self.user_description = user_description
         self.enabled_animations = enabled_animations or []
-        self.rtvi_processor = rtvi_processor
         self.context_strategy = context_strategy
         self.summary_prompt = summary_prompt
         self.flow_manager = None
@@ -90,7 +86,7 @@ class FlowComponentFactory:
 
         try:
             flow_config, state = load_config(
-                self.flow_config_path, self.session_variables_path, self.rtvi_processor
+                self.flow_config_path, self.session_variables_path
             )
 
             # Modify system messages in all nodes to include user description and animation instruction, and tools
@@ -98,7 +94,6 @@ class FlowComponentFactory:
                 self._add_llm_tools_to_node(node_data)
                 if "role_messages" in node_data:
                     self._update_system_message(node_data["role_messages"])
-
             flow_manager = FlowManager(
                 llm=self.llm,
                 context_aggregator=self.context_aggregator,
@@ -109,7 +104,6 @@ class FlowComponentFactory:
                 task=self.task,
                 flow_config=flow_config,
             )
-
             flow_manager.state = state
 
             self.flow_manager = flow_manager
@@ -220,6 +214,3 @@ class FlowComponentFactory:
                 )
                 if animation_instruction:
                     system_msg["content"] += f"\n{animation_instruction}"
-
-            # End conversation is now handled through pre-actions in flows
-            # No need to add end conversation instruction to system messages

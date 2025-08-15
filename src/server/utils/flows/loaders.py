@@ -3,7 +3,6 @@ import json
 from pathlib import Path
 
 from pipecat_flows import NodeConfig, FlowConfig
-from pipecat.processors.frameworks.rtvi import RTVIProcessor
 
 from .models.config_models import FlowConfigurationFile
 from .handlers import (
@@ -12,13 +11,11 @@ from .handlers import (
     get_info_variable_handler,
     get_variable_action_handler,
 )
-from ..end_conversation_handler import EndConversationHandler
 
 
 def load_config(
     flow_config_path: str,
     session_variables_path: Optional[str] = None,
-    rtvi_processor: Optional[RTVIProcessor] = None,
 ) -> Tuple[FlowConfig, Dict[str, Any]]:
     """
     [Your existing docstring]
@@ -47,7 +44,7 @@ def load_config(
 
     # Extract state and flow configurations
     state = get_flow_state(config_data)
-    flow_config = get_flow_config(config_data, rtvi_processor)
+    flow_config = get_flow_config(config_data)
 
     return flow_config, state
 
@@ -76,9 +73,7 @@ def load_session_variables(session_variables_path: Optional[str]) -> Dict[str, A
     return session_variables
 
 
-def get_flow_config(
-    config: FlowConfigurationFile, rtvi_processor: Optional[RTVIProcessor] = None
-) -> FlowConfig:
+def get_flow_config(config: FlowConfigurationFile) -> FlowConfig:
     """
     Extracts and processes the flow configuration from a validated configuration object.
 
@@ -123,33 +118,6 @@ def get_flow_config(
             for action in node_dict["pre_actions"]:
                 if action.get("handler") == "get_variable_action_handler":
                     action["handler"] = get_variable_action_handler
-                elif action.get("handler") == "handle_end_conversation":
-
-                    async def end_conversation_wrapper(action_config, flow_manager):
-                        """Wrapper for end conversation handler in flows with RTVI access."""
-                        from loguru import logger
-
-                        logger.info("Flow end conversation action requested")
-
-                        if not rtvi_processor:
-                            logger.error(
-                                "No RTVI processor available for flow end conversation"
-                            )
-                            return
-
-                        try:
-                            result = (
-                                await EndConversationHandler.handle_end_conversation(
-                                    params={}, rtvi=rtvi_processor
-                                )
-                            )
-                            logger.info(
-                                f"Flow conversation ended successfully: {result}"
-                            )
-                        except Exception as e:
-                            logger.error(f"Error ending flow conversation: {e}")
-
-                    action["handler"] = end_conversation_wrapper
 
         if "post_actions" in node_dict:
             for action in node_dict["post_actions"]:

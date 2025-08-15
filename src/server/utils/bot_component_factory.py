@@ -155,12 +155,11 @@ class BotComponentFactory:
 
         return ToolsSchema(standard_tools=[animation_schema, end_conversation_schema])
 
-    def get_function_registrations(self, rtvi_processor, use_flows: bool = False):
+    def get_function_registrations(self, rtvi_processor):
         """Get the function registrations for the LLM based on configuration.
 
         Args:
             rtvi_processor: The RTVI processor instance
-            use_flows: Whether advanced flows are being used
 
         Returns:
             List of tuples (function_name, handler_function) to register
@@ -223,24 +222,6 @@ class BotComponentFactory:
                 function_call_debug_wrapper(animation_handler_wrapper),
             )
         )
-
-        # Only register end_conversation when NOT using flows
-        # When using flows, end_conversation is handled through pre-actions
-        if not use_flows:
-
-            async def end_conversation_handler_wrapper(params):
-                """Wrapper for the end conversation handler to include RTVI instance."""
-                return await EndConversationHandler.handle_end_conversation(
-                    params, rtvi=rtvi_processor
-                )
-
-            registrations.append(
-                (
-                    "end_conversation",
-                    function_call_debug_wrapper(end_conversation_handler_wrapper),
-                )
-            )
-
         return registrations
 
     async def build(self) -> Tuple[

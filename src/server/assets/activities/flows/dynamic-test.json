@@ -98,7 +98,6 @@
                 ]
               },
               "handler": "general_handler",
-              "transition_callback": "general_transition_callback"
             }
           }
         ],
@@ -135,7 +134,6 @@
                 ]
               },
               "handler": "general_handler",
-              "transition_callback": "general_transition_callback"
             }
           },
           {
@@ -199,7 +197,6 @@
                 ]
               },
               "handler": "general_handler",
-              "transition_callback": "general_transition_callback"
             }
           }
         ],
@@ -222,10 +219,15 @@
         "task_messages": [
           {
             "role": "system",
-            "content": "The session is now complete. Say goodbye in a friendly and encouraging way. Please call the end_conversation function now."
+            "content": "The session is now complete. Say goodbye in a friendly and encouraging way."
           }
         ],
-        "functions": []
+        "functions": [],
+        "pre_actions": [
+          {
+            "type": "end_conversation"
+          }
+        ]
       }
     }
   }
