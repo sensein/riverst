@@ -66,6 +66,14 @@ VALID_ANIMATIONS = [
         "id": "sleep",
         "description": "When you are sleepy, you can do the 'sleep' animation.",
     },
+    {
+        "id": "thinking",
+        "description": (
+            "When you are thinking, you can do the 'thinking' animation, "
+            "you can do the 'thinking' animation if you are thinking."
+        ),
+        
+    }
 ]
 
 

@@ -126,6 +126,7 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
       ok: "ok",
       thumbup: "thumbup",
       thumbdown: "thumbdown",
+      thinking: "/animations/thinking/thinking.fbx",
     };
 
     const moodList = ["happy", "angry", "sad", "fear", "disgust", "love", "sleep"];
