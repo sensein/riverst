@@ -251,13 +251,12 @@ async def run_bot(
 
         end_conversation_handler = EndConversationHandler(rtvi)
 
-        if config.get("advanced_flows", False):
-            llm.register_function(
-                "end_conversation",
-                function_call_debug_wrapper(
-                    end_conversation_handler.handle_end_conversation
-                ),
-            )
+        llm.register_function(
+            "end_conversation",
+            function_call_debug_wrapper(
+                end_conversation_handler.handle_end_conversation
+            ),
+        )
 
         async def handle_user_idle(_: UserIdleProcessor, retry_count: int) -> bool:
             """Handle user inactivity by escalating reminders and ending the session if needed.
