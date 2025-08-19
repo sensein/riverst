@@ -26,7 +26,19 @@
           "const": "./assets/activities/flows/vocab-tutoring.json",
           "description": "Path to the advanced flows configuration file."
         },
-        "session_variables_path": {
+        "user_activity_variables": {
+          "type": "object",
+          "properties": {
+            "index_field": {
+              "type": ["integer", "null"],
+              "minimum": 0,
+              "default": null,
+              "description": "Current chapter index for the book being studied."
+            }
+          },
+          "description": "The user variables specific to the activity."
+        },
+        "activity_variables_path": {
           "type": "string",
           "title": "Books",
           "dynamicEnum": "books",
@@ -89,6 +101,12 @@
           "maxLength": 500,
           "default": "The user is a 4-grade student. They want to learn vocabulary words from a book.",
           "description": "Optional free-text field to describe the user."
+        },
+        "current_chapter": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "default": null,
+          "description": "Optional target chapter index for the book. If specified, the system will automatically load this chapter. If null, the model will ask the user which chapter they want to study."
         },
         "short_term_memory": {
           "type": "boolean",

@@ -212,27 +212,6 @@ async def general_handler(
             return found_func
         return False
 
-    if DEBUG_MODE:
-        # Debug: Check if result contains any function objects
-        def check_for_functions(obj, path=""):
-            if callable(obj):
-                logger.error(f"FOUND FUNCTION OBJECT in result at {path}: {obj}")
-                return True
-            elif isinstance(obj, dict):
-                found_func = False
-                for key, value in obj.items():
-                    if check_for_functions(value, f"{path}.{key}"):
-                        found_func = True
-                return found_func
-            elif isinstance(obj, (list, tuple)):
-                found_func = False
-                for i, item in enumerate(obj):
-                    if check_for_functions(item, f"{path}[{i}]"):
-                        found_func = True
-                return found_func
-            return False
-
-        logger.info(f"DEBUG: Checking result for function objects: {result}")
     if check_for_functions(result):
         logger.error("CRITICAL: Result contains function objects!")
     else:
@@ -241,7 +220,114 @@ async def general_handler(
     return result, next_node
 
 
-async def get_session_variable_handler(
+def handle_indexable_variable(
+    variable_name: str,
+    flow_manager: FlowManager,
+    current_index: int = None,
+    source: str = "activity_variables",
+) -> Dict[str, Any]:
+    """
+    Helper function to handle indexable variable logic.
+
+    Args:
+        variable_name: Name of the variable
+        flow_manager: Flow manager instance
+        current_index: Index provided in function call
+        source: Source field in flow_manager.state to get variable from
+
+    Returns:
+        Dictionary with status and either data or error message
+    """
+    # Get the variable data
+    root_data = flow_manager.state[source].get(variable_name)
+    if root_data is None:
+        return {"status": "error", "message": f"Variable '{variable_name}' not found"}
+
+    index_field = isinstance(root_data, dict) and root_data.get("indexable_by", None)
+
+    if not index_field:
+        # Simple variable - return as is
+        return {"status": "success", "data": root_data}
+
+    # Indexable variable - handle index logic
+    indexable_items = root_data.get(index_field, [])
+    item_count = len(indexable_items)
+    options = f"0-{item_count-1}" if item_count > 0 else "none available"
+
+    index_error_message = (
+        "Variable '{variable_name}' is indexable by {index_field} (valid indices: {options}). "
+        "Please ask the user for a proper index in very natural language given the context, "
+        "then call context function with 'current_index' set to their response. "
+        "If there was an error in how they responded, "
+        "please try to correct the user in a very natural way."
+    )
+
+    # Determine the index to use
+    index = None
+
+    # Case 1: Index is provided in the current function call
+    if current_index is not None:
+        try:
+            index = int(current_index)
+            if index < 0 or index >= item_count:
+                raise ValueError("Index out of range")
+
+            # Valid index - update the state
+            flow_manager.state["user_activity_variables"]["index"] = index
+
+        except ValueError:
+            return {
+                "status": "error",
+                "message": index_error_message.format(
+                    variable_name=variable_name,
+                    index_field=index_field,
+                    options=options,
+                ),
+            }
+
+    # Case 2: Try to get index from session configuration
+    elif (
+        index := flow_manager.state.get("user_activity_variables", {}).get("index")
+    ) is not None:
+        try:
+            index = int(index)
+            if index < 0 or index >= item_count:
+                raise ValueError("Index out of range")
+        except (ValueError, KeyError):
+            return {
+                "status": "error",
+                "message": index_error_message.format(
+                    variable_name=variable_name,
+                    index_field=index_field,
+                    options=options,
+                ),
+            }
+
+    # Case 3: No index available - need to prompt
+    else:
+        return {
+            "status": "error",
+            "message": index_error_message.format(
+                variable_name=variable_name,
+                index_field=index_field,
+                options=options,
+            ),
+        }
+
+    # Get the indexed item
+    indexed_data = indexable_items[index]
+
+    # Build the result data
+    data = {
+        k: v for k, v in root_data.items() if k != "indexable_by" and k != index_field
+    }
+
+    data[f"current_{index_field}"] = indexed_data
+
+    return {"status": "success", "data": data}
+
+
+async def get_activity_variable_handler(
     args: Union[FlowArgs, dict], flow_manager: FlowManager
 ) -> Dict[str, Any]:
     """
@@ -260,84 +346,18 @@ async def get_session_variable_handler(
     Returns:
         Flow result with the requested variable value
     """
-    index_error_message = (
-        "Variable '{variable_name}' is indexable by {index_field} (valid indices: {options}). "
-        "Please ask the user for a proper index in very natural language given the context, "
-        "then call this function again with 'current_index' set to their response. "
-        "If there was an error in how they responded, "
-        "please try to correct the user in a very natural way."
-    )
-
     variable_name = args.get("variable_name")
     if not variable_name:
         return {"status": "error", "message": "No variable name provided"}
 
-    # Get the variable data
-    root_data = flow_manager.state["session_variables"].get(variable_name)
-    if root_data is None:
-        return {"status": "error", "message": f"Variable '{variable_name}' not found"}
+    current_index = args.get("current_index")
 
-    # Check if this is an indexable variable
-    index_field = isinstance(root_data, dict) and root_data.get("indexable_by", None)
-
-    if not index_field:
-        # Simple variable - return as is
-        return {"status": "success", "data": root_data}
-
-    # Indexable variable - handle index logic
-    indexable_items = root_data.get(index_field, [])
-    item_count = len(indexable_items)
-    options = f"0-{item_count-1}" if item_count > 0 else "none available"
-
-    # Determine the index to use
-    index = None
-
-    # Case 1: Index is provided in the current function call
-    if args.get("current_index") is not None:
-        try:
-            index = int(args.get("current_index"))
-            if index < 0 or index >= item_count:
-                raise ValueError("Index out of range")
-
-            # Valid index - update the state
-            flow_manager.state["session_variables"][variable_name][
-                "current_index"
-            ] = index
-        except ValueError:
-            return {
-                "status": "error",
-                "message": index_error_message.format(
-                    variable_name=variable_name,
-                    index_field=index_field,
-                    options=options,
-                ),
-            }
-
-    # Case 2: Try to get index from previously stored state
-    else:
-        stored_index = root_data.get("current_index", None)
-        if stored_index is None:
-            return {
-                "status": "error",
-                "message": index_error_message.format(
-                    variable_name=variable_name,
-                    index_field=index_field,
-                    options=options,
-                ),
-            }
-        index = int(stored_index)
-
-    # Get the indexed item: root[root["indexable_by"]][index]
-    indexed_data = indexable_items[index]
-
-    data = {
-        k: v for k, v in root_data.items() if k != "indexable_by" and k != index_field
-    }
-    if flow_manager.current_node == "warm_up":
-        indexed_data.pop("vocab_words", None)
-    data[f"current_{index_field}"] = indexed_data
-
-    return {"status": "success", "data": data}
+    return handle_indexable_variable(
+        variable_name=variable_name,
+        flow_manager=flow_manager,
+        current_index=current_index,
+        source="activity_variables",
+    )
 
 
 async def get_info_variable_handler(
@@ -389,8 +409,8 @@ async def get_variable_action_handler(action: dict, flow_manager: FlowManager) -
         return
 
     source = action.get(
-        "source", "session_variables"
-    )  # Default to session_variables if not specified
+        "source", "activity_variables"
+    )  # Default to activity_variables if not specified
 
     if source not in flow_manager.state:
         logger.error(f"Source '{source}' not found in flow manager state")
@@ -402,38 +422,28 @@ async def get_variable_action_handler(action: dict, flow_manager: FlowManager) -
         )
         return
 
-    root_data = flow_manager.state[source][variable_name]
-    if root_data is None:
-        logger.error(f"Variable '{variable_name}' has None value in {source}")
-        return
+    # Use helper function to handle indexable variable logic
+    result = handle_indexable_variable(
+        variable_name=variable_name,
+        flow_manager=flow_manager,
+        current_index=None,  # Pre-actions don't provide current_index
+        source=source,
+    )
 
-    # Check if this is an indexable variable (similar to get_session_variable_handler)
-    index_field = isinstance(root_data, dict) and root_data.get("indexable_by", None)
-
-    if not index_field:
-        # Simple variable - use as is
-        value = root_data
+    if result["status"] == "error":
+        content = result["message"]
+        logger.error(f"Error retrieving variable '{variable_name}': {content}")
     else:
-        # Indexable variable - apply indexing logic
-        indexable_items = root_data.get(index_field, [])
-        stored_index = root_data.get("current_index", None)
+        # Successfully retrieved the variable value
+        value = result["data"]
 
-        if stored_index is not None and 0 <= stored_index < len(indexable_items):
-            # Get the indexed item: root[root["indexable_by"]][index]
-            value = indexable_items[stored_index]
+        # Format the content based on the variable type
+        if isinstance(value, dict):
+            content = f"Available information - {variable_name}: {json.dumps(value, indent=2)}"
         else:
-            # No valid index, use the raw data
-            value = root_data
+            content = f"Available information - {variable_name}: {value}"
 
-    # Format the content based on the variable type
-    if isinstance(value, dict):
-        content = (
-            f"Available information - {variable_name}: {json.dumps(value, indent=2)}"
-        )
-    else:
-        content = f"Available information - {variable_name}: {value}"
-
-    logger.info(f"Adding {variable_name} from {source} to context: {value}")
+        logger.info(f"Adding {variable_name} from {source} to context: {value}")
     context = flow_manager._context_aggregator.user()._context
 
     # Handle different LLM providers based on context class type
