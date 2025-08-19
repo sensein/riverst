@@ -249,16 +249,13 @@ async def run_bot(
             "trigger_animation", function_call_debug_wrapper(animation_handler_wrapper)
         )
 
-        # create a closure that provides the rtvi instance to the end conversation handler
-        async def end_conversation_handler_wrapper(params):
-            """Wrapper for the end conversation handler to include RTVI instance."""
-            return await EndConversationHandler.handle_end_conversation(
-                params, rtvi=rtvi
-            )
+        end_conversation_handler = EndConversationHandler(rtvi)
 
         llm.register_function(
             "end_conversation",
-            function_call_debug_wrapper(end_conversation_handler_wrapper),
+            function_call_debug_wrapper(
+                end_conversation_handler.handle_end_conversation
+            ),
         )
 
         async def handle_user_idle(_: UserIdleProcessor, retry_count: int) -> bool:
@@ -412,6 +409,7 @@ async def run_bot(
             session_variables_path=config.get("session_variables_path"),
             user_description=config.get("user_description", ""),
             enabled_animations=allowed_animations,
+            end_conversation_handler=end_conversation_handler,
             summary_prompt=(
                 "Summarize the key moments of the session and concepts discussed so far. "
                 "Keep it concise and focused on the activity goal and achievements."
