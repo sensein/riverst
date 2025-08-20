@@ -16,7 +16,7 @@ from .handlers import (
 def load_config(
     flow_config_path: str,
     activity_variables_path: Optional[str] = None,
-    user_activity_variables: Optional[dict[str, Any]] = None,
+    user_variables: Optional[dict[str, Any]] = None,
     end_conversation_handler=None,
 ) -> Tuple[FlowConfig, Dict[str, Any]]:
     """
@@ -39,11 +39,12 @@ def load_config(
         activity_variables_file = Path(activity_variables_path)
         if activity_variables_file.exists():
             activity_variables = load_activity_variables(activity_variables_path)
-            flow_config_data["state_config"]["activity_data"] = activity_variables
+            flow_config_data["state_config"]["activity"] = activity_variables
 
-    elif user_activity_variables:
-        # If user_activity_variables is provided, use it directly
-        flow_config_data["state_config"]["user"] = user_activity_variables
+    elif user_variables:
+        # If user_activity_variables is provided, merge it with existing user data
+        existing_user = flow_config_data["state_config"].get("user", {})
+        flow_config_data["state_config"]["user"] = {**existing_user, **user_variables}
 
     # Validate the complete configuration
     flow_config_data = FlowConfigurationFile(**flow_config_data)
