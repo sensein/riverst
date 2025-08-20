@@ -407,7 +407,11 @@ async def run_bot(
             advanced_flows=config.get("advanced_flows", False),
             flow_config_path=config.get("advanced_flows_config_path"),
             activity_variables_path=config.get("activity_variables_path"),
-            user_activity_variables=config.get("user_activity_variables", {}),
+            user_activity_variables=(
+                {"index_field": config.get("index_field")}
+                if config.get("index_field") is not None
+                else {}
+            ),
             user_description=config.get("user_description", ""),
             enabled_animations=allowed_animations,
             end_conversation_handler=end_conversation_handler,

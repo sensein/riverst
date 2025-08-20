@@ -235,12 +235,23 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
       );
     }
 
+
     // String (text or textarea)
     if (config.type === 'string') {
       const multiline = config.maxLength && config.maxLength > 100;
       return (
         <Form.Item key={key} name={namePath} label={labelWithTooltip} rules={rules}>
           {multiline ? <TextArea autoSize /> : <Input />}
+        </Form.Item>
+      );
+    }
+
+
+    // Integer or nullable integer field
+    if (config.type === 'integer' || (Array.isArray(config.type) && config.type.includes('integer'))) {
+      return (
+        <Form.Item key={key} name={namePath} label={labelWithTooltip} rules={rules}>
+          <Input type="number" min={config.minimum} />
         </Form.Item>
       );
     }
