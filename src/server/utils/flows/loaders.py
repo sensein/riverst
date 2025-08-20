@@ -6,9 +6,9 @@ from pipecat_flows import NodeConfig, FlowConfig
 
 from .models.config_models import FlowConfigurationFile
 from .handlers import (
-    get_session_variable_handler,
+    get_activity_handler,
     general_handler,
-    get_info_variable_handler,
+    get_user_handler,
     get_variable_action_handler,
 )
 
@@ -39,13 +39,11 @@ def load_config(
         activity_variables_file = Path(activity_variables_path)
         if activity_variables_file.exists():
             activity_variables = load_activity_variables(activity_variables_path)
-            flow_config_data["state_config"]["activity_variables"] = activity_variables
+            flow_config_data["state_config"]["activity_data"] = activity_variables
 
     elif user_activity_variables:
         # If user_activity_variables is provided, use it directly
-        flow_config_data["state_config"][
-            "user_activity_variables"
-        ] = user_activity_variables
+        flow_config_data["state_config"]["user"] = user_activity_variables
 
     # Validate the complete configuration
     flow_config_data = FlowConfigurationFile(**flow_config_data)
@@ -60,9 +58,7 @@ def load_config(
 
 
 def load_activity_variables(activity_variables_path: Optional[str]) -> Dict[str, Any]:
-    """
-    [Your existing docstring - but remove Optional from return type since you return {} not None]
-    """
+
     if not activity_variables_path:
         return {}
 
@@ -117,14 +113,11 @@ def get_flow_config(
                     func_def["function"]["handler"] = general_handler
                 elif (
                     func_def.get("function", {}).get("handler")
-                    == "get_session_variable_handler"
+                    == "get_activity_handler"
                 ):
-                    func_def["function"]["handler"] = get_session_variable_handler
-                elif (
-                    func_def.get("function", {}).get("handler")
-                    == "get_info_variable_handler"
-                ):
-                    func_def["function"]["handler"] = get_info_variable_handler
+                    func_def["function"]["handler"] = get_activity_handler
+                elif func_def.get("function", {}).get("handler") == "get_user_handler":
+                    func_def["function"]["handler"] = get_user_handler
 
         # Actions also need to resolve handlers
         if "pre_actions" in node_dict:
@@ -173,8 +166,8 @@ def get_flow_state(config: FlowConfigurationFile) -> Dict[str, Any]:
             k: v.model_dump() if hasattr(v, "model_dump") else v
             for k, v in state_config.stages.items()
         },
-        "info": state_config.info,
-        "activity_variables": state_config.activity_variables,
+        "user": state_config.user,
+        "activity": state_config.activity,
     }
 
     return state_dict

@@ -25,19 +25,23 @@ def update_checklist_fields(args: FlowArgs, checklist: Dict[str, bool]) -> None:
     logger.info("Checklist after updating:\n{}", pformat(checklist))
 
 
-def update_info_fields(args: FlowArgs, flow_manager: FlowManager) -> None:
+def update_user_fields(args: FlowArgs, flow_manager: FlowManager) -> None:
     """
-    Update the info fields in the flow state with values from args.
+    Update the user session fields in the flow state with values from args.
 
     Args:
         args: Flow arguments containing field values
         flow_manager: Flow manager instance
     """
-    logger.info("Info before updating:\n{}", pformat(flow_manager.state["info"]))
-    flow_manager.state["info"].update(
-        {field: args[field] for field in args if field in flow_manager.state["info"]}
+    logger.info(
+        "User session fields before updating:\n{}", pformat(flow_manager.state["user"])
     )
-    logger.info("Info after updating:\n{}", pformat(flow_manager.state["info"]))
+    flow_manager.state["user"].update(
+        {field: args[field] for field in args if field in flow_manager.state["user"]}
+    )
+    logger.info(
+        "User session fields after updating:\n{}", pformat(flow_manager.state["user"])
+    )
 
 
 def create_next_node(flow_manager: FlowManager) -> Tuple[str, NodeConfig]:
@@ -85,22 +89,22 @@ def create_next_node(flow_manager: FlowManager) -> Tuple[str, NodeConfig]:
 
     # Evaluate each condition in order
     for condition in conditions:
-        info_variable = condition["parameters"]["variable_path"]
-        value = condition["parameters"]["value"]
+        user_variable = condition["parameters"]["variable_path"]
+        matching_value = condition["parameters"]["value"]
         operator_str = condition["parameters"]["operator"]
 
-        if info_variable not in flow_manager.state["info"]:
+        if user_variable not in flow_manager.state["user"]:
             raise ValueError(
-                f"Info variable '{info_variable}' not found in flow manager state."
+                f"User variable '{user_variable}' not found in flow manager state."
             )
 
-        info_value = flow_manager.state["info"][info_variable]
+        true_value = flow_manager.state["user"][user_variable]
 
         if operator_str not in OPERATORS:
             raise ValueError(f"Unsupported operator: {operator_str}")
 
         # Check if condition matches
-        if OPERATORS[operator_str](info_value, value):
+        if OPERATORS[operator_str](true_value, matching_value):
             # Condition is true, route to target node
             target_node = condition["target_node"]
             node = flow_manager.nodes.get(target_node)
@@ -109,7 +113,7 @@ def create_next_node(flow_manager: FlowManager) -> Tuple[str, NodeConfig]:
                     f"Node '{target_node}' not found in flow manager nodes."
                 )
             logger.info(
-                f"Condition matched: {info_variable} {operator_str} {value}, routing to {target_node}"
+                f"Condition matched: {user_variable} {operator_str} {matching_value}, routing to {target_node}"
             )
             return target_node, node
 
@@ -172,7 +176,7 @@ async def general_handler(
             - Result dictionary with status and message
             - Next node configuration if complete, or current node configuration if incomplete
     """
-    update_info_fields(args, flow_manager)
+    update_user_fields(args, flow_manager)
     stage = flow_manager.current_node
     checklist = flow_manager.state["stages"][stage]["checklist"]
     update_checklist_fields(args, checklist)
@@ -224,7 +228,7 @@ def handle_indexable_variable(
     variable_name: str,
     flow_manager: FlowManager,
     current_index: int = None,
-    source: str = "activity_variables",
+    source: str = "activity",
 ) -> Dict[str, Any]:
     """
     Helper function to handle indexable variable logic.
@@ -273,7 +277,7 @@ def handle_indexable_variable(
                 raise ValueError("Index out of range")
 
             # Valid index - update the state
-            flow_manager.state["user_activity_variables"]["index"] = index
+            flow_manager.state["user"]["index"] = index
 
         except ValueError:
             return {
@@ -286,9 +290,7 @@ def handle_indexable_variable(
             }
 
     # Case 2: Try to get index from session configuration
-    elif (
-        index := flow_manager.state.get("user_activity_variables", {}).get("index")
-    ) is not None:
+    elif (index := flow_manager.state.get("user", {}).get("index")) is not None:
         try:
             index = int(index)
             if index < 0 or index >= item_count:
@@ -327,11 +329,11 @@ def handle_indexable_variable(
     return {"status": "success", "data": data}
 
 
-async def get_activity_variable_handler(
+async def get_activity_handler(
     args: Union[FlowArgs, dict], flow_manager: FlowManager
 ) -> Dict[str, Any]:
     """
-    Handler to retrieve task variables from the flow state.
+    Handler to retrieve activity variables from the flow state.
 
     For simple variables: returns the variable directly
     For indexable variables: root[root["indexable_by"]][index][field] (if field specified)
@@ -356,15 +358,15 @@ async def get_activity_variable_handler(
         variable_name=variable_name,
         flow_manager=flow_manager,
         current_index=current_index,
-        source="activity_variables",
+        source="activity",
     )
 
 
-async def get_info_variable_handler(
+async def get_user_handler(
     args: Union[FlowArgs, dict], flow_manager: FlowManager
 ) -> Dict[str, Any]:
     """
-    Handler to retrieve a task variable from the flow state.
+    Handler to retrieve a user-session variable from the flow state.
 
     Args:
         args: Flow arguments, should include 'variable_name'
@@ -378,13 +380,13 @@ async def get_info_variable_handler(
     if not variable_name:
         return {"status": "error", "message": "No variable name provided"}
 
-    if variable_name not in flow_manager.state["info"]:
+    if variable_name not in flow_manager.state["user"]:
         return {
             "status": "error",
-            "error": f"Variable '{variable_name}' not found in session info",
+            "error": f"Variable '{variable_name}' not found in session user",
         }
 
-    return {"status": "success", "data": flow_manager.state["info"].get(variable_name)}
+    return {"status": "success", "data": flow_manager.state["user"].get(variable_name)}
 
 
 async def get_variable_action_handler(action: dict, flow_manager: FlowManager) -> None:
@@ -408,9 +410,7 @@ async def get_variable_action_handler(action: dict, flow_manager: FlowManager) -
         logger.error("Missing variable_name in add_to_context action")
         return
 
-    source = action.get(
-        "source", "activity_variables"
-    )  # Default to activity_variables if not specified
+    source = action.get("source", "activity")
 
     if source not in flow_manager.state:
         logger.error(f"Source '{source}' not found in flow manager state")

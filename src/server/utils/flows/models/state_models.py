@@ -89,12 +89,12 @@ class StateConfig(BaseModel):
     Configuration for the application state.
 
     Defines the structure of the state, including stages with checklists,
-    general information, and task-specific variables.
+    user session information, and activity-specific variables.
     """
 
     stages: Dict[str, StageModel]
-    info: Dict[str, Any]
-    session_variables: Dict[str, Any]
+    user: Dict[str, Any]
+    activity: Dict[str, Any]
 
     @model_validator(mode="after")
     def validate_field_uniqueness(self):
@@ -109,26 +109,26 @@ class StateConfig(BaseModel):
         for stage in self.stages.values():
             checklist_fields.update(stage.checklist.keys())
 
-        info_fields = set(self.info.keys())
-        task_variable_fields = set(self.session_variables.keys())
+        user_fields = set(self.user.keys())
+        activity_fields = set(self.activity.keys())
 
         # Check for overlaps
-        info_checklist_overlap = checklist_fields.intersection(info_fields)
-        if info_checklist_overlap:
+        user_checklist_overlap = checklist_fields.intersection(user_fields)
+        if user_checklist_overlap:
             raise ValueError(
-                f"Fields {info_checklist_overlap} appear in both checklist and info"
+                f"Fields {user_checklist_overlap} appear in both checklist and user"
             )
 
-        task_checklist_overlap = checklist_fields.intersection(task_variable_fields)
-        if task_checklist_overlap:
+        activity_checklist_overlap = checklist_fields.intersection(activity_fields)
+        if activity_checklist_overlap:
             raise ValueError(
-                f"Fields {task_checklist_overlap} appear in both checklist and session_variables"
+                f"Fields {activity_checklist_overlap} appear in both checklist and activity"
             )
 
-        info_task_overlap = info_fields.intersection(task_variable_fields)
-        if info_task_overlap:
+        user_activity_overlap = user_fields.intersection(activity_fields)
+        if user_activity_overlap:
             raise ValueError(
-                f"Fields {info_task_overlap} appear in both info and session_variables"
+                f"Fields {user_activity_overlap} appear in both user and activity"
             )
 
         # Validate stage connections

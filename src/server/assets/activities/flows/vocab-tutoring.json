@@ -60,16 +60,16 @@
         }
       }
     },
-    "info": {
+    "user": {
+      "index": null,
       "has_listened_to_book": false,
       "vocab_words_known": [],
       "vocab_words_taught+mastered": [],
       "vocab_words_taught+not_mastered": []
     },
-    "session_variables": {
+    "activity": {
       "reading_context": {
         "indexable_by": "chapters",
-        "current_index": 1,
         "book_title": "",
         "book_author": "",
         "pages": [
