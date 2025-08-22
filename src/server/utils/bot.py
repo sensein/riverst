@@ -408,8 +408,8 @@ async def run_bot(
             flow_config_path=config.get("advanced_flows_config_path"),
             activity_variables_path=config.get("activity_variables_path"),
             user_activity_variables=(
-                {"index_field": config.get("index_field") - 1}
-                if config.get("index_field") is not None
+                {"index": config.get("index")}
+                if config.get("index") is not None
                 else {}
             ),
             user_description=config.get("user_description", ""),

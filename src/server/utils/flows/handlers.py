@@ -242,6 +242,7 @@ def handle_indexable_variable(
     Returns:
         Dictionary with status and either data or error message
     """
+    logger.info("Current user state:\n{}", pformat(flow_manager.state["user"]))
     # Get the variable data
     root_data = flow_manager.state[source].get(variable_name)
     if root_data is None:
@@ -292,7 +293,7 @@ def handle_indexable_variable(
     # Case 2: Try to get index from session configuration
     elif (index := flow_manager.state.get("user", {}).get("index")) is not None:
         try:
-            index = int(index)
+            index = int(index) - 1  # Adjust for 0-based index
             if index < 0 or index >= item_count:
                 raise ValueError("Index out of range")
         except (ValueError, KeyError):
@@ -448,7 +449,6 @@ async def get_variable_action_handler(action: dict, flow_manager: FlowManager) -
 
     # Handle different LLM providers based on context class type
     context_class_name = context.__class__.__name__
-
     try:
         if context_class_name == "OpenAILLMContext":
             # OpenAI format

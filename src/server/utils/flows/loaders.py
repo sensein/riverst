@@ -41,7 +41,7 @@ def load_config(
             activity_variables = load_activity_variables(activity_variables_path)
             flow_config_data["state_config"]["activity"] = activity_variables
 
-    elif user_variables:
+    if user_variables:
         # If user_activity_variables is provided, merge it with existing user data
         existing_user = flow_config_data["state_config"].get("user", {})
         flow_config_data["state_config"]["user"] = {**existing_user, **user_variables}
