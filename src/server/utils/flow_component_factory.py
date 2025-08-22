@@ -29,7 +29,7 @@ class FlowComponentFactory:
         enabled_animations: Optional[List[str]] = None,
         session_dir: Optional[str] = None,
         end_conversation_handler: Optional[Any] = None,
-        context_strategy: ContextStrategy = ContextStrategy.RESET_WITH_SUMMARY,
+        context_strategy: ContextStrategy = ContextStrategy.RESET,
         summary_prompt: str = (
             "Summarize the key moments of learning, words, and concepts discussed in the tutoring session so far. "
             "Keep it concise and focused on vocabulary learning."

@@ -1,8 +1,10 @@
 {
     "reading_context": {
+        "key_information": {
+            "book_title": "Peter Pan",
+            "book_author": "James M. Barrie"
+        },
         "indexable_by": "chapters",
-        "book_title": "Peter Pan",
-        "book_author": "James M. Barrie",
         "book_summary": "In \"Peter Pan\" by James M. Barrie, the story revolves around Peter Pan, a mischievous boy who refuses to grow up and lives in the magical land of Neverland. The main conflict arises when Peter takes Wendy Darling and her brothers, John and Michael, on an adventure to Neverland, where they encounter pirates, fairies, and the fearsome Captain Hook. Key characters include Peter Pan, the adventurous and carefree boy; Wendy, who embodies the nurturing qualities of motherhood; and Captain Hook, the cunning antagonist who seeks revenge against Peter. The central theme of the story explores the tension between the innocence of childhood and the inevitability of growing up, emphasizing the importance of imagination and the bittersweet nature of maturity. Ultimately, the story resolves with Wendy and her brothers returning home, realizing the value of family and the responsibilities that come with growing up, while Peter remains in Neverland, forever a child. The narrative invites readers to reflect on their own experiences of childhood and the passage of time.",
         "chapters": [
             {

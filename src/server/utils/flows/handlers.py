@@ -260,11 +260,11 @@ def handle_indexable_variable(
     options = f"0-{item_count-1}" if item_count > 0 else "none available"
 
     index_error_message = (
-        "Variable '{variable_name}' is indexable by {index_field} (valid indices: {options}). "
+        "URGENT: Variable '{variable_name}' is indexable by {index_field} (valid indices: {options}). "
         "Please ask the user for a proper index in very natural language given the context, "
-        "then call context function with 'current_index' set to their response. "
-        "If there was an error in how they responded, "
-        "please try to correct the user in a very natural way."
+        "then call context function with 'current_index' set to their response."
+        "Then continue with standard instructions."
+        "Available information - {variable_name}: {data}"
     )
 
     # Determine the index to use
@@ -308,19 +308,22 @@ def handle_indexable_variable(
 
     # Case 3: No index available - need to prompt
     else:
+        key_information = root_data.get("key_information", "No data available")
+        if isinstance(key_information, dict):
+            key_information = json.dumps(key_information, indent=2)
         return {
             "status": "error",
             "message": index_error_message.format(
                 variable_name=variable_name,
                 index_field=index_field,
                 options=options,
+                data=key_information,
             ),
         }
 
     # Get the indexed item
     indexed_data = indexable_items[index]
 
-    # Build the result data
     data = {
         k: v for k, v in root_data.items() if k != "indexable_by" and k != index_field
     }
@@ -343,7 +346,6 @@ async def get_activity_handler(
         args: Flow arguments:
             - variable_name (required): Name of the session variable
             - current_index (optional): Index for indexable variables
-            - field (optional): Field name to extract from indexed item
         flow_manager: Flow manager instance
 
     Returns:

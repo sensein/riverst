@@ -1,8 +1,10 @@
 {
     "reading_context": {
         "indexable_by": "chapters",
-        "book_title": "A Little Princess",
-        "book_author": "Burnett",
+        "key_information": {
+            "book_title": "A Little Princess",
+            "book_author": "Frances Burnett"
+        },
         "book_summary": "In *A Little Princess* by Frances Hodgson Burnett, we follow the life of Sara Crewe, a bright and imaginative young girl who is sent to a prestigious boarding school in London by her wealthy father. The main conflict arises when Sara's father tragically dies, leaving her destitute and at the mercy of the cruel headmistress, Miss Minchin, who forces her into servitude and treats her as a mere servant rather than the cherished pupil she once was. Key characters include Sara, whose resilience and kindness shine through her hardships; Miss Minchin, the antagonist who embodies cruelty and jealousy; and Ermengarde, a fellow student who becomes Sara's friend and ally. \n\nThe central theme of the story revolves around the importance of kindness, imagination, and the strength of the human spirit in the face of adversity. Despite her dire circumstances, Sara maintains her dignity and continues to dream, ultimately inspiring those around her. The resolution comes when Sara's fortunes change unexpectedly, revealing her true worth and leading to a joyful reunion with a long-lost friend who restores her rightful place in society. Through her journey, Sara teaches readers that true richness comes from within, and that kindness can prevail even in the darkest times.",
         "chapters": [
             {

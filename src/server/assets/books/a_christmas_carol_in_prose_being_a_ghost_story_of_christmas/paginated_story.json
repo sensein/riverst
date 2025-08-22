@@ -1,8 +1,10 @@
 {
     "reading_context": {
         "indexable_by": "chapters",
-        "book_title": "A Christmas Carol",
-        "book_author": "Charles Dickens",
+        "key_information": {
+            "book_title": "A Christmas Carol",
+            "book_author": "Charles Dickens"
+        },
         "book_summary": "\"A Christmas Carol\" by Charles Dickens is a timeless tale that follows the transformation of Ebenezer Scrooge, a miserly and cold-hearted businessman who despises Christmas and all things joyful. The main conflict arises when Scrooge is visited by the ghost of his deceased business partner, Jacob Marley, who warns him of the consequences of his selfish ways and foretells the arrival of three spirits. These ghosts—representing Christmas Past, Present, and Yet to Come—take Scrooge on a journey through his life, revealing the impact of his choices on himself and others, and instilling a sense of regret and longing for redemption.\n\nKey characters include Scrooge, who embodies greed and isolation; Marley, who serves as a catalyst for Scrooge's change; and the spirits, who guide him through his reflections. Additionally, characters like Bob Cratchit and Tiny Tim illustrate the warmth of family and the spirit of generosity that Scrooge has long neglected. The central theme revolves around the importance of compassion, community, and the potential for personal redemption.\n\nBy the end of the story, Scrooge awakens on Christmas morning filled with joy and gratitude, having resolved to embrace the spirit of Christmas and to change his ways. He becomes a beloved figure in his community, demonstrating that it is never too late to change and make a positive impact on the lives of others. Ultimately, \"A Christmas Carol\" serves as a powerful reminder of the importance of kindness and the transformative power of",
         "chapters": [
             {

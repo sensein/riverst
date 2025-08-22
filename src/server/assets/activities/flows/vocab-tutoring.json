@@ -130,6 +130,32 @@
               },
               "handler": "general_handler"
             }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_reading_context",
+              "description": "Get the current reading context, particularly when you previously had to ask what chapter we are on",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "variable_name": {
+                    "type": "string",
+                    "description": "The name of the variable to retrieve",
+                    "default": "reading_context"
+                  },
+                  "current_index": {
+                    "type": "integer",
+                    "description": "The current index of the reading context, supplied by the student after you ask"
+                  }
+                },
+                "required": [
+                  "variable_name",
+                  "current_index"
+                ]
+              },
+              "handler": "get_activity_handler"
+            }
           }
         ],
         "pre_actions": [
@@ -202,6 +228,32 @@
               },
               "handler": "general_handler"
             }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_reading_context",
+              "description": "Get the current reading context, particularly when you previously had to ask what chapter we are on",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "variable_name": {
+                    "type": "string",
+                    "description": "The name of the variable to retrieve",
+                    "default": "reading_context"
+                  },
+                  "current_index": {
+                    "type": "integer",
+                    "description": "The current index of the reading context, supplied by the student after you ask"
+                  }
+                },
+                "required": [
+                  "variable_name",
+                  "current_index"
+                ]
+              },
+              "handler": "get_activity_handler"
+            }
           }
         ],
         "pre_actions": [
@@ -269,6 +321,32 @@
                 ]
               },
               "handler": "general_handler"
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "get_reading_context",
+              "description": "Get the current reading context, particularly when you previously had to ask what chapter we are on",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "variable_name": {
+                    "type": "string",
+                    "description": "The name of the variable to retrieve",
+                    "default": "reading_context"
+                  },
+                  "current_index": {
+                    "type": "integer",
+                    "description": "The current index of the reading context, supplied by the student after you ask"
+                  }
+                },
+                "required": [
+                  "variable_name",
+                  "current_index"
+                ]
+              },
+              "handler": "get_activity_handler"
             }
           }
         ],

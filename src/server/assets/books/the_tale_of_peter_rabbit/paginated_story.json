@@ -1,8 +1,10 @@
 {
     "reading_context": {
+        "key_information": {
+            "book_title": "The Tale of Peter Rabbit",
+            "book_author": "Beatrix Potter"
+        },
         "indexable_by": "chapters",
-        "book_title": "The Tale of Peter Rabbit",
-        "book_author": "Beatrix Potter",
         "book_summary": "In \"The Tale of Peter Rabbit\" by Beatrix Potter, the mischievous young rabbit, Peter, defies his mother's warning and sneaks into the garden of the grumpy farmer, Mr. McGregor. The main conflict arises as Peter indulges in the delicious vegetables, only to be discovered by Mr. McGregor, who chases him through the garden. Key characters include Peter, the adventurous and disobedient rabbit; his wise and cautious siblings, Flopsy, Mopsy, and Cotton-tail; and the antagonistic Mr. McGregor, who represents the dangers of disobedience. The central theme revolves around the consequences of ignoring parental guidance and the importance of making wise choices. After a series of frantic escapades, Peter narrowly escapes capture, losing his jacket in the process, and eventually finds his way back home, where he learns a valuable lesson about listening to his mother. The story concludes with Peter safely back in his burrow, while his siblings enjoy their day, highlighting the contrast between Peter's reckless adventure and the safety of obedience.",
         "chapters": [
             {
