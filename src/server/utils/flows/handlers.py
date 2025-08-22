@@ -4,6 +4,7 @@ Handlers for flow state management and transitions.
 
 from typing import Dict, Any, Tuple, Union
 from pipecat_flows import FlowArgs, FlowManager, NodeConfig
+from pipecat.frames.frames import LLMMessagesAppendFrame
 from loguru import logger
 from pprint import pformat
 import operator
@@ -257,14 +258,14 @@ def handle_indexable_variable(
     # Indexable variable - handle index logic
     indexable_items = root_data.get(index_field, [])
     item_count = len(indexable_items)
-    options = f"0-{item_count-1}" if item_count > 0 else "none available"
+    options = f"1-{item_count}" if item_count > 0 else "none available"
 
     index_error_message = (
-        "URGENT: Variable '{variable_name}' is indexable by {index_field} (valid indices: {options}). "
-        "Please ask the user for a proper index in very natural language given the context, "
-        "then call context function with 'current_index' set to their response."
-        "Then continue with standard instructions."
-        "Available information - {variable_name}: {data}"
+        "Available information - {variable_name}: {data}. "
+        "Variable '{variable_name}' is indexable by {index_field}. "
+        "At an appropriate moment, ask the user for a proper index in very natural language given the context, "
+        "then call get_reading_context function with 'current_index' set to their response. "
+        "Continue as you otherwise would afterwards, this should be subtle."
     )
 
     # Determine the index to use
@@ -394,15 +395,15 @@ async def get_user_handler(
 
 async def get_variable_action_handler(action: dict, flow_manager: FlowManager) -> None:
     """
-    Pre-action handler that adds a variable value to the LLM context.
+    Post-action handler that adds a variable value to the LLM context.
 
     This handler retrieves the value of the specified variable and adds it
-    directly to the LLM context as a system message. It supports multiple LLM
-    providers including OpenAI, Anthropic, Google/Gemini, and AWS Bedrock.
+    directly to the LLM context as a system message for use in subsequent
+    interactions. It supports multiple LLM providers including OpenAI,
+    Anthropic, Google/Gemini, and AWS Bedrock.
 
     Checks if variable is indexable and retrieves the indexed item if the index is set.
     It will not prompt the user for an index!
-
 
     Args:
         action: Action configuration with variable_name field
@@ -446,47 +447,8 @@ async def get_variable_action_handler(action: dict, flow_manager: FlowManager) -
         else:
             content = f"Available information - {variable_name}: {value}"
 
-        logger.info(f"Adding {variable_name} from {source} to context: {value}")
-    context = flow_manager._context_aggregator.user()._context
+    await flow_manager.task.queue_frame(
+        LLMMessagesAppendFrame(messages=[{"role": "system", "content": content}])
+    )
 
-    # Handle different LLM providers based on context class type
-    context_class_name = context.__class__.__name__
-    try:
-        if context_class_name == "OpenAILLMContext":
-            # OpenAI format
-            message = {"role": "system", "content": content}
-            context.add_message(message)
-
-        elif context_class_name == "AnthropicLLMContext":
-            # Anthropic format
-            message = {"role": "system", "content": [{"type": "text", "text": content}]}
-            context.add_message(message)
-
-        elif context_class_name == "GoogleLLMContext":
-            # Google/Gemini format
-            from pipecat.services.google.llm import Content, Part
-
-            message = Content(role="system", parts=[Part(text=content)])
-            context.add_message(message)
-
-        elif context_class_name == "AWSBedrockLLMContext":
-            # AWS Bedrock format
-            message = {"role": "system", "content": [{"type": "text", "text": content}]}
-            context.add_message(message)
-
-        else:
-            # Fallback attempt with generic add_message
-            if hasattr(context, "add_message"):
-                message = {"role": "system", "content": content}
-                context.add_message(message)
-            else:
-                logger.error(f"Unsupported context type: {context_class_name}")
-                return
-
-        logger.info(
-            f"Successfully added {variable_name} to {context_class_name} context"
-        )
-
-    except Exception as e:
-        logger.error(f"Error adding message to context: {e}")
-        return
+    logger.debug(f"Added system message for variable '{variable_name}': {content}")
