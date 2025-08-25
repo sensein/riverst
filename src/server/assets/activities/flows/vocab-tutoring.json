@@ -372,7 +372,7 @@
             "type": "function",
             "function": {
               "name": "check_closing_progress",
-              "description": "Based on non-summary parts of the conversation, check completion of closing elements",
+              "description": "Based on non-summary parts of the conversation, check completion of closing elements. This must be based on actual conversation, not the reading context or summary. If there is no conversation, then these checks MUST fail.",
               "parameters": {
                 "type": "object",
                 "properties": {
