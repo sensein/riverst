@@ -8,6 +8,7 @@ regular bot mode and advanced flows.
 
 from typing import Dict, Any, Optional
 from loguru import logger
+import asyncio
 
 from pipecat.processors.frameworks.rtvi import RTVIServerMessageFrame, RTVIProcessor
 from pipecat.adapters.schemas.function_schema import FunctionSchema
@@ -98,6 +99,7 @@ class CleanEndProcessor(FrameProcessor):
         super().__init__(**kwargs)
 
         self.end_conversation_frame: Frame = None
+        self.tts_stopped_received = False
 
     async def process_frame(self, frame: Frame, direction: FrameDirection):
 
@@ -109,8 +111,38 @@ class CleanEndProcessor(FrameProcessor):
                 self.end_conversation_frame = frame
                 return  # Do not push frame now
 
+            if (
+                frame.data.get("type") == "visemes-event"
+                and self.tts_stopped_received
+                and self.end_conversation_frame
+            ):
+                # Extract duration from visemes-event payload
+                payload = frame.data.get("payload", {})
+                duration = payload.get("duration", 0)
+                logger.debug(f"Received visemes-event with duration: {duration}s")
+
+                # Wait for the audio duration + 0.5 seconds
+                wait_time = duration + 0.5
+                logger.debug(
+                    f"Waiting {wait_time}s before sending end conversation frame"
+                )
+
+                # Schedule the end conversation frame to be sent after the wait
+                asyncio.create_task(self._send_end_frame_after_delay(wait_time))
+
+                # Reset state
+                self.tts_stopped_received = False
+                self.end_conversation_frame = None
+
         if isinstance(frame, TTSStoppedFrame) and self.end_conversation_frame:
             logger.debug("Received TTSStoppedFrame after conversation ended")
-            await self.push_frame(self.end_conversation_frame)
+            self.tts_stopped_received = True
 
         await self.push_frame(frame)
+
+    async def _send_end_frame_after_delay(self, delay: float):
+        """Send the end conversation frame after a delay."""
+        await asyncio.sleep(delay)
+        if self.end_conversation_frame:
+            logger.debug("Sending delayed end conversation frame")
+            await self.push_frame(self.end_conversation_frame)
