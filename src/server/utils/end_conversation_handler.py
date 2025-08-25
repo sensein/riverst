@@ -111,6 +111,6 @@ class CleanEndProcessor(FrameProcessor):
 
         if isinstance(frame, TTSStoppedFrame) and self.end_conversation_frame:
             logger.debug("Received TTSStoppedFrame after conversation ended")
-            self.push_frame(self.end_conversation_frame)
+            await self.push_frame(self.end_conversation_frame)
 
         await self.push_frame(frame)
