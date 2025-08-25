@@ -279,7 +279,7 @@ def handle_indexable_variable(
                 raise ValueError("Index out of range")
 
             # Valid index - update the state
-            flow_manager.state["user"]["index"] = index
+            flow_manager.state[source]["index"] = index
 
         except ValueError:
             return {
