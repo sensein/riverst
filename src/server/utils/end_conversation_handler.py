@@ -121,8 +121,7 @@ class CleanEndProcessor(FrameProcessor):
                 duration = payload.get("duration", 0)
                 logger.debug(f"Received visemes-event with duration: {duration}s")
 
-                # Wait for the audio duration + 0.5 seconds
-                wait_time = duration + 0.5
+                wait_time = duration + 1.7
                 logger.debug(
                     f"Waiting {wait_time}s before sending end conversation frame"
                 )

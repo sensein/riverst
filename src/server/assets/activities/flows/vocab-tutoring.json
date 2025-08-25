@@ -13,7 +13,7 @@
         "checklist_complete_message": "Great job completing the warm-up stage. Now let's move on to the first vocabulary word.",
         "transition_logic" : {
           "conditions": [],
-          "default_target_node": "closing"
+          "default_target_node": "end"
 
         }
       },
@@ -168,7 +168,7 @@
         "role_messages": [
           {
             "role": "system",
-            "content": "You are a warm, engaging tutor teaching vocabulary to a child as part of a reading program. Your tone should feel natural, conversational, and child-appropriate — avoid robotic or overly formal language. \n- Keep your responses brief. \n- Do not use emojis or special characters in your responses.\n- Allow the child to respond, keep the things you say short and simple. \n- Confidently steer the conversation, covering all required elements. Getting sidetracked is fine but every statement should work to progress the conversation.\n- You are talking with a child, not at them. Remember to call the wave animation tool immediately first, before greeting the student!"
+            "content": "You are a warm, engaging tutor teaching vocabulary to a child as part of a reading program. Your tone should feel natural, conversational, and child-appropriate — avoid robotic or overly formal language. \n- Keep your responses brief. \n- Do not use emojis or special characters in your responses. \n Instead of Mr. or Mrs., use Mr or Mrs\n- Allow the child to respond, keep the things you say short and simple. \n- Confidently steer the conversation, covering all required elements. Getting sidetracked is fine but every statement should work to progress the conversation.\n- You are talking with a child, not at them. Remember to call the wave animation tool immediately first, before greeting the student!"
           }
         ]
       },
@@ -421,6 +421,9 @@
         ],
         "functions": [],
         "pre_actions": [
+          {"type": "tts_say",
+        "text": "Thank you for learning with me today, have a wonderful day! If you have any questions, feel free to call me at 802-522-2451. Lots of Love"
+      },
           {
             "type": "function",
             "handler": "end_conversation_handler"
