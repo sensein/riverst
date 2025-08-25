@@ -4,6 +4,7 @@ Handlers for flow state management and transitions.
 
 from typing import Dict, Any, Tuple, Union
 from pipecat_flows import FlowArgs, FlowManager, NodeConfig
+from pipecat.frames.frames import LLMMessagesAppendFrame
 from loguru import logger
 from pprint import pformat
 import operator
@@ -25,19 +26,23 @@ def update_checklist_fields(args: FlowArgs, checklist: Dict[str, bool]) -> None:
     logger.info("Checklist after updating:\n{}", pformat(checklist))
 
 
-def update_info_fields(args: FlowArgs, flow_manager: FlowManager) -> None:
+def update_user_fields(args: FlowArgs, flow_manager: FlowManager) -> None:
     """
-    Update the info fields in the flow state with values from args.
+    Update the user session fields in the flow state with values from args.
 
     Args:
         args: Flow arguments containing field values
         flow_manager: Flow manager instance
     """
-    logger.info("Info before updating:\n{}", pformat(flow_manager.state["info"]))
-    flow_manager.state["info"].update(
-        {field: args[field] for field in args if field in flow_manager.state["info"]}
+    logger.info(
+        "User session fields before updating:\n{}", pformat(flow_manager.state["user"])
     )
-    logger.info("Info after updating:\n{}", pformat(flow_manager.state["info"]))
+    flow_manager.state["user"].update(
+        {field: args[field] for field in args if field in flow_manager.state["user"]}
+    )
+    logger.info(
+        "User session fields after updating:\n{}", pformat(flow_manager.state["user"])
+    )
 
 
 def create_next_node(flow_manager: FlowManager) -> Tuple[str, NodeConfig]:
@@ -85,22 +90,22 @@ def create_next_node(flow_manager: FlowManager) -> Tuple[str, NodeConfig]:
 
     # Evaluate each condition in order
     for condition in conditions:
-        info_variable = condition["parameters"]["variable_path"]
-        value = condition["parameters"]["value"]
+        user_variable = condition["parameters"]["variable_path"]
+        matching_value = condition["parameters"]["value"]
         operator_str = condition["parameters"]["operator"]
 
-        if info_variable not in flow_manager.state["info"]:
+        if user_variable not in flow_manager.state["user"]:
             raise ValueError(
-                f"Info variable '{info_variable}' not found in flow manager state."
+                f"User variable '{user_variable}' not found in flow manager state."
             )
 
-        info_value = flow_manager.state["info"][info_variable]
+        true_value = flow_manager.state["user"][user_variable]
 
         if operator_str not in OPERATORS:
             raise ValueError(f"Unsupported operator: {operator_str}")
 
         # Check if condition matches
-        if OPERATORS[operator_str](info_value, value):
+        if OPERATORS[operator_str](true_value, matching_value):
             # Condition is true, route to target node
             target_node = condition["target_node"]
             node = flow_manager.nodes.get(target_node)
@@ -109,7 +114,7 @@ def create_next_node(flow_manager: FlowManager) -> Tuple[str, NodeConfig]:
                     f"Node '{target_node}' not found in flow manager nodes."
                 )
             logger.info(
-                f"Condition matched: {info_variable} {operator_str} {value}, routing to {target_node}"
+                f"Condition matched: {user_variable} {operator_str} {matching_value}, routing to {target_node}"
             )
             return target_node, node
 
@@ -172,7 +177,7 @@ async def general_handler(
             - Result dictionary with status and message
             - Next node configuration if complete, or current node configuration if incomplete
     """
-    update_info_fields(args, flow_manager)
+    update_user_fields(args, flow_manager)
     stage = flow_manager.current_node
     checklist = flow_manager.state["stages"][stage]["checklist"]
     update_checklist_fields(args, checklist)
@@ -212,27 +217,6 @@ async def general_handler(
             return found_func
         return False
 
-    if DEBUG_MODE:
-        # Debug: Check if result contains any function objects
-        def check_for_functions(obj, path=""):
-            if callable(obj):
-                logger.error(f"FOUND FUNCTION OBJECT in result at {path}: {obj}")
-                return True
-            elif isinstance(obj, dict):
-                found_func = False
-                for key, value in obj.items():
-                    if check_for_functions(value, f"{path}.{key}"):
-                        found_func = True
-                return found_func
-            elif isinstance(obj, (list, tuple)):
-                found_func = False
-                for i, item in enumerate(obj):
-                    if check_for_functions(item, f"{path}[{i}]"):
-                        found_func = True
-                return found_func
-            return False
-
-        logger.info(f"DEBUG: Checking result for function objects: {result}")
     if check_for_functions(result):
         logger.error("CRITICAL: Result contains function objects!")
     else:
@@ -241,43 +225,30 @@ async def general_handler(
     return result, next_node
 
 
-async def get_session_variable_handler(
-    args: Union[FlowArgs, dict], flow_manager: FlowManager
+def handle_indexable_variable(
+    variable_name: str,
+    flow_manager: FlowManager,
+    current_index: int = None,
+    source: str = "activity",
 ) -> Dict[str, Any]:
     """
-    Handler to retrieve task variables from the flow state.
-
-    For simple variables: returns the variable directly
-    For indexable variables: root[root["indexable_by"]][index][field] (if field specified)
+    Helper function to handle indexable variable logic.
 
     Args:
-        args: Flow arguments:
-            - variable_name (required): Name of the session variable
-            - current_index (optional): Index for indexable variables
-            - field (optional): Field name to extract from indexed item
+        variable_name: Name of the variable
         flow_manager: Flow manager instance
+        current_index: Index provided in function call
+        source: Source field in flow_manager.state to get variable from
 
     Returns:
-        Flow result with the requested variable value
+        Dictionary with status and either data or error message
     """
-    index_error_message = (
-        "Variable '{variable_name}' is indexable by {index_field} (valid indices: {options}). "
-        "Please ask the user for a proper index in very natural language given the context, "
-        "then call this function again with 'current_index' set to their response. "
-        "If there was an error in how they responded, "
-        "please try to correct the user in a very natural way."
-    )
-
-    variable_name = args.get("variable_name")
-    if not variable_name:
-        return {"status": "error", "message": "No variable name provided"}
-
+    logger.info("Current %s state:\n%s", source, pformat(flow_manager.state[source]))
     # Get the variable data
-    root_data = flow_manager.state["session_variables"].get(variable_name)
+    root_data = flow_manager.state[source].get(variable_name)
     if root_data is None:
         return {"status": "error", "message": f"Variable '{variable_name}' not found"}
 
-    # Check if this is an indexable variable
     index_field = isinstance(root_data, dict) and root_data.get("indexable_by", None)
 
     if not index_field:
@@ -287,22 +258,29 @@ async def get_session_variable_handler(
     # Indexable variable - handle index logic
     indexable_items = root_data.get(index_field, [])
     item_count = len(indexable_items)
-    options = f"0-{item_count-1}" if item_count > 0 else "none available"
+    options = f"1-{item_count}" if item_count > 0 else "none available"
+
+    index_error_message = (
+        "Available information - {variable_name}: {data}. "
+        "Variable '{variable_name}' is indexable by {index_field}. "
+        "At an appropriate moment, ask the user for a proper index in very natural language given the context, "
+        "then call get_reading_context function with 'current_index' set to their response. "
+        "Continue as you otherwise would afterwards, this should be subtle."
+    )
 
     # Determine the index to use
     index = None
 
     # Case 1: Index is provided in the current function call
-    if args.get("current_index") is not None:
+    if current_index is not None:
         try:
-            index = int(args.get("current_index"))
+            index = int(current_index)
             if index < 0 or index >= item_count:
                 raise ValueError("Index out of range")
 
             # Valid index - update the state
-            flow_manager.state["session_variables"][variable_name][
-                "current_index"
-            ] = index
+            flow_manager.state[source]["index"] = index
+
         except ValueError:
             return {
                 "status": "error",
@@ -313,10 +291,13 @@ async def get_session_variable_handler(
                 ),
             }
 
-    # Case 2: Try to get index from previously stored state
-    else:
-        stored_index = root_data.get("current_index", None)
-        if stored_index is None:
+    # Case 2: Try to get index from session configuration
+    elif (index := flow_manager.state.get("user", {}).get("index")) is not None:
+        try:
+            index = int(index) - 1  # Adjust for 0-based index
+            if index < 0 or index >= item_count:
+                raise ValueError("Index out of range")
+        except (ValueError, KeyError):
             return {
                 "status": "error",
                 "message": index_error_message.format(
@@ -325,26 +306,71 @@ async def get_session_variable_handler(
                     options=options,
                 ),
             }
-        index = int(stored_index)
 
-    # Get the indexed item: root[root["indexable_by"]][index]
+    # Case 3: No index available - need to prompt
+    else:
+        key_information = root_data.get("key_information", "No data available")
+        if isinstance(key_information, dict):
+            key_information = json.dumps(key_information, indent=2)
+        return {
+            "status": "error",
+            "message": index_error_message.format(
+                variable_name=variable_name,
+                index_field=index_field,
+                options=options,
+                data=key_information,
+            ),
+        }
+
+    # Get the indexed item
     indexed_data = indexable_items[index]
 
     data = {
         k: v for k, v in root_data.items() if k != "indexable_by" and k != index_field
     }
-    if flow_manager.current_node == "warm_up":
-        indexed_data.pop("vocab_words", None)
+
     data[f"current_{index_field}"] = indexed_data
 
     return {"status": "success", "data": data}
 
 
-async def get_info_variable_handler(
+async def get_activity_handler(
     args: Union[FlowArgs, dict], flow_manager: FlowManager
 ) -> Dict[str, Any]:
     """
-    Handler to retrieve a task variable from the flow state.
+    Handler to retrieve activity variables from the flow state.
+
+    For simple variables: returns the variable directly
+    For indexable variables: root[root["indexable_by"]][index][field] (if field specified)
+
+    Args:
+        args: Flow arguments:
+            - variable_name (required): Name of the session variable
+            - current_index (optional): Index for indexable variables
+        flow_manager: Flow manager instance
+
+    Returns:
+        Flow result with the requested variable value
+    """
+    variable_name = args.get("variable_name")
+    if not variable_name:
+        return {"status": "error", "message": "No variable name provided"}
+
+    current_index = args.get("current_index")
+
+    return handle_indexable_variable(
+        variable_name=variable_name,
+        flow_manager=flow_manager,
+        current_index=current_index,
+        source="activity",
+    )
+
+
+async def get_user_handler(
+    args: Union[FlowArgs, dict], flow_manager: FlowManager
+) -> Dict[str, Any]:
+    """
+    Handler to retrieve a user-session variable from the flow state.
 
     Args:
         args: Flow arguments, should include 'variable_name'
@@ -358,26 +384,26 @@ async def get_info_variable_handler(
     if not variable_name:
         return {"status": "error", "message": "No variable name provided"}
 
-    if variable_name not in flow_manager.state["info"]:
+    if variable_name not in flow_manager.state["user"]:
         return {
             "status": "error",
-            "error": f"Variable '{variable_name}' not found in session info",
+            "error": f"Variable '{variable_name}' not found in session user",
         }
 
-    return {"status": "success", "data": flow_manager.state["info"].get(variable_name)}
+    return {"status": "success", "data": flow_manager.state["user"].get(variable_name)}
 
 
 async def get_variable_action_handler(action: dict, flow_manager: FlowManager) -> None:
     """
-    Pre-action handler that adds a variable value to the LLM context.
+    Post-action handler that adds a variable value to the LLM context.
 
     This handler retrieves the value of the specified variable and adds it
-    directly to the LLM context as a system message. It supports multiple LLM
-    providers including OpenAI, Anthropic, Google/Gemini, and AWS Bedrock.
+    directly to the LLM context as a system message for use in subsequent
+    interactions. It supports multiple LLM providers including OpenAI,
+    Anthropic, Google/Gemini, and AWS Bedrock.
 
     Checks if variable is indexable and retrieves the indexed item if the index is set.
     It will not prompt the user for an index!
-
 
     Args:
         action: Action configuration with variable_name field
@@ -388,9 +414,7 @@ async def get_variable_action_handler(action: dict, flow_manager: FlowManager) -
         logger.error("Missing variable_name in add_to_context action")
         return
 
-    source = action.get(
-        "source", "session_variables"
-    )  # Default to session_variables if not specified
+    source = action.get("source", "activity")
 
     if source not in flow_manager.state:
         logger.error(f"Source '{source}' not found in flow manager state")
@@ -402,79 +426,29 @@ async def get_variable_action_handler(action: dict, flow_manager: FlowManager) -
         )
         return
 
-    root_data = flow_manager.state[source][variable_name]
-    if root_data is None:
-        logger.error(f"Variable '{variable_name}' has None value in {source}")
-        return
+    # Use helper function to handle indexable variable logic
+    result = handle_indexable_variable(
+        variable_name=variable_name,
+        flow_manager=flow_manager,
+        current_index=None,  # Pre-actions don't provide current_index
+        source=source,
+    )
 
-    # Check if this is an indexable variable (similar to get_session_variable_handler)
-    index_field = isinstance(root_data, dict) and root_data.get("indexable_by", None)
-
-    if not index_field:
-        # Simple variable - use as is
-        value = root_data
+    if result["status"] == "error":
+        content = result["message"]
+        logger.error(f"Error retrieving variable '{variable_name}': {content}")
     else:
-        # Indexable variable - apply indexing logic
-        indexable_items = root_data.get(index_field, [])
-        stored_index = root_data.get("current_index", None)
+        # Successfully retrieved the variable value
+        value = result["data"]
 
-        if stored_index is not None and 0 <= stored_index < len(indexable_items):
-            # Get the indexed item: root[root["indexable_by"]][index]
-            value = indexable_items[stored_index]
+        # Format the content based on the variable type
+        if isinstance(value, dict):
+            content = f"Available information - {variable_name}: {json.dumps(value, indent=2)}"
         else:
-            # No valid index, use the raw data
-            value = root_data
+            content = f"Available information - {variable_name}: {value}"
 
-    # Format the content based on the variable type
-    if isinstance(value, dict):
-        content = (
-            f"Available information - {variable_name}: {json.dumps(value, indent=2)}"
-        )
-    else:
-        content = f"Available information - {variable_name}: {value}"
+    await flow_manager.task.queue_frame(
+        LLMMessagesAppendFrame(messages=[{"role": "system", "content": content}])
+    )
 
-    logger.info(f"Adding {variable_name} from {source} to context: {value}")
-    context = flow_manager._context_aggregator.user()._context
-
-    # Handle different LLM providers based on context class type
-    context_class_name = context.__class__.__name__
-
-    try:
-        if context_class_name == "OpenAILLMContext":
-            # OpenAI format
-            message = {"role": "system", "content": content}
-            context.add_message(message)
-
-        elif context_class_name == "AnthropicLLMContext":
-            # Anthropic format
-            message = {"role": "system", "content": [{"type": "text", "text": content}]}
-            context.add_message(message)
-
-        elif context_class_name == "GoogleLLMContext":
-            # Google/Gemini format
-            from pipecat.services.google.llm import Content, Part
-
-            message = Content(role="system", parts=[Part(text=content)])
-            context.add_message(message)
-
-        elif context_class_name == "AWSBedrockLLMContext":
-            # AWS Bedrock format
-            message = {"role": "system", "content": [{"type": "text", "text": content}]}
-            context.add_message(message)
-
-        else:
-            # Fallback attempt with generic add_message
-            if hasattr(context, "add_message"):
-                message = {"role": "system", "content": content}
-                context.add_message(message)
-            else:
-                logger.error(f"Unsupported context type: {context_class_name}")
-                return
-
-        logger.info(
-            f"Successfully added {variable_name} to {context_class_name} context"
-        )
-
-    except Exception as e:
-        logger.error(f"Error adding message to context: {e}")
-        return
+    logger.debug(f"Added system message for variable '{variable_name}': {content}")
