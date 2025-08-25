@@ -40,6 +40,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
   const transportState = usePipecatClientTransportState();
   const [isValid, setIsValid] = useState(false);
   const [dynamicEnums, setDynamicEnums] = useState<{ books: { id: string; path: string; title: string }[] }>({ books: [] });
+  const [maxChapters, setMaxChapters] = useState<number | null>(null);
 
   // Defaults extracted from schema
   const defaultAnimations =
@@ -72,6 +73,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
 
   const pipelineModality = Form.useWatch(['options', 'pipeline_modality'], form);
   const embodiment = Form.useWatch(['options', 'embodiment'], form);
+  const selectedBook = Form.useWatch(['options', 'activity_variables_path'], form);
 
   // Schema validator
   const validateSchema = useCallback(async () => {
@@ -96,6 +98,28 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
     fetchBooks();
     validateSchema();
   }, [form, validateSchema]);
+
+  // Fetch chapter count when book selection changes
+  useEffect(() => {
+    if (!selectedBook) {
+      setMaxChapters(null);
+      return;
+    }
+
+    const fetchBookChapters = async () => {
+      try {
+        const response = await axios.get('/api/book-chapters', {
+          params: { bookPath: selectedBook }
+        });
+        setMaxChapters(response.data.maxChapters);
+      } catch (error) {
+        console.error('Failed to fetch book chapters:', error);
+        setMaxChapters(null);
+      }
+    };
+
+    fetchBookChapters();
+  }, [selectedBook]);
 
   // Update field values based on pipeline modality
   useEffect(() => {
@@ -249,9 +273,41 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
 
     // Integer or nullable integer field
     if (config.type === 'integer' || (Array.isArray(config.type) && config.type.includes('integer'))) {
+      const max = key === 'index' && maxChapters ? maxChapters : config.maximum;
+
+      // Add validation rules for chapter index
+      if (key === 'index' && maxChapters) {
+        rules.push({
+          validator: (_: any, value: any) => {
+            if (value === undefined || value === null || value === '') {
+              return Promise.resolve();
+            }
+            const numValue = Number(value);
+            if (isNaN(numValue)) {
+              return Promise.reject(new Error('Please enter a valid number'));
+            }
+            if (!Number.isInteger(numValue)) {
+              return Promise.reject(new Error('Chapter must be a whole number'));
+            }
+            if (numValue < 1) {
+              return Promise.reject(new Error('Chapter must be at least 1'));
+            }
+            if (numValue > maxChapters) {
+              return Promise.reject(new Error(`Chapter must be no more than ${maxChapters}`));
+            }
+            return Promise.resolve();
+          }
+        });
+      }
+
       return (
         <Form.Item key={key} name={namePath} label={labelWithTooltip} rules={rules}>
-          <Input type="number" min={config.minimum} />
+          <Input
+            type="number"
+            min={config.minimum}
+            max={max}
+            placeholder={key === 'index' && maxChapters ? `1-${maxChapters}` : undefined}
+          />
         </Form.Item>
       );
     }
