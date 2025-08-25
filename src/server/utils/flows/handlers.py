@@ -243,7 +243,7 @@ def handle_indexable_variable(
     Returns:
         Dictionary with status and either data or error message
     """
-    logger.info("Current user state:\n{}", pformat(flow_manager.state["user"]))
+    logger.info("Current %s state:\n%s", source, pformat(flow_manager.state[source]))
     # Get the variable data
     root_data = flow_manager.state[source].get(variable_name)
     if root_data is None:
