@@ -134,11 +134,14 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
     if (gestureMap[animation]) {
       const val = gestureMap[animation];
       if (typeof val === "string") {
-        head.playGesture(val);
+        // Check if it's an .fbx file path (should use playPose)
+        if (val.endsWith('.fbx')) {
+          head.playPose(val);
+        } else {
+          head.playGesture(val);
+        }
       } else if (typeof val === "object") {
         head.playGesture(val.gesture, val.duration);
-      } else {
-        head.playPose(val); // for dance
       }
     } else if (moodList.includes(animation)) {
       head.setMood(animation);
