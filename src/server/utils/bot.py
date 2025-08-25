@@ -251,11 +251,14 @@ async def run_bot(
 
         end_conversation_handler = EndConversationHandler(rtvi)
 
+        async def end_conversation_wrapper(params):
+            return await end_conversation_handler.handle_end_conversation(
+                params, flow_manager
+            )
+
         llm.register_function(
             "end_conversation",
-            function_call_debug_wrapper(
-                end_conversation_handler.handle_end_conversation
-            ),
+            function_call_debug_wrapper(end_conversation_wrapper),
         )
 
         async def handle_user_idle(_: UserIdleProcessor, retry_count: int) -> bool:
