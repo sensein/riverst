@@ -97,8 +97,7 @@
                   "cat_is_dead"
                 ]
               },
-              "handler": "general_handler",
-              "transition_callback": "general_transition_callback"
+              "handler": "general_handler"
             }
           }
         ],
@@ -134,8 +133,7 @@
                   "said_the_phrase_BOOM_SHAKALAKA"
                 ]
               },
-              "handler": "general_handler",
-              "transition_callback": "general_transition_callback"
+              "handler": "general_handler"
             }
           },
           {
@@ -198,8 +196,7 @@
                   "told_the_user_what_number_they_are_thinking_of"
                 ]
               },
-              "handler": "general_handler",
-              "transition_callback": "general_transition_callback"
+              "handler": "general_handler"
             }
           }
         ],
@@ -225,7 +222,13 @@
             "content": "The session is now complete. Say goodbye in a friendly and encouraging way. Please call the end_conversation function now."
           }
         ],
-        "functions": []
+        "functions": [],
+        "pre_actions": [
+          {
+            "type": "function",
+            "handler": "end_conversation_handler"
+          }
+        ]
       }
     }
   }

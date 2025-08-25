@@ -7,7 +7,6 @@ from pipecat_flows import FlowManager, ContextStrategy, ContextStrategyConfig
 
 from .flows import load_config
 from .animation_handler import AnimationHandler
-from .end_conversation_handler import EndConversationHandler
 
 
 class FlowComponentFactory:
@@ -28,6 +27,7 @@ class FlowComponentFactory:
         user_description: Optional[str] = None,
         enabled_animations: Optional[List[str]] = None,
         session_dir: Optional[str] = None,
+        end_conversation_handler: Optional[Any] = None,
         context_strategy: ContextStrategy = ContextStrategy.RESET_WITH_SUMMARY,
         summary_prompt: str = (
             "Summarize the key moments of learning, words, and concepts discussed in the tutoring session so far. "
@@ -46,6 +46,7 @@ class FlowComponentFactory:
             user_description: Description of the user for context
             animation_instruction: Instruction for animations of the avatar
             session_dir: Directory for session data
+            end_conversation_handler: Handler for ending conversations
             context_strategy: Strategy for managing context
             summary_prompt: Prompt for summarizing conversation
         """
@@ -59,6 +60,7 @@ class FlowComponentFactory:
         self.enabled_animations = enabled_animations or []
         self.context_strategy = context_strategy
         self.summary_prompt = summary_prompt
+        self.end_conversation_handler = end_conversation_handler
         self.flow_manager = None
 
     def build(self) -> Optional[FlowManager]:
@@ -87,7 +89,9 @@ class FlowComponentFactory:
 
         try:
             flow_config, state = load_config(
-                self.flow_config_path, self.session_variables_path
+                self.flow_config_path,
+                self.session_variables_path,
+                end_conversation_handler=self.end_conversation_handler,
             )
 
             # Modify system messages in all nodes to include user description and animation instruction, and tools
@@ -220,7 +224,7 @@ class FlowComponentFactory:
 
             # Add end conversation instruction
             end_conversation_instruction = (
-                EndConversationHandler.get_end_conversation_instruction()
+                self.end_conversation_handler.get_end_conversation_instruction()
             )
             if end_conversation_instruction:
                 system_msg["content"] += f"\n{end_conversation_instruction}"

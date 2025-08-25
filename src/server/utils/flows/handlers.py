@@ -192,6 +192,52 @@ async def general_handler(
         next_node = create_current_node(flow_manager, message)
 
     result = {"status": "success" if complete else "error", "message": message}
+
+    # Debug: Check if result contains any function objects
+    def check_for_functions(obj, path=""):
+        if callable(obj):
+            logger.error(f"FOUND FUNCTION OBJECT in result at {path}: {obj}")
+            return True
+        elif isinstance(obj, dict):
+            found_func = False
+            for key, value in obj.items():
+                if check_for_functions(value, f"{path}.{key}"):
+                    found_func = True
+            return found_func
+        elif isinstance(obj, (list, tuple)):
+            found_func = False
+            for i, item in enumerate(obj):
+                if check_for_functions(item, f"{path}[{i}]"):
+                    found_func = True
+            return found_func
+        return False
+
+    if DEBUG_MODE:
+        # Debug: Check if result contains any function objects
+        def check_for_functions(obj, path=""):
+            if callable(obj):
+                logger.error(f"FOUND FUNCTION OBJECT in result at {path}: {obj}")
+                return True
+            elif isinstance(obj, dict):
+                found_func = False
+                for key, value in obj.items():
+                    if check_for_functions(value, f"{path}.{key}"):
+                        found_func = True
+                return found_func
+            elif isinstance(obj, (list, tuple)):
+                found_func = False
+                for i, item in enumerate(obj):
+                    if check_for_functions(item, f"{path}[{i}]"):
+                        found_func = True
+                return found_func
+            return False
+
+        logger.info(f"DEBUG: Checking result for function objects: {result}")
+    if check_for_functions(result):
+        logger.error("CRITICAL: Result contains function objects!")
+    else:
+        logger.info("DEBUG: Result is clean (no function objects)")
+
     return result, next_node
 
 
@@ -329,6 +375,10 @@ async def get_variable_action_handler(action: dict, flow_manager: FlowManager) -
     directly to the LLM context as a system message. It supports multiple LLM
     providers including OpenAI, Anthropic, Google/Gemini, and AWS Bedrock.
 
+    Checks if variable is indexable and retrieves the indexed item if the index is set.
+    It will not prompt the user for an index!
+
+
     Args:
         action: Action configuration with variable_name field
         flow_manager: Flow manager instance
@@ -352,10 +402,28 @@ async def get_variable_action_handler(action: dict, flow_manager: FlowManager) -
         )
         return
 
-    value = flow_manager.state[source][variable_name]
-    if value is None:
+    root_data = flow_manager.state[source][variable_name]
+    if root_data is None:
         logger.error(f"Variable '{variable_name}' has None value in {source}")
         return
+
+    # Check if this is an indexable variable (similar to get_session_variable_handler)
+    index_field = isinstance(root_data, dict) and root_data.get("indexable_by", None)
+
+    if not index_field:
+        # Simple variable - use as is
+        value = root_data
+    else:
+        # Indexable variable - apply indexing logic
+        indexable_items = root_data.get(index_field, [])
+        stored_index = root_data.get("current_index", None)
+
+        if stored_index is not None and 0 <= stored_index < len(indexable_items):
+            # Get the indexed item: root[root["indexable_by"]][index]
+            value = indexable_items[stored_index]
+        else:
+            # No valid index, use the raw data
+            value = root_data
 
     # Format the content based on the variable type
     if isinstance(value, dict):
@@ -366,15 +434,6 @@ async def get_variable_action_handler(action: dict, flow_manager: FlowManager) -
         content = f"Available information - {variable_name}: {value}"
 
     logger.info(f"Adding {variable_name} from {source} to context: {value}")
-
-    # Add to context
-    if (
-        not hasattr(flow_manager, "_context_aggregator")
-        or not flow_manager._context_aggregator
-    ):
-        logger.error("Flow manager has no context aggregator")
-        return
-
     context = flow_manager._context_aggregator.user()._context
 
     # Handle different LLM providers based on context class type
@@ -416,45 +475,6 @@ async def get_variable_action_handler(action: dict, flow_manager: FlowManager) -
             f"Successfully added {variable_name} to {context_class_name} context"
         )
 
-        logger.error("Current context messages:\n{}", pformat(context.get_messages()))
-
     except Exception as e:
         logger.error(f"Error adding message to context: {e}")
         return
-
-
-# async def get_info_variable_action_handlerd(args: dict, flow_manager: FlowManager) -> Dict[str, Any]:
-#     """
-#     Action handler to retrieve a task variable from the flow state.
-
-#     Args:
-#         args: Flow arguments, should include 'variable_name'
-#         flow_manager: Flow manager instance
-
-#     Returns:
-#         Flow result with the requested variable value
-#     """
-#     result = await get_info_variable_handler(args, flow_manager)
-
-#     if result.get("status") == "success":
-#         flow.manager.
-
-
-# async def get_session_variable_action_handler(args: dict, flow_manager: FlowManager) -> Dict[str, Any]:
-#     """
-#     Action handler to retrieve task variables from the flow state.
-
-#     For simple variables: returns the variable directly
-#     For indexable variables: root[root["indexable_by"]][index][field] (if field specified)
-
-#     Args:
-#         args: Flow arguments:
-#             - variable_name (required): Name of the session variable
-#             - current_index (optional): Index for indexable variables
-#             - field (optional): Field name to extract from indexed item
-#         flow_manager: Flow manager instance
-
-#     Returns:
-#         Flow result with the requested variable value
-#     """
-#     return await get_session_variable_handler(args, flow_manager)

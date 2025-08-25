@@ -29,3 +29,4 @@ smart-turn-v2/
 smart_turn_v2/
 src/server/config/authorized_users.json
 logs/*
+turn_credentials.json
