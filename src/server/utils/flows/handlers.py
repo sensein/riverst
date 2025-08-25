@@ -330,6 +330,7 @@ def handle_indexable_variable(
     }
 
     data[f"current_{index_field}"] = indexed_data
+    data["key_information"]["Chapter Number"] = index + 1
 
     return {"status": "success", "data": data}
 
@@ -442,10 +443,19 @@ async def get_variable_action_handler(action: dict, flow_manager: FlowManager) -
         value = result["data"]
 
         # Format the content based on the variable type
-        if isinstance(value, dict):
-            content = f"Available information - {variable_name}: {json.dumps(value, indent=2)}"
-        else:
-            content = f"Available information - {variable_name}: {value}"
+    if isinstance(value, dict):
+        key_info = value.get("key_information", {})
+
+        # Get remaining data (everything except key_information)
+        other_data = {k: v for k, v in value.items() if k != "key_information"}
+
+        content = f"""KEY INFORMATION SECTION:
+    {json.dumps(key_info, indent=2)}
+
+    MORE INFORMATION:
+    {json.dumps(other_data, indent=2)}"""
+    else:
+        content = f"Available information - {variable_name}: {value}"
 
     await flow_manager.task.queue_frame(
         LLMMessagesAppendFrame(messages=[{"role": "system", "content": content}])

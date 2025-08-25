@@ -5,11 +5,42 @@
             "book_title": "A Christmas Carol",
             "book_author": "Charles Dickens"
         },
-        "book_summary": "\"A Christmas Carol\" by Charles Dickens is a timeless tale that follows the transformation of Ebenezer Scrooge, a miserly and cold-hearted businessman who despises Christmas and all things joyful. The main conflict arises when Scrooge is visited by the ghost of his deceased business partner, Jacob Marley, who warns him of the consequences of his selfish ways and foretells the arrival of three spirits. These ghosts—representing Christmas Past, Present, and Yet to Come—take Scrooge on a journey through his life, revealing the impact of his choices on himself and others, and instilling a sense of regret and longing for redemption.\n\nKey characters include Scrooge, who embodies greed and isolation; Marley, who serves as a catalyst for Scrooge's change; and the spirits, who guide him through his reflections. Additionally, characters like Bob Cratchit and Tiny Tim illustrate the warmth of family and the spirit of generosity that Scrooge has long neglected. The central theme revolves around the importance of compassion, community, and the potential for personal redemption.\n\nBy the end of the story, Scrooge awakens on Christmas morning filled with joy and gratitude, having resolved to embrace the spirit of Christmas and to change his ways. He becomes a beloved figure in his community, demonstrating that it is never too late to change and make a positive impact on the lives of others. Ultimately, \"A Christmas Carol\" serves as a powerful reminder of the importance of kindness and the transformative power of",
+        "book_summary": "\"A Christmas Carol\" by Charles Dickens is a timeless tale that follows the transformation of Ebenezer Scrooge, a miserly and cold-hearted businessman who despises Christmas and all things joyful. The main conflict arises when Scrooge is visited by the ghost of his deceased business partner, Jacob Marley, who warns him of the consequences of his selfish ways and foretells the arrival of three spirits. These ghosts\u2014representing Christmas Past, Present, and Yet to Come\u2014take Scrooge on a journey through his life, revealing the impact of his choices on himself and others, and instilling a sense of regret and longing for redemption.\n\nKey characters include Scrooge, who embodies greed and isolation; Marley, who serves as a catalyst for Scrooge's change; and the spirits, who guide him through his reflections. Additionally, characters like Bob Cratchit and Tiny Tim illustrate the warmth of family and the spirit of generosity that Scrooge has long neglected. The central theme revolves around the importance of compassion, community, and the potential for personal redemption.\n\nBy the end of the story, Scrooge awakens on Christmas morning filled with joy and gratitude, having resolved to embrace the spirit of Christmas and to change his ways. He becomes a beloved figure in his community, demonstrating that it is never too late to change and make a positive impact on the lives of others. Ultimately, \"A Christmas Carol\" serves as a powerful reminder of the importance of kindness and the transformative power of",
         "chapters": [
             {
                 "chapter_summary": "In Chapter 1 of \"A Christmas Carol,\" titled \"Marley's Ghost,\" Ebenezer Scrooge is visited by the ghost of his former business partner, Jacob Marley, who appears bound in heavy chains made of cash boxes and ledgers. Marley reveals to Scrooge that he is doomed to wander the earth because he failed to care for others during his life, and he warns Scrooge that he will be haunted by three spirits to help him avoid a similar fate. Scrooge's initial disbelief gives way to fear as he listens to Marley's lamentations about the consequences of a life focused solely on business. This encounter marks a pivotal moment in the story, setting the stage for Scrooge's potential transformation and the supernatural interventions that will follow.",
-                "image": "",
+                "image": ""
+            },
+            {
+                "chapter_summary": "In Chapter 2 of *A Christmas Carol*, titled \"Ghosts of Departed Usurers,\" Ebenezer Scrooge awakens to find himself visited by the Ghost of Christmas Past. The spirit, appearing as a strange figure that blends the qualities of a child and an old man, guides Scrooge back to his childhood, revealing scenes of his lonely school days and the joy of Christmas as experienced by his younger self. Scrooge is deeply affected by the memories, particularly of his sister Fan, who brings him home from school, and the kind-hearted Fezziwig, his former employer who celebrated Christmas with exuberance and generosity. This chapter propels the story forward by prompting Scrooge to reflect on the joy and warmth he once knew, contrasting it with his current miserly existence, thus setting the stage for his transformation.",
+                "image": ""
+            },
+            {
+                "chapter_summary": "In Chapter 3 of \"A Christmas Carol,\" Scrooge is transported to the joyful scene of Mr Fezziwig's Christmas ball, where he witnesses the kindness and generosity of his former employer, who creates a festive atmosphere for his employees. As Scrooge observes the merriment and camaraderie, he is struck by the contrast between Fezziwig's joyful spirit and his own miserly ways, prompting a moment of reflection on the importance of compassion over wealth. The chapter progresses the narrative by revealing Scrooge's past relationships, specifically with a young woman named Belle, who ultimately leaves him due to his growing obsession with money. This confrontation with his former self and lost love deepens Scrooge's regret and foreshadows his struggle with the consequences of his choices, setting the stage for his potential redemption.",
+                "image": ""
+            },
+            {
+                "chapter_summary": "In Chapter 4 of *A Christmas Carol*, Scrooge awakens at the stroke of One, anticipating the arrival of the second spirit, but is initially met with nothingness, causing him anxiety. Eventually, he discovers a radiant light emanating from the adjoining room, leading him to encounter the Ghost of Christmas Present, who is jovial and adorned in a green robe. Scrooge, now less resolute than before, is invited to come in and learn from the spirit, marking a significant shift in his character as he prepares to confront the warmth and generosity of the Christmas season. This chapter propels the story forward by introducing the next phase of Scrooge's transformation, as he begins to engage with the spirit's lessons about compassion and community.",
+                "image": ""
+            },
+            {
+                "chapter_summary": "In Chapter 5 of *A Christmas Carol*, Scrooge is visited by the Ghost of Christmas Present, who shows him scenes of joy and togetherness on Christmas Day, despite the harsh weather. The Spirit takes Scrooge through the bustling streets, where people celebrate with laughter and camaraderie, and then to the humble home of Bob Cratchit, where the family prepares a modest yet joyful Christmas dinner, highlighting their love and gratitude, especially for Tiny Tim, who is physically frail but full of spirit. Scrooge's heart begins to soften as he witnesses the Cratchit family's warmth and love, leading him to reflect on his own past and attitudes toward others, particularly his own role in society. The chapter culminates in a moment of revelation when the Spirit reveals two impoverished children, named Ignorance and Want, urging Scrooge to recognize the consequences of his past indifference and the urgent need for compassion and charity.",
+                "image": ""
+            },
+            {
+                "chapter_summary": "In Chapter 6 of *A Christmas Carol*, Scrooge is confronted by the Ghost of Christmas Yet to Come, a silent and foreboding figure that leads him through a series of grim visions of his future. Scrooge witnesses the indifferent reactions of businessmen to the death of a wealthy man, the grim dealings of grave robbers, and the sorrowful atmosphere in the Cratchit household following Tiny Tim's death. This chapter reveals the consequences of Scrooge's life choices, highlighting themes of isolation and the potential for redemption, as he begins to realize that his current path may lead to a lonely and unremarkable death. The chapter culminates in a moment of horror for Scrooge as he sees his own neglected grave, prompting a desperate plea for change and hope for a different future.",
+                "image": ""
+            },
+            {
+                "chapter_summary": "In Chapter 7 of *A Christmas Carol*, Scrooge awakens on Christmas morning, realizing he has been given a second chance at life after his encounters with the spirits. Overwhelmed with joy and gratitude, he vows to embrace the lessons of the past, present, and future, and immediately sets out to spread Christmas cheer by buying a large turkey for the Cratchit family and making amends with those he previously wronged. Scrooge's transformation is evident as he joyfully interacts with strangers, visits his nephew Fred, and prepares to be a better person. This chapter marks a pivotal shift in the story, showcasing Scrooge's redemption and the positive impact of his newfound spirit of generosity and kindness.",
+                "image": ""
+            }
+        ]
+    },
+    "vocab": {
+        "indexable_by": "chapters",
+        "chapters": [
+            {
                 "vocab_words": {
                     "grade_4": [
                         {
@@ -19,8 +50,8 @@
                         },
                         {
                             "word": "gaze",
-                            "sentence": "“You see this toothpick?” said Scrooge, returning quickly to\nthe charge, for the reason just assigned; and wishing, though it were\nonly for a second, to divert the vision’s stony gaze from himself.",
-                            "context_description": "In this moment, Scrooge is feeling overwhelmed and terrified by the ghost's presence, which is unsettling him deeply. By abruptly shifting the conversation to a mundane object—a toothpick—he attempts to distract both himself and the ghost, revealing his desperation to avoid confronting the fear and dread that the spectre evokes in him. This sentence illustrates Scrooge's struggle with his emotions and his attempt to regain control in a situation that feels increasingly out of his grasp."
+                            "sentence": "\u201cYou see this toothpick?\u201d said Scrooge, returning quickly to\nthe charge, for the reason just assigned; and wishing, though it were\nonly for a second, to divert the vision\u2019s stony gaze from himself.",
+                            "context_description": "In this moment, Scrooge is feeling overwhelmed and terrified by the ghost's presence, which is unsettling him deeply. By abruptly shifting the conversation to a mundane object\u2014a toothpick\u2014he attempts to distract both himself and the ghost, revealing his desperation to avoid confronting the fear and dread that the spectre evokes in him. This sentence illustrates Scrooge's struggle with his emotions and his attempt to regain control in a situation that feels increasingly out of his grasp."
                         },
                         {
                             "word": "habit",
@@ -31,29 +62,29 @@
                     "grade_5": [
                         {
                             "word": "procuring",
-                            "sentence": "A chance and hope of my procuring, Ebenezer.”\n\n“You were always a good friend to me,” said Scrooge.",
+                            "sentence": "A chance and hope of my procuring, Ebenezer.\u201d\n\n\u201cYou were always a good friend to me,\u201d said Scrooge.",
                             "context_description": "In this moment, the Ghost of Jacob Marley is emphasizing the urgency of Scrooge's situation by revealing that he has the opportunity to change his fate. The phrase \"A chance and hope of my procuring\" signifies that Marley, despite his own torment, is offering Scrooge a lifeline through the upcoming visits from the Three Spirits, highlighting the theme of redemption and the possibility of transformation in Scrooge's character. Scrooge's response reflects his reliance on their past friendship, revealing his vulnerability and fear as he faces the prospect of change."
                         },
                         {
                             "word": "benevolence",
                             "sentence": "The common welfare was my business;\ncharity, mercy, forbearance, and benevolence, were, all, my business.",
-                            "context_description": "In this moment, the Ghost of Jacob Marley is passionately explaining to Scrooge the true nature of his life's work and the regret he feels for prioritizing profit over humanity. This sentence serves to highlight the central theme of the story—emphasizing the importance of compassion and social responsibility, which contrasts sharply with Scrooge's former values and sets the stage for his eventual transformation."
+                            "context_description": "In this moment, the Ghost of Jacob Marley is passionately explaining to Scrooge the true nature of his life's work and the regret he feels for prioritizing profit over humanity. This sentence serves to highlight the central theme of the story\u2014emphasizing the importance of compassion and social responsibility, which contrasts sharply with Scrooge's former values and sets the stage for his eventual transformation."
                         },
                         {
                             "word": "remorse",
-                            "sentence": "Incessant torture of remorse.”",
+                            "sentence": "Incessant torture of remorse.\u201d",
                             "context_description": "In this moment, the Ghost of Jacob Marley reveals the profound suffering he endures in the afterlife due to his past actions and the life he led, which was solely focused on greed and business. The phrase \"incessant torture of remorse\" underscores the theme of regret and the consequences of a life lived without compassion, setting the stage for Scrooge's own journey of self-reflection and redemption."
                         },
                         {
                             "word": "deference",
-                            "sentence": "“You must have been very slow about it, Jacob,” Scrooge\nobserved, in a business-like manner, though with humility and deference.",
+                            "sentence": "\u201cYou must have been very slow about it, Jacob,\u201d Scrooge\nobserved, in a business-like manner, though with humility and deference.",
                             "context_description": "In this moment, Scrooge is trying to engage with the Ghost of Jacob Marley while grappling with the heavy implications of Marley's eternal punishment. His comment about Marley being \"slow\" reflects Scrooge's characteristic focus on business and practicality, even in the face of a supernatural revelation, highlighting his struggle to comprehend the gravity of his former partner's plight and the consequences of a life devoted solely to greed. This sentence underscores Scrooge's initial inability to fully grasp the moral lesson being presented to him."
                         }
                     ],
                     "grade_6": [
                         {
                             "word": "appalling",
-                            "sentence": "humbug!”\n\nAt this the spirit raised a frightful cry, and shook its chain with such\na dismal and appalling noise, that Scrooge held on tight to his chair,\nto save himself from falling in a swoon.",
+                            "sentence": "humbug!\u201d\n\nAt this the spirit raised a frightful cry, and shook its chain with such\na dismal and appalling noise, that Scrooge held on tight to his chair,\nto save himself from falling in a swoon.",
                             "context_description": "In this tense moment, Scrooge exclaims \"humbug!\" as a dismissal of the supernatural events unfolding before him, reflecting his skepticism and disbelief in the ghostly visitation. This reaction highlights his deep-seated cynicism and fear, setting the stage for the ensuing terror he experiences as the spirit responds with a chilling display, intensifying the atmosphere of dread and foreshadowing Scrooge's eventual transformation."
                         },
                         {
@@ -70,24 +101,22 @@
                 }
             },
             {
-                "chapter_summary": "In Chapter 2 of *A Christmas Carol*, titled \"Ghosts of Departed Usurers,\" Ebenezer Scrooge awakens to find himself visited by the Ghost of Christmas Past. The spirit, appearing as a strange figure that blends the qualities of a child and an old man, guides Scrooge back to his childhood, revealing scenes of his lonely school days and the joy of Christmas as experienced by his younger self. Scrooge is deeply affected by the memories, particularly of his sister Fan, who brings him home from school, and the kind-hearted Fezziwig, his former employer who celebrated Christmas with exuberance and generosity. This chapter propels the story forward by prompting Scrooge to reflect on the joy and warmth he once knew, contrasting it with his current miserly existence, thus setting the stage for his transformation.",
-                "image": "",
                 "vocab_words": {
                     "grade_4": [
                         {
                             "word": "curiously",
-                            "sentence": "Here he produced a decanter of curiously light wine, and a block of\ncuriously heavy cake, and administered instalments of those dainties to\nthe young people: at the same time, sending out a meagre servant to\noffer a glass of “something” to the postboy, who answered\nthat he thanked the gentleman, but if it was the same tap as he had\ntasted before, he had rather not.",
+                            "sentence": "Here he produced a decanter of curiously light wine, and a block of\ncuriously heavy cake, and administered instalments of those dainties to\nthe young people: at the same time, sending out a meagre servant to\noffer a glass of \u201csomething\u201d to the postboy, who answered\nthat he thanked the gentleman, but if it was the same tap as he had\ntasted before, he had rather not.",
                             "context_description": "In this sentence, the schoolmaster's actions illustrate the contrast between the festive atmosphere of the children's reunion and the oppressive environment of the school. The mention of \"curiously light wine\" and \"curiously heavy cake\" emphasizes the peculiar and somewhat uninviting nature of the hospitality provided, reflecting the children's mixed emotions of excitement and discomfort as they prepare to leave their dreary school life behind. This moment serves to highlight the innocence of childhood joy amidst a backdrop of adult expectations and societal norms."
                         },
                         {
                             "word": "solitary",
-                            "sentence": "“A\nsolitary child, neglected by his friends, is left there still.”",
+                            "sentence": "\u201cA\nsolitary child, neglected by his friends, is left there still.\u201d",
                             "context_description": "In this moment, the Ghost of Christmas Past reveals to Scrooge a poignant scene from his own childhood, highlighting the loneliness and neglect he experienced during his formative years. This sentence serves to evoke empathy in Scrooge and illustrates the emotional scars that have contributed to his current misanthropic outlook, prompting him to confront the impact of his past on his present."
                         },
                         {
                             "word": "bothered",
-                            "sentence": "Marley’s Ghost bothered him exceedingly.",
-                            "context_description": "In this moment, Scrooge is grappling with the unsettling experience of having encountered Marley’s Ghost, which symbolizes his past actions and the consequences of his miserly life. The sentence highlights Scrooge's internal struggle and growing anxiety about the supernatural visit, setting the stage for his eventual transformation and the themes of regret and redemption that permeate the story."
+                            "sentence": "Marley\u2019s Ghost bothered him exceedingly.",
+                            "context_description": "In this moment, Scrooge is grappling with the unsettling experience of having encountered Marley\u2019s Ghost, which symbolizes his past actions and the consequences of his miserly life. The sentence highlights Scrooge's internal struggle and growing anxiety about the supernatural visit, setting the stage for his eventual transformation and the themes of regret and redemption that permeate the story."
                         },
                         {
                             "word": "wonder",
@@ -101,7 +130,7 @@
                         },
                         {
                             "word": "purpose",
-                            "sentence": "“Rise! and walk with me!”\n\nIt would have been in vain for Scrooge to plead that the weather and the\nhour were not adapted to pedestrian purposes; that bed was warm, and the\nthermometer a long way below freezing; that he was clad but lightly in\nhis slippers, dressing-gown, and nightcap; and that he had a cold upon\nhim at that time.",
+                            "sentence": "\u201cRise! and walk with me!\u201d\n\nIt would have been in vain for Scrooge to plead that the weather and the\nhour were not adapted to pedestrian purposes; that bed was warm, and the\nthermometer a long way below freezing; that he was clad but lightly in\nhis slippers, dressing-gown, and nightcap; and that he had a cold upon\nhim at that time.",
                             "context_description": "In this passage, the sentence \"Rise! and walk with me!\" signifies the Ghost's insistence on taking Scrooge on a journey to confront his past, emphasizing the urgency and importance of this moment. Scrooge's internal objections highlight his reluctance and human vulnerability, setting the stage for his transformation as he is compelled to leave the comfort of his bed and face the realities of his life."
                         },
                         {
@@ -123,7 +152,7 @@
                         },
                         {
                             "word": "recognising",
-                            "sentence": "“Let us go on.”\n\nThey walked along the road, Scrooge recognising every gate, and post,\nand tree; until a little market-town appeared in the distance, with its\nbridge, its church, and winding river.",
+                            "sentence": "\u201cLet us go on.\u201d\n\nThey walked along the road, Scrooge recognising every gate, and post,\nand tree; until a little market-town appeared in the distance, with its\nbridge, its church, and winding river.",
                             "context_description": "In this moment, Scrooge is being guided by the Spirit through a familiar landscape from his childhood, which evokes a deep sense of nostalgia and recognition. The phrase \"Let us go on\" signifies the Spirit's encouragement for Scrooge to confront his past, highlighting his emotional journey as he begins to reconnect with joyful memories that he had long forgotten, setting the stage for his transformation."
                         },
                         {
@@ -134,11 +163,11 @@
                         {
                             "word": "increasing",
                             "sentence": "Even this, though, when Scrooge looked at it with increasing steadiness,\nwas not its strangest quality.",
-                            "context_description": "In this moment, Scrooge is observing the Ghost of Christmas Present, and the sentence emphasizes the surreal and otherworldly nature of the spirit. It highlights that despite the ghost's already bizarre appearance, there is something even more peculiar about it, building suspense and intrigue as Scrooge—and the reader—anticipate discovering what that strange quality might be."
+                            "context_description": "In this moment, Scrooge is observing the Ghost of Christmas Present, and the sentence emphasizes the surreal and otherworldly nature of the spirit. It highlights that despite the ghost's already bizarre appearance, there is something even more peculiar about it, building suspense and intrigue as Scrooge\u2014and the reader\u2014anticipate discovering what that strange quality might be."
                         },
                         {
                             "word": "inquire",
-                            "sentence": "“I am the Ghost of Christmas Past.”\n\n“Long Past?” inquired Scrooge: observant of its dwarfish\nstature.",
+                            "sentence": "\u201cI am the Ghost of Christmas Past.\u201d\n\n\u201cLong Past?\u201d inquired Scrooge: observant of its dwarfish\nstature.",
                             "context_description": "In this moment, Scrooge is encountering the Ghost of Christmas Past for the first time, which signifies a pivotal turning point in the story. The ghost's introduction emphasizes the theme of reflection and the importance of one's history, as Scrooge begins to confront his past decisions and their impact on his current life. Scrooge's inquiry about the spirit's stature highlights his initial confusion and skepticism about the supernatural, setting the stage for the transformative journey he is about to undertake."
                         },
                         {
@@ -150,18 +179,18 @@
                     "grade_6": [
                         {
                             "word": "extraordinary",
-                            "sentence": "What business had\nhe to be married to the Princess!”\n\nTo hear Scrooge expending all the earnestness of his nature on such\nsubjects, in a most extraordinary voice between laughing and crying; and\nto see his heightened and excited face; would have been a surprise to\nhis business friends in the city, indeed.",
+                            "sentence": "What business had\nhe to be married to the Princess!\u201d\n\nTo hear Scrooge expending all the earnestness of his nature on such\nsubjects, in a most extraordinary voice between laughing and crying; and\nto see his heightened and excited face; would have been a surprise to\nhis business friends in the city, indeed.",
                             "context_description": "In this moment, Scrooge is reflecting on his childhood memories with a sense of nostalgia and joy, as he recalls the stories and characters that captivated him as a young boy. His exclamation about the Sultan's Groom humorously underscores his emotional transformation, revealing a side of him that is passionate and whimsical, contrasting sharply with the cold, unfeeling persona he presents to his business associates. This shift is significant in illustrating Scrooge's gradual awakening to the warmth of human connection and the spirit of Christmas."
                         },
                         {
                             "word": "remonstrated",
-                            "sentence": "“I am a mortal,” Scrooge remonstrated, “and liable to\nfall.”\n\n“Bear but a touch of my hand there,” said the Spirit,\nlaying it upon his heart, “and you shall be upheld in more than\nthis!”\n\nAs the words were spoken, they passed through the wall, and stood upon\nan open country road, with fields on either hand.",
+                            "sentence": "\u201cI am a mortal,\u201d Scrooge remonstrated, \u201cand liable to\nfall.\u201d\n\n\u201cBear but a touch of my hand there,\u201d said the Spirit,\nlaying it upon his heart, \u201cand you shall be upheld in more than\nthis!\u201d\n\nAs the words were spoken, they passed through the wall, and stood upon\nan open country road, with fields on either hand.",
                             "context_description": "In this passage, Scrooge expresses his fear and vulnerability as a mortal when confronted by the Ghost, highlighting his reluctance to leave the safety of his home. The Spirit reassures him with a promise of support, symbolizing the transformative journey Scrooge is about to undertake, as they transition from the familiar confines of his life to a new, expansive reality. This moment marks a pivotal point in Scrooge's character development, as he begins to confront his past and the possibility of change."
                         },
                         {
                             "word": "melancholy",
                             "sentence": "He spoke before the hour bell sounded, which it now did with a deep,\ndull, hollow, melancholy One.",
-                            "context_description": "In this moment, Scrooge is caught in a tense and anxious state as he grapples with the reality of Marley’s Ghost and the implications of his visit. The sentence highlights the significance of the hour bell, marking a transition in the story; it not only signifies the passage of time but also foreshadows the arrival of supernatural events that will further challenge Scrooge's understanding of reality. The use of adjectives like \"deep,\" \"dull,\" and \"melancholy\" sets a foreboding tone, enhancing the atmosphere of suspense and unease."
+                            "context_description": "In this moment, Scrooge is caught in a tense and anxious state as he grapples with the reality of Marley\u2019s Ghost and the implications of his visit. The sentence highlights the significance of the hour bell, marking a transition in the story; it not only signifies the passage of time but also foreshadows the arrival of supernatural events that will further challenge Scrooge's understanding of reality. The use of adjectives like \"deep,\" \"dull,\" and \"melancholy\" sets a foreboding tone, enhancing the atmosphere of suspense and unease."
                         },
                         {
                             "word": "conducive",
@@ -182,13 +211,11 @@
                 }
             },
             {
-                "chapter_summary": "In Chapter 3 of \"A Christmas Carol,\" Scrooge is transported to the joyful scene of Mr Fezziwig's Christmas ball, where he witnesses the kindness and generosity of his former employer, who creates a festive atmosphere for his employees. As Scrooge observes the merriment and camaraderie, he is struck by the contrast between Fezziwig's joyful spirit and his own miserly ways, prompting a moment of reflection on the importance of compassion over wealth. The chapter progresses the narrative by revealing Scrooge's past relationships, specifically with a young woman named Belle, who ultimately leaves him due to his growing obsession with money. This confrontation with his former self and lost love deepens Scrooge's regret and foreshadows his struggle with the consequences of his choices, setting the stage for his potential redemption.",
-                "image": "",
                 "vocab_words": {
                     "grade_4": [
                         {
                             "word": "gratitude",
-                            "sentence": "“A small matter,” said the Ghost, “to make these silly\nfolks so full of gratitude.”\n\n“Small!” echoed Scrooge.",
+                            "sentence": "\u201cA small matter,\u201d said the Ghost, \u201cto make these silly\nfolks so full of gratitude.\u201d\n\n\u201cSmall!\u201d echoed Scrooge.",
                             "context_description": "In this moment, the Ghost of Christmas Past is highlighting the significance of Mr Fezziwig's generosity and how even small acts of kindness can have a profound impact on people's lives. Scrooge's incredulity at the Ghost's remark reflects his initial misunderstanding of the value of compassion and community, setting the stage for his character development as he begins to confront his own past and the consequences of his miserly behavior."
                         },
                         {
@@ -198,44 +225,44 @@
                         },
                         {
                             "word": "delight",
-                            "sentence": "Why do you delight to torture me?”\n\n“One shadow more!” exclaimed the Ghost.",
-                            "context_description": "In this moment, Scrooge is overwhelmed by the painful memories being revealed to him by the Ghost, reflecting his deep emotional turmoil and regret over his past choices. His plea, \"Why do you delight to torture me?” underscores his desperation and fear as he confronts the consequences of his actions, while the Ghost's insistence on showing \"one shadow more\" emphasizes the inevitability of facing one's past in order to seek redemption and change."
+                            "sentence": "Why do you delight to torture me?\u201d\n\n\u201cOne shadow more!\u201d exclaimed the Ghost.",
+                            "context_description": "In this moment, Scrooge is overwhelmed by the painful memories being revealed to him by the Ghost, reflecting his deep emotional turmoil and regret over his past choices. His plea, \"Why do you delight to torture me?\u201d underscores his desperation and fear as he confronts the consequences of his actions, while the Ghost's insistence on showing \"one shadow more\" emphasizes the inevitability of facing one's past in order to seek redemption and change."
                         },
                         {
                             "word": "wealth",
-                            "sentence": "“There is nothing on which it is so hard as poverty; and there is\nnothing it professes to condemn with such severity as the pursuit of\nwealth!”",
+                            "sentence": "\u201cThere is nothing on which it is so hard as poverty; and there is\nnothing it professes to condemn with such severity as the pursuit of\nwealth!\u201d",
                             "context_description": "In this moment, Scrooge reflects on the harsh realities of life, revealing his internal conflict between his past aspirations and his current obsession with wealth. The sentence underscores the theme of societal judgment, highlighting how poverty is seen as a burden while the relentless pursuit of wealth is criticized, emphasizing the moral dilemmas that Scrooge faces as he confronts the consequences of his choices."
                         },
                         {
                             "word": "hope",
-                            "sentence": "“All\nyour other hopes have merged into the hope of being beyond the chance of\nits sordid reproach.",
+                            "sentence": "\u201cAll\nyour other hopes have merged into the hope of being beyond the chance of\nits sordid reproach.",
                             "context_description": "In this moment, the character is reflecting on the transformation of Scrooge's aspirations, indicating that his once noble dreams have been overshadowed by his obsession with wealth and societal approval. The sentence highlights the theme of materialism versus personal values, illustrating how Scrooge's priorities have shifted from meaningful connections to the pursuit of money, setting the stage for his eventual redemption."
                         },
                         {
                             "word": "friend",
-                            "sentence": "“Belle,” said the husband, turning to his wife with a smile,\n“I saw an old friend of yours this afternoon.”",
+                            "sentence": "\u201cBelle,\u201d said the husband, turning to his wife with a smile,\n\u201cI saw an old friend of yours this afternoon.\u201d",
                             "context_description": "In this moment, the husband is addressing his wife, Belle, and referencing Ebenezer Scrooge, a figure from their past who holds significant emotional weight for Belle. This sentence serves to evoke nostalgia and longing, highlighting the contrast between Scrooge's current isolated state and the warmth of familial love and connection that Belle now experiences, deepening the theme of lost relationships and the possibility of redemption."
                         },
                         {
                             "word": "happiness",
-                            "sentence": "The happiness he gives, is quite as great as if it cost a\nfortune.”",
+                            "sentence": "The happiness he gives, is quite as great as if it cost a\nfortune.\u201d",
                             "context_description": "In this moment, Scrooge reflects on the true value of generosity and the impact of kindness, as he observes the joy Fezziwig brings to his employees. The sentence underscores a pivotal realization for Scrooge, highlighting that emotional richness and happiness do not necessarily require financial expenditure, which is a key theme in his transformation throughout the story."
                         },
                         {
                             "word": "memory",
-                            "sentence": "“You may—the memory of what is past half makes me hope you\nwill—have pain in this.",
+                            "sentence": "\u201cYou may\u2014the memory of what is past half makes me hope you\nwill\u2014have pain in this.",
                             "context_description": "In this emotional moment, the girl is expressing her hope that the memory of their past relationship will cause the man some pain, indicating the depth of her feelings and the hurt of their separation. This sentence underscores the theme of regret and the consequences of choices, highlighting the girl's understanding of the man's character and the inevitability of his decision to prioritize wealth over love."
                         }
                     ],
                     "grade_5": [
                         {
                             "word": "confidence",
-                            "sentence": "But if you were free\nto-day, to-morrow, yesterday, can even I believe that you would choose a\ndowerless girl—you who, in your very confidence with her, weigh\neverything by Gain: or, choosing her, if for a moment you were false\nenough to your one guiding principle to do so, do I not know that your\nrepentance and regret would surely follow?",
-                            "context_description": "In this poignant moment, the female character confronts her partner about the nature of his feelings and values, questioning whether he would truly choose her—a woman without financial means—if given the chance. This sentence highlights her realization of the disparity between their emotional connection and his materialistic tendencies, emphasizing the theme of love versus social status and the internal conflict within the male character regarding his true desires and principles."
+                            "sentence": "But if you were free\nto-day, to-morrow, yesterday, can even I believe that you would choose a\ndowerless girl\u2014you who, in your very confidence with her, weigh\neverything by Gain: or, choosing her, if for a moment you were false\nenough to your one guiding principle to do so, do I not know that your\nrepentance and regret would surely follow?",
+                            "context_description": "In this poignant moment, the female character confronts her partner about the nature of his feelings and values, questioning whether he would truly choose her\u2014a woman without financial means\u2014if given the chance. This sentence highlights her realization of the disparity between their emotional connection and his materialistic tendencies, emphasizing the theme of love versus social status and the internal conflict within the male character regarding his true desires and principles."
                         },
                         {
                             "word": "release",
-                            "sentence": "It is enough that I\nhave thought of it, and can release you.”\n\n“Have I ever sought release?”\n\n“In words.",
+                            "sentence": "It is enough that I\nhave thought of it, and can release you.\u201d\n\n\u201cHave I ever sought release?\u201d\n\n\u201cIn words.",
                             "context_description": "In this poignant exchange, the character is expressing her deep emotional struggle with the transformation of their relationship due to the pursuit of wealth. The sentence \"It is enough that I have thought of it, and can release you\" signifies her realization that their love has been overshadowed by materialism, and she is offering him freedom from their commitment as a means of reclaiming her own dignity and peace. This moment highlights the central theme of the story, which critiques the detrimental effects of greed on personal relationships."
                         },
                         {
@@ -245,7 +272,7 @@
                         },
                         {
                             "word": "pursuit",
-                            "sentence": "“There is nothing on which it is so hard as poverty; and there is\nnothing it professes to condemn with such severity as the pursuit of\nwealth!”",
+                            "sentence": "\u201cThere is nothing on which it is so hard as poverty; and there is\nnothing it professes to condemn with such severity as the pursuit of\nwealth!\u201d",
                             "context_description": "In this moment, Scrooge reflects on the harsh realities of life, revealing his internal struggle between the pain of poverty and the societal condemnation of wealth-seeking. This sentence underscores the theme of materialism versus emotional fulfillment, highlighting how Scrooge's obsession with wealth has led to personal loss and regret, as he confronts the consequences of his choices through the Ghost of Christmas Past."
                         },
                         {
@@ -265,14 +292,14 @@
                         },
                         {
                             "word": "remark",
-                            "sentence": "Is that so much that he deserves this\npraise?”\n\n“It isn’t that,” said Scrooge, heated by the remark,\nand speaking unconsciously like his former, not his latter, self.",
+                            "sentence": "Is that so much that he deserves this\npraise?\u201d\n\n\u201cIt isn\u2019t that,\u201d said Scrooge, heated by the remark,\nand speaking unconsciously like his former, not his latter, self.",
                             "context_description": "In this moment, the Ghost challenges Scrooge's perception of value by questioning whether the modest financial contributions of Fezziwig warrant the heartfelt gratitude of his employees. Scrooge's heated response reveals his internal conflict; he momentarily reverts to his former self, demonstrating how deeply he is affected by the memories of kindness and joy from his past, contrasting sharply with his current miserly disposition. This exchange emphasizes the theme of the importance of compassion and the impact of leadership on the happiness of others."
                         }
                     ],
                     "grade_6": [
                         {
                             "word": "unconsciously",
-                            "sentence": "Is that so much that he deserves this\npraise?”\n\n“It isn’t that,” said Scrooge, heated by the remark,\nand speaking unconsciously like his former, not his latter, self.",
+                            "sentence": "Is that so much that he deserves this\npraise?\u201d\n\n\u201cIt isn\u2019t that,\u201d said Scrooge, heated by the remark,\nand speaking unconsciously like his former, not his latter, self.",
                             "context_description": "In this moment, the Ghost is challenging Scrooge's perception of value and gratitude by questioning whether the modest expense Fezziwig incurred for the apprentices justifies their heartfelt praise. Scrooge's heated response reveals a glimpse of his former self, indicating his internal struggle between his current miserly mindset and the warmth of his past, emphasizing the theme of the impact of kindness and generosity on human happiness. This exchange deepens Scrooge's character development as he begins to confront the importance of compassion in relationships."
                         },
                         {
@@ -307,15 +334,13 @@
                         },
                         {
                             "word": "sordid",
-                            "sentence": "“All\nyour other hopes have merged into the hope of being beyond the chance of\nits sordid reproach.",
+                            "sentence": "\u201cAll\nyour other hopes have merged into the hope of being beyond the chance of\nits sordid reproach.",
                             "context_description": "In this moment, the young girl reflects on how the protagonist, Scrooge, has allowed his once noble aspirations to be overshadowed by his obsession with wealth and societal approval. This sentence highlights the theme of lost innocence and the corrupting influence of greed, illustrating the emotional distance that has developed between them as Scrooge prioritizes material gain over meaningful relationships and ideals."
                         }
                     ]
                 }
             },
             {
-                "chapter_summary": "In Chapter 4 of *A Christmas Carol*, Scrooge awakens at the stroke of One, anticipating the arrival of the second spirit, but is initially met with nothingness, causing him anxiety. Eventually, he discovers a radiant light emanating from the adjoining room, leading him to encounter the Ghost of Christmas Present, who is jovial and adorned in a green robe. Scrooge, now less resolute than before, is invited to come in and learn from the spirit, marking a significant shift in his character as he prepares to confront the warmth and generosity of the Christmas season. This chapter propels the story forward by introducing the next phase of Scrooge's transformation, as he begins to engage with the spirit's lessons about compassion and community.",
-                "image": "",
                 "vocab_words": {
                     "grade_4": [
                         {
@@ -325,7 +350,7 @@
                         },
                         {
                             "word": "purpose",
-                            "sentence": "He felt that he was restored to consciousness in the right nick of time,\nfor the especial purpose of holding a conference with the second\nmessenger despatched to him through Jacob Marley’s intervention.",
+                            "sentence": "He felt that he was restored to consciousness in the right nick of time,\nfor the especial purpose of holding a conference with the second\nmessenger despatched to him through Jacob Marley\u2019s intervention.",
                             "context_description": "In this sentence, Scrooge realizes that he has awakened just in time to meet the second spirit sent to him by Jacob Marley, emphasizing the urgency and significance of this moment in the narrative. This awareness reflects Scrooge's growing acceptance of the supernatural events unfolding around him and sets the stage for his transformation as he prepares to confront his past and future."
                         },
                         {
@@ -352,12 +377,12 @@
                         },
                         {
                             "word": "intervention",
-                            "sentence": "He felt that he was restored to consciousness in the right nick of time,\nfor the especial purpose of holding a conference with the second\nmessenger despatched to him through Jacob Marley’s intervention.",
+                            "sentence": "He felt that he was restored to consciousness in the right nick of time,\nfor the especial purpose of holding a conference with the second\nmessenger despatched to him through Jacob Marley\u2019s intervention.",
                             "context_description": "In this sentence, Scrooge realizes that he has awakened just in time for an important meeting with the second spirit, which signifies a pivotal moment in his journey of transformation. This awareness highlights his growing acceptance of the supernatural events occurring around him, setting the stage for the lessons he is about to learn from the next ghost."
                         },
                         {
                             "word": "astonished",
-                            "sentence": "Without venturing\nfor Scrooge quite as hardily as this, I don’t mind calling on you\nto believe that he was ready for a good broad field of strange\nappearances, and that nothing between a baby and rhinoceros would have\nastonished him very much.",
+                            "sentence": "Without venturing\nfor Scrooge quite as hardily as this, I don\u2019t mind calling on you\nto believe that he was ready for a good broad field of strange\nappearances, and that nothing between a baby and rhinoceros would have\nastonished him very much.",
                             "context_description": "In this passage, the narrator emphasizes Scrooge's readiness to encounter the supernatural and bizarre after his previous experiences with the ghost of Jacob Marley. The comparison of his potential astonishment to a range from a baby to a rhinoceros illustrates the extent of his mental preparation for the strange visitations he expects, highlighting both his nervous anticipation and the whimsical nature of his situation."
                         },
                         {
@@ -394,15 +419,13 @@
                         },
                         {
                             "word": "consciousness",
-                            "sentence": "He felt that he was restored to consciousness in the right nick of time,\nfor the especial purpose of holding a conference with the second\nmessenger despatched to him through Jacob Marley’s intervention.",
+                            "sentence": "He felt that he was restored to consciousness in the right nick of time,\nfor the especial purpose of holding a conference with the second\nmessenger despatched to him through Jacob Marley\u2019s intervention.",
                             "context_description": "In this sentence, Scrooge realizes he has awakened just in time to meet the second spirit sent to him by Jacob Marley. This moment is crucial for the story as it signifies the continuation of Scrooge's supernatural journey towards redemption, highlighting his growing awareness and anticipation of the lessons he is about to learn from the spirits."
                         }
                     ]
                 }
             },
             {
-                "chapter_summary": "In Chapter 5 of *A Christmas Carol*, Scrooge is visited by the Ghost of Christmas Present, who shows him scenes of joy and togetherness on Christmas Day, despite the harsh weather. The Spirit takes Scrooge through the bustling streets, where people celebrate with laughter and camaraderie, and then to the humble home of Bob Cratchit, where the family prepares a modest yet joyful Christmas dinner, highlighting their love and gratitude, especially for Tiny Tim, who is physically frail but full of spirit. Scrooge's heart begins to soften as he witnesses the Cratchit family's warmth and love, leading him to reflect on his own past and attitudes toward others, particularly his own role in society. The chapter culminates in a moment of revelation when the Spirit reveals two impoverished children, named Ignorance and Want, urging Scrooge to recognize the consequences of his past indifference and the urgent need for compassion and charity.",
-                "image": "",
                 "vocab_words": {
                     "grade_4": [
                         {
@@ -417,7 +440,7 @@
                         },
                         {
                             "word": "generous",
-                            "sentence": "And perhaps it was the pleasure the good Spirit had in showing off this\npower of his, or else it was his own kind, generous, hearty nature, and\nhis sympathy with all poor men, that led him straight to Scrooge’s\nclerk’s; for there he went, and took Scrooge with him, holding to\nhis robe; and on the threshold of the door the Spirit smiled, and\nstopped to bless Bob Cratchit’s dwelling with the sprinkling of\nhis torch.",
+                            "sentence": "And perhaps it was the pleasure the good Spirit had in showing off this\npower of his, or else it was his own kind, generous, hearty nature, and\nhis sympathy with all poor men, that led him straight to Scrooge\u2019s\nclerk\u2019s; for there he went, and took Scrooge with him, holding to\nhis robe; and on the threshold of the door the Spirit smiled, and\nstopped to bless Bob Cratchit\u2019s dwelling with the sprinkling of\nhis torch.",
                             "context_description": "In this passage, the narrator reflects on the benevolent nature of the Ghost of Christmas Present as he leads Scrooge to visit Bob Cratchit's home. This moment emphasizes the Spirit's joyful and generous character, showcasing his desire to bless those in need, particularly the Cratchit family, which serves to highlight the contrasts between Scrooge's former selfishness and the warmth of community and compassion that the Spirit embodies."
                         },
                         {
@@ -427,12 +450,12 @@
                         },
                         {
                             "word": "sorrowful",
-                            "sentence": "Is it a foot or a claw?”\n\n“It might be a claw, for the flesh there is upon it,” was\nthe Spirit’s sorrowful reply.",
+                            "sentence": "Is it a foot or a claw?\u201d\n\n\u201cIt might be a claw, for the flesh there is upon it,\u201d was\nthe Spirit\u2019s sorrowful reply.",
                             "context_description": "In this moment, Scrooge is confronting the unsettling reality of the Ghost's true nature, which symbolizes the darker aspects of society, particularly the plight of the poor and neglected. His question about whether the appendage is a \"foot or a claw\" reflects his growing awareness of the consequences of his own greed and indifference, as the Spirit reveals the grim fate of the children it carries, emphasizing the themes of compassion and social responsibility that are central to the story."
                         },
                         {
                             "word": "remarkable",
-                            "sentence": "It was a remarkable quality\nof the Ghost (which Scrooge had observed at the baker’s), that\nnotwithstanding his gigantic size, he could accommodate himself to any\nplace with ease; and that he stood beneath a low roof quite as\ngracefully and like a supernatural creature, as it was possible he could\nhave done in any lofty hall.",
+                            "sentence": "It was a remarkable quality\nof the Ghost (which Scrooge had observed at the baker\u2019s), that\nnotwithstanding his gigantic size, he could accommodate himself to any\nplace with ease; and that he stood beneath a low roof quite as\ngracefully and like a supernatural creature, as it was possible he could\nhave done in any lofty hall.",
                             "context_description": "In this passage, the narrator highlights the Ghost's remarkable ability to adapt to different environments, emphasizing his supernatural nature and grace despite his large size. This quality serves to illustrate the Ghost's benevolence and connection to the common people, reinforcing the theme of empathy and the idea that true generosity transcends social status, which is central to Scrooge's transformation throughout the story."
                         },
                         {
@@ -444,17 +467,17 @@
                     "grade_5": [
                         {
                             "word": "deliberating",
-                            "sentence": "The two\nyoung Cratchits laughed tremendously at the idea of Peter’s being\na man of business; and Peter himself looked thoughtfully at the fire\nfrom between his collars, as if he were deliberating what particular\ninvestments he should favour when he came into the receipt of that\nbewildering income.",
+                            "sentence": "The two\nyoung Cratchits laughed tremendously at the idea of Peter\u2019s being\na man of business; and Peter himself looked thoughtfully at the fire\nfrom between his collars, as if he were deliberating what particular\ninvestments he should favour when he came into the receipt of that\nbewildering income.",
                             "context_description": "In this passage, the Cratchit family is enjoying their Christmas celebration despite the overshadowing presence of Scrooge, who represents hardship and unkindness. The sentence highlights the humor and innocence of the younger Cratchit children as they playfully imagine Peter's future as a businessman, contrasting their light-heartedness with the weight of their financial struggles, and it underscores Peter's hopeful aspirations amidst their challenging circumstances."
                         },
                         {
                             "word": "cultivate",
-                            "sentence": "Introduce him to me, and I’ll cultivate his\nacquaintance.",
+                            "sentence": "Introduce him to me, and I\u2019ll cultivate his\nacquaintance.",
                             "context_description": "In this moment, the narrator expresses a light-hearted wish to meet anyone who could rival Scrooge's nephew's joyful laughter, emphasizing the infectious nature of happiness. This sentence highlights the contrast between Scrooge's previous miserly demeanor and the warmth and joy that his nephew embodies, illustrating the theme of transformation and the importance of human connection during the Christmas season."
                         },
                         {
                             "word": "sentiment",
-                            "sentence": "Admiration was the universal sentiment, though\nsome objected that the reply to “Is it a bear?” ought to\nhave been “Yes;” inasmuch as an answer in the negative was\nsufficient to have diverted their thoughts from Mr Scrooge, supposing\nthey had ever had any tendency that way.",
+                            "sentence": "Admiration was the universal sentiment, though\nsome objected that the reply to \u201cIs it a bear?\u201d ought to\nhave been \u201cYes;\u201d inasmuch as an answer in the negative was\nsufficient to have diverted their thoughts from Mr Scrooge, supposing\nthey had ever had any tendency that way.",
                             "context_description": "In this moment of the story, the characters are engaged in a lighthearted game where they are trying to guess the animal Fred is thinking of, which ultimately leads to a humorous revelation about Scrooge himself. The sentence highlights the group's admiration for their cleverness and the jovial atmosphere, while also suggesting that some may have preferred a different answer to keep the focus away from Scrooge, emphasizing his reputation as a miserly figure and the contrast between the festive spirit of the gathering and Scrooge's character."
                         },
                         {
@@ -464,7 +487,7 @@
                         },
                         {
                             "word": "trembling",
-                            "sentence": "to hear the Insect on the leaf pronouncing on the too\nmuch life among his hungry brothers in the dust!”\n\nScrooge bent before the Ghost’s rebuke, and trembling cast his\neyes upon the ground.",
+                            "sentence": "to hear the Insect on the leaf pronouncing on the too\nmuch life among his hungry brothers in the dust!\u201d\n\nScrooge bent before the Ghost\u2019s rebuke, and trembling cast his\neyes upon the ground.",
                             "context_description": "In this moment, the Ghost of Christmas Present chastises Scrooge for his callous attitude towards the poor and his previous belief in the idea of \"surplus population.\" The metaphor of the \"Insect on the leaf\" serves to highlight the arrogance of judging the value of life, emphasizing that even the smallest creatures have no right to deem others unworthy of existence. This rebuke deeply impacts Scrooge, prompting him to reflect on his own moral failings and the consequences of his past beliefs."
                         },
                         {
@@ -476,7 +499,7 @@
                     "grade_6": [
                         {
                             "word": "conspicuous",
-                            "sentence": "There were pears and apples, clustered high in\nblooming pyramids; there were bunches of grapes, made, in the\nshopkeepers’ benevolence to dangle from conspicuous hooks, that\npeople’s mouths might water gratis as they passed; there were\npiles of filberts, mossy and brown, recalling, in their fragrance,\nancient walks among the woods, and pleasant shufflings ankle deep\nthrough withered leaves; there were Norfolk Biffins, squat and swarthy,\nsetting off the yellow of the oranges and lemons, and, in the great\ncompactness of their juicy persons, urgently entreating and beseeching\nto be carried home in paper bags and eaten after dinner.",
+                            "sentence": "There were pears and apples, clustered high in\nblooming pyramids; there were bunches of grapes, made, in the\nshopkeepers\u2019 benevolence to dangle from conspicuous hooks, that\npeople\u2019s mouths might water gratis as they passed; there were\npiles of filberts, mossy and brown, recalling, in their fragrance,\nancient walks among the woods, and pleasant shufflings ankle deep\nthrough withered leaves; there were Norfolk Biffins, squat and swarthy,\nsetting off the yellow of the oranges and lemons, and, in the great\ncompactness of their juicy persons, urgently entreating and beseeching\nto be carried home in paper bags and eaten after dinner.",
                             "context_description": "In this passage, the detailed description of the vibrant fruits and nuts in the shop windows serves to create a festive and cheerful atmosphere in the town during Christmas time. The imagery highlights the abundance and joy of the season, emphasizing the community's spirit and the warmth of holiday traditions, contrasting with the earlier themes of isolation and gloom associated with Ebenezer Scrooge."
                         },
                         {
@@ -486,7 +509,7 @@
                         },
                         {
                             "word": "extravagant",
-                            "sentence": "When Scrooge’s\nnephew laughed in this way: holding his sides, rolling his head, and\ntwisting his face into the most extravagant contortions: Scrooge’s\nniece, by marriage, laughed as heartily as he.",
+                            "sentence": "When Scrooge\u2019s\nnephew laughed in this way: holding his sides, rolling his head, and\ntwisting his face into the most extravagant contortions: Scrooge\u2019s\nniece, by marriage, laughed as heartily as he.",
                             "context_description": "In this moment, the sentence highlights the joyous and infectious nature of laughter, contrasting sharply with Scrooge's earlier solemnity and isolation. It serves to illustrate the warmth and camaraderie of Scrooge's nephew and his family, emphasizing the theme of joy and connection during the Christmas season, which is pivotal to Scrooge's eventual transformation."
                         },
                         {
@@ -508,18 +531,16 @@
                 }
             },
             {
-                "chapter_summary": "In Chapter 6 of *A Christmas Carol*, Scrooge is confronted by the Ghost of Christmas Yet to Come, a silent and foreboding figure that leads him through a series of grim visions of his future. Scrooge witnesses the indifferent reactions of businessmen to the death of a wealthy man, the grim dealings of grave robbers, and the sorrowful atmosphere in the Cratchit household following Tiny Tim's death. This chapter reveals the consequences of Scrooge's life choices, highlighting themes of isolation and the potential for redemption, as he begins to realize that his current path may lead to a lonely and unremarkable death. The chapter culminates in a moment of horror for Scrooge as he sees his own neglected grave, prompting a desperate plea for change and hope for a different future.",
-                "image": "",
                 "vocab_words": {
                     "grade_4": [
                         {
                             "word": "fearful",
-                            "sentence": "he said, “this is a fearful place.",
+                            "sentence": "he said, \u201cthis is a fearful place.",
                             "context_description": "In this moment, Scrooge is confronted with the stark reality of death and the loneliness that accompanies a life devoid of kindness and generosity. His declaration that \"this is a fearful place\" reflects his growing awareness of the consequences of his past avarice and the emotional emptiness that has led him to this grim scene, reinforcing the story's theme of redemption and the importance of compassion."
                         },
                         {
                             "word": "tender",
-                            "sentence": "It is\nnot that the hand is heavy and will fall down when released; it is not\nthat the heart and pulse are still; but that the hand was\nopen, generous, and true; the heart brave, warm, and tender; and the\npulse a man’s.",
+                            "sentence": "It is\nnot that the hand is heavy and will fall down when released; it is not\nthat the heart and pulse are still; but that the hand was\nopen, generous, and true; the heart brave, warm, and tender; and the\npulse a man\u2019s.",
                             "context_description": "In this moment, Scrooge grapples with the reality of death as he confronts the body before him, reflecting on the virtues of the deceased rather than the physical state of the body. The sentence emphasizes the contrast between the lifelessness of the man and the positive qualities he embodied in life, highlighting Scrooge's internal struggle with his own feelings of regret and the importance of living a life filled with generosity and warmth."
                         },
                         {
@@ -539,12 +560,12 @@
                         },
                         {
                             "word": "tenderness",
-                            "sentence": "“Let me see some tenderness connected with a death,” said\nScrooge; “or that dark chamber, Spirit, which we left just now,\nwill be for ever present to me.”",
+                            "sentence": "\u201cLet me see some tenderness connected with a death,\u201d said\nScrooge; \u201cor that dark chamber, Spirit, which we left just now,\nwill be for ever present to me.\u201d",
                             "context_description": "In this moment, Scrooge is expressing a deep longing for a more compassionate and meaningful perspective on death, contrasting the coldness he has witnessed. His plea to the Ghost signifies his desire to understand the emotional connections that can arise from loss, highlighting his evolving character and the importance of empathy in the narrative as he confronts his past and seeks redemption."
                         },
                         {
                             "word": "future",
-                            "sentence": "“Ghost of the Future!”",
+                            "sentence": "\u201cGhost of the Future!\u201d",
                             "context_description": "In this moment, Scrooge addresses the Ghost of Christmas Yet To Come, acknowledging its ominous presence and the fear it instills in him. This sentence highlights Scrooge's recognition of the spirit's role in revealing his potential future, setting the stage for his transformation as he grapples with the consequences of his past actions."
                         },
                         {
@@ -566,7 +587,7 @@
                         },
                         {
                             "word": "disgust",
-                            "sentence": "As they sat grouped about\ntheir spoil, in the scanty light afforded by the old man’s lamp,\nhe viewed them with a detestation and disgust, which could hardly have\nbeen greater, though they had been obscene demons, marketing the corpse\nitself.",
+                            "sentence": "As they sat grouped about\ntheir spoil, in the scanty light afforded by the old man\u2019s lamp,\nhe viewed them with a detestation and disgust, which could hardly have\nbeen greater, though they had been obscene demons, marketing the corpse\nitself.",
                             "context_description": "In this moment, Scrooge witnesses a disturbing scene where a group of characters is callously discussing and profiting from the belongings of a deceased man. The sentence conveys Scrooge's horror and moral revulsion at their behavior, emphasizing the theme of greed and the lack of compassion in society, which is central to the story's critique of social indifference and the consequences of a life lived without empathy."
                         },
                         {
@@ -598,12 +619,12 @@
                         },
                         {
                             "word": "persevered",
-                            "sentence": "“Men’s courses will foreshadow certain ends, to which, if\npersevered in, they must lead,” said Scrooge.",
-                            "context_description": "In this moment, Scrooge is grappling with the weight of his actions and their consequences as he faces the reality of his own mortality. By stating that \"Men’s courses will foreshadow certain ends,\" he reflects on the idea that the choices one makes in life determine their future, highlighting his internal struggle to change his path before it's too late. This realization is pivotal to his character development and the overall theme of redemption in the story."
+                            "sentence": "\u201cMen\u2019s courses will foreshadow certain ends, to which, if\npersevered in, they must lead,\u201d said Scrooge.",
+                            "context_description": "In this moment, Scrooge is grappling with the weight of his actions and their consequences as he faces the reality of his own mortality. By stating that \"Men\u2019s courses will foreshadow certain ends,\" he reflects on the idea that the choices one makes in life determine their future, highlighting his internal struggle to change his path before it's too late. This realization is pivotal to his character development and the overall theme of redemption in the story."
                         },
                         {
                             "word": "extraordinary",
-                            "sentence": "Bob told them of the extraordinary kindness of Mr Scrooge’s\nnephew, whom he had scarcely seen but once, and who, meeting him in the\nstreet that day, and seeing that he looked a little—“just a\nlittle down you know,” said Bob, inquired what had happened to\ndistress him.",
+                            "sentence": "Bob told them of the extraordinary kindness of Mr Scrooge\u2019s\nnephew, whom he had scarcely seen but once, and who, meeting him in the\nstreet that day, and seeing that he looked a little\u2014\u201cjust a\nlittle down you know,\u201d said Bob, inquired what had happened to\ndistress him.",
                             "context_description": "In this passage, Bob Cratchit shares with his family a moment of unexpected kindness from Mr Scrooge's nephew, highlighting the contrast between Scrooge's typical demeanor and the warmth shown by his nephew. This moment serves to illustrate the theme of compassion and community, as Bob finds solace in the support of others during a difficult time, reinforcing the idea that kindness can emerge even from unexpected sources."
                         },
                         {
@@ -613,15 +634,13 @@
                         },
                         {
                             "word": "disinterested",
-                            "sentence": "“Well, I am the most disinterested among you, after all,”\nsaid the first speaker, “for I never wear black gloves, and I\nnever eat lunch.",
+                            "sentence": "\u201cWell, I am the most disinterested among you, after all,\u201d\nsaid the first speaker, \u201cfor I never wear black gloves, and I\nnever eat lunch.",
                             "context_description": "In this passage, the speaker is attempting to position himself as morally superior and less interested in the deceased man's wealth compared to the other businessmen. By claiming to be \"disinterested,\" he ironically highlights his own selfishness and the callousness of the group, who are more concerned with the deceased's money than with mourning his death. This moment underscores the story's critique of greed and the lack of genuine compassion among the wealthy."
                         }
                     ]
                 }
             },
             {
-                "chapter_summary": "In Chapter 7 of *A Christmas Carol*, Scrooge awakens on Christmas morning, realizing he has been given a second chance at life after his encounters with the spirits. Overwhelmed with joy and gratitude, he vows to embrace the lessons of the past, present, and future, and immediately sets out to spread Christmas cheer by buying a large turkey for the Cratchit family and making amends with those he previously wronged. Scrooge's transformation is evident as he joyfully interacts with strangers, visits his nephew Fred, and prepares to be a better person. This chapter marks a pivotal shift in the story, showcasing Scrooge's redemption and the positive impact of his newfound spirit of generosity and kindness.",
-                "image": "",
                 "vocab_words": {
                     "grade_4": [
                         {
@@ -631,7 +650,7 @@
                         },
                         {
                             "word": "earnestness",
-                            "sentence": "“A merry Christmas, Bob!” said Scrooge, with an earnestness\nthat could not be mistaken, as he clapped him on the back.",
+                            "sentence": "\u201cA merry Christmas, Bob!\u201d said Scrooge, with an earnestness\nthat could not be mistaken, as he clapped him on the back.",
                             "context_description": "In this pivotal moment, Scrooge's transformation from a miserly employer to a generous and warm-hearted individual is showcased. His heartfelt greeting to Bob signifies a dramatic change in his character, highlighting the theme of redemption and the spirit of Christmas, as he not only wishes Bob a merry Christmas but also expresses his intent to improve Bob's circumstances by raising his salary."
                         },
                         {
@@ -641,7 +660,7 @@
                         },
                         {
                             "word": "obliged",
-                            "sentence": "“I am much obliged to\nyou.",
+                            "sentence": "\u201cI am much obliged to\nyou.",
                             "context_description": "In this moment, Scrooge expresses genuine gratitude to the old gentleman after making a generous offer to help him financially, marking a significant change in Scrooge's character from a miser to someone who is kind and appreciative. This sentence highlights Scrooge's transformation and newfound warmth as he embraces the spirit of Christmas and the joy of giving."
                         },
                         {
@@ -653,22 +672,22 @@
                     "grade_5": [
                         {
                             "word": "struggling",
-                            "sentence": "I’ll raise your salary, and endeavour to assist your\nstruggling family, and we will discuss your affairs this very afternoon,\nover a Christmas bowl of smoking bishop, Bob!",
+                            "sentence": "I\u2019ll raise your salary, and endeavour to assist your\nstruggling family, and we will discuss your affairs this very afternoon,\nover a Christmas bowl of smoking bishop, Bob!",
                             "context_description": "In this pivotal moment of transformation for Scrooge, he surprises Bob Cratchit by not only promising to raise his salary but also expressing a desire to help his family, signaling a significant change in Scrooge's character from miserly employer to a more compassionate and generous figure. This sentence highlights the theme of redemption and the spirit of Christmas, as Scrooge embraces the holiday's values of kindness and community support."
                         },
                         {
                             "word": "endeavour",
-                            "sentence": "I’ll raise your salary, and endeavour to assist your\nstruggling family, and we will discuss your affairs this very afternoon,\nover a Christmas bowl of smoking bishop, Bob!",
+                            "sentence": "I\u2019ll raise your salary, and endeavour to assist your\nstruggling family, and we will discuss your affairs this very afternoon,\nover a Christmas bowl of smoking bishop, Bob!",
                             "context_description": "In this pivotal moment, Scrooge, who has undergone a significant transformation after his encounters with the spirits, surprises Bob Cratchit by expressing genuine kindness and generosity. By offering to raise Bob's salary and help his struggling family, Scrooge not only shows his newfound compassion but also marks a turning point in the story where he begins to embrace the spirit of Christmas and community, highlighting the theme of redemption."
                         },
                         {
                             "word": "intelligent",
-                            "sentence": "“An intelligent boy!” said Scrooge.",
+                            "sentence": "\u201cAn intelligent boy!\u201d said Scrooge.",
                             "context_description": "In this moment, Scrooge, who has just awakened to the joy of Christmas Day after his transformative experiences with the spirits, is expressing delight and surprise at the boy's quick and confident response. This sentence highlights Scrooge's newfound appreciation for life and human connection, marking a significant shift in his character from miserly to more open and joyful."
                         },
                         {
                             "word": "remarkable",
-                            "sentence": "“A remarkable boy!",
+                            "sentence": "\u201cA remarkable boy!",
                             "context_description": "In this moment, Scrooge, who has just experienced a profound transformation after his visits from the Spirits, is expressing his newfound joy and appreciation for life. By calling the boy \"remarkable,\" he is not only acknowledging the boy's intelligence but also reflecting his own change in attitude towards others, highlighting his excitement and eagerness to connect with the world around him on Christmas Day."
                         },
                         {
@@ -690,7 +709,7 @@
                         },
                         {
                             "word": "irresistibly",
-                            "sentence": "He\nlooked so irresistibly pleasant, in a word, that three or four\ngood-humoured fellows said, “Good morning, sir!",
+                            "sentence": "He\nlooked so irresistibly pleasant, in a word, that three or four\ngood-humoured fellows said, \u201cGood morning, sir!",
                             "context_description": "In this sentence, Scrooge's transformation from a miserly and grumpy character to a joyful and approachable one is highlighted. After his experiences with the spirits, he is now radiating warmth and happiness, which is so infectious that it prompts cheerful greetings from passersby, illustrating the positive impact of his newfound generosity and spirit of Christmas on those around him."
                         },
                         {

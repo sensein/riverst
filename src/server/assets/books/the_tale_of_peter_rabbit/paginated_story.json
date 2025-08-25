@@ -8,8 +8,39 @@
         "book_summary": "In \"The Tale of Peter Rabbit\" by Beatrix Potter, the mischievous young rabbit, Peter, defies his mother's warning and sneaks into the garden of the grumpy farmer, Mr McGregor. The main conflict arises as Peter indulges in the delicious vegetables, only to be discovered by Mr McGregor, who chases him through the garden. Key characters include Peter, the adventurous and disobedient rabbit; his wise and cautious siblings, Flopsy, Mopsy, and Cotton-tail; and the antagonistic Mr McGregor, who represents the dangers of disobedience. The central theme revolves around the consequences of ignoring parental guidance and the importance of making wise choices. After a series of frantic escapades, Peter narrowly escapes capture, losing his jacket in the process, and eventually finds his way back home, where he learns a valuable lesson about listening to his mother. The story concludes with Peter safely back in his burrow, while his siblings enjoy their day, highlighting the contrast between Peter's reckless adventure and the safety of obedience.",
         "chapters": [
             {
-                "chapter_summary": "In the opening chapter of \"The Tale of Peter Rabbit,\" readers are introduced to the four little rabbits—Flopsy, Mopsy, Cotton-tail, and Peter—who live with their mother under a fir tree. Mrs Rabbit warns her children to avoid Mr McGregor's garden due to a past incident involving their father. While Flopsy, Mopsy, and Cotton-tail heed their mother's advice and go blackberry picking, Peter disobeys and sneaks into the garden. This decision sets the stage for Peter's subsequent adventures and mischief, propelling the story forward as it foreshadows the challenges he will face in Mr McGregor's garden.",
-                "image": "page1.png",
+                "chapter_summary": "In the opening chapter of \"The Tale of Peter Rabbit,\" readers are introduced to the four little rabbits\u2014Flopsy, Mopsy, Cotton-tail, and Peter\u2014who live with their mother under a fir tree. Mrs Rabbit warns her children to avoid Mr McGregor's garden due to a past incident involving their father. While Flopsy, Mopsy, and Cotton-tail heed their mother's advice and go blackberry picking, Peter disobeys and sneaks into the garden. This decision sets the stage for Peter's subsequent adventures and mischief, propelling the story forward as it foreshadows the challenges he will face in Mr McGregor's garden.",
+                "image": "page1.png"
+            },
+            {
+                "chapter_summary": "In this chapter of \"The Tale of Peter Rabbit,\" Peter indulges in a variety of vegetables from Mr McGregor's garden, which leads to him feeling unwell. As he searches for parsley, he encounters Mr McGregor, who chases him while yelling \"Stop thief!\" This encounter causes Peter to panic and forget the way out, resulting in him losing both of his shoes in the garden. His desperate attempt to escape ultimately leads to him getting caught in a gooseberry net, which heightens the tension and propels the story forward by placing Peter in a precarious situation.",
+                "image": "page2.png"
+            },
+            {
+                "chapter_summary": "In this chapter of \"The Tale of Peter Rabbit,\" Peter finds himself in a precarious situation after losing his new blue jacket while trying to escape from Mr McGregor. Overcome with despair, he is encouraged by friendly sparrows to take action, prompting him to flee into a tool-shed. There, he hides in a water-filled can, but his cover is nearly blown when he sneezes, drawing Mr McGregor's attention as he searches for Peter. This chapter heightens the tension of Peter's predicament and showcases his resourcefulness, propelling the story forward as he continues to evade capture.",
+                "image": "page3.png"
+            },
+            {
+                "chapter_summary": "In this chapter of \"The Tale of Peter Rabbit,\" Peter narrowly escapes from Mr McGregor, who attempts to catch him after he jumps out of a window, knocking over plants in the process. After evading Mr McGregor, Peter finds himself exhausted and lost, unsure of where to go next. He encounters a locked door and an old mouse who is too busy to help him, highlighting Peter's isolation and the challenges he faces in navigating the garden. This chapter advances the story by emphasizing Peter's precarious situation and setting the stage for his continued adventures and struggles in the garden.",
+                "image": "page4.png"
+            },
+            {
+                "chapter_summary": "In this chapter of \"The Tale of Peter Rabbit,\" Peter Rabbit, feeling upset after being scolded, attempts to navigate Mr McGregor's garden but becomes confused and lost. He encounters a pond where a cat is watching goldfish, prompting him to cautiously avoid her, recalling warnings from his cousin Benjamin Bunny. After hiding from the sound of Mr McGregor hoeing, Peter eventually climbs onto a wheelbarrow to survey the garden and spots Mr McGregor with his back turned, revealing a potential escape route through the gate. This chapter heightens the tension as Peter's adventure in the garden continues, emphasizing his vulnerability and the dangers he faces.",
+                "image": "page5.png"
+            },
+            {
+                "chapter_summary": "In this chapter of \"The Tale of Peter Rabbit,\" Peter escapes from Mr McGregor's garden after a close encounter, running swiftly along a path and slipping under a gate to reach the safety of the woods. Despite being spotted by Mr McGregor, Peter's determination to flee keeps him focused on his escape. Upon returning home, exhausted and without his clothes, Peter's mother notices his missing jacket and shoes, highlighting his repeated disobedience. This chapter emphasizes the consequences of Peter's adventurous spirit and sets the stage for potential future conflicts with his mother regarding his reckless behavior.",
+                "image": "page6.png"
+            },
+            {
+                "chapter_summary": "In this chapter of \"The Tale of Peter Rabbit,\" Peter Rabbit is feeling unwell after his adventures, prompting his mother to put him to bed early. She prepares chamomile tea to help him feel better and administers a dose, emphasizing the importance of taking care of oneself when sick. Meanwhile, his sisters, Flopsy, Mopsy, and Cotton-tail, enjoy a more pleasant supper of bread, milk, and blackberries, highlighting the contrast between Peter's misfortune and their contentment. This chapter advances the story by illustrating the consequences of Peter's reckless behavior and setting the stage for his recovery and potential lessons learned.",
+                "image": "page7.png"
+            }
+        ]
+    },
+    "vocab": {
+        "indexable_by": "chapters",
+        "chapters": [
+            {
                 "vocab_words": {
                     "grade_4": [
                         {
@@ -38,8 +69,6 @@
                 }
             },
             {
-                "chapter_summary": "In this chapter of \"The Tale of Peter Rabbit,\" Peter indulges in a variety of vegetables from Mr McGregor's garden, which leads to him feeling unwell. As he searches for parsley, he encounters Mr McGregor, who chases him while yelling \"Stop thief!\" This encounter causes Peter to panic and forget the way out, resulting in him losing both of his shoes in the garden. His desperate attempt to escape ultimately leads to him getting caught in a gooseberry net, which heightens the tension and propels the story forward by placing Peter in a precarious situation.",
-                "image": "page2.png",
                 "vocab_words": {
                     "grade_4": [
                         {
@@ -105,8 +134,6 @@
                 }
             },
             {
-                "chapter_summary": "In this chapter of \"The Tale of Peter Rabbit,\" Peter finds himself in a precarious situation after losing his new blue jacket while trying to escape from Mr McGregor. Overcome with despair, he is encouraged by friendly sparrows to take action, prompting him to flee into a tool-shed. There, he hides in a water-filled can, but his cover is nearly blown when he sneezes, drawing Mr McGregor's attention as he searches for Peter. This chapter heightens the tension of Peter's predicament and showcases his resourcefulness, propelling the story forward as he continues to evade capture.",
-                "image": "page3.png",
                 "vocab_words": {
                     "grade_4": [
                         {
@@ -128,7 +155,7 @@
                         },
                         {
                             "word": "presently",
-                            "sentence": "Presently Peter sneezed—\"Kerchoo!\"",
+                            "sentence": "Presently Peter sneezed\u2014\"Kerchoo!\"",
                             "context_description": "In this moment of tension, Peter sneezing serves as a pivotal point in the story, revealing his presence to Mr McGregor despite his attempts to hide. This sneeze not only heightens the suspense but also illustrates Peter's vulnerability and the precariousness of his situation as he tries to evade capture."
                         },
                         {
@@ -157,8 +184,6 @@
                 }
             },
             {
-                "chapter_summary": "In this chapter of \"The Tale of Peter Rabbit,\" Peter narrowly escapes from Mr McGregor, who attempts to catch him after he jumps out of a window, knocking over plants in the process. After evading Mr McGregor, Peter finds himself exhausted and lost, unsure of where to go next. He encounters a locked door and an old mouse who is too busy to help him, highlighting Peter's isolation and the challenges he faces in navigating the garden. This chapter advances the story by emphasizing Peter's precarious situation and setting the stage for his continued adventures and struggles in the garden.",
-                "image": "page4.png",
                 "vocab_words": {
                     "grade_4": [
                         {
@@ -179,7 +204,7 @@
                         {
                             "word": "family",
                             "sentence": "An old mouse was running in and out over the stone doorstep, carrying peas and beans to her family in the wood.",
-                            "context_description": "In this part of the story, the sentence introduces a new character, the old mouse, who is depicted as busy and industrious, emphasizing the contrast between her normal life and Peter’s chaotic situation. This moment highlights Peter's vulnerability and confusion as he seeks help, while also illustrating the everyday activities of the woodland creatures, enriching the setting and community around him."
+                            "context_description": "In this part of the story, the sentence introduces a new character, the old mouse, who is depicted as busy and industrious, emphasizing the contrast between her normal life and Peter's chaotic situation. This moment highlights Peter's vulnerability and confusion as he seeks help, while also illustrating the everyday activities of the woodland creatures, enriching the setting and community around him."
                         },
                         {
                             "word": "rest",
@@ -205,7 +230,7 @@
                         },
                         {
                             "word": "wander",
-                            "sentence": "After a time he began to wander about, going lippity—lippity—not very fast, and looking all around.",
+                            "sentence": "After a time he began to wander about, going lippity\u2014lippity\u2014not very fast, and looking all around.",
                             "context_description": "In this part of the story, Peter Rabbit is recovering from the fright of being chased by Mr McGregor. The sentence illustrates his cautious and somewhat disoriented state as he begins to explore his surroundings, emphasizing his vulnerability and the playful, bouncy nature of a rabbit, even in a moment of unease. This wandering reflects both his need to find safety and his innate curiosity."
                         }
                     ],
@@ -229,8 +254,6 @@
                 }
             },
             {
-                "chapter_summary": "In this chapter of \"The Tale of Peter Rabbit,\" Peter Rabbit, feeling upset after being scolded, attempts to navigate Mr McGregor's garden but becomes confused and lost. He encounters a pond where a cat is watching goldfish, prompting him to cautiously avoid her, recalling warnings from his cousin Benjamin Bunny. After hiding from the sound of Mr McGregor hoeing, Peter eventually climbs onto a wheelbarrow to survey the garden and spots Mr McGregor with his back turned, revealing a potential escape route through the gate. This chapter heightens the tension as Peter's adventure in the garden continues, emphasizing his vulnerability and the dangers he faces.",
-                "image": "page5.png",
                 "vocab_words": {
                     "grade_4": [
                         {
@@ -240,7 +263,7 @@
                         },
                         {
                             "word": "suddenly",
-                            "sentence": "He went back towards the tool-shed, but suddenly, quite close to him, he heard the noise of a hoe—scr-r-ritch, scratch, scratch, scritch.",
+                            "sentence": "He went back towards the tool-shed, but suddenly, quite close to him, he heard the noise of a hoe\u2014scr-r-ritch, scratch, scratch, scritch.",
                             "context_description": "In this part of the story, Peter Rabbit is navigating the dangers of Mr McGregor's garden. The sentence highlights the tension and suspense of the moment, as the sound of the hoe signals the presence of Mr McGregor, increasing Peter's fear and urgency to hide. This auditory detail emphasizes the perilous environment Peter is in, reinforcing the theme of adventure and the consequences of his mischief."
                         },
                         {
@@ -260,8 +283,6 @@
                 }
             },
             {
-                "chapter_summary": "In this chapter of \"The Tale of Peter Rabbit,\" Peter escapes from Mr McGregor's garden after a close encounter, running swiftly along a path and slipping under a gate to reach the safety of the woods. Despite being spotted by Mr McGregor, Peter's determination to flee keeps him focused on his escape. Upon returning home, exhausted and without his clothes, Peter's mother notices his missing jacket and shoes, highlighting his repeated disobedience. This chapter emphasizes the consequences of Peter's adventurous spirit and sets the stage for potential future conflicts with his mother regarding his reckless behavior.",
-                "image": "page6.png",
                 "vocab_words": {
                     "grade_4": [
                         {
@@ -332,8 +353,6 @@
                 }
             },
             {
-                "chapter_summary": "In this chapter of \"The Tale of Peter Rabbit,\" Peter Rabbit is feeling unwell after his adventures, prompting his mother to put him to bed early. She prepares chamomile tea to help him feel better and administers a dose, emphasizing the importance of taking care of oneself when sick. Meanwhile, his sisters, Flopsy, Mopsy, and Cotton-tail, enjoy a more pleasant supper of bread, milk, and blackberries, highlighting the contrast between Peter's misfortune and their contentment. This chapter advances the story by illustrating the consequences of Peter's reckless behavior and setting the stage for his recovery and potential lessons learned.",
-                "image": "page7.png",
                 "vocab_words": {
                     "grade_4": [
                         {
