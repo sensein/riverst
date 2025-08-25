@@ -286,8 +286,10 @@ async def get_books() -> JSONResponse:
                         "r", encoding="utf-8"
                     ) as f:
                         book_data = json.load(f)
-                        title = book_data.get("reading_context", {}).get(
-                            "book_title", book_name
+                        title = (
+                            book_data.get("reading_context", {})
+                            .get("key_information", {})
+                            .get("book_title", book_name)
                         )
                 except Exception:
                     title = book_name.replace("_", " ").title()
