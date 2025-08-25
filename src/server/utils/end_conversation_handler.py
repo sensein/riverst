@@ -11,7 +11,8 @@ from loguru import logger
 
 from pipecat.processors.frameworks.rtvi import RTVIServerMessageFrame, RTVIProcessor
 from pipecat.adapters.schemas.function_schema import FunctionSchema
-from pipecat.frames.frames import TTSSpeakFrame
+from pipecat.frames.frames import TTSSpeakFrame, TTSStoppedFrame, Frame
+from pipecat.processors.frame_processor import FrameDirection, FrameProcessor
 
 
 class EndConversationHandler:
@@ -88,3 +89,28 @@ class EndConversationHandler:
             }
 
         return result
+
+
+class CleanEndProcessor(FrameProcessor):
+    """Processor for handling clean end of conversations."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.end_conversation_frame: Frame = None
+
+    async def process_frame(self, frame: Frame, direction: FrameDirection):
+
+        await super().process_frame(frame, direction)
+
+        if isinstance(frame, RTVIServerMessageFrame):
+            if frame.data.get("type") == "conversation-ended":
+                logger.debug("Received conversation-ended frame")
+                self.end_conversation_frame = frame
+                return  # Do not push frame now
+
+        if isinstance(frame, TTSStoppedFrame) and self.end_conversation_frame:
+            logger.debug("Received TTSStoppedFrame after conversation ended")
+            self.push_frame(self.end_conversation_frame)
+
+        await self.push_frame(frame)

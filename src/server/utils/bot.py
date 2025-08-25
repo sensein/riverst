@@ -48,7 +48,7 @@ from .bot_component_factory import BotComponentFactory
 from .flow_component_factory import FlowComponentFactory
 from .metrics import MetricsLoggerProcessor
 from .animation_handler import AnimationHandler
-from .end_conversation_handler import EndConversationHandler
+from .end_conversation_handler import EndConversationHandler, CleanEndProcessor
 from .video_buffer_processor import VideoBufferProcessor
 
 load_dotenv(override=True)
@@ -323,6 +323,8 @@ async def run_bot(
             ),
         )
 
+        clean_end_processor = CleanEndProcessor()
+
         if stt is not None and tts is not None:
             # Note: e2e is faster, but classic is still preferable for now
             steps = [
@@ -348,6 +350,7 @@ async def run_bot(
                     if config.get("video_flag", False)
                     else None
                 ),
+                clean_end_processor,
                 pipecat_transport.output(),
                 audiobuffer,
                 transcript.assistant(),
