@@ -2,7 +2,7 @@
 Handlers for flow state management and transitions.
 """
 
-from typing import Dict, Any, Tuple, Union
+from typing import Dict, Any, Tuple, Union, Optional
 from pipecat_flows import FlowArgs, FlowManager, NodeConfig
 from pipecat.frames.frames import LLMMessagesAppendFrame
 from loguru import logger
@@ -11,60 +11,188 @@ import operator
 import json
 
 
-def update_checklist_fields(args: FlowArgs, checklist: Dict[str, bool]) -> None:
-    """
-    Mark checklist items as complete based on checklist values in args.
+class IndexableVariableHandler:
+    """Handles retrieval and indexing of variables from flow state."""
 
-    Args:
-        args: Flow arguments containing field values
-        checklist: Checklist dictionary to update
-    """
-    logger.info("Checklist before updating:\n{}", pformat(checklist))
-    checklist.update(
-        {field: True for field in args if args[field] and field in checklist}
-    )
-    logger.info("Checklist after updating:\n{}", pformat(checklist))
+    def __init__(self, flow_manager: FlowManager):
+        self.flow_manager = flow_manager
+
+    def get_variable(
+        self,
+        variable_name: str,
+        source: str = "activity",
+        current_index: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """
+        Retrieve a variable, handling indexable logic if needed.
+
+        Returns:
+            Dict with 'status' and either 'data' or 'message'
+        """
+        logger.info(
+            "Current %s state:\n%s",
+            source,
+            pformat(self.flow_manager.state.get(source, {})),
+        )
+
+        # Validate source and variable exist
+        if source not in self.flow_manager.state:
+            return self._error(f"Source '{source}' not found")
+
+        root_data = self.flow_manager.state[source].get(variable_name)
+        if root_data is None:
+            return self._error(f"Variable '{variable_name}' not found")
+
+        # Handle non-indexable variables
+        if not self._is_indexable(root_data):
+            return self._success(root_data)
+
+        # Handle indexable variables
+        return self._handle_indexable(variable_name, root_data, source, current_index)
+
+    def _is_indexable(self, data: Any) -> bool:
+        """Check if data is indexable."""
+        return isinstance(data, dict) and "indexable_by" in data
+
+    def _handle_indexable(
+        self,
+        variable_name: str,
+        root_data: dict,
+        source: str,
+        current_index: Optional[int],
+    ) -> Dict[str, Any]:
+        """Process indexable variable logic."""
+        index_field = root_data["indexable_by"]
+        items = root_data.get(index_field, [])
+
+        # Try to resolve index from multiple sources
+        index = self._resolve_index(current_index, len(items))
+
+        if index is None:
+            return self._create_index_prompt(variable_name, root_data, index_field)
+
+        if not self._validate_index(index, len(items)):
+            return self._create_index_prompt(variable_name, root_data, index_field)
+
+        # Store resolved index
+        self.flow_manager.state[source]["index"] = index
+
+        # Build response data
+        return self._build_indexed_response(root_data, index_field, index)
+
+    def _resolve_index(
+        self, current_index: Optional[int], item_count: int
+    ) -> Optional[int]:
+        """Resolve index from available sources."""
+        # Priority 1: Explicit current_index
+        if current_index is not None:
+            try:
+                return int(current_index)
+            except (ValueError, TypeError):
+                return None
+
+        # Priority 2: User session index (1-based, needs adjustment)
+        user_index = self.flow_manager.state.get("user", {}).get("index")
+        if user_index is not None:
+            try:
+                return int(user_index) - 1
+            except (ValueError, TypeError):
+                return None
+
+        return None
+
+    def _validate_index(self, index: int, item_count: int) -> bool:
+        """Validate index is within bounds."""
+        return 0 <= index < item_count
+
+    def _create_index_prompt(
+        self,
+        variable_name: str,
+        root_data: dict,
+        index_field: str,
+    ) -> Dict[str, Any]:
+        """Create prompt message for missing/invalid index."""
+        key_info = root_data.get("key_information", "No data available")
+        if isinstance(key_info, dict):
+            key_info = json.dumps(key_info, indent=2)
+
+        message = (
+            f"Available information - {variable_name}: {key_info}. "
+            f"Variable '{variable_name}' is indexable by {index_field}. "
+            f"At an appropriate moment, ask the user for a proper index in very natural language given the context, "
+            f"then call get_reading_context function with 'current_index' set to their response. "
+            f"Continue as you otherwise would afterwards, this should be subtle."
+        )
+
+        return self._error(message)
+
+    def _build_indexed_response(
+        self, root_data: dict, index_field: str, index: int
+    ) -> Dict[str, Any]:
+        """Build response for successfully indexed variable."""
+        # Copy all fields except indexing metadata
+        data = {
+            k: v for k, v in root_data.items() if k not in ["indexable_by", index_field]
+        }
+
+        # Add current indexed item
+        data[f"current_{index_field}"] = root_data[index_field][index]
+
+        # Update chapter number if key_information exists
+        if "key_information" in data:
+            if isinstance(data["key_information"], dict):
+                data["key_information"]["Chapter Number"] = index + 1
+
+        return self._success(data)
+
+    def _success(self, data: Any) -> Dict[str, Any]:
+        """Create success response."""
+        return {"status": "success", "data": data}
+
+    def _error(self, message: str) -> Dict[str, Any]:
+        """Create error response."""
+        return {"status": "error", "message": message}
 
 
-def update_user_fields(args: FlowArgs, flow_manager: FlowManager) -> None:
-    """
-    Update the user session fields in the flow state with values from args.
+class VariableFormatter:
+    """Format variables for LLM context."""
 
-    Args:
-        args: Flow arguments containing field values
-        flow_manager: Flow manager instance
-    """
-    logger.info(
-        "User session fields before updating:\n{}", pformat(flow_manager.state["user"])
-    )
-    flow_manager.state["user"].update(
-        {field: args[field] for field in args if field in flow_manager.state["user"]}
-    )
-    logger.info(
-        "User session fields after updating:\n{}", pformat(flow_manager.state["user"])
-    )
+    @staticmethod
+    def format(variable_name: str, value: Any) -> str:
+        """Format variable value for clean presentation."""
+        if not isinstance(value, dict):
+            return f"Available information ({variable_name}): {value}"
+
+        lines = []
+        for key, val in value.items():
+            formatted_key = key.replace("_", " ").title()
+            lines.append(VariableFormatter._format_value(formatted_key, val))
+
+        return "\n".join(lines)
+
+    @staticmethod
+    def _format_value(key: str, value: Any) -> str:
+        """Format a single key-value pair."""
+        if isinstance(value, dict):
+            sub_items = [
+                f"  • {k.replace('_', ' ').title()}: {v}" for k, v in value.items()
+            ]
+            return f"**{key}:**\n" + "\n".join(sub_items)
+
+        if isinstance(value, list):
+            return f"**{key}:** {', '.join(str(v) for v in value)}"
+
+        return f"**{key}:** {value}"
 
 
-def create_next_node(flow_manager: FlowManager) -> Tuple[str, NodeConfig]:
-    """
-    Determine the next node ID based on current stage and transition logic.
+# ====================
+# Flow State Management
+# ====================
 
-    This function evaluates transition conditions (found in flows config) and routes to the appropriate target node.
 
-    Steps:
-    1. Get the current stage from flow manager
-    2. Check if stage uses next_stage (legacy) or transition_logic (new dynamic transitions)
-    3a. If using next_stage, use that directly
-    3b. If using transition_logic, evaluate conditions:
-       - If a condition is met, route to the target node specified in that condition
-       - If no conditions are met or there are no conditions, route to the default target node
+class FlowStateManager:
+    """Manages flow state updates and transitions."""
 
-    Args:
-        flow_manager: Flow manager instance
-
-    Returns:
-        Tuple containing the next node ID and its configuration.
-    """
     OPERATORS = {
         "==": operator.eq,
         "!=": operator.ne,
@@ -76,387 +204,191 @@ def create_next_node(flow_manager: FlowManager) -> Tuple[str, NodeConfig]:
         "not_in": lambda a, b: not operator.contains(a, b),
     }
 
-    stage = flow_manager.current_node
-    if not stage:
-        raise ValueError("Current stage is not set in flow manager.")
+    def __init__(self, flow_manager: FlowManager):
+        self.flow_manager = flow_manager
 
-    transition_logic = flow_manager.state["stages"][stage]["transition_logic"]
-    conditions = transition_logic.get("conditions", [])
-    default_target = transition_logic.get("default_target_node")
+    def update_checklist(self, args: FlowArgs, checklist: Dict[str, bool]) -> None:
+        """Mark checklist items as complete based on args."""
+        logger.info("Checklist before updating:\n{}", pformat(checklist))
+        checklist.update(
+            {field: True for field in args if args[field] and field in checklist}
+        )
+        logger.info("Checklist after updating:\n{}", pformat(checklist))
 
-    # If no default target is specified, raise an error
-    if not default_target:
-        raise ValueError(f"No default_target_node specified for stage '{stage}'.")
+    def update_user_fields(self, args: FlowArgs) -> None:
+        """Update user session fields with values from args."""
+        user_state = self.flow_manager.state.get("user", {})
+        logger.info("User session before updating:\n{}", pformat(user_state))
 
-    # Evaluate each condition in order
-    for condition in conditions:
-        user_variable = condition["parameters"]["variable_path"]
-        matching_value = condition["parameters"]["value"]
-        operator_str = condition["parameters"]["operator"]
+        user_state.update({field: args[field] for field in args if field in user_state})
 
-        if user_variable not in flow_manager.state["user"]:
-            raise ValueError(
-                f"User variable '{user_variable}' not found in flow manager state."
-            )
+        logger.info("User session after updating:\n{}", pformat(user_state))
 
-        true_value = flow_manager.state["user"][user_variable]
+    def determine_next_node(self) -> Tuple[str, NodeConfig]:
+        """Determine next node based on transition logic."""
+        stage = self.flow_manager.current_node
+        if not stage:
+            raise ValueError("Current stage is not set")
 
-        if operator_str not in OPERATORS:
+        transition_logic = self.flow_manager.state["stages"][stage]["transition_logic"]
+        conditions = transition_logic.get("conditions", [])
+        default_target = transition_logic.get("default_target_node")
+
+        if not default_target:
+            raise ValueError(f"No default_target_node for stage '{stage}'")
+
+        # Evaluate conditions
+        for condition in conditions:
+            if self._evaluate_condition(condition):
+                target = condition["target_node"]
+                node = self._get_node(target)
+                logger.info(f"Condition matched, routing to {target}")
+                return target, node
+
+        # Use default
+        logger.info(f"No conditions matched, using default: {default_target}")
+        return default_target, self._get_node(default_target)
+
+    def _evaluate_condition(self, condition: dict) -> bool:
+        """Evaluate a single transition condition."""
+        params = condition["parameters"]
+        variable_path = params["variable_path"]
+        expected_value = params["value"]
+        operator_str = params["operator"]
+
+        user_state = self.flow_manager.state.get("user", {})
+        if variable_path not in user_state:
+            raise ValueError(f"Variable '{variable_path}' not found in user state")
+
+        actual_value = user_state[variable_path]
+
+        if operator_str not in self.OPERATORS:
             raise ValueError(f"Unsupported operator: {operator_str}")
 
-        # Check if condition matches
-        if OPERATORS[operator_str](true_value, matching_value):
-            # Condition is true, route to target node
-            target_node = condition["target_node"]
-            node = flow_manager.nodes.get(target_node)
-            if not node:
-                raise ValueError(
-                    f"Node '{target_node}' not found in flow manager nodes."
-                )
-            logger.info(
-                f"Condition matched: {user_variable} {operator_str} {matching_value}, routing to {target_node}"
-            )
-            return target_node, node
+        return self.OPERATORS[operator_str](actual_value, expected_value)
 
-    # If no conditions matched, use the default target
-    logger.info(f"No conditions matched, using default target: {default_target}")
-    node = flow_manager.nodes.get(default_target)
-    if not node:
-        raise ValueError(
-            f"Default target node '{default_target}' not found in flow manager nodes."
-        )
-    return default_target, node
+    def _get_node(self, node_id: str) -> NodeConfig:
+        """Get node configuration by ID."""
+        node = self.flow_manager.nodes.get(node_id)
+        if not node:
+            raise ValueError(f"Node '{node_id}' not found")
+        return node
+
+    def create_current_node(self, message: str) -> NodeConfig:
+        """Create configuration for current node with additional message."""
+        current_node = self.flow_manager.current_node
+        if not current_node:
+            raise ValueError("Current stage is not set")
+
+        node = self._get_node(current_node)
+        node["task_messages"][0]["content"] += f"\n\n{message}"
+        node["pre_actions"] = []
+
+        return node
 
 
-def create_current_node(flow_manager: FlowManager, message: str) -> NodeConfig:
-    """
-    Create the configuration for the current node based on the current stage.
-
-    Args:
-        flow_manager: Flow manager instance
-        checklist: Checklist dictionary for the current stage
-
-    Returns:
-        Current node configuration
-    """
-    current_node = flow_manager.current_node
-    if not current_node:
-        raise ValueError("Current stage is not set in flow manager.")
-
-    node = flow_manager.nodes.get(current_node)
-    if not node:
-        raise ValueError(f"Node '{current_node}' not found in flow manager nodes.")
-
-    node["task_messages"][0]["content"] += f"\n\n{message}"
-    node["pre_actions"] = []
-
-    return node
+# ====================
+# Handler Functions
+# ====================
 
 
 async def general_handler(
     args: FlowArgs, flow_manager: FlowManager
 ) -> Tuple[Dict[str, Any], NodeConfig]:
     """
-    General handler to check progress through a stage, store details in flow state, and handle transitions.
+    General handler for flow progression and state management.
 
-    note: Updated to match pipecat-flows 0.0.18 consolidated functions
-
-    Steps:
-    1. Update info fields in flow state with args
-    2. Update checklist fields in the current stage's checklist
-    3. Check if all checklist items are complete
-    4. If complete, create next node and return success message
-    5. If incomplete, create current node with error message and return it
-
-    Args:
-        args: Flow arguments
-        flow_manager: Flow manager instance
-
-    Returns:
-        Tuple containing:
-            - Result dictionary with status and message
-            - Next node configuration if complete, or current node configuration if incomplete
+    Handles checklist updates, field updates, and node transitions.
     """
-    update_user_fields(args, flow_manager)
+    state_manager = FlowStateManager(flow_manager)
+
+    # Update user fields
+    state_manager.update_user_fields(args)
+
+    # Update checklist
     stage = flow_manager.current_node
     checklist = flow_manager.state["stages"][stage]["checklist"]
-    update_checklist_fields(args, checklist)
+    state_manager.update_checklist(args, checklist)
+
+    # Check completion
     complete = all(checklist.values())
 
     if complete:
         message = "Complete"
-        _, next_node = create_next_node(flow_manager)
+        _, next_node = state_manager.determine_next_node()
     else:
-        message = flow_manager.state["stages"][stage][
+        incomplete_items = [item for item, done in checklist.items() if not done]
+        base_message = flow_manager.state["stages"][stage][
             "checklist_incomplete_message"
-        ].format(", ".join([item for item, done in checklist.items() if not done]))
+        ]
+        message = base_message.format(", ".join(incomplete_items))
         message = (
-            "CRITICAL: You're rejoining mid-flow. CHECK YOUR INSTRUCTIONS CAREFULLY - complete only "
-            "required tasks, skip any I haven't asked you to repeat: " + message
+            "CRITICAL: You're rejoining mid-flow. CHECK YOUR INSTRUCTIONS CAREFULLY - "
+            "complete only required tasks, skip any I haven't asked you to repeat: "
+            + message
         )
-        next_node = create_current_node(flow_manager, message)
+        next_node = state_manager.create_current_node(message)
 
     result = {"status": "success" if complete else "error", "message": message}
 
-    # Debug: Check if result contains any function objects
-    def check_for_functions(obj, path=""):
-        if callable(obj):
-            logger.error(f"FOUND FUNCTION OBJECT in result at {path}: {obj}")
-            return True
-        elif isinstance(obj, dict):
-            found_func = False
-            for key, value in obj.items():
-                if check_for_functions(value, f"{path}.{key}"):
-                    found_func = True
-            return found_func
-        elif isinstance(obj, (list, tuple)):
-            found_func = False
-            for i, item in enumerate(obj):
-                if check_for_functions(item, f"{path}[{i}]"):
-                    found_func = True
-            return found_func
-        return False
-
-    if check_for_functions(result):
-        logger.error("CRITICAL: Result contains function objects!")
-    else:
-        logger.info("DEBUG: Result is clean (no function objects)")
-
     return result, next_node
-
-
-def handle_indexable_variable(
-    variable_name: str,
-    flow_manager: FlowManager,
-    current_index: int = None,
-    source: str = "activity",
-) -> Dict[str, Any]:
-    """
-    Helper function to handle indexable variable logic.
-
-    Args:
-        variable_name: Name of the variable
-        flow_manager: Flow manager instance
-        current_index: Index provided in function call
-        source: Source field in flow_manager.state to get variable from
-
-    Returns:
-        Dictionary with status and either data or error message
-    """
-    logger.info("Current %s state:\n%s", source, pformat(flow_manager.state[source]))
-    # Get the variable data
-    root_data = flow_manager.state[source].get(variable_name)
-    if root_data is None:
-        return {"status": "error", "message": f"Variable '{variable_name}' not found"}
-
-    index_field = isinstance(root_data, dict) and root_data.get("indexable_by", None)
-
-    if not index_field:
-        # Simple variable - return as is
-        return {"status": "success", "data": root_data}
-
-    # Indexable variable - handle index logic
-    indexable_items = root_data.get(index_field, [])
-    item_count = len(indexable_items)
-    options = f"1-{item_count}" if item_count > 0 else "none available"
-
-    index_error_message = (
-        "Available information - {variable_name}: {data}. "
-        "Variable '{variable_name}' is indexable by {index_field}. "
-        "At an appropriate moment, ask the user for a proper index in very natural language given the context, "
-        "then call get_reading_context function with 'current_index' set to their response. "
-        "Continue as you otherwise would afterwards, this should be subtle."
-    )
-
-    # Determine the index to use
-    index = None
-
-    # Case 1: Index is provided in the current function call
-    if current_index is not None:
-        try:
-            index = int(current_index)
-            if index < 0 or index >= item_count:
-                raise ValueError("Index out of range")
-
-            # Valid index - update the state
-            flow_manager.state[source]["index"] = index
-
-        except ValueError:
-            return {
-                "status": "error",
-                "message": index_error_message.format(
-                    variable_name=variable_name,
-                    index_field=index_field,
-                    options=options,
-                ),
-            }
-
-    # Case 2: Try to get index from session configuration
-    elif (index := flow_manager.state.get("user", {}).get("index")) is not None:
-        try:
-            index = int(index) - 1  # Adjust for 0-based index
-            if index < 0 or index >= item_count:
-                raise ValueError("Index out of range")
-        except (ValueError, KeyError):
-            return {
-                "status": "error",
-                "message": index_error_message.format(
-                    variable_name=variable_name,
-                    index_field=index_field,
-                    options=options,
-                ),
-            }
-
-    # Case 3: No index available - need to prompt
-    else:
-        key_information = root_data.get("key_information", "No data available")
-        if isinstance(key_information, dict):
-            key_information = json.dumps(key_information, indent=2)
-        return {
-            "status": "error",
-            "message": index_error_message.format(
-                variable_name=variable_name,
-                index_field=index_field,
-                options=options,
-                data=key_information,
-            ),
-        }
-
-    # Get the indexed item
-    indexed_data = indexable_items[index]
-
-    data = {
-        k: v for k, v in root_data.items() if k != "indexable_by" and k != index_field
-    }
-
-    data[f"current_{index_field}"] = indexed_data
-    data["key_information"]["Chapter Number"] = index + 1
-
-    return {"status": "success", "data": data}
 
 
 async def get_activity_handler(
     args: Union[FlowArgs, dict], flow_manager: FlowManager
 ) -> Dict[str, Any]:
-    """
-    Handler to retrieve activity variables from the flow state.
-
-    For simple variables: returns the variable directly
-    For indexable variables: root[root["indexable_by"]][index][field] (if field specified)
-
-    Args:
-        args: Flow arguments:
-            - variable_name (required): Name of the session variable
-            - current_index (optional): Index for indexable variables
-        flow_manager: Flow manager instance
-
-    Returns:
-        Flow result with the requested variable value
-    """
+    """Handler to retrieve activity variables."""
     variable_name = args.get("variable_name")
     if not variable_name:
         return {"status": "error", "message": "No variable name provided"}
 
-    current_index = args.get("current_index")
-
-    return handle_indexable_variable(
+    handler = IndexableVariableHandler(flow_manager)
+    return handler.get_variable(
         variable_name=variable_name,
-        flow_manager=flow_manager,
-        current_index=current_index,
         source="activity",
+        current_index=args.get("current_index"),
     )
 
 
 async def get_user_handler(
     args: Union[FlowArgs, dict], flow_manager: FlowManager
 ) -> Dict[str, Any]:
-    """
-    Handler to retrieve a user-session variable from the flow state.
-
-    Args:
-        args: Flow arguments, should include 'variable_name'
-        flow_manager: Flow manager instance
-
-    Returns:
-        Flow result with the requested variable value
-    """
+    """Handler to retrieve user-session variables."""
     variable_name = args.get("variable_name")
 
     if not variable_name:
         return {"status": "error", "message": "No variable name provided"}
 
-    if variable_name not in flow_manager.state["user"]:
+    user_state = flow_manager.state.get("user", {})
+    if variable_name not in user_state:
         return {
             "status": "error",
-            "error": f"Variable '{variable_name}' not found in session user",
+            "message": f"Variable '{variable_name}' not found in session user",
         }
 
-    return {"status": "success", "data": flow_manager.state["user"].get(variable_name)}
+    return {"status": "success", "data": user_state[variable_name]}
 
 
 async def get_variable_action_handler(action: dict, flow_manager: FlowManager) -> None:
-    """
-    Post-action handler that adds a variable value to the LLM context.
-
-    This handler retrieves the value of the specified variable and adds it
-    directly to the LLM context as a system message for use in subsequent
-    interactions. It supports multiple LLM providers including OpenAI,
-    Anthropic, Google/Gemini, and AWS Bedrock.
-
-    Checks if variable is indexable and retrieves the indexed item if the index is set.
-    It will not prompt the user for an index!
-
-    Args:
-        action: Action configuration with variable_name field
-        flow_manager: Flow manager instance
-    """
+    """Post-action handler that adds a variable value to the LLM context."""
     variable_name = action.get("variable_name")
     if not variable_name:
         logger.error("Missing variable_name in add_to_context action")
         return
 
     source = action.get("source", "activity")
-
-    if source not in flow_manager.state:
-        logger.error(f"Source '{source}' not found in flow manager state")
-        return
-
-    if variable_name not in flow_manager.state[source]:
-        logger.error(
-            f"Variable '{variable_name}' not found in {source} within flow manager state"
-        )
-        return
-
-    # Use helper function to handle indexable variable logic
-    result = handle_indexable_variable(
-        variable_name=variable_name,
-        flow_manager=flow_manager,
-        current_index=None,  # Pre-actions don't provide current_index
-        source=source,
-    )
+    handler = IndexableVariableHandler(flow_manager)
+    result = handler.get_variable(variable_name, source)
 
     if result["status"] == "error":
+        logger.error(
+            f"Error retrieving variable '{variable_name}': {result['message']}"
+        )
         content = result["message"]
-        logger.error(f"Error retrieving variable '{variable_name}': {content}")
     else:
-        # Successfully retrieved the variable value
-        value = result["data"]
+        content = VariableFormatter.format(variable_name, result["data"])
 
-        # Format the content based on the variable type
-    if isinstance(value, dict):
-        key_info = value.get("key_information", {})
-
-        # Get remaining data (everything except key_information)
-        other_data = {k: v for k, v in value.items() if k != "key_information"}
-
-        content = f"""KEY INFORMATION SECTION:
-    {json.dumps(key_info, indent=2)}
-
-    MORE INFORMATION:
-    {json.dumps(other_data, indent=2)}"""
-    else:
-        content = f"Available information - {variable_name}: {value}"
-
+    # Queue the message to LLM
     await flow_manager.task.queue_frame(
         LLMMessagesAppendFrame(messages=[{"role": "system", "content": content}])
     )
