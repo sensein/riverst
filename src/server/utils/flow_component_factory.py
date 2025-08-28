@@ -84,7 +84,7 @@ class FlowComponentFactory:
                 "activity variables path not provided, using default within flow config file"
             )
         else:
-            logger.info(f"acitivity variables path: {self.activity_variables_path}")
+            logger.info(f"activity variables path: {self.activity_variables_path}")
 
         if not self.flow_config_path:
             logger.error("Flow config path not provided but advanced_flows is enabled")
