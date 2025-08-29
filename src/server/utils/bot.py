@@ -197,6 +197,42 @@ async def run_bot(
         )
 
         rtvi = RTVIProcessor(config=RTVIConfig(config=[]))
+        
+        # Track thinking animation state
+        thinking_task = None
+        thinking_active = False
+        
+        async def stop_thinking_animation():
+            """Stop the thinking animation if it's currently active."""
+            nonlocal thinking_task, thinking_active
+            if thinking_active and thinking_task:
+                thinking_task.cancel()
+                thinking_active = False
+                try:
+                    await thinking_task
+                except asyncio.CancelledError:
+                    pass
+        
+        async def start_thinking_animation_with_timeout():
+            """Start thinking animation with a 2-second timeout."""
+            nonlocal thinking_active
+            if "thinking" in allowed_animations:
+                thinking_active = True
+                try:
+                    await AnimationHandler.handle_animation(
+                        {"animation_id": "thinking"}, rtvi=rtvi, allowed_animations=allowed_animations
+                    )
+                    logger.info("Started thinking animation with timeout")
+                    # Wait for 2 seconds, then automatically stop
+                    await asyncio.sleep(0.5)
+                    thinking_active = False
+                    logger.info("Thinking animation timeout reached, stopping")
+                except asyncio.CancelledError:
+                    logger.info("Thinking animation was cancelled")
+                    thinking_active = False
+                except Exception as e:
+                    logger.error(f"Failed to start thinking animation: {e}")
+                    thinking_active = False
 
         def function_call_debug_wrapper(fn):
             async def wrapper(params: FunctionCallParams):
@@ -420,14 +456,28 @@ async def run_bot(
         # Event handlers for data, transcripts, and UI events
         @transcript.event_handler("on_transcript_update")
         async def on_transcript_update(processor, frame):
+            # Stop thinking animation when final user transcript is rendered
+            for msg in frame.messages:
+                if msg.role == "user" and msg.content and msg.content.strip():
+                    await stop_thinking_animation()
+                    logger.info("Stopped thinking animation on user transcript completion")
+                    
+                    break
             await transcript_handler.on_transcript_update(processor, frame)
 
         @audiobuffer.event_handler("on_user_turn_audio_data")
         async def on_user_audio(_, audio, sr, ch):
+            nonlocal thinking_task, thinking_active
             audios_dir = os.path.join(session_dir, "audios")
             os.makedirs(audios_dir, exist_ok=True)
             path = f"{audios_dir}/{datetime.datetime.now():%Y%m%d_%H%M%S_%f}_USER.wav"
             await save_audio_file(audio, path, sr, ch)
+            
+            # Start thinking animation when user stops speaking
+            if not thinking_active:
+                thinking_task = asyncio.create_task(start_thinking_animation_with_timeout())
+            else:
+                logger.info("Thinking animation already active, not starting new one")
 
         @audiobuffer.event_handler("on_bot_turn_audio_data")
         async def on_bot_audio(_, audio, sr, ch):
