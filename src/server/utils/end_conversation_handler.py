@@ -100,6 +100,7 @@ class CleanEndProcessor(FrameProcessor):
 
         self.end_conversation_frame: Frame = None
         self.tts_stopped_received = False
+        self._END_OF_SPEECH_BUFFER_S = 1.7
 
     async def process_frame(self, frame: Frame, direction: FrameDirection):
 
@@ -121,7 +122,7 @@ class CleanEndProcessor(FrameProcessor):
                 duration = payload.get("duration", 0)
                 logger.debug(f"Received visemes-event with duration: {duration}s")
 
-                wait_time = duration + 1.7
+                wait_time = duration + self._END_OF_SPEECH_BUFFER_S
                 logger.debug(
                     f"Waiting {wait_time}s before sending end conversation frame"
                 )
