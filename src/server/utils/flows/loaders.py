@@ -6,16 +6,17 @@ from pipecat_flows import NodeConfig, FlowConfig
 
 from .models.config_models import FlowConfigurationFile
 from .handlers import (
-    get_session_variable_handler,
+    get_activity_handler,
     general_handler,
-    get_info_variable_handler,
+    get_user_handler,
     get_variable_action_handler,
 )
 
 
 def load_config(
     flow_config_path: str,
-    session_variables_path: Optional[str] = None,
+    activity_variables_path: Optional[str] = None,
+    user_variables: Optional[dict[str, Any]] = None,
     end_conversation_handler=None,
 ) -> Tuple[FlowConfig, Dict[str, Any]]:
     """
@@ -26,54 +27,56 @@ def load_config(
     if not flow_config_file.exists():
         raise FileNotFoundError(f"Configuration file not found: {flow_config_path}")
 
-    config_data = json.loads(flow_config_file.read_text())
+    flow_config_data = json.loads(flow_config_file.read_text())
 
-    if "state_config" not in config_data:
+    if "state_config" not in flow_config_data:
         raise ValueError(
             "State configuration is missing in the flow configuration file."
         )
 
     # Only check session variables if path is provided
-    if session_variables_path:
-        session_variables_file = Path(session_variables_path)
-        if session_variables_file.exists():
-            session_variables = load_session_variables(session_variables_path)
-            config_data["state_config"]["session_variables"] = session_variables
+    if activity_variables_path:
+        activity_variables_file = Path(activity_variables_path)
+        if activity_variables_file.exists():
+            activity_variables = load_activity_variables(activity_variables_path)
+            flow_config_data["state_config"]["activity"] = activity_variables
+
+        # If user_variables is provided, merge it with existing user data
+        existing_user = flow_config_data["state_config"].get("user", {})
+        flow_config_data["state_config"]["user"] = {**existing_user, **user_variables}
 
     # Validate the complete configuration
-    config_data = FlowConfigurationFile(**config_data)
+    flow_config_data = FlowConfigurationFile(**flow_config_data)
 
     # Extract state and flow configurations
-    state = get_flow_state(config_data)
+    state = get_flow_state(flow_config_data)
     flow_config = get_flow_config(
-        config_data, end_conversation_handler=end_conversation_handler
+        flow_config_data, end_conversation_handler=end_conversation_handler
     )
 
     return flow_config, state
 
 
-def load_session_variables(session_variables_path: Optional[str]) -> Dict[str, Any]:
-    """
-    [Your existing docstring - but remove Optional from return type since you return {} not None]
-    """
-    if not session_variables_path:
+def load_activity_variables(activity_variables_path: Optional[str]) -> Dict[str, Any]:
+
+    if not activity_variables_path:
         return {}
 
-    session_variables_file = Path(session_variables_path)
+    activity_variables_file = Path(activity_variables_path)
 
-    if not session_variables_file.exists():
+    if not activity_variables_file.exists():
         raise FileNotFoundError(
-            f"Session variables file not found: {session_variables_path}"
+            f"Session variables file not found: {activity_variables_path}"
         )
 
     try:
-        session_variables = json.loads(session_variables_file.read_text())
+        activity_variables = json.loads(activity_variables_file.read_text())
     except json.JSONDecodeError as e:
         raise ValueError(
-            f"Invalid JSON in session variables file: {session_variables_path}"
+            f"Invalid JSON in session variables file: {activity_variables_path}"
         ) from e
 
-    return session_variables
+    return activity_variables
 
 
 def get_flow_config(
@@ -110,14 +113,11 @@ def get_flow_config(
                     func_def["function"]["handler"] = general_handler
                 elif (
                     func_def.get("function", {}).get("handler")
-                    == "get_session_variable_handler"
+                    == "get_activity_handler"
                 ):
-                    func_def["function"]["handler"] = get_session_variable_handler
-                elif (
-                    func_def.get("function", {}).get("handler")
-                    == "get_info_variable_handler"
-                ):
-                    func_def["function"]["handler"] = get_info_variable_handler
+                    func_def["function"]["handler"] = get_activity_handler
+                elif func_def.get("function", {}).get("handler") == "get_user_handler":
+                    func_def["function"]["handler"] = get_user_handler
 
         # Actions also need to resolve handlers
         if "pre_actions" in node_dict:
@@ -126,7 +126,9 @@ def get_flow_config(
                     action["handler"] = get_variable_action_handler
                 if action.get("handler") == "end_conversation_handler":
                     if end_conversation_handler is None:
-                        raise ValueError("Configuration requests 'end_conversation_handler', but no handler was provided.")
+                        raise ValueError(
+                            "Configuration requests 'end_conversation_handler', but no handler was provided."
+                        )
                     action["handler"] = end_conversation_handler.handle_end_conversation
 
         if "post_actions" in node_dict:
@@ -164,8 +166,8 @@ def get_flow_state(config: FlowConfigurationFile) -> Dict[str, Any]:
             k: v.model_dump() if hasattr(v, "model_dump") else v
             for k, v in state_config.stages.items()
         },
-        "info": state_config.info,
-        "session_variables": state_config.session_variables,
+        "user": state_config.user,
+        "activity": state_config.activity,
     }
 
     return state_dict
