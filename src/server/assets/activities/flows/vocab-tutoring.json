@@ -13,7 +13,7 @@
         "checklist_complete_message": "Great job completing the warm-up stage. Now let's move on to the first vocabulary word.",
         "transition_logic" : {
           "conditions": [],
-          "default_target_node": "closing"
+          "default_target_node": "vocab"
 
         }
       },
