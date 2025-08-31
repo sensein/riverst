@@ -27,7 +27,7 @@ interface TalkingHeadAPI {
   setMood: (mood: string) => void;
   stopSpeaking: () => void;
   playGesture: (gesture: string, duration?: number) => void;
-  playPose: (posePath: string) => void;
+  playPose: (url: string, onprogress?: any, dur?: number, ndx?: number, scale?: number) => Promise<any>;
   speakAudio: (args: {
     audio: AudioBuffer;
     words?: string[];
@@ -38,6 +38,9 @@ interface TalkingHeadAPI {
     vdurations?: number[];
   }) => void;
   setView: (view: string) => void;
+  stopPose: () => void;
+  stopAnimation: () => void;
+  playAnimation: (url: string, onprogress?: any, dur?: number, ndx?: number, scale?: number) => Promise<any>;
 }
 
 const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
@@ -110,6 +113,29 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
     if (!head) return;
     head.setMood("neutral");
     head.stopSpeaking();
+  });
+
+  // Handle when the user stops speaking - start thinking animation
+  useRTVIClientEvent(RTVIEvent.UserStoppedSpeaking, () => {
+    const head = headRef.current;
+    if (!head) return;
+    // Randomly select thinking animation
+    const thinkingAnimations = [
+      "/animations/thinking/thinking.fbx",
+      "/animations/thinking/thinking2.fbx"
+    ];
+    const randomIndex = Math.floor(Math.random() * thinkingAnimations.length);
+    const selectedAnimation = thinkingAnimations[randomIndex];
+    head.playAnimation(selectedAnimation);
+  });
+
+  // Handle when bot starts speaking - stop thinking animation
+  useRTVIClientEvent(RTVIEvent.BotTtsStopped, () => {
+    const head = headRef.current;
+    if (!head) return;
+    head.stopPose(); // Stop thinking animation when bot responds
+    head.setMood("neutral");
+    console.log("Bot started speaking");
   });
 
   // Helper to play animations or mood changes
