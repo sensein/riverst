@@ -122,11 +122,14 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
     // Randomly select thinking animation
     const thinkingAnimations = [
       "/animations/thinking/thinking.fbx",
-      "/animations/thinking/thinking2.fbx"
+      "/animations/thinking/thinking2.fbx",
+      "/animations/thinking/thinking3.fbx"
     ];
-    const randomIndex = Math.floor(Math.random() * thinkingAnimations.length);
-    const selectedAnimation = thinkingAnimations[randomIndex];
-    head.playAnimation(selectedAnimation);
+    const randomIndex = Math.floor(Math.random() * (thinkingAnimations.length + 3));
+    if (randomIndex < thinkingAnimations.length) {
+      const selectedAnimation = thinkingAnimations[randomIndex];
+      head.playAnimation(selectedAnimation);
+    } 
   });
 
   // Handle when bot starts speaking - stop thinking animation
@@ -135,7 +138,6 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
     if (!head) return;
     head.stopPose(); // Stop thinking animation when bot responds
     head.setMood("neutral");
-    console.log("Bot started speaking");
   });
 
   // Helper to play animations or mood changes
