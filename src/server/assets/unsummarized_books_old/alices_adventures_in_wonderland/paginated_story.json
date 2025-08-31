@@ -1,7 +1,6 @@
 {
     "reading_context": {
         "indexable_by": "chapters",
-        "current_index": null,
         "book_title": "Alice in Wonderland",
         "book_author": "Lewis Carroll",
         "chapters": [

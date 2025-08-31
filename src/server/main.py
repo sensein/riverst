@@ -80,7 +80,7 @@ ice_servers = [
     IceServer(urls="stun:stun3.l.google.com:3478"),
     IceServer(urls="stun:stun3.l.google.com:5349"),
     IceServer(urls="stun:stun4.l.google.com:19302"),
-    IceServer(urls="stun:stun4.l.google.com:5349")
+    IceServer(urls="stun:stun4.l.google.com:5349"),
 ]
 
 # Optionally add TURN server if env vars are present
@@ -90,12 +90,9 @@ turn_credential = os.getenv("TURN_CREDENTIAL")
 
 if turn_url and turn_username and turn_credential:
     ice_servers.append(
-        IceServer(
-            urls=turn_url,
-            username=turn_username,
-            credential=turn_credential
-        )
+        IceServer(urls=turn_url, username=turn_username, credential=turn_credential)
     )
+
 
 # Authentication routes
 @app.post("/api/auth/google")
@@ -289,8 +286,10 @@ async def get_books() -> JSONResponse:
                         "r", encoding="utf-8"
                     ) as f:
                         book_data = json.load(f)
-                        title = book_data.get("reading_context", {}).get(
-                            "book_title", book_name
+                        title = (
+                            book_data.get("reading_context", {})
+                            .get("key_information", {})
+                            .get("book_title", book_name)
                         )
                 except Exception:
                     title = book_name.replace("_", " ").title()
@@ -301,6 +300,32 @@ async def get_books() -> JSONResponse:
     except Exception as e:
         logger.error(f"Error loading books: {e}")
         return JSONResponse(status_code=500, content={"error": "Unable to load books"})
+
+
+@app.get("/api/book-chapters")
+async def get_book_chapters(bookPath: str = Query(...)) -> JSONResponse:
+    """Returns the maximum number of chapters for a specific book."""
+    try:
+        # Convert relative path to absolute path
+        book_file_path = BASE_SESSION_DIR / bookPath.lstrip("./")
+
+        if not book_file_path.exists():
+            return JSONResponse(
+                status_code=404, content={"error": "Book file not found"}
+            )
+
+        with book_file_path.open("r", encoding="utf-8") as f:
+            book_data = json.load(f)
+            chapters = book_data.get("reading_context", {}).get("chapters", [])
+            max_chapters = len(chapters)
+
+        return JSONResponse(content={"maxChapters": max_chapters})
+
+    except Exception as e:
+        logger.error(f"Error loading book chapters: {e}")
+        return JSONResponse(
+            status_code=500, content={"error": "Unable to load book chapters"}
+        )
 
 
 @app.get("/api/activities")
@@ -631,7 +656,7 @@ if __name__ == "__main__":
         uvicorn_kwargs["ssl_certfile"] = os.path.expanduser(args.ssl_certfile)
         uvicorn_kwargs["ssl_keyfile"] = os.path.expanduser(args.ssl_keyfile)
         logger.add(sys.stderr, level="TRACE" if args.verbose else "DEBUG")
-        #logger.add(sys.stderr, level="ERROR")
+        # logger.add(sys.stderr, level="ERROR")
     else:
         logger.add(sys.stderr, level="TRACE" if args.verbose else "DEBUG")
 

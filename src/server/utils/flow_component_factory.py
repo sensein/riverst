@@ -23,12 +23,13 @@ class FlowComponentFactory:
         task: PipelineTask,
         advanced_flows: bool = False,
         flow_config_path: Optional[str] = None,
-        session_variables_path: Optional[str] = None,
+        activity_variables_path: Optional[str] = None,
+        user_activity_variables: Optional[dict[str, Any]] = None,
         user_description: Optional[str] = None,
         enabled_animations: Optional[List[str]] = None,
         session_dir: Optional[str] = None,
         end_conversation_handler: Optional[Any] = None,
-        context_strategy: ContextStrategy = ContextStrategy.RESET_WITH_SUMMARY,
+        context_strategy: ContextStrategy = ContextStrategy.RESET,
         summary_prompt: str = (
             "Summarize the key moments of learning, words, and concepts discussed in the tutoring session so far. "
             "Keep it concise and focused on vocabulary learning."
@@ -42,7 +43,8 @@ class FlowComponentFactory:
             task: The pipeline task
             advanced_flows: Whether to use advanced flows (default: False)
             flow_config_path: Path to the flow configuration file
-            session_variables_path: Path to the session variables file
+            activity_variables_path: Path to the activity variables file (e.g. book)
+            user_activity_variables: User-activity specific variables (e.g. current_chapter)
             user_description: Description of the user for context
             animation_instruction: Instruction for animations of the avatar
             session_dir: Directory for session data
@@ -55,7 +57,8 @@ class FlowComponentFactory:
         self.task = task
         self.advanced_flows = advanced_flows
         self.flow_config_path = flow_config_path
-        self.session_variables_path = session_variables_path
+        self.activity_variables_path = activity_variables_path
+        self.user_activity_variables = user_activity_variables or {}
         self.user_description = user_description
         self.enabled_animations = enabled_animations or []
         self.context_strategy = context_strategy
@@ -76,12 +79,12 @@ class FlowComponentFactory:
         logger.info(
             f"Initializing flow manager with config path: {self.flow_config_path}"
         )
-        if not self.session_variables_path:
+        if not self.activity_variables_path:
             logger.warning(
-                "Session variables path not provided, using default within flow config file"
+                "activity variables path not provided, using default within flow config file"
             )
         else:
-            logger.info(f"Session variables path: {self.session_variables_path}")
+            logger.info(f"activity variables path: {self.activity_variables_path}")
 
         if not self.flow_config_path:
             logger.error("Flow config path not provided but advanced_flows is enabled")
@@ -90,7 +93,8 @@ class FlowComponentFactory:
         try:
             flow_config, state = load_config(
                 self.flow_config_path,
-                self.session_variables_path,
+                self.activity_variables_path,
+                self.user_activity_variables,
                 end_conversation_handler=self.end_conversation_handler,
             )
 

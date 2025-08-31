@@ -251,11 +251,14 @@ async def run_bot(
 
         end_conversation_handler = EndConversationHandler(rtvi)
 
+        async def end_conversation_wrapper(params):
+            return await end_conversation_handler.handle_end_conversation(
+                params, flow_manager
+            )
+
         llm.register_function(
             "end_conversation",
-            function_call_debug_wrapper(
-                end_conversation_handler.handle_end_conversation
-            ),
+            function_call_debug_wrapper(end_conversation_wrapper),
         )
 
         async def handle_user_idle(_: UserIdleProcessor, retry_count: int) -> bool:
@@ -406,7 +409,12 @@ async def run_bot(
             task=task,
             advanced_flows=config.get("advanced_flows", False),
             flow_config_path=config.get("advanced_flows_config_path"),
-            session_variables_path=config.get("session_variables_path"),
+            activity_variables_path=config.get("activity_variables_path"),
+            user_activity_variables=(
+                {"index": config.get("index")}
+                if config.get("index") is not None
+                else {}
+            ),
             user_description=config.get("user_description", ""),
             enabled_animations=allowed_animations,
             end_conversation_handler=end_conversation_handler,

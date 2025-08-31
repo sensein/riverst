@@ -149,7 +149,7 @@ export default function AvatarInteractionContent({
       async (message: { type: string }) => {
         if (message.type === 'conversation-ended') {
           enableMic(false);
-          await onSessionEnd(8000);
+          await onSessionEnd(0);
         }
       },
       []
