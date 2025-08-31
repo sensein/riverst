@@ -159,6 +159,21 @@ class BotComponentFactory:
             # TODO: we may improve this by adding a language detection tool!!
         instruction += f"Avatar description: {self.avatar_personality_description}\n"
         instruction += f"Task description: {self.task_description}\n"
+
+        instruction += """
+            Natural speech style (spoken output guidelines):
+            - Keep sentences short and conversational; vary rhythm.
+            - Sprinkle light interjections and discourse markers when appropriate:
+            EN: “uh”, “um”, “hmm”, “well”, “so”, “you know”, “I mean”, “okay”
+            - Use punctuation for micro-pauses:
+            comma ≈ short pause; em-dash — medium; ellipsis … ≈ slightly longer.
+            - DO NOT add fillers inside numbers, code, URLs, names, or step-by-step instructions.
+            - If giving critical instructions or reading structured info, switch to “clear mode” (no fillers).
+            - Keep fillers subtle: at most ~1 per 2 sentences; never begin two sentences in a row with a filler.
+            - When you genuinely hesitate (e.g., searching memory, reflecting), you may briefly call the tool
+            `trigger_animation` with `animation_id="thinking"` before the sentence that starts with “hmm/uh/well”.
+            """.strip() + "\n"
+
         if self.user_description:
             instruction += f"User description: {self.user_description}\n"
         return instruction.strip()
