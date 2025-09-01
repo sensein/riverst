@@ -70,7 +70,7 @@ VALID_ANIMATIONS = [
         "id": "thinking",
         "description": (
             "When you are thinking, you can do the 'thinking' animation, "
-            "you can do the 'thinking' animation if you are thinking."
+            "If you are unsure or contemplating something, you can do the 'thinking' animation."
         ),
         
     }
