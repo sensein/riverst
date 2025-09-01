@@ -130,7 +130,7 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
   });
 
   // Handle when bot starts speaking - stop thinking animation
-  useRTVIClientEvent(RTVIEvent.BotTtsStopped, () => {
+  useRTVIClientEvent(RTVIEvent.BotTtsStarted, () => {
     const head = headRef.current;
     if (!head) return;
     head.stopPose(); // Stop thinking animation when bot responds
