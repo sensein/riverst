@@ -219,14 +219,13 @@
         "task_messages": [
           {
             "role": "system",
-            "content": "The session is now complete. Say goodbye in a friendly and encouraging way. Please call the end_conversation function now."
+            "content": "The session is now complete. Say goodbye in a friendly and encouraging way."
           }
         ],
         "functions": [],
-        "pre_actions": [
+        "post_actions": [
           {
-            "type": "function",
-            "handler": "end_conversation_handler"
+            "type": "end_conversation"
           }
         ]
       }

@@ -8,20 +8,17 @@ regular bot mode and advanced flows.
 
 from typing import Dict, Any, Optional
 from loguru import logger
-import asyncio
 
-from pipecat.processors.frameworks.rtvi import RTVIServerMessageFrame, RTVIProcessor
 from pipecat.adapters.schemas.function_schema import FunctionSchema
-from pipecat.frames.frames import TTSSpeakFrame, TTSStoppedFrame, Frame
-from pipecat.processors.frame_processor import FrameDirection, FrameProcessor
+from pipecat.frames.frames import TTSSpeakFrame
 
 
 class EndConversationHandler:
     """Handles conversation termination, providing a unified interface for ending sessions."""
 
-    def __init__(self, rtvi: RTVIProcessor):
-        """Initialize the handler with RTVI processor for real-time updates."""
-        self.rtvi = rtvi
+    def __init__(self, task):
+        """Initialize the handler with pipeline task for frame queuing."""
+        self.task = task
 
     @staticmethod
     def get_end_conversation_instruction() -> str:
@@ -31,10 +28,9 @@ class EndConversationHandler:
             Formatted instruction string explaining when to use end_conversation function.
         """
         instruction = (
-            "End Conversation Instruction: Call the end_conversation() function when you want to "
-            "end the conversation naturally. IMPORTANT: MAKE SURE TO SAY GOODBYE BEFORE "
-            "CALLING IT! Use this when you determine it's appropriate to end "
-            "the interaction, or when the user indicates they want to finish the session.\n"
+            "End Conversation Instruction: Call the end_conversation function when you want to "
+            "end the conversation naturally. Use it when the user indicates they want to finish the session "
+            "or at a natural stopping point in the dialogue.\n"
         )
         return instruction
 
@@ -67,18 +63,10 @@ class EndConversationHandler:
         logger.info("End conversation requested by LLM")
 
         try:
-            await self.rtvi.push_frame(
-                TTSSpeakFrame("It was nice talking to you. Have a nice day!")
-            )
+            await self.task.queue_frame(TTSSpeakFrame("Thanks for talking today, bye!"))
 
-            # Send conversation ended message to client
-            frame = RTVIServerMessageFrame(
-                data={
-                    "type": "conversation-ended",
-                    "message": "The conversation has ended. Thank you for talking with 'River street'!",
-                }
-            )
-            await self.rtvi.push_frame(frame)
+            # Use stop_when_done for graceful termination
+            await self.task.stop_when_done()
             result = {"status": "conversation_ended"}
             logger.info("Conversation ended successfully")
 
@@ -90,59 +78,3 @@ class EndConversationHandler:
             }
 
         return result
-
-
-class CleanEndProcessor(FrameProcessor):
-    """Processor for handling clean end of conversations."""
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        self.end_conversation_frame: Frame = None
-        self.tts_stopped_received = False
-        self._END_OF_SPEECH_BUFFER_S = 1.7
-
-    async def process_frame(self, frame: Frame, direction: FrameDirection):
-
-        await super().process_frame(frame, direction)
-
-        if isinstance(frame, RTVIServerMessageFrame):
-            if frame.data.get("type") == "conversation-ended":
-                logger.debug("Received conversation-ended frame")
-                self.end_conversation_frame = frame
-                return  # Do not push frame now
-
-            if (
-                frame.data.get("type") == "visemes-event"
-                and self.tts_stopped_received
-                and self.end_conversation_frame
-            ):
-                # Extract duration from visemes-event payload
-                payload = frame.data.get("payload", {})
-                duration = payload.get("duration", 0)
-                logger.debug(f"Received visemes-event with duration: {duration}s")
-
-                wait_time = duration + self._END_OF_SPEECH_BUFFER_S
-                logger.debug(
-                    f"Waiting {wait_time}s before sending end conversation frame"
-                )
-
-                # Schedule the end conversation frame to be sent after the wait
-                asyncio.create_task(self._send_end_frame_after_delay(wait_time))
-
-                # Reset state
-                self.tts_stopped_received = False
-                self.end_conversation_frame = None
-
-        if isinstance(frame, TTSStoppedFrame) and self.end_conversation_frame:
-            logger.debug("Received TTSStoppedFrame after conversation ended")
-            self.tts_stopped_received = True
-
-        await self.push_frame(frame)
-
-    async def _send_end_frame_after_delay(self, delay: float):
-        """Send the end conversation frame after a delay."""
-        await asyncio.sleep(delay)
-        if self.end_conversation_frame:
-            logger.debug("Sending delayed end conversation frame")
-            await self.push_frame(self.end_conversation_frame)

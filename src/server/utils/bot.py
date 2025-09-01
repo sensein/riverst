@@ -48,7 +48,7 @@ from .bot_component_factory import BotComponentFactory
 from .flow_component_factory import FlowComponentFactory
 from .metrics import MetricsLoggerProcessor
 from .animation_handler import AnimationHandler
-from .end_conversation_handler import EndConversationHandler, CleanEndProcessor
+from .end_conversation_handler import EndConversationHandler
 from .video_buffer_processor import VideoBufferProcessor
 
 load_dotenv(override=True)
@@ -249,18 +249,6 @@ async def run_bot(
             "trigger_animation", function_call_debug_wrapper(animation_handler_wrapper)
         )
 
-        end_conversation_handler = EndConversationHandler(rtvi)
-
-        async def end_conversation_wrapper(params):
-            return await end_conversation_handler.handle_end_conversation(
-                params, flow_manager
-            )
-
-        llm.register_function(
-            "end_conversation",
-            function_call_debug_wrapper(end_conversation_wrapper),
-        )
-
         async def handle_user_idle(_: UserIdleProcessor, retry_count: int) -> bool:
             """Handle user inactivity by escalating reminders and ending the session if needed.
 
@@ -326,8 +314,6 @@ async def run_bot(
             ),
         )
 
-        clean_end_processor = CleanEndProcessor()
-
         if stt is not None and tts is not None:
             # Note: e2e is faster, but classic is still preferable for now
             steps = [
@@ -353,7 +339,6 @@ async def run_bot(
                     if config.get("video_flag", False)
                     else None
                 ),
-                clean_end_processor,
                 pipecat_transport.output(),
                 audiobuffer,
                 transcript.assistant(),
@@ -403,6 +388,19 @@ async def run_bot(
             ),
             idle_timeout_secs=None,  # No idle timeout for the bot
             cancel_on_idle_timeout=False,  # Don't auto-cancel, just notify
+        )
+
+        # Create end conversation handler after task is defined
+        end_conversation_handler = EndConversationHandler(task)
+
+        async def end_conversation_wrapper(params):
+            return await end_conversation_handler.handle_end_conversation(
+                params, None  # flow_manager will be available when this is called
+            )
+
+        llm.register_function(
+            "end_conversation",
+            function_call_debug_wrapper(end_conversation_wrapper),
         )
 
         # Will initialize flow manager if advanced flows are enabled
