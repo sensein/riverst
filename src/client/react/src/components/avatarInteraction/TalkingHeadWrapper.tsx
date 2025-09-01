@@ -122,9 +122,9 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
 
     // TODO: Triggering thinking animation using LLM 
     const MAX_THINKING_ANIMATIONS = 3;
-    const thinkingNumber = Math.floor(Math.random() * (MAX_THINKING_ANIMATIONS + 1)) + 1; // Random number between 1 and MAX_THINKING_ANIMATIONS + 1 (+1 because we don't want to make animation at every UserStoppedSpeaking event)
-    const selectedAnimation = `/animations/thinking/thinking${thinkingNumber === 1 ? '' : thinkingNumber}.fbx`;
-    if (thinkingNumber <= MAX_THINKING_ANIMATIONS) {
+    const thinkingNumber = Math.floor(Math.random() * (MAX_THINKING_ANIMATIONS + 1)); // 0 means no animation, 1-3 are valid animations
+    if (thinkingNumber > 0) {
+      const selectedAnimation = `/animations/thinking/thinking${thinkingNumber === 1 ? '' : thinkingNumber}.fbx`;
       head.playAnimation(selectedAnimation);
     }
   });
