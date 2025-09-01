@@ -24,7 +24,7 @@ from pipecat.processors.audio.audio_buffer_processor import AudioBufferProcessor
 from pipecat.processors.transcript_processor import TranscriptProcessor
 from pipecat.transports.base_transport import TransportParams
 from pipecat.transports.network.small_webrtc import SmallWebRTCTransport
-from pipecat.frames.frames import EndFrame
+from pipecat.frames.frames import EndFrame, LLMRunFrame
 from pipecat.services.llm_service import FunctionCallParams
 from pipecat.processors.filters.stt_mute_filter import (
     STTMuteConfig,
@@ -292,7 +292,7 @@ async def run_bot(
                     "content": message,
                 }
             )
-            await task.queue_frame(context_aggregator.assistant().get_context_frame())
+            await task.queue_frame(LLMRunFrame())
             return True
 
         # user_idle = UserIdleProcessor(callback=handle_user_idle, timeout=15)
@@ -460,7 +460,7 @@ async def run_bot(
             if flow_manager:
                 await flow_manager.initialize()
             else:
-                await task.queue_frames([context_aggregator.user().get_context_frame()])
+                await task.queue_frames([LLMRunFrame()])
 
         @pipecat_transport.event_handler("on_client_connected")
         async def on_client_connected(_, __):

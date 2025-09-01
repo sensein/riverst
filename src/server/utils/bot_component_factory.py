@@ -18,7 +18,10 @@ from pipecat.services.piper.tts import PiperTTSService
 from pipecat.services.gemini_multimodal_live import GeminiMultimodalLiveLLMService
 from pipecat.services.whisper.stt import WhisperSTTService
 from pipecat.adapters.schemas.tools_schema import ToolsSchema
-from pipecat.processors.aggregators.openai_llm_context import OpenAILLMContext
+from pipecat.processors.aggregators.llm_response import (
+    LLMContext,
+    LLMContextAggregatorPair,
+)
 from pipecat.services.elevenlabs.tts import ElevenLabsTTSService
 import json
 from .animation_handler import AnimationHandler
@@ -461,8 +464,8 @@ class BotComponentFactory:
 
         # print("Messages of this session:", messages)
 
-        context = OpenAILLMContext(messages=messages, tools=tools, tool_choice="auto")
-        context_aggregator = llm.create_context_aggregator(context=context)
+        context = LLMContext(messages=messages, tools=tools, tool_choice="auto")
+        context_aggregator = LLMContextAggregatorPair(context=context)
         lipsync_processor = LipsyncProcessor()
 
         return (
