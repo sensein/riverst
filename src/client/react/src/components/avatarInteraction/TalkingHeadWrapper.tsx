@@ -119,17 +119,14 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
   useRTVIClientEvent(RTVIEvent.UserStoppedSpeaking, () => {
     const head = headRef.current;
     if (!head) return;
-    // Randomly select thinking animation
-    const thinkingAnimations = [
-      "/animations/thinking/thinking.fbx",
-      "/animations/thinking/thinking2.fbx",
-      "/animations/thinking/thinking3.fbx"
-    ];
-    const randomIndex = Math.floor(Math.random() * (thinkingAnimations.length + 3));
-    if (randomIndex < thinkingAnimations.length) {
-      const selectedAnimation = thinkingAnimations[randomIndex];
+
+    // TODO: Triggering thinking animation using LLM 
+    const MAX_THINKING_ANIMATIONS = 3;
+    const thinkingNumber = Math.floor(Math.random() * (MAX_THINKING_ANIMATIONS + 1)) + 1; // Random number between 1 and MAX_THINKING_ANIMATIONS + 1 (+1 because we don't want to make animation at every UserStoppedSpeaking event)
+    const selectedAnimation = `/animations/thinking/thinking${thinkingNumber === 1 ? '' : thinkingNumber}.fbx`;
+    if (thinkingNumber <= MAX_THINKING_ANIMATIONS) {
       head.playAnimation(selectedAnimation);
-    } 
+    }
   });
 
   // Handle when bot starts speaking - stop thinking animation
