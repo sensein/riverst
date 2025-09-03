@@ -30,6 +30,7 @@ class EndConversationHandler:
         instruction = (
             "End Conversation Instruction: Call the end_conversation function when you want to "
             "end the conversation naturally. Use it when the user indicates they want to finish the session "
+            "or when they say goodbye or express their intention to leave "
             "or at a natural stopping point in the dialogue.\n"
         )
         return instruction
