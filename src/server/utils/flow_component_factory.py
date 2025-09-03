@@ -115,7 +115,7 @@ class FlowComponentFactory:
                 flow_config=flow_config,
             )
 
-            flow_manager.state = state
+            flow_manager.state.update(state)
 
             self.flow_manager = flow_manager
             logger.info("Flow manager successfully built")
