@@ -86,6 +86,7 @@ const AuthenticatedRoutes = () => (
           </ProtectedRoute>
         }
       />
+      <Route path="*" element={<ErrorPage />} />
     </Routes>
   </AuthProvider>
 );
@@ -105,10 +106,9 @@ const App = () => {
             {/* Completely unauthenticated route - NO AuthProvider */}
             <Route path="/avatar-interaction/:sessionId" element={<AvatarInteraction />} />
 
+            <Route path="/error" element={<ErrorPage />} />
             {/* All other routes - WITH AuthProvider (including login) */}
             <Route path="/*" element={<AuthenticatedRoutes />} />
-            {/* Catch-all for unknown routes */}
-            <Route path="*" element={<ErrorPage />} />
           </Routes>
         </Suspense>
       </Router>

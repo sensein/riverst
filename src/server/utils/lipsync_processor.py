@@ -249,7 +249,7 @@ class LipsyncProcessor(FrameProcessor):
     """Processor for handling lipsync animations based on audio input."""
 
     PHONEME_VISEME_MAP_PATH = os.path.abspath("assets/phoneme_oculusviseme_map.json")
-    MIN_DURATION_TO_PROCESS = 1.0  # seconds
+    MIN_DURATION_TO_PROCESS = 0.5  # seconds
     SAMPLE_RATE = 16000
     MIN_SAMPLES_TO_PROCESS = int(SAMPLE_RATE * MIN_DURATION_TO_PROCESS)
 
@@ -338,19 +338,44 @@ class LipsyncProcessor(FrameProcessor):
         return waveform.to(self.device)
 
     async def _run_lipsync(self, waveform: torch.Tensor, direction: FrameDirection):
+        # Pre-pad MIN_DURATION_TO_PROCESS s of silence before inference
+        # Motivation: https://github.com/tabahi/contexless-phonemes-CUPE/issues/2#issuecomment-3206071931
+        pad_samples = int(self.MIN_DURATION_TO_PROCESS * self.SAMPLE_RATE)
+        silence = torch.zeros(pad_samples, device=waveform.device)
+        padded_waveform = torch.cat([silence, waveform], dim=-1)
+
         result = await asyncio.to_thread(
             predict_phonemes_from_waveform,
-            waveform,
+            padded_waveform,
             self.extractor,
             self.windowing,
             self.token_to_phoneme,
             self.token_to_group,
             device=self.device,
         )
-        # print("phonemes:", result["phoneme_segments"])
-        viseme_events = self._phoneme_segments_to_viseme_events(
-            result["phoneme_segments"]
-        )
+
+        # Subtract MIN_DURATION_TO_PROCESS s offset from predicted timestamps and discard anything in the padded region
+        offset = self.MIN_DURATION_TO_PROCESS
+        adjusted_segments = []
+        for seg in result["phoneme_segments"]:
+            s, e = seg["start"], seg["end"]
+
+            # Drop segments fully before offset
+            if e <= offset:
+                continue
+
+            # Drop segments that straddle the offset
+            if s < offset < e:
+                continue
+
+            # Shift times
+            seg_new = seg.copy()
+            seg_new["start"] = round(s - offset, 2)
+            seg_new["end"] = round(e - offset, 2)
+
+            adjusted_segments.append(seg_new)
+
+        viseme_events = self._phoneme_segments_to_viseme_events(adjusted_segments)
         if (
             viseme_events
             and "visemes" in viseme_events
