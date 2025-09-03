@@ -119,7 +119,7 @@ const LoginPage: React.FC = () => {
               Welcome to Riverst
             </Title>
             <Paragraph type="secondary">
-              Sign in with your Google account to continue
+              Sign in with your Google account to access the reserved area
             </Paragraph>
           </div>
 
@@ -143,10 +143,11 @@ const LoginPage: React.FC = () => {
           )}
 
           <div>
-            <Paragraph type="secondary" style={{ fontSize: '12px', margin: 0 }}>
-              Only authorized users can access this application.
+            <Paragraph type="secondary" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
+              Access is restricted to authorized users only.
               <br />
-              Contact your administrator if you need access.
+              To request access, please contact{' '}
+              <a href="mailto:fabiocat@mit.edu">fabiocat@mit.edu</a>.
             </Paragraph>
           </div>
         </Space>

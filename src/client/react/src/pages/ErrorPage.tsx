@@ -12,6 +12,8 @@ export default function ErrorPage() {
   const isCustom = !!message
   const resolvedStatus = status || (isCustom ? 'error' : '404')
 
+  console.log("ErrorPage rendered with status:", resolvedStatus)
+
   return (
     <div style={{ padding: '2rem' }}>
       <Result
