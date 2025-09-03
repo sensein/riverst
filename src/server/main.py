@@ -377,7 +377,7 @@ async def get_activity_settings(settings_path: str) -> JSONResponse:
         )
 
         for key, model_list in {
-            "llm_type": ["openai", "openai_realtime_beta", "gemini"],
+            "llm_type": ["openai", "openai_gpt-realtime", "gemini"],
             "stt_type": ["openai"],
             "tts_type": ["openai"],
         }.items():
@@ -387,7 +387,7 @@ async def get_activity_settings(settings_path: str) -> JSONResponse:
                     m
                     for m in allowed
                     if not (
-                        (not has_openai and m in ["openai", "openai_realtime_beta"])
+                        (not has_openai and m in ["openai", "openai_gpt-realtime"])
                         or (not has_google and m == "gemini")
                     )
                 ]

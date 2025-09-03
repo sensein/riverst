@@ -32,7 +32,7 @@ import shutil
 ModalityType = Literal["classic", "e2e"]
 LLMType = Literal[
     "openai",
-    "openai_realtime_beta",
+    "openai_gpt-realtime",
     "ollama/qwen3:4b-instruct-2507-q4_K_M",
 ]
 STTType = Literal["openai", "whisper"]
@@ -40,7 +40,7 @@ TTSType = Literal["openai", "piper", "kokoro"]
 
 ALLOWED_LLM = {
     "classic": {"openai", "ollama/qwen3:4b-instruct-2507-q4_K_M"},
-    "e2e": {"openai_realtime_beta"},
+    "e2e": {"openai_gpt-realtime"},
 }
 
 
@@ -211,7 +211,7 @@ class BotComponentFactory:
             if self.llm_type == "openai":
                 llm = OpenAILLMService(
                     api_key=os.getenv("OPENAI_API_KEY"),
-                    model=(self.llm_params or {}).get("model", "gpt-4o-mini"),
+                    model=(self.llm_params or {}).get("model", "gpt-4.1"),
                 )
             elif self.llm_type.startswith("ollama/"):
                 llm = CustomOLLamaLLMService(
@@ -268,7 +268,7 @@ class BotComponentFactory:
                 tts = KokoroTTSService(voice=voice_id, device=device)
 
         elif self.modality == "e2e":
-            if self.llm_type == "openai_realtime_beta":
+            if self.llm_type == "openai_gpt-realtime":
                 voice = (
                     "alloy"
                     if "gender" in self.avatar and self.avatar["gender"] == "feminine"
@@ -291,9 +291,7 @@ class BotComponentFactory:
                 )
                 llm = FixedOpenAIRealtimeBetaLLMService(
                     api_key=os.getenv("OPENAI_API_KEY"),
-                    model=(self.llm_params or {}).get(
-                        "model", "gpt-4o-realtime-preview-2025-06-03"
-                    ),
+                    model=(self.llm_params or {}).get("model", "gpt-realtime"),
                     session_properties=props,
                     start_audio_paused=False,
                     send_transcription_frames=True,

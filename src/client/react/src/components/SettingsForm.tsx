@@ -136,7 +136,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
       updates.stt_type = getDefault('stt_type');
       updates.tts_type = getDefault('tts_type');
     } else if (pipelineModality === 'e2e') {
-      updates.llm_type = 'openai_realtime_beta';
+      updates.llm_type = 'openai_gpt-realtime';
       updates.stt_type = undefined;
       updates.tts_type = undefined;
     }
@@ -187,7 +187,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
     if (key === 'llm_type') {
       config.enum = pipelineModality === 'classic'
         ? ['openai', 'ollama/qwen3:4b-instruct-2507-q4_K_M']
-        : ['openai_realtime_beta'];
+        : ['openai_gpt-realtime'];
     }
 
     const rules = [];
