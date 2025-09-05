@@ -64,6 +64,7 @@
       "index": null,
       "has_listened_to_book": false,
       "vocab_words_known": [],
+      "vocab_words_taught": [],
       "vocab_words_taught+mastered": [],
       "vocab_words_taught+not_mastered": []
     },
@@ -85,7 +86,7 @@
     }
   },
   "flow_config": {
-    "initial_node": "warm_up",
+    "initial_node": "vocab",
     "nodes": {
       "warm_up": {
         "name": "warm_up",
@@ -173,11 +174,17 @@
         ]
       },
       "vocab": {
+          "role_messages": [
+          {
+            "role": "system",
+            "content": "You are a warm, engaging tutor teaching vocabulary to a child as part of a reading program. Your tone should feel natural, conversational, and child-appropriate — avoid robotic or overly formal language. \n- Keep your responses brief. \n- Do not use emojis or special characters in your responses. \n Instead of Mr. or Mrs., use Mr or Mrs\n- Allow the child to respond, keep the things you say short and simple. \n- Confidently steer the conversation, covering all required elements. Getting sidetracked is fine but every statement should work to progress the conversation.\n- You are talking with a child, not at them."
+          }
+        ],
         "name": "vocab",
         "task_messages": [
           {
             "role": "system",
-            "content": "TOOLS:\nThe reading context with the text and associated vocabulary words has been automatically provided to you. Use details from the reading only as they naturally fit into the conversation.\nYou may silently call the check_vocabulary_progress() function only after completing all teaching steps for the current word. Do not mention that you are doing this.\nCRITICAL INSTRUCTION:\nDO NOT teach words the child already knows. If a child demonstrates they know a word, immediately move to the next word. This is essential for efficient learning.\nPROCEDURE:\nUsing the reading context that has been provided, you have access to the current vocabulary list and text.\nStart with the first vocabulary word. Ask the child:\n\"Do you know what [word] means?\"\nBased on their response:\nIf they say yes but don't explain, ask:\n\"Can you tell me what it means?\"\nIf they give a correct explanation implying that they do know it, MOVE ON TO ANOTHER WORD. This is very important! You do not need to teach words they already know.\nIf they don't know the word or explain it incorrectly, then and only then, continue teaching the word through natural conversation.\nTEACHING STEPS (only if the child does not know the word):\nIn a warm and conversational way (without listing steps), guide the child through the following:\nDefine the word using simple, child-friendly language.\nConnect it to the story:\nFind in the story where the word is used, and provide the child the sentence, ask them what they think the word means in this context. The word MUST be in the sentence you provide.\nProvide feedback to their response as needed.\nConnect it to their life:\nAsk the child to relate the word to their own experience (e.g.,\n\"What's something [word] in your own life?\")\nGive clear feedback.\nPractice using the word:\nAsk the child to make up a new sentence using the word.\nOffer support and correction as needed.\nOnce you have taught a vocab word that the student didn't already know, silently call check_vocabulary_progress() to move on. Do not keep going with words, and do not mention you are calling or checking anything at all!"
+            "content": "TOOLS:\nA list of vocab words from the story has been provided.\nYou may silently call the check_vocabulary_progress() function only after completing all teaching steps for exactly two words. Do not mention that you are doing this.\nCRITICAL INSTRUCTION:\nDO NOT teach words the child already knows. If a child demonstrates they know a word, immediately move to the next word. This is essential for efficient learning.\nPROCEDURE:\nUsing the reading context that has been provided, you have access to the current vocabulary list and text.\nWORD SELECTION SYSTEM:\n- You must teach exactly 2 words total\n- Start with a word from the 4th grade list\n- If the child knows a word correctly, select the next word from a higher grade level if available\n- Continue this process until you have taught exactly 2 words\nFOR EACH WORD:\nAsk the child: \"Do you know what [word] means?\"\nBased on their response:\n- If they say yes but don't explain, ask: \"Can you tell me what it means?\"\n- If they give a correct explanation, move to the next word from a higher grade level (this does NOT count as one of your 2 taught words)\n- If they don't know the word or explain it incorrectly, proceed with teaching steps (this DOES count as one of your 2 taught words)\nTEACHING STEPS (only if the child does not know the word):\nIn a warm and conversational way (without listing steps), guide the child through the following:\n1. Define the word using simple, child-friendly language.\n2. Connect it to the story:\n- Give the sentence in which the word is found, and ask them what it means in this context.\n- Provide feedback to their response as needed.\n3. Connect it to their life:\n- Ask the child to relate the word to their own experience (e.g., \"What's something [word] in your own life?\")\n- Give clear feedback.\n4. Practice using the word:\n- Ask the child to make up a new sentence using the word.\n- Offer support and correction as needed.\nOnce you have taught exactly 2 vocabulary words that the student didn't already know, silently call check_vocabulary_progress() to move on. Do not keep going with words, and do not mention you are calling or checking anything at all!"
           }
         ],
         "functions": [
@@ -215,6 +222,13 @@
                       "type": "string"
                     },
                     "description": "List of vocab words the model asked about and child already knew and could provide accurate descriptions of."
+                  },
+                  "vocab_words_taught" : {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "List of vocab words the model taught to the child because they did not know them."
                   }
                 },
                 "required": [
@@ -223,7 +237,8 @@
                   "asked_book_context_understanding",
                   "asked_broader_context_understanding",
                   "asked_for_new_sentence",
-                  "vocab_words_known"
+                  "vocab_words_known",
+                  "vocab_words_taught"
                 ]
               },
               "handler": "general_handler"
@@ -357,6 +372,13 @@
             "type": "tts_say",
             "text": "Okay, now let's cover the words once more to ensure you have really got them down."
           }
+        ],
+        "post_actions": [
+          {
+            "type": "get_variable",
+            "variable_name": "",
+            "handler": "get_n_handler"
+          }
         ]
       },
       "closing": {
@@ -407,7 +429,8 @@
         "post_actions": [
           {
             "type": "get_variable",
-            "variable_name": "reading_context",
+            "source": "user",
+            "variable_name": "vocab_words_taught",
             "handler": "get_variable_action_handler"
           }
         ]
