@@ -48,7 +48,7 @@ class IndexableVariableHandler:
             return self._success(root_data)
 
         # Handle indexable variables
-        return self._handle_indexable(variable_name, root_data, source, current_index)
+        return self._handle_indexable(variable_name, root_data, current_index)
 
     def _is_indexable(self, data: Any) -> bool:
         """Check if data is indexable."""
@@ -58,7 +58,6 @@ class IndexableVariableHandler:
         self,
         variable_name: str,
         root_data: dict,
-        source: str,
         current_index: Optional[int],
     ) -> Dict[str, Any]:
         """Process indexable variable logic."""
@@ -74,8 +73,8 @@ class IndexableVariableHandler:
         if not self._validate_index(index, len(items)):
             return self._create_index_prompt(variable_name, root_data, index_field)
 
-        # Store resolved index
-        self.flow_manager.state[source]["index"] = index
+        # Store resolved index in user state where _resolve_index looks for it
+        self.flow_manager.state["user"]["index"] = index
 
         # Build response data
         return self._build_indexed_response(root_data, index_field, index)
@@ -84,14 +83,14 @@ class IndexableVariableHandler:
         self, current_index: Optional[int], item_count: int
     ) -> Optional[int]:
         """Resolve index from available sources."""
-        # Priority 1: Explicit current_index
+        # Priority 1: Explicit current_index from prompting user (1-based, needs adjustment)
         if current_index is not None:
             try:
-                return int(current_index)
+                return int(current_index) - 1
             except (ValueError, TypeError):
                 return None
 
-        # Priority 2: User session index (1-based, needs adjustment)
+        # Priority 2: User session index from settings (1-based, needs adjustment)
         user_index = self.flow_manager.state.get("user", {}).get("index")
         if user_index is not None:
             try:
@@ -269,7 +268,7 @@ class FlowStateManager:
 
     def _get_node(self, node_id: str) -> NodeConfig:
         """Get node configuration by ID."""
-        node = self.flow_manager.nodes.get(node_id)
+        node = self.flow_manager._nodes.get(node_id)
         if not node:
             raise ValueError(f"Node '{node_id}' not found")
         return node
