@@ -86,7 +86,7 @@
     }
   },
   "flow_config": {
-    "initial_node": "vocab",
+    "initial_node": "warm_up",
     "nodes": {
       "warm_up": {
         "name": "warm_up",
