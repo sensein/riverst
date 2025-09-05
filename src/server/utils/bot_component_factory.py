@@ -1,6 +1,7 @@
 import os
 from typing import Optional, Tuple, Literal, List, Dict, Any
 from dataclasses import dataclass
+from loguru import logger
 
 from pipecat.services.openai.stt import OpenAISTTService
 from pipecat.services.openai.tts import OpenAITTSService
@@ -174,8 +175,14 @@ class BotComponentFactory:
         end_conversation_schema = (
             EndConversationHandler.build_end_conversation_tools_schema()
         )
+        stop_animation_schema = AnimationHandler.build_stop_animation_tools_schema()
 
-        return ToolsSchema(standard_tools=[animation_schema, end_conversation_schema])
+        logger.info("TOOLS_DEBUG: Animation schema: {}", animation_schema.name)
+        logger.info("TOOLS_DEBUG: End conversation schema: {}", end_conversation_schema.name)
+        logger.info("TOOLS_DEBUG: Stop animation schema: {}", stop_animation_schema.name)
+        logger.info("TOOLS_DEBUG: Stop animation schema details: {}", stop_animation_schema.__dict__)
+
+        return ToolsSchema(standard_tools=[animation_schema, end_conversation_schema, stop_animation_schema])
 
     async def build(self) -> Tuple[
         Optional[object],  # STT

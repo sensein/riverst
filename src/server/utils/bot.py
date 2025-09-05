@@ -205,6 +205,13 @@ async def run_bot(
                     if isinstance(params, FunctionCallParams)
                     else params
                 )
+                
+                # Enhanced logging for stop_animation specifically
+                if hasattr(fn, '__name__') and 'stop_animation' in fn.__name__:
+                    logger.info("STOP_ANIMATION_WRAPPER_DEBUG: Function '{}' called", fn.__name__)
+                    logger.info("STOP_ANIMATION_WRAPPER_DEBUG: Params type: {}", type(params))
+                    logger.info("STOP_ANIMATION_WRAPPER_DEBUG: Params: {}", params)
+                
                 logger.info(
                     "FUNCTION_DEBUG: Function '{}' called with args: {}",
                     fn.__name__,
@@ -244,10 +251,25 @@ async def run_bot(
             return await AnimationHandler.handle_animation(
                 params, rtvi=rtvi, allowed_animations=allowed_animations
             )
-
+        
         llm.register_function(
             "trigger_animation", function_call_debug_wrapper(animation_handler_wrapper)
         )
+
+        async def stop_animation_handler_wrapper(params):
+            """Wrapper for the stop animation handler to include RTVI instance."""
+            logger.info("WRAPPER_DEBUG: stop_animation_handler_wrapper called with params: {}", params)
+            result = await AnimationHandler.handle_stop_animation(
+                params, rtvi=rtvi
+            )
+            logger.info("WRAPPER_DEBUG: stop_animation_handler_wrapper returning: {}", result)
+            return result
+
+        llm.register_function(
+            "stop_animation", function_call_debug_wrapper(stop_animation_handler_wrapper)
+        )
+        
+        logger.info("REGISTRATION_DEBUG: Registered stop_animation function with LLM")
 
         async def handle_user_idle(_: UserIdleProcessor, retry_count: int) -> bool:
             """Handle user inactivity by escalating reminders and ending the session if needed.

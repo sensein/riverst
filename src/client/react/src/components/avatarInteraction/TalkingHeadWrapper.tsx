@@ -27,7 +27,7 @@ interface TalkingHeadAPI {
   setMood: (mood: string) => void;
   stopSpeaking: () => void;
   playGesture: (gesture: string, duration?: number) => void;
-  playPose: (url: string, onprogress?: any, dur?: number, ndx?: number, scale?: number) => Promise<any>;
+  playPose: (posePath: string) => void;
   speakAudio: (args: {
     audio: AudioBuffer;
     words?: string[];
@@ -115,28 +115,6 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
     head.stopSpeaking();
   });
 
-  // Handle when the user stops speaking - start thinking animation
-  useRTVIClientEvent(RTVIEvent.UserStoppedSpeaking, () => {
-    const head = headRef.current;
-    if (!head) return;
-
-    // TODO: Triggering thinking animation using LLM 
-    const MAX_THINKING_ANIMATIONS = 3;
-    const thinkingNumber = Math.floor(Math.random() * (MAX_THINKING_ANIMATIONS + 1)); // 0 means no animation, 1-3 are valid animations
-    if (thinkingNumber > 0) {
-      const selectedAnimation = `/animations/thinking/thinking${thinkingNumber === 1 ? '' : thinkingNumber}.fbx`;
-      head.playAnimation(selectedAnimation);
-    }
-  });
-
-  // Handle when bot starts speaking - stop thinking animation
-  useRTVIClientEvent(RTVIEvent.BotTtsStarted, () => {
-    const head = headRef.current;
-    if (!head) return;
-    head.stopPose(); // Stop thinking animation when bot responds
-    head.setMood("neutral");
-  });
-
   // Helper to play animations or mood changes
   const handleAnimationEvent = (animation: string) => {
     const head = headRef.current;
@@ -159,8 +137,8 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
     if (gestureMap[animation]) {
       const val = gestureMap[animation];
       if (typeof val === "string") {
-        // Check if it's an .fbx file path (should use playPose)
-        if (val.endsWith('.fbx')) {
+        // Check if it's a file path
+        if (val.startsWith("/animations/")) {
           head.playPose(val);
         } else {
           head.playGesture(val);
@@ -207,7 +185,12 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
     RTVIEvent.ServerMessage,
     useCallback((msg: any) => {
       if (msg.type === "animation-event") {
-        handleAnimationEvent(msg.payload.animation_id);
+        if (msg.payload === "stop") {
+          headRef.current?.stopPose?.();
+          headRef.current?.setMood("neutral");
+        } else {
+          handleAnimationEvent(msg.payload.animation_id);
+        }
       } else if (msg.type === "visemes-event") {
         if (msg.payload) handleVisemeEvent(msg.payload);
         else console.warn("Invalid viseme payload:", msg.payload);
