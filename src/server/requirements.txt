@@ -20,3 +20,6 @@ google-auth
 google-auth-oauthlib
 python-jose[cryptography]
 python-multipart
+#onnx>=1.12.0  # for gpu
+#onnxslim>=0.1.67  # for gpu
+#onnxruntime-gpu  # for gpu
