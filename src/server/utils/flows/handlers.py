@@ -73,8 +73,8 @@ class IndexableVariableHandler:
         if not self._validate_index(index, len(items)):
             return self._create_index_prompt(variable_name, root_data, index_field)
 
-        # Store resolved index in user state where _resolve_index looks for it
-        self.flow_manager.state["user"]["index"] = index
+        # Store resolved index in user state where _resolve_index looks for it (1-based)
+        self.flow_manager.state["user"]["index"] = index + 1
 
         # Build response data
         return self._build_indexed_response(root_data, index_field, index)
@@ -83,26 +83,26 @@ class IndexableVariableHandler:
         self, current_index: Optional[int], item_count: int
     ) -> Optional[int]:
         """Resolve index from available sources."""
-        # Priority 1: Explicit current_index from prompting user (1-based, needs adjustment)
+        # Priority 1: Explicit current_index from prompting user (1-based)
         if current_index is not None:
             try:
-                return int(current_index) - 1
+                return int(current_index)
             except (ValueError, TypeError):
                 return None
 
-        # Priority 2: User session index from settings (1-based, needs adjustment)
+        # Priority 2: User session index from settings (1-based)
         user_index = self.flow_manager.state.get("user", {}).get("index")
         if user_index is not None:
             try:
-                return int(user_index) - 1
+                return int(user_index)
             except (ValueError, TypeError):
                 return None
 
         return None
 
     def _validate_index(self, index: int, item_count: int) -> bool:
-        """Validate index is within bounds."""
-        return 0 <= index < item_count
+        """Validate index is within bounds (1-based)."""
+        return 1 <= index <= item_count
 
     def _create_index_prompt(
         self,
@@ -134,13 +134,13 @@ class IndexableVariableHandler:
             k: v for k, v in root_data.items() if k not in ["indexable_by", index_field]
         }
 
-        # Add current indexed item
-        data[f"current_{index_field}"] = root_data[index_field][index]
+        # Add current indexed item (subtract 1 for 0-based array indexing)
+        data[f"current_{index_field}"] = root_data[index_field][index - 1]
 
-        # Update chapter number if key_information exists
+        # Update chapter number if key_information exists (index is already 1-based)
         if "key_information" in data:
             if isinstance(data["key_information"], dict):
-                data["key_information"]["Chapter Number"] = index + 1
+                data["key_information"]["Chapter Number"] = index
 
         return self._success(data)
 
