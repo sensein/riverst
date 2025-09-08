@@ -12,6 +12,8 @@ from loguru import logger
 from pipecat.adapters.schemas.function_schema import FunctionSchema
 from pipecat.frames.frames import TTSSpeakFrame
 
+from ..monitoring import function_call_debug
+
 
 class EndConversationHandler:
     """Handles conversation termination, providing a unified interface for ending sessions."""
@@ -51,14 +53,14 @@ class EndConversationHandler:
             required=[],
         )
 
+    @function_call_debug
     async def handle_end_conversation(
-        self, action: Dict[str, Any], flow_manager: Any
+        self, _params: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:
         """Handle conversation termination request.
 
         Args:
-            action: Action configuration dict from flow system
-            flow_manager: FlowManager instance
+            _params: Action configuration dict from flow system (unused in this context)
 
         Returns:
             Response dict for action system.

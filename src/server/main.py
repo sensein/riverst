@@ -117,7 +117,7 @@ async def google_auth(request: Request) -> JSONResponse:
         log_rejected_login(email, name, "User not in authorized list")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied. Your account is not authorized to access this application.",
+            detail="Access denied. Your account is not authorized to access this application. Go on, git!",
         )
 
     # Create JWT token

@@ -1,6 +1,4 @@
 import aiohttp
-import json
-import traceback
 from typing import Any
 
 from dotenv import load_dotenv
@@ -16,7 +14,6 @@ from pipecat.processors.frameworks.rtvi import (
     RTVIProcessor,
 )
 from pipecat.processors.transcript_processor import TranscriptProcessor
-from pipecat.services.llm_service import FunctionCallParams
 from pipecat.processors.filters.stt_mute_filter import (
     STTMuteConfig,
     STTMuteFilter,
@@ -86,7 +83,7 @@ async def run_bot(
             tts,
             _,
             _,
-            context,
+            _,
             context_aggregator,
             allowed_animations,
             _,
@@ -112,56 +109,11 @@ async def run_bot(
 
         rtvi = RTVIProcessor(config=RTVIConfig(config=[]))
 
-        def function_call_debug_wrapper(fn):
-            async def wrapper(params: FunctionCallParams):
-                args = (
-                    params.arguments
-                    if isinstance(params, FunctionCallParams)
-                    else params
-                )
-                logger.info(
-                    "FUNCTION_DEBUG: Function '{}' called with args: {}",
-                    fn.__name__,
-                    json.dumps(args),
-                )
-                try:
-                    result = await fn(params)
-                    logger.info(
-                        "FUNCTION_DEBUG: Function '{}' completed successfully with result: {}",
-                        fn.__name__,
-                        json.dumps(result) if result else "None",
-                    )
-                    return result
-                except Exception as e:
-                    logger.error(
-                        "FUNCTION_DEBUG: Error in function '{}': {}",
-                        fn.__name__,
-                        str(e),
-                    )
-                    logger.error("FUNCTION_DEBUG: {}", traceback.format_exc())
-
-                    result = {
-                        "status": "error",
-                        "message": f"Execution error in '{fn.__name__}': {str(e)}",
-                    }
-
-                    if isinstance(params, FunctionCallParams):
-                        await params.result_callback(result)
-                    else:
-                        return result
-
-            return wrapper
-
-        # create a closure that provides the rtvi instance and allowed animations to the handler
-        async def animation_handler_wrapper(params):
-            """Wrapper for the animation handler to include RTVI instance."""
-            return await AnimationHandler.handle_animation(
-                params, rtvi=rtvi, allowed_animations=allowed_animations
-            )
-
-        llm.register_function(
-            "trigger_animation", function_call_debug_wrapper(animation_handler_wrapper)
+        # Animations (debugging handled as a wrapper in the handler)
+        animation_handler = AnimationHandler(
+            rtvi=rtvi, allowed_animations=allowed_animations
         )
+        llm.register_function("trigger_animation", animation_handler.handle_animation)
 
         # User idle handler implementation moved to EventHandlerManager
 
@@ -217,15 +169,8 @@ async def run_bot(
 
         # Create end conversation handler after task is defined
         end_conversation_handler = EndConversationHandler(task)
-
-        async def end_conversation_wrapper(params):
-            return await end_conversation_handler.handle_end_conversation(
-                params, None  # flow_manager will be available when this is called
-            )
-
         llm.register_function(
-            "end_conversation",
-            function_call_debug_wrapper(end_conversation_wrapper),
+            "end_conversation", end_conversation_handler.handle_end_conversation
         )
 
         # Will initialize flow manager if advanced flows are enabled

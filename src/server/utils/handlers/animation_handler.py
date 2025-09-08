@@ -11,6 +11,8 @@ from pipecat.services.llm_service import FunctionCallParams
 from pipecat.processors.frameworks.rtvi import RTVIServerMessageFrame, RTVIProcessor
 from pipecat.adapters.schemas.function_schema import FunctionSchema
 
+from ..monitoring.function_call_debug_wrapper import function_call_debug
+
 VALID_ANIMATIONS = [
     {
         "id": "dance",
@@ -76,6 +78,16 @@ VALID_ANIMATION_IDS = list(ANIMATION_MAP.keys())
 class AnimationHandler:
     """Handles avatar animations, providing a unified interface for triggering animations."""
 
+    def __init__(self, rtvi: RTVIProcessor, allowed_animations: List[str]):
+        """Initialize the animation handler with dependencies.
+
+        Args:
+            rtvi: RTVIProcessor instance for sending animation events.
+            allowed_animations: List of allowed animation IDs for this session.
+        """
+        self.rtvi = rtvi
+        self.allowed_animations = allowed_animations
+
     @staticmethod
     def get_valid_animation_ids() -> List[str]:
         """Return all valid animation IDs."""
@@ -100,18 +112,16 @@ class AnimationHandler:
             f"Animation Instruction: {' '.join(instructions)}\n" if instructions else ""
         )
 
-    @staticmethod
-    def build_animation_tools_schema(enabled_animations: List[str]) -> "FunctionSchema":
-        """Build JSON schema for animation tool.
-
-        Args:
-            enabled_animations: List of enabled animation IDs.
+    def build_animation_tools_schema(self) -> "FunctionSchema":
+        """Build JSON schema for animation tool using instance's allowed animations.
 
         Returns:
             Schema dict for LLM tool registration.
         """
         animations = [
-            anim_id for anim_id in enabled_animations if anim_id in VALID_ANIMATION_IDS
+            anim_id
+            for anim_id in self.allowed_animations
+            if anim_id in VALID_ANIMATION_IDS
         ]
         return FunctionSchema(
             name="trigger_animation",
@@ -126,16 +136,12 @@ class AnimationHandler:
             required=["animation_id"],
         )
 
-    @staticmethod
-    async def handle_animation(
-        params: Any, rtvi: RTVIProcessor, allowed_animations: List[str]
-    ) -> Optional[Dict[str, Any]]:
+    @function_call_debug
+    async def handle_animation(self, params: Any) -> Optional[Dict[str, Any]]:
         """Trigger avatar animation if allowed.
 
         Args:
             params: FunctionCallParams or dict containing 'animation_id'.
-            rtvi: RTVIProcessor to send the animation event.
-            allowed_animations: List of allowed animation IDs.
 
         Returns:
             Response dict if not using result_callback.
@@ -143,10 +149,10 @@ class AnimationHandler:
         args = params.arguments if isinstance(params, FunctionCallParams) else params
         animation_id = args.get("animation_id")
 
-        if animation_id not in allowed_animations:
+        if animation_id not in self.allowed_animations:
             result = {
                 "status": "error",
-                "error": f"Invalid animation ID. Valid IDs: {allowed_animations}",
+                "error": f"Invalid animation ID. Valid IDs: {self.allowed_animations}",
             }
         else:
             try:
@@ -156,7 +162,7 @@ class AnimationHandler:
                         "payload": {"animation_id": animation_id},
                     }
                 )
-                await rtvi.push_frame(frame)
+                await self.rtvi.push_frame(frame)
                 result = {"status": "animation_triggered"}
             except Exception as e:
                 result = {
