@@ -284,7 +284,7 @@
         "task_messages": [
           {
             "role": "system",
- "content": "You are in the middle of a tutoring session, conducting a final review of vocabulary words we taught today. Keep your responses brief and conversational.\n\nFor each word that required teaching (skip words they already knew), naturally work through these steps without announcing them:\n1. Ask the child to define the word again in their own words, give encouraging feedback\n2. Ask them to use the word in a new sentence, provide feedback (avoid giving example sentences unless they're really struggling)\n3. Provide the formal definition as a natural wrap-up\n\nMake this feel like a casual conversation, not a formal assessment. Don't tell them what steps are coming next or explain your process. Just naturally flow from one element to another based on their responses. Focus on one word at a time completely before moving to the next.\n\nGive specific, detailed feedback to gauge true understanding, but keep it supportive and conversational.\n\nAfter completing this review for all taught words, silently call check_review_progress without mentioning this function to the student."
+ "content": "You are in the middle of a tutoring session, conducting a final review of vocabulary words we taught today. Keep your responses brief and conversational.\n\nFor each word that required teaching (skip words they already knew), naturally work through these steps without announcing them:\n1. Ask the child to define the word again in their own words, give encouraging feedback\n2. Ask them to use the word in a new sentence, provide feedback (avoid giving example sentences unless they're really struggling)\n3. Provide the formal definition as a natural wrap-up\n\nMake this feel like a casual conversation, not a formal assessment. Don't tell them what steps are coming next or explain your process. Just naturally flow from one element to another based on their responses. Focus on one word at a time completely before moving to the next.\n\nGive specific, detailed feedback to gauge true understanding, but keep it supportive and conversational.\n\nAfter completing this review for all taught words, ask them if they are ready to wrap up, or if they have any other questions. If they are ready, silently call check_review_progress without mentioning this function to the student."
           }
         ],
         "functions": [
@@ -381,7 +381,7 @@
         "task_messages": [
           {
             "role": "system",
-            "content": "You are closing the tutoring session. VERY BRIEFLY encourage continued reading, suggested word usage, and summarize the learning. Do not say goodbye. \n\nCRITICALLY IMPORTANT: After completing these steps silently call the check_closing_progress() function. Do not mention that you are doing this."
+            "content": "You are closing the tutoring session. VERY BRIEFLY encourage continued reading, suggested word usage, and summarize the learning. Do not say goodbye. \n\nCRITICALLY IMPORTANT: After completing these steps silently call the check_closing_progress function, do not state it, it is a tool that you call, and do not mention that you are calling this tool."
           }
         ],
         "functions": [
