@@ -74,7 +74,7 @@ class IndexableVariableHandler:
             return self._create_index_prompt(variable_name, root_data, index_field)
 
         # Store resolved index in user state where _resolve_index looks for it (1-based)
-        self.flow_manager.state["user"]["index"] = index + 1
+        self.flow_manager.state["user"]["index"] = index
 
         # Build response data
         return self._build_indexed_response(root_data, index_field, index)
