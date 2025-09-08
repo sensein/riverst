@@ -211,7 +211,7 @@ class BotComponentFactory:
             if self.llm_type == "openai":
                 llm = OpenAILLMService(
                     api_key=os.getenv("OPENAI_API_KEY"),
-                    model=(self.llm_params or {}).get("model", "gpt-4.1"),
+                    model=(self.llm_params or {}).get("model", "gpt-5"),
                 )
             elif self.llm_type.startswith("ollama/"):
                 llm = CustomOLLamaLLMService(
