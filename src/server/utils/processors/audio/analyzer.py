@@ -13,7 +13,7 @@ from senselab.audio.tasks.speaker_embeddings import (
 )
 from senselab.utils.data_structures import HFModel, SpeechBrainModel
 
-from .utils import tensor_to_serializable
+from .serialization import tensor_to_serializable
 
 
 class AudioAnalyzer:

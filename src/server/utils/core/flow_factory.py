@@ -5,8 +5,8 @@ from loguru import logger
 from pipecat.pipeline.task import PipelineTask
 from pipecat_flows import FlowManager, ContextStrategy, ContextStrategyConfig
 
-from .flows import load_config
-from .animation_handler import AnimationHandler
+from ..flows import load_config
+from ..handlers.animation_handler import AnimationHandler
 
 
 class FlowComponentFactory:

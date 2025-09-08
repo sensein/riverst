@@ -29,7 +29,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
 
-from utils.bot import run_bot
+from utils.core.bot_runner import run_bot
 from pipecat.transports.network.webrtc_connection import (
     IceServer,
     SmallWebRTCConnection,

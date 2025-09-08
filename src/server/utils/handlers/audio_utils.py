@@ -1,30 +1,12 @@
-"""This module contains various utility functions."""
+"""Audio utilities for event handlers."""
 
 import os
 import io
 import wave
 import asyncio
 import aiofiles
-from typing import Any
-import torch
-from torch import device as TorchDevice
 import struct
 import math
-from senselab.utils.data_structures import ScriptLine
-
-
-def tensor_to_serializable(obj: Any) -> Any:
-    """Convert various objects into a JSON-serializable format."""
-    if isinstance(obj, torch.Tensor):
-        return obj.detach().cpu().tolist()
-    elif isinstance(obj, ScriptLine):
-        return obj.model_dump()  # Properly handles nested ScriptLine chunks too
-    elif isinstance(obj, dict):
-        return {k: tensor_to_serializable(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
-        return [tensor_to_serializable(v) for v in obj]
-    else:
-        return obj
 
 
 async def save_audio_file(
@@ -101,26 +83,3 @@ async def save_audio_file(
     async with aiofiles.open(filename, "wb") as f:
         await f.write(wav_bytes)
     return True
-
-
-def get_best_device(options=["cuda", "mps", "cpu"]) -> TorchDevice:
-    """Returns the "best" available torch device according to the following strategy:
-
-    1. Use CUDA if available.
-    2. If not, use MPS (Metal Performance Shaders) if available.
-    3. Otherwise, fall back to CPU.
-
-    Returns:
-        torch.device: The best available torch device ('cuda', 'mps', or 'cpu').
-    """
-    if torch.cuda.is_available() and "cuda" in options:
-        return torch.device("cuda")
-    elif (
-        hasattr(torch.backends, "mps")
-        and torch.backends.mps.is_available()
-        and "mps" in options
-    ):
-        return torch.device("mps")
-    else:
-        # Fallback to CPU
-        return torch.device("cpu")

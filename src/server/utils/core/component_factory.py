@@ -21,12 +21,12 @@ from pipecat.adapters.schemas.tools_schema import ToolsSchema
 from pipecat.processors.aggregators.openai_llm_context import OpenAILLMContext
 from pipecat.services.elevenlabs.tts import ElevenLabsTTSService
 import json
-from .animation_handler import AnimationHandler
-from .end_conversation_handler import EndConversationHandler
-from .lipsync_processor import LipsyncProcessor
-from .kokoro import KokoroTTSService
-from .utils import get_best_device
-from .custom_ollama import CustomOLLamaLLMService
+from ..handlers.animation_handler import AnimationHandler
+from ..handlers.conversation_handler import EndConversationHandler
+from ..processors.speech.lipsync_processor import LipsyncProcessor
+from ..transport.custom_services.kokoro_service import KokoroTTSService
+from ..common.device_utils import get_best_device
+from ..transport.custom_services.ollama_service import CustomOLLamaLLMService
 import shutil
 
 ModalityType = Literal["classic", "e2e"]

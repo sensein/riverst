@@ -14,7 +14,7 @@ from ultralytics import YOLO
 from ultralytics.utils import LOGGER
 from loguru import logger
 
-from .utils import get_best_device
+from ...common.device_utils import get_best_device
 
 LOGGER.setLevel(logging.WARNING)
 
