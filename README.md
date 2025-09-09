@@ -20,6 +20,16 @@ src/
 
 The code has a client-server architecture. You find instructions on how to run the client and the server in the respective folders. The bot server must be running for the client to work. Start the server first before trying the client app.
 
+#### Run with Docker
+
+You can also run Riverst entirely with Docker:
+
+```bash
+docker compose up --build
+```
+
+⚠️ Important: Before running, make sure you have created the necessary .env files with your API keys and configuration. The .env files are required for both the server and the client.
+
 ### Requirements
 
 - Python 3.10+
