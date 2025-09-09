@@ -15,7 +15,7 @@ from huggingface_hub import hf_hub_download
 import importlib.util
 import sys
 import os
-from ...common.device_utils import get_best_device
+from ...utils.device_utils import get_best_device
 import asyncio
 import re
 import numpy as np

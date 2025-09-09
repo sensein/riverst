@@ -11,7 +11,7 @@ from pipecat.services.llm_service import FunctionCallParams
 from pipecat.processors.frameworks.rtvi import RTVIServerMessageFrame, RTVIProcessor
 from pipecat.adapters.schemas.function_schema import FunctionSchema
 
-from ..monitoring.function_call_debug_wrapper import function_call_debug
+from ..monitoring import function_call_debug
 
 VALID_ANIMATIONS = [
     {
@@ -112,16 +112,18 @@ class AnimationHandler:
             f"Animation Instruction: {' '.join(instructions)}\n" if instructions else ""
         )
 
-    def build_animation_tools_schema(self) -> "FunctionSchema":
-        """Build JSON schema for animation tool using instance's allowed animations.
+    @staticmethod
+    def build_animation_tools_schema(allowed_animations: List[str]) -> "FunctionSchema":
+        """Build JSON schema for animation tool using provided allowed animations.
+
+        Args:
+            allowed_animations: List of allowed animation IDs for this session.
 
         Returns:
             Schema dict for LLM tool registration.
         """
         animations = [
-            anim_id
-            for anim_id in self.allowed_animations
-            if anim_id in VALID_ANIMATION_IDS
+            anim_id for anim_id in allowed_animations if anim_id in VALID_ANIMATION_IDS
         ]
         return FunctionSchema(
             name="trigger_animation",

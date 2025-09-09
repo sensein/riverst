@@ -23,13 +23,11 @@ from pipecat.processors.filters.stt_mute_filter import (
 from ..processors.audio.resampling_helper import AudioResamplingHelper
 from ..transport.configuration_manager import TransportConfigurationManager
 from .pipeline_orchestrator import PipelineBuilder
-from ..handlers.event_manager import EventHandlerManager
-from ..handlers.transcript_handler import TranscriptHandler
+from .event_manager import EventHandlerManager
+from ..components.transcription import TranscriptHandler
 from .component_factory import BotComponentFactory
-from .flow_factory import FlowComponentFactory
+from ..flows.flow_factory import FlowComponentFactory
 from ..monitoring.metrics_logger import MetricsLoggerProcessor
-from ..handlers.animation_handler import AnimationHandler
-from ..handlers.conversation_handler import EndConversationHandler
 from ..processors.video.buffer_processor import VideoBufferProcessor
 
 load_dotenv(override=True)
@@ -77,18 +75,13 @@ async def run_bot(
             avatar=config["avatar"],
         )
 
-        (
-            stt,
-            llm,
-            tts,
-            _,
-            _,
-            _,
-            context_aggregator,
-            allowed_animations,
-            _,
-            lipsync_processor,
-        ) = await factory.build()
+        components = await factory.build()
+        stt = components.stt
+        llm = components.llm
+        tts = components.tts
+        context_aggregator = components.context_aggregator
+        allowed_animations = components.used_animations
+        lipsync_processor = components.lipsync_processor
         metrics_logger = MetricsLoggerProcessor(session_dir=session_dir)
 
         # Setup WebRTC transport using configuration manager
@@ -109,11 +102,7 @@ async def run_bot(
 
         rtvi = RTVIProcessor(config=RTVIConfig(config=[]))
 
-        # Animations (debugging handled as a wrapper in the handler)
-        animation_handler = AnimationHandler(
-            rtvi=rtvi, allowed_animations=allowed_animations
-        )
-        llm.register_function("trigger_animation", animation_handler.handle_animation)
+        # Tool registration will happen after task is initialized
 
         # User idle handler implementation moved to EventHandlerManager
 
@@ -167,11 +156,8 @@ async def run_bot(
             cancel_on_idle_timeout=False,  # Don't auto-cancel, just notify
         )
 
-        # Create end conversation handler after task is defined
-        end_conversation_handler = EndConversationHandler(task)
-        llm.register_function(
-            "end_conversation", end_conversation_handler.handle_end_conversation
-        )
+        # Register all tools through the factory after task is defined
+        tool_handlers = factory.register_tools(llm=llm, rtvi=rtvi, task=task)
 
         # Will initialize flow manager if advanced flows are enabled
         flow_factory = FlowComponentFactory(
@@ -188,7 +174,7 @@ async def run_bot(
             ),
             user_description=config.get("user_description", ""),
             enabled_animations=allowed_animations,
-            end_conversation_handler=end_conversation_handler,
+            end_conversation_handler=tool_handlers.get("end_conversation"),
             summary_prompt=(
                 "Summarize the key moments of the session and concepts discussed so far. "
                 "Keep it concise and focused on the activity goal and achievements."

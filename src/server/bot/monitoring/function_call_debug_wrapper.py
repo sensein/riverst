@@ -9,13 +9,10 @@ def function_call_debug(fn):
     """
     Decorator to add debug logging for function calls.
     """
+
     @wraps(fn)
     async def wrapper(params: FunctionCallParams):
-        args = (
-            params.arguments
-            if isinstance(params, FunctionCallParams)
-            else params
-        )
+        args = params.arguments if isinstance(params, FunctionCallParams) else params
         logger.info(
             "FUNCTION_DEBUG: Function '{}' called with args: {}",
             fn.__name__,

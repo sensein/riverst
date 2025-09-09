@@ -6,7 +6,7 @@ from pipecat.pipeline.task import PipelineTask
 from pipecat_flows import FlowManager, ContextStrategy, ContextStrategyConfig
 
 from ..flows import load_config
-from ..handlers.animation_handler import AnimationHandler
+from ..components.llm_tools.animation_handler import AnimationHandler
 
 
 class FlowComponentFactory:
@@ -27,7 +27,6 @@ class FlowComponentFactory:
         user_activity_variables: Optional[dict[str, Any]] = None,
         user_description: Optional[str] = None,
         enabled_animations: Optional[List[str]] = None,
-        session_dir: Optional[str] = None,
         end_conversation_handler: Optional[Any] = None,
         context_strategy: ContextStrategy = ContextStrategy.RESET,
         summary_prompt: str = (
@@ -47,7 +46,6 @@ class FlowComponentFactory:
             user_activity_variables: User-activity specific variables (e.g. current_chapter)
             user_description: Description of the user for context
             animation_instruction: Instruction for animations of the avatar
-            session_dir: Directory for session data
             end_conversation_handler: Handler for ending conversations
             context_strategy: Strategy for managing context
             summary_prompt: Prompt for summarizing conversation

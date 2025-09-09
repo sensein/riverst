@@ -29,12 +29,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
 
-from utils.core.bot_runner import run_bot
+from bot.core.bot_runner import run_bot
 from pipecat.transports.network.webrtc_connection import (
     IceServer,
     SmallWebRTCConnection,
 )
-from auth import (
+from src.server.authorization.auth import (
     verify_google_token,
     load_authorized_users,
     log_rejected_login,
