@@ -85,7 +85,7 @@ async def run_bot(
         metrics_logger = MetricsLoggerProcessor(session_dir=session_dir)
 
         # Setup WebRTC transport using configuration manager
-        transport_manager = TransportConfigurationManager()
+        transport_manager = TransportConfigurationManager(config)
         transport_params, pipecat_transport = transport_manager.setup_transport(
             webrtc_connection, config
         )
