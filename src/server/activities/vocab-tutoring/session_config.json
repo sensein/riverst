@@ -22,15 +22,15 @@
         },
         "advanced_flows_config_path": {
           "type": "string",
-          "default": "./assets/activities/flows/vocab-tutoring.json",
-          "const": "./assets/activities/flows/vocab-tutoring.json",
+          "default": "./activities/vocab-tutoring/flow_config.json",
+          "const": "./activities/vocab-tutoring/flow_config.json",
           "description": "Path to the advanced flows configuration file."
         },
         "activity_variables_path": {
           "type": "string",
           "title": "Books",
           "dynamicEnum": "books",
-          "default": "./assets/books/the_tale_of_peter_rabbit/paginated_story.json",
+          "default": "./activities/vocab-tutoring/resources/the_tale_of_peter_rabbit/paginated_story.json",
           "description": "Select the book to use for vocabulary tutoring."
         },
         "index": {

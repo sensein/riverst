@@ -40,6 +40,9 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
   const transportState = usePipecatClientTransportState();
   const [isValid, setIsValid] = useState(false);
   const [dynamicEnums, setDynamicEnums] = useState<{ books: { id: string; path: string; title: string }[] }>({ books: [] });
+
+  // Extract activity name from schema
+  const activityName = (schema?.properties as any)?.name?.const;
   const [maxChapters, setMaxChapters] = useState<number | null>(null);
 
   // Defaults extracted from schema
@@ -88,8 +91,14 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
 
     const fetchBooks = async () => {
       try {
-        const response = await axios.get(`/api/books`);
-        setDynamicEnums(prev => ({ ...prev, books: response.data }));
+        if (activityName) {
+          const response = await axios.get(`/api/activities/${activityName}/resources`);
+          setDynamicEnums(prev => ({ ...prev, books: response.data }));
+        } else {
+          // Fallback to generic resources if no activity name
+          const response = await axios.get('/api/resources');
+          setDynamicEnums(prev => ({ ...prev, books: response.data }));
+        }
       } catch (error) {
         console.error('Failed to fetch books:', error);
       }
@@ -97,7 +106,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
 
     fetchBooks();
     validateSchema();
-  }, [form, validateSchema]);
+  }, [form, validateSchema, activityName]);
 
   // Fetch chapter count when book selection changes
   useEffect(() => {
@@ -108,12 +117,12 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
 
     const fetchBookChapters = async () => {
       try {
-        const response = await axios.get('/api/book-chapters', {
-          params: { bookPath: selectedBook }
+        const response = await axios.get('/api/resources/chapters', {
+          params: { resourcePath: selectedBook }
         });
         setMaxChapters(response.data.maxChapters);
       } catch (error) {
-        console.error('Failed to fetch book chapters:', error);
+        console.error('Failed to fetch resource chapters:', error);
         setMaxChapters(null);
       }
     };

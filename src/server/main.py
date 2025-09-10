@@ -263,68 +263,80 @@ async def get_avatars() -> JSONResponse:
         )
 
 
-@app.get("/api/books")
-async def get_books() -> JSONResponse:
-    """Returns a list of available books for vocabulary tutoring."""
-    books_dir = BASE_SESSION_DIR / "assets" / "books"
-    if not books_dir.is_dir():
-        logger.error("Books directory not found")
-        return JSONResponse(
-            status_code=404, content={"error": "Books directory not found"}
-        )
-
-    try:
-        books = []
-        for book_dir in books_dir.iterdir():
-            if book_dir.is_dir() and (book_dir / "paginated_story.json").exists():
-                book_name = book_dir.name
-                path = f"./assets/books/{book_name}/paginated_story.json"
-
-                # Try to read the book title from the JSON file
-                try:
-                    with (book_dir / "paginated_story.json").open(
-                        "r", encoding="utf-8"
-                    ) as f:
-                        book_data = json.load(f)
-                        title = (
-                            book_data.get("reading_context", {})
-                            .get("key_information", {})
-                            .get("book_title", book_name)
-                        )
-                except Exception:
-                    title = book_name.replace("_", " ").title()
-
-                books.append({"id": book_name, "title": title, "path": path})
-
-        return JSONResponse(content=books)
-    except Exception as e:
-        logger.error(f"Error loading books: {e}")
-        return JSONResponse(status_code=500, content={"error": "Unable to load books"})
-
-
-@app.get("/api/book-chapters")
-async def get_book_chapters(bookPath: str = Query(...)) -> JSONResponse:
-    """Returns the maximum number of chapters for a specific book."""
-    try:
-        # Convert relative path to absolute path
-        book_file_path = BASE_SESSION_DIR / bookPath.lstrip("./")
-
-        if not book_file_path.exists():
+@app.get("/api/resources")
+async def get_resources(activity: str = Query(None)) -> JSONResponse:
+    """Returns a list of available resources for activities."""
+    if activity:
+        # Get resources for specific activity
+        resources_dir = BASE_SESSION_DIR / "activities" / activity / "resources"
+        if not resources_dir.is_dir():
+            logger.error(f"Resources directory not found for activity: {activity}")
             return JSONResponse(
-                status_code=404, content={"error": "Book file not found"}
+                status_code=404, content={"error": "Resources directory not found"}
             )
 
-        with book_file_path.open("r", encoding="utf-8") as f:
-            book_data = json.load(f)
-            chapters = book_data.get("reading_context", {}).get("chapters", [])
+        try:
+            resources = []
+            for resource_dir in resources_dir.iterdir():
+                if (
+                    resource_dir.is_dir()
+                    and (resource_dir / "paginated_story.json").exists()
+                ):
+                    resource_name = resource_dir.name
+                    path = f"./activities/{activity}/resources/{resource_name}/paginated_story.json"
+
+                    # Try to read the resource title from the JSON file
+                    try:
+                        with (resource_dir / "paginated_story.json").open(
+                            "r", encoding="utf-8"
+                        ) as f:
+                            resource_data = json.load(f)
+                            title = (
+                                resource_data.get("reading_context", {})
+                                .get("key_information", {})
+                                .get("book_title", resource_name)
+                            )
+                    except Exception:
+                        title = resource_name.replace("_", " ").title()
+
+                    resources.append(
+                        {"id": resource_name, "title": title, "path": path}
+                    )
+
+            return JSONResponse(content=resources)
+        except Exception as e:
+            logger.error(f"Error loading resources for activity {activity}: {e}")
+            return JSONResponse(
+                status_code=500, content={"error": "Unable to load resources"}
+            )
+    else:
+        # Return empty list if no activity specified
+        return JSONResponse(content=[])
+
+
+@app.get("/api/resources/chapters")
+async def get_resource_chapters(resourcePath: str = Query(...)) -> JSONResponse:
+    """Returns the maximum number of chapters for a specific resource."""
+    try:
+        # Convert relative path to absolute path
+        resource_file_path = BASE_SESSION_DIR / resourcePath.lstrip("./")
+
+        if not resource_file_path.exists():
+            return JSONResponse(
+                status_code=404, content={"error": "Resource file not found"}
+            )
+
+        with resource_file_path.open("r", encoding="utf-8") as f:
+            resource_data = json.load(f)
+            chapters = resource_data.get("reading_context", {}).get("chapters", [])
             max_chapters = len(chapters)
 
         return JSONResponse(content={"maxChapters": max_chapters})
 
     except Exception as e:
-        logger.error(f"Error loading book chapters: {e}")
+        logger.error(f"Error loading resource chapters: {e}")
         return JSONResponse(
-            status_code=500, content={"error": "Unable to load book chapters"}
+            status_code=500, content={"error": "Unable to load resource chapters"}
         )
 
 
@@ -347,22 +359,22 @@ async def get_activities() -> JSONResponse:
         )
 
 
-@app.get("/api/activities/settings/{settings_path:path}")
-async def get_activity_settings(settings_path: str) -> JSONResponse:
-    """Loads activity settings JSON and filters services by available API keys.
+@app.get("/api/activities/{activity_name}/session_config")
+async def get_activity_settings(activity_name: str) -> JSONResponse:
+    """Loads activity session configuration JSON and filters services by available API keys.
 
     Args:
-        settings_path (str): Relative path to the settings file.
+        activity_name (str): Name of the activity.
 
     Returns:
         JSONResponse: Filtered JSON configuration.
     """
-    file_path = BASE_SESSION_DIR / "assets" / "activities" / "settings" / settings_path
+    file_path = BASE_SESSION_DIR / "activities" / activity_name / "session_config.json"
 
     if not file_path.is_file():
-        logger.error(f"Settings file not found: {file_path}")
+        logger.error(f"Session config file not found: {file_path}")
         return JSONResponse(
-            status_code=404, content={"error": "Settings file not found"}
+            status_code=404, content={"error": "Session config file not found"}
         )
 
     try:
@@ -411,6 +423,49 @@ async def get_activity_settings(settings_path: str) -> JSONResponse:
         logger.error(f"Error reading or processing settings file: {e}")
         return JSONResponse(
             status_code=500, content={"error": "Unable to load settings"}
+        )
+
+
+@app.get("/api/activities/{activity_name}/resources")
+async def get_activity_resources(activity_name: str) -> JSONResponse:
+    """Returns a list of available resources for a specific activity."""
+    resources_dir = BASE_SESSION_DIR / "activities" / activity_name / "resources"
+
+    if not resources_dir.is_dir():
+        # Return empty list if no resources directory exists
+        return JSONResponse(content=[])
+
+    try:
+        resources = []
+        for resource_dir in resources_dir.iterdir():
+            if (
+                resource_dir.is_dir()
+                and (resource_dir / "paginated_story.json").exists()
+            ):
+                resource_name = resource_dir.name
+                path = f"./activities/{activity_name}/resources/{resource_name}/paginated_story.json"
+
+                # Try to read the resource title from the JSON file
+                try:
+                    with (resource_dir / "paginated_story.json").open(
+                        "r", encoding="utf-8"
+                    ) as f:
+                        resource_data = json.load(f)
+                        title = (
+                            resource_data.get("reading_context", {})
+                            .get("key_information", {})
+                            .get("book_title", resource_name)
+                        )
+                except Exception:
+                    title = resource_name.replace("_", " ").title()
+
+                resources.append({"id": resource_name, "title": title, "path": path})
+
+        return JSONResponse(content=resources)
+    except Exception as e:
+        logger.error(f"Error loading resources for activity {activity_name}: {e}")
+        return JSONResponse(
+            status_code=500, content={"error": "Unable to load resources"}
         )
 
 

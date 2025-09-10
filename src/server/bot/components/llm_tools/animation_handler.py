@@ -139,11 +139,14 @@ class AnimationHandler:
         )
 
     @function_call_debug
-    async def handle_animation(self, params: Any) -> Optional[Dict[str, Any]]:
+    async def handle_animation(
+        self, params: Any, flow_manager: Any = None
+    ) -> Optional[Dict[str, Any]]:
         """Trigger avatar animation if allowed.
 
         Args:
             params: FunctionCallParams or dict containing 'animation_id'.
+            flow_manager: Optional FlowManager instance (provided by pipecat-flows).
 
         Returns:
             Response dict if not using result_callback.

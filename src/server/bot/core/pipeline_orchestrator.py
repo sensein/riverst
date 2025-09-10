@@ -1,10 +1,5 @@
 from typing import Optional, Any
 from pipecat.pipeline.pipeline import Pipeline
-from pipecat.processors.filters.stt_mute_filter import (
-    STTMuteConfig,
-    STTMuteFilter,
-    STTMuteStrategy,
-)
 from ..processors.video.processor import VideoProcessor
 from ..processors.video.buffer_processor import VideoBufferProcessor
 
@@ -21,22 +16,6 @@ class PipelineBuilder:
         """
         self.config = config
         self.session_dir = session_dir
-
-    def _create_stt_mute_processor(self) -> STTMuteFilter:
-        """Create STT mute processor with appropriate configuration.
-
-        Returns:
-            STTMuteFilter: Configured STT mute processor
-        """
-        return STTMuteFilter(
-            config=STTMuteConfig(
-                strategies={
-                    STTMuteStrategy.FIRST_SPEECH,
-                    # Mute only during the bot's first speech utterance.
-                    # Useful for introductions when you want the bot to complete its greeting before the user can speak.
-                }
-            ),
-        )
 
     def _create_video_buffer(self) -> Optional[VideoBufferProcessor]:
         """Create video buffer processor if video is enabled.
@@ -87,6 +66,7 @@ class PipelineBuilder:
         self,
         pipecat_transport,
         rtvi,
+        stt_mute_processor,
         stt,
         llm,
         tts,
@@ -103,6 +83,7 @@ class PipelineBuilder:
             pipecat_transport: WebRTC transport
             rtvi: RTVI processor
             stt: Speech-to-text processor
+            stt_mute_processor: STT mute processor
             llm: Language model processor
             tts: Text-to-speech processor
             transcript: Transcript processor
@@ -115,7 +96,6 @@ class PipelineBuilder:
         Returns:
             Pipeline: Configured pipeline instance
         """
-        stt_mute_processor = self._create_stt_mute_processor()
         video_buffer = self._create_video_buffer()
         video_processor = self._create_video_processor(transport_params)
         lipsync = self._should_include_lipsync(lipsync_processor)
@@ -198,6 +178,7 @@ class PipelineBuilder:
         pipecat_transport,
         rtvi,
         stt,
+        stt_mute_processor,
         llm,
         tts,
         transcript,
@@ -213,6 +194,7 @@ class PipelineBuilder:
             pipecat_transport: WebRTC transport
             rtvi: RTVI processor
             stt: Speech-to-text processor (can be None)
+            stt_mute_processor: STT mute processor
             llm: Language model processor
             tts: Text-to-speech processor (can be None)
             transcript: Transcript processor
@@ -230,6 +212,7 @@ class PipelineBuilder:
                 pipecat_transport,
                 rtvi,
                 stt,
+                stt_mute_processor,
                 llm,
                 tts,
                 transcript,

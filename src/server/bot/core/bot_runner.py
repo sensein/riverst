@@ -90,7 +90,7 @@ async def run_bot(
 
         # Setup audio buffer with resampling helper
         resampling_helper = AudioResamplingHelper()
-        audiobuffer = resampling_helper.create_audio_buffer_processor()
+        audiobuffer = resampling_helper.configure_audio_buffer_processor()
 
         video_buffer = VideoBufferProcessor(
             session_dir=session_dir,
@@ -124,20 +124,20 @@ async def run_bot(
         )
 
         # Build pipeline using pipeline builder
-        pipeline_builder = PipelineBuilder()
+        pipeline_builder = PipelineBuilder(config, session_dir)
         pipeline = pipeline_builder.build_pipeline(
             pipecat_transport=pipecat_transport,
             rtvi=rtvi,
-            stt_mute_processor=stt_mute_processor,
             stt=stt,
-            transcript=transcript,
-            context_aggregator=context_aggregator,
+            stt_mute_processor=stt_mute_processor,
             llm=llm,
             tts=tts,
+            transcript=transcript,
+            context_aggregator=context_aggregator,
             lipsync_processor=lipsync_processor,
-            video_buffer=video_buffer,
             audiobuffer=audiobuffer,
             metrics_logger=metrics_logger,
+            transport_params=transport_manager.create_transport_params(),
         )
 
         task = PipelineTask(
@@ -179,8 +179,8 @@ async def run_bot(
         flow_manager = flow_factory.build()
 
         # Setup event handlers using event handler manager
-        event_manager = EventHandlerManager()
-        event_manager.register_event_handlers(
+        event_manager = EventHandlerManager(session_dir)
+        event_manager.register_all_handlers(
             transcript=transcript,
             transcript_handler=transcript_handler,
             audiobuffer=audiobuffer,
@@ -191,7 +191,6 @@ async def run_bot(
             context_aggregator=context_aggregator,
             metrics_logger=metrics_logger,
             video_buffer=video_buffer,
-            session_dir=session_dir,
         )
 
         runner = PipelineRunner(handle_sigint=False)
