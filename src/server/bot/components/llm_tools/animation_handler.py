@@ -11,7 +11,7 @@ from pipecat.services.llm_service import FunctionCallParams
 from pipecat.processors.frameworks.rtvi import RTVIServerMessageFrame, RTVIProcessor
 from pipecat.adapters.schemas.function_schema import FunctionSchema
 
-from ..monitoring import function_call_debug
+from ...monitoring import function_call_debug
 
 VALID_ANIMATIONS = [
     {

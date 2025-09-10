@@ -12,7 +12,7 @@ from loguru import logger
 from pipecat.adapters.schemas.function_schema import FunctionSchema
 from pipecat.frames.frames import TTSSpeakFrame
 
-from ..monitoring import function_call_debug
+from ...monitoring import function_call_debug
 
 
 class EndConversationHandler:

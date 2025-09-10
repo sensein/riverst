@@ -34,7 +34,7 @@ from pipecat.transports.network.webrtc_connection import (
     IceServer,
     SmallWebRTCConnection,
 )
-from src.server.authorization.auth import (
+from authorization.auth import (
     verify_google_token,
     load_authorized_users,
     log_rejected_login,

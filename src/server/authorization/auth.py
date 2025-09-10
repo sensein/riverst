@@ -26,7 +26,7 @@ security = HTTPBearer()
 
 # Path to user whitelist and rejection logs
 BASE_DIR = Path(__file__).parent
-USERS_FILE = BASE_DIR / "authorization" / "authorized_users.json"
+USERS_FILE = BASE_DIR / "authorized_users.json"
 REJECTION_LOG_FILE = BASE_DIR / "logs" / "rejected_logins.json"
 
 # Ensure directories exist
