@@ -63,7 +63,7 @@ class TransportConfigurationManager:
             audio_out_10ms_chunks=2,
         )
 
-    def create_transport(self, webrtc_connection) -> SmallWebRTCTransport:
+    def setup_transport(self, webrtc_connection) -> SmallWebRTCTransport:
         """Create configured WebRTC transport.
 
         Args:

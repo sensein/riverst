@@ -86,9 +86,7 @@ async def run_bot(
 
         # Setup WebRTC transport using configuration manager
         transport_manager = TransportConfigurationManager(config)
-        transport_params, pipecat_transport = transport_manager.setup_transport(
-            webrtc_connection, config
-        )
+        pipecat_transport = transport_manager.setup_transport(webrtc_connection)
 
         # Setup audio buffer with resampling helper
         resampling_helper = AudioResamplingHelper()
@@ -128,9 +126,7 @@ async def run_bot(
         # Build pipeline using pipeline builder
         pipeline_builder = PipelineBuilder()
         pipeline = pipeline_builder.build_pipeline(
-            config=config,
             pipecat_transport=pipecat_transport,
-            transport_params=transport_params,
             rtvi=rtvi,
             stt_mute_processor=stt_mute_processor,
             stt=stt,
