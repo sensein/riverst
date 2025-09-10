@@ -134,23 +134,23 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
 
     const moodList = ["happy", "angry", "sad", "fear", "disgust", "love", "sleep"];
 
-    if (gestureMap[animation]) {
-      const val = gestureMap[animation];
-      if (typeof val === "string") {
-        // Check if it's a file path
-        if (val.startsWith("/animations/")) {
-          head.playPose(val);
-        } else {
-          head.playGesture(val);
+      if (gestureMap[animation]) {
+        const val = gestureMap[animation];
+        if (typeof val === "string") {
+          // Check if it's a file path
+          if (val.startsWith("/animations/")) {
+            head.playPose(val);
+          } else {
+            head.playGesture(val);
+          }
+        } else if (typeof val === "object") {
+          head.playGesture(val.gesture, val.duration);
         }
-      } else if (typeof val === "object") {
-        head.playGesture(val.gesture, val.duration);
+      } else if (moodList.includes(animation)) {
+        head.setMood(animation);
+        setTimeout(() => head.setMood("neutral"), 4000);
       }
-    } else if (moodList.includes(animation)) {
-      head.setMood(animation);
-      setTimeout(() => head.setMood("neutral"), 4000);
-    }
-  };
+    };
 
   // Helper to play viseme or word timings
   const handleVisemeEvent = (payload: any) => {
@@ -185,9 +185,14 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
     RTVIEvent.ServerMessage,
     useCallback((msg: any) => {
       if (msg.type === "animation-event") {
-        if (msg.payload === "stop") {
-          headRef.current?.stopPose?.();
-          headRef.current?.setMood("neutral");
+        if (msg.payload["stop"] === true) {
+          const head = headRef.current;
+          if (!head) return;
+          head.stopPose();
+          head.setMood("neutral");
+          head.stopAnimation();
+          // Log the stop animation event
+          console.log("Animation stop event received");
         } else {
           handleAnimationEvent(msg.payload.animation_id);
         }

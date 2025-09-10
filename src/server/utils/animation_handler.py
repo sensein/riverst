@@ -6,7 +6,6 @@ It provides a centralized place for defining available animations and handling a
 """
 
 from typing import Dict, Any, List, Optional
-import traceback
 
 from pipecat.services.llm_service import FunctionCallParams
 from pipecat.processors.frameworks.rtvi import RTVIServerMessageFrame, RTVIProcessor
@@ -70,8 +69,8 @@ VALID_ANIMATIONS = [
     {
         "id": "thinking",
         "description": (
-            "When you are thinking, you can do the 'thinking' animation, "
-            "When the user finishes speaking and before you reply and if he/she asked a question that is a bit thought-provoking, trigger 'thinking' animation immediately. End it the moment you start speaking. Don’t retrigger if already active, and never run animations while you’re speaking."
+            "When you are thinking, you can do the 'thinking' animation."
+            "When the user asked a question that is a bit thought-provoking or complicated question, trigger 'thinking' animation with params 'delay': 0, 'end_event': 'audio_playback_start'."
         ),
         
     }
@@ -144,7 +143,7 @@ class AnimationHandler:
         """
         return FunctionSchema(
             name="stop_animation",
-            description="Stop any currently playing animation.",
+            description="Trigger to stop any currently playing animation.",
             properties={},
             required=[],
         )
@@ -206,30 +205,20 @@ class AnimationHandler:
         Returns:
             Response dict if not using result_callback.
         """
-        from loguru import logger
-        
-        logger.info("STOP_ANIMATION_DEBUG: handle_stop_animation called with params: {}", params)
-        logger.info("STOP_ANIMATION_DEBUG: RTVI processor state: {}", rtvi)
-        
+
         try:
             frame = RTVIServerMessageFrame(
                 data={"type": "animation-event", "payload": {"stop": True}}
             )
-            logger.info("STOP_ANIMATION_DEBUG: Created RTVI frame: {}", frame.data)
             
             await rtvi.push_frame(frame)
-            logger.info("STOP_ANIMATION_DEBUG: Successfully pushed frame to RTVI")
             
             result = {"status": "animation_stopped"}
         except Exception as e:
-            logger.error("STOP_ANIMATION_DEBUG: Exception in handle_stop_animation: {}", str(e))
-            logger.error("STOP_ANIMATION_DEBUG: Exception traceback: {}", traceback.format_exc())
             result = {
                 "status": "error",
                 "error": f"Failed to stop animation: {str(e)}",
             }
-
-        logger.info("STOP_ANIMATION_DEBUG: Final result: {}", result)
 
         if isinstance(params, FunctionCallParams):
             await params.result_callback(result)
