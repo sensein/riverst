@@ -1,0 +1,29 @@
+version: "3.11"
+
+services:
+  server:
+    build:
+      context: ./src/server
+      dockerfile: Dockerfile
+    container_name: riverst_server
+    ports:
+      - "7860:7860"
+    env_file:
+      - ./src/server/.env
+    volumes:
+      - ./src/server/sessions:/app/sessions
+
+  frontend:
+    build:
+      context: ./src/client/react
+      dockerfile: Dockerfile
+    container_name: riverst_frontend
+    ports:
+      - "5173:5173"
+    env_file:
+      - ./src/client/react/.env
+    volumes:
+      - ./src/client/react:/app
+      - /app/node_modules
+    depends_on:
+      - server

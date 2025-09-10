@@ -28,10 +28,12 @@ class EndConversationHandler:
             Formatted instruction string explaining when to use end_conversation function.
         """
         instruction = (
-            "End Conversation Instruction: Call the end_conversation function when you want to "
-            "end the conversation naturally. Use it when the user indicates they want to finish the session "
-            "or when they say goodbye or express their intention to leave "
-            "or at a natural stopping point in the dialogue.\n"
+            "End Conversation Instruction: Call the end_conversation function ONLY when you want to "
+            "end the ENTIRE tutoring session. Use it when the user clearly indicates they want to "
+            "finish the whole session, says goodbye, or expresses their intention to leave completely. "
+            "Do NOT use this function when transitioning between activities or sections within the "
+            "tutoring session (like finishing a review section to move on to something else). "
+            "Only use it for final session endings.\n"
         )
         return instruction
 

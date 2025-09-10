@@ -497,11 +497,33 @@ async def run_bot(
 
             async def trigger_analysis_on_audios(audios_dir: str):
                 try:
-                    # Trigger analysis on all files in audios_dir without waiting for them
-                    for filename in os.listdir(audios_dir):
-                        if filename.endswith(".wav"):
-                            filepath = os.path.join(audios_dir, filename)
-                            await AudioAnalyzer.analyze_audio(filepath)
+
+                    def str_to_bool(value: str) -> bool:
+                        return str(value).strip().strip("\"'").lower() in {
+                            "1",
+                            "true",
+                            "yes",
+                            "on",
+                        }
+
+                    ANALYZE_AUDIO = str_to_bool(
+                        os.environ.get("ANALYZE_AUDIO", "false")
+                    )
+
+                    # Only analyze audio if the environment variable ANALYZE_AUDIO is set to "true"
+                    if ANALYZE_AUDIO:
+                        # Trigger analysis on all files in audios_dir without waiting for them
+                        for filename in os.listdir(audios_dir):
+                            if filename.endswith(".wav"):
+                                filepath = os.path.join(audios_dir, filename)
+                                try:
+                                    await AudioAnalyzer.analyze_audio(filepath)
+                                except Exception as e:
+                                    logger.error(f"Error analyzing audio: {e}")
+                    else:
+                        logger.info(
+                            "Audio analysis skipped due to ANALYZE_AUDIO env variable."
+                        )
                 except Exception as e:
                     logger.error(f"Error triggering analysis on audios: {e}")
 
