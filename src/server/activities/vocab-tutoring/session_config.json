@@ -30,7 +30,7 @@
           "type": "string",
           "title": "Books",
           "dynamicEnum": "books",
-          "default": "./activities/vocab-tutoring/resources/the_tale_of_peter_rabbit/paginated_story.json",
+          "default": "./activities/vocab-tutoring/resources/the_tale_of_peter_rabbit.json",
           "description": "Select the book to use for vocabulary tutoring."
         },
         "index": {

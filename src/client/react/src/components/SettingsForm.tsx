@@ -93,7 +93,9 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
     const fetchBooks = async () => {
       try {
         if (activityName) {
-          const response = await axios.get(`/api/activities/${activityName}/resources`);
+          const response = await axios.get('/api/resources', {
+            params: { activity: activityName }
+          });
           setDynamicEnums(prev => ({ ...prev, books: response.data }));
         } else {
           // Fallback to generic resources if no activity name
