@@ -2,8 +2,8 @@
     "reading_context": {
         "indexable_by": "chapters",
         "key_information": {
-            "book_title": "Alice in Wonderland",
-            "book_author": "Lewis Carroll"
+            "name": "Alice in Wonderland",
+            "author": "Lewis Carroll"
         },
         "book_summary": "In \"Alice in Wonderland,\" Lewis Carroll introduces readers to a whimsical and fantastical world through the eyes of a curious young girl named Alice. The story begins when Alice follows a hurried White Rabbit down a rabbit hole, leading her into a bizarre land filled with peculiar creatures and nonsensical events. Throughout her adventures, Alice encounters a variety of eccentric characters, including the Mad Hatter, the Cheshire Cat, and the Queen of Hearts, each presenting their own challenges and absurdities that contribute to the central conflict of Alice's struggle to make sense of her surroundings and assert her identity.\n\nAs Alice navigates this dreamlike landscape, she grapples with themes of curiosity, growing up, and the fluidity of reality. The narrative explores the importance of imagination and the absurdity of adult conventions, highlighting how children often perceive the world differently. Ultimately, Alice's journey culminates in a chaotic trial presided over by the Queen of Hearts, where she stands up for herself and declares that the events of Wonderland are nothing but a pack of cards. This declaration leads to her awakening from the dream, providing a resolution that emphasizes the power of self-assertion and the transition from childhood wonder to the complexities of adulthood. Alice's adventures serve as a reminder to embrace curiosity and the joy of exploration, even in the face of absurdity.",
         "chapters": [

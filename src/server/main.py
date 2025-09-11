@@ -277,24 +277,19 @@ async def get_resources(activity: str = Query(None)) -> JSONResponse:
 
         try:
             resources = []
-            for resource_dir in resources_dir.iterdir():
-                if (
-                    resource_dir.is_dir()
-                    and (resource_dir / "paginated_story.json").exists()
-                ):
-                    resource_name = resource_dir.name
-                    path = f"./activities/{activity}/resources/{resource_name}/paginated_story.json"
+            for resource_file in resources_dir.iterdir():
+                if resource_file.is_file() and resource_file.suffix == ".json":
+                    resource_name = resource_file.stem
+                    path = f"./activities/{activity}/resources/{resource_file.name}"
 
                     # Try to read the resource title from the JSON file
                     try:
-                        with (resource_dir / "paginated_story.json").open(
-                            "r", encoding="utf-8"
-                        ) as f:
+                        with resource_file.open("r", encoding="utf-8") as f:
                             resource_data = json.load(f)
                             title = (
                                 resource_data.get("reading_context", {})
                                 .get("key_information", {})
-                                .get("book_title", resource_name)
+                                .get("name", resource_name.replace("_", " ").title())
                             )
                     except Exception:
                         title = resource_name.replace("_", " ").title()
@@ -314,9 +309,9 @@ async def get_resources(activity: str = Query(None)) -> JSONResponse:
         return JSONResponse(content=[])
 
 
-@app.get("/api/resources/chapters")
-async def get_resource_chapters(resourcePath: str = Query(...)) -> JSONResponse:
-    """Returns the maximum number of chapters for a specific resource."""
+@app.get("/api/resources/indices")
+async def get_resource_indices(resourcePath: str = Query(...)) -> JSONResponse:
+    """Returns the maximum number of indices for a specific resource."""
     try:
         # Convert relative path to absolute path
         resource_file_path = BASE_SESSION_DIR / resourcePath.lstrip("./")
@@ -328,15 +323,26 @@ async def get_resource_chapters(resourcePath: str = Query(...)) -> JSONResponse:
 
         with resource_file_path.open("r", encoding="utf-8") as f:
             resource_data = json.load(f)
-            chapters = resource_data.get("reading_context", {}).get("chapters", [])
-            max_chapters = len(chapters)
+            reading_context = resource_data.get("reading_context", {})
+            indexable_by = reading_context.get("indexable_by")
 
-        return JSONResponse(content={"maxChapters": max_chapters})
+            if not indexable_by:
+                return JSONResponse(
+                    status_code=400, content={"error": "Resource is not indexable"}
+                )
+
+            # Get the indexable content array
+            index_array = reading_context.get(indexable_by, [])
+            max_indices = len(index_array)
+
+        return JSONResponse(
+            content={"indexType": indexable_by, "maxIndices": max_indices}
+        )
 
     except Exception as e:
-        logger.error(f"Error loading resource chapters: {e}")
+        logger.error(f"Error loading resource indices: {e}")
         return JSONResponse(
-            status_code=500, content={"error": "Unable to load resource chapters"}
+            status_code=500, content={"error": "Unable to load resource indices"}
         )
 
 
@@ -423,49 +429,6 @@ async def get_activity_settings(activity_name: str) -> JSONResponse:
         logger.error(f"Error reading or processing settings file: {e}")
         return JSONResponse(
             status_code=500, content={"error": "Unable to load settings"}
-        )
-
-
-@app.get("/api/activities/{activity_name}/resources")
-async def get_activity_resources(activity_name: str) -> JSONResponse:
-    """Returns a list of available resources for a specific activity."""
-    resources_dir = BASE_SESSION_DIR / "activities" / activity_name / "resources"
-
-    if not resources_dir.is_dir():
-        # Return empty list if no resources directory exists
-        return JSONResponse(content=[])
-
-    try:
-        resources = []
-        for resource_dir in resources_dir.iterdir():
-            if (
-                resource_dir.is_dir()
-                and (resource_dir / "paginated_story.json").exists()
-            ):
-                resource_name = resource_dir.name
-                path = f"./activities/{activity_name}/resources/{resource_name}/paginated_story.json"
-
-                # Try to read the resource title from the JSON file
-                try:
-                    with (resource_dir / "paginated_story.json").open(
-                        "r", encoding="utf-8"
-                    ) as f:
-                        resource_data = json.load(f)
-                        title = (
-                            resource_data.get("reading_context", {})
-                            .get("key_information", {})
-                            .get("book_title", resource_name)
-                        )
-                except Exception:
-                    title = resource_name.replace("_", " ").title()
-
-                resources.append({"id": resource_name, "title": title, "path": path})
-
-        return JSONResponse(content=resources)
-    except Exception as e:
-        logger.error(f"Error loading resources for activity {activity_name}: {e}")
-        return JSONResponse(
-            status_code=500, content={"error": "Unable to load resources"}
         )
 
 
