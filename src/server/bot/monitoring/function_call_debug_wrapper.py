@@ -11,15 +11,19 @@ def function_call_debug(fn):
     """
 
     @wraps(fn)
-    async def wrapper(params: FunctionCallParams):
-        args = params.arguments if isinstance(params, FunctionCallParams) else params
+    async def wrapper(*args, **kwargs):
+        # Extract params from args - could be first arg (standalone function) or second arg (instance method)
+        params = args[1] if len(args) > 1 else args[0] if args else kwargs.get("params")
+        func_args = (
+            params.arguments if isinstance(params, FunctionCallParams) else params
+        )
         logger.info(
             "FUNCTION_DEBUG: Function '{}' called with args: {}",
             fn.__name__,
-            json.dumps(args),
+            json.dumps(func_args),
         )
         try:
-            result = await fn(params)
+            result = await fn(*args, **kwargs)
             logger.info(
                 "FUNCTION_DEBUG: Function '{}' completed successfully with result: {}",
                 fn.__name__,
