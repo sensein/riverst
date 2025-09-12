@@ -89,8 +89,7 @@ async def run_bot(
         pipecat_transport = transport_manager.setup_transport(webrtc_connection)
 
         # Setup audio buffer with resampling helper
-        resampling_helper = AudioResamplingHelper()
-        audiobuffer = resampling_helper.configure_audio_buffer_processor()
+        audiobuffer = AudioResamplingHelper.configure_audio_buffer_processor()
 
         video_buffer = VideoBufferProcessor(
             session_dir=session_dir,
