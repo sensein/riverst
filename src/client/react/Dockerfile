@@ -1,31 +1,18 @@
-# Stage 1: Build the React app using Node
-FROM node:18 AS builder
+# Stage: Dev server for Vite
+FROM node:20-alpine
 
-# Setup environment
-ENV npm_config_arch=x64
-
-# Set working directory
+# Create app dir
 WORKDIR /app
 
-# Copy dependencies and install
+# Install deps (use npm ci if you have a lockfile)
 COPY package*.json ./
 RUN npm ci
 
-# Copy the full source and build it
+# Copy the rest
 COPY . .
-RUN npm run build
 
-# Stage 2: Serve using nginx
-FROM nginx:alpine
+# Expose Vite default port
+EXPOSE 5173
 
-# Remove the default nginx config
-RUN rm /etc/nginx/conf.d/default.conf
-
-# Copy your optimized app
-COPY --from=builder /app/dist /usr/share/nginx/html
-
-# Add custom nginx config
-COPY nginx.conf /etc/nginx/conf.d/
-
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+# Run Vite dev server binding to 0.0.0.0 so Docker can expose it
+CMD [ "npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173" ]

@@ -48,7 +48,7 @@
         },
         "tts_type": {
           "type": "string",
-          "enum": ["openai", "piper", "elevenlabs"],
+          "enum": ["openai", "elevenlabs"],
           "default": "openai",
           "const": "openai",
           "description": "The TTS service to use."

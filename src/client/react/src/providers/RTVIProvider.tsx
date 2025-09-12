@@ -19,8 +19,26 @@ export function RTVIProvider({
   const transport = new SmallWebRTCTransport({
     connectionUrl: `/api/offer?session_id=${encodeURIComponent(
       sessionId
-    )}`
+    )}`,
+    iceServers: [
+      {
+        urls: [
+          'stun:stun.l.google.com:19302',
+          'stun:stun.l.google.com:5349',
+          'stun:stun1.l.google.com:3478',
+          'stun:stun1.l.google.com:5349',
+          'stun:stun2.l.google.com:19302',
+          'stun:stun2.l.google.com:5349',
+          'stun:stun3.l.google.com:3478',
+          'stun:stun3.l.google.com:5349',
+          'stun:stun4.l.google.com:19302',
+          'stun:stun4.l.google.com:5349',
+        ],
+      },
+    ],
+    waitForICEGathering: true
   });
+
   const navigate = useNavigate()
 
   // recreate client whenever sessionId changes
