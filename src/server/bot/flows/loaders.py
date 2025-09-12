@@ -1,5 +1,7 @@
 from typing import Dict, Any, Tuple, Optional
 import json
+import importlib.util
+import sys
 from pathlib import Path
 
 from pipecat_flows import NodeConfig, FlowConfig
@@ -11,6 +13,111 @@ from .handlers import (
     get_user_handler,
     get_variable_action_handler,
 )
+
+
+def load_custom_handler(handler_name: str, flow_config_path: str) -> callable:
+    """
+    Load a custom handler function from an activity's handlers.py file.
+
+    Args:
+        handler_name: Name of the handler function to load
+        flow_config_path: Path to the flow_config.json file
+
+    Returns:
+        The handler function
+
+    Raises:
+        FileNotFoundError: If handlers.py doesn't exist for the activity
+        AttributeError: If the handler function doesn't exist in the module
+        ImportError: If there's an error importing the handlers module
+    """
+    # Get activity directory from flow_config path
+    flow_config_file = Path(flow_config_path)
+    activity_dir = flow_config_file.parent
+    handlers_file = activity_dir / "handlers.py"
+
+    if not handlers_file.exists():
+        raise FileNotFoundError(
+            f"Custom handler file not found: {handlers_file}. "
+            f"Create handlers.py in the activity directory."
+        )
+
+    try:
+        # Create a unique module name to avoid conflicts
+        activity_name = activity_dir.name
+        module_name = f"activity_{activity_name}_handlers"
+
+        # Load the module
+        spec = importlib.util.spec_from_file_location(module_name, handlers_file)
+        if spec is None or spec.loader is None:
+            raise ImportError(f"Could not load module spec for {handlers_file}")
+
+        module = importlib.util.module_from_spec(spec)
+
+        # Add to sys.modules to handle potential circular imports
+        sys.modules[module_name] = module
+
+        # Execute the module
+        spec.loader.exec_module(module)
+
+        # Get the handler function
+        if not hasattr(module, handler_name):
+            available_handlers = [
+                attr for attr in dir(module) if not attr.startswith("_")
+            ]
+            raise AttributeError(
+                f"Handler '{handler_name}' not found in {handlers_file}. "
+                f"Available handlers: {available_handlers}"
+            )
+
+        handler_func = getattr(module, handler_name)
+
+        # Verify it's callable
+        if not callable(handler_func):
+            raise ValueError(
+                f"'{handler_name}' in {handlers_file} is not a callable function"
+            )
+
+        return handler_func
+
+    except Exception as e:
+        raise ImportError(
+            f"Error loading custom handler '{handler_name}' from {handlers_file}: {str(e)}"
+        ) from e
+
+
+def resolve_handler(handler_string: str, flow_config_path: str) -> callable:
+    """
+    Resolve a handler string to the actual handler function.
+
+    Args:
+        handler_string: Handler identifier (e.g., "general_handler" or "activity:my_handler")
+        flow_config_path: Path to the flow_config.json file
+
+    Returns:
+        The resolved handler function
+    """
+    # Handle built-in handlers
+    if handler_string == "general_handler":
+        return general_handler
+    elif handler_string == "get_activity_handler":
+        return get_activity_handler
+    elif handler_string == "get_user_handler":
+        return get_user_handler
+    elif handler_string == "get_variable_action_handler":
+        return get_variable_action_handler
+
+    # Handle custom activity handlers
+    elif handler_string.startswith("activity:"):
+        handler_name = handler_string[9:]  # Remove "activity:" prefix
+        return load_custom_handler(handler_name, flow_config_path)
+
+    else:
+        raise ValueError(
+            f"Unknown handler: '{handler_string}'. "
+            f"Use built-in handlers (general_handler, get_activity_handler, etc.) "
+            f"or custom handlers with 'activity:' prefix."
+        )
 
 
 def load_config(
@@ -51,7 +158,9 @@ def load_config(
     # Extract state and flow configurations
     state = get_flow_state(flow_config_data)
     flow_config = get_flow_config(
-        flow_config_data, end_conversation_handler=end_conversation_handler
+        flow_config_data,
+        flow_config_path,
+        end_conversation_handler=end_conversation_handler,
     )
 
     return flow_config, state
@@ -80,7 +189,7 @@ def load_activity_variables(activity_variables_path: Optional[str]) -> Dict[str,
 
 
 def get_flow_config(
-    config: FlowConfigurationFile, end_conversation_handler=None
+    config: FlowConfigurationFile, flow_config_path: str, end_conversation_handler=None
 ) -> FlowConfig:
     """
     Extracts and processes the flow configuration from a validated configuration object.
@@ -107,34 +216,65 @@ def get_flow_config(
 
         # Process functions to assign actual handler references
         if "functions" in node_dict:
-
             for func_def in node_dict["functions"]:
-                if func_def.get("function", {}).get("handler") == "general_handler":
-                    func_def["function"]["handler"] = general_handler
-                elif (
-                    func_def.get("function", {}).get("handler")
-                    == "get_activity_handler"
-                ):
-                    func_def["function"]["handler"] = get_activity_handler
-                elif func_def.get("function", {}).get("handler") == "get_user_handler":
-                    func_def["function"]["handler"] = get_user_handler
+                handler_string = func_def.get("function", {}).get("handler")
+                if handler_string:
+                    try:
+                        func_def["function"]["handler"] = resolve_handler(
+                            handler_string, flow_config_path
+                        )
+                    except (
+                        FileNotFoundError,
+                        AttributeError,
+                        ImportError,
+                        ValueError,
+                    ) as e:
+                        raise ValueError(
+                            f"Failed to resolve handler '{handler_string}' in node '{node_id}': {str(e)}"
+                        ) from e
 
         # Actions also need to resolve handlers
         if "pre_actions" in node_dict:
             for action in node_dict["pre_actions"]:
-                if action.get("handler") == "get_variable_action_handler":
-                    action["handler"] = get_variable_action_handler
-                if action.get("handler") == "end_conversation_handler":
+                handler_string = action.get("handler")
+                if handler_string == "end_conversation_handler":
                     if end_conversation_handler is None:
                         raise ValueError(
                             "Configuration requests 'end_conversation_handler', but no handler was provided."
                         )
                     action["handler"] = end_conversation_handler.handle_end_conversation
+                elif handler_string:
+                    try:
+                        action["handler"] = resolve_handler(
+                            handler_string, flow_config_path
+                        )
+                    except (
+                        FileNotFoundError,
+                        AttributeError,
+                        ImportError,
+                        ValueError,
+                    ) as e:
+                        raise ValueError(
+                            f"Failed to resolve pre_action handler '{handler_string}' in node '{node_id}': {str(e)}"
+                        ) from e
 
         if "post_actions" in node_dict:
             for action in node_dict["post_actions"]:
-                if action.get("handler") == "get_variable_action_handler":
-                    action["handler"] = get_variable_action_handler
+                handler_string = action.get("handler")
+                if handler_string:
+                    try:
+                        action["handler"] = resolve_handler(
+                            handler_string, flow_config_path
+                        )
+                    except (
+                        FileNotFoundError,
+                        AttributeError,
+                        ImportError,
+                        ValueError,
+                    ) as e:
+                        raise ValueError(
+                            f"Failed to resolve post_action handler '{handler_string}' in node '{node_id}': {str(e)}"
+                        ) from e
 
         # Store the processed node
         flow_config_dict["nodes"][node_id] = NodeConfig(**node_dict)

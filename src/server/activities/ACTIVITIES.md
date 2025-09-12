@@ -1,6 +1,6 @@
 # Activities Structure
 
-This document describes the modular activity structure implemented in the system.
+This document describes the modular activity structure implemented in the system. For detailed guidance on creating new activities, see the [Complete Activity Creation Guide](./ACTIVITY_CREATION_GUIDE.md).
 
 ## Directory Structure
 
@@ -47,7 +47,7 @@ Contains the conversation flow definition for activities that use advanced flows
 Directory containing activity-specific resources like books, audio files, or other assets.
 
 ### handlers.py (optional)
-Contains activity-specific handler functions for custom business logic.
+Contains activity-specific handler functions for custom business logic. Custom handlers are referenced in flow configurations using the `"activity:"` prefix (e.g., `"handler": "activity:my_custom_handler"`).
 
 ## API Endpoints
 
