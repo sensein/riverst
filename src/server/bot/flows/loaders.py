@@ -199,6 +199,7 @@ def get_flow_config(
 
     Args:
         config: A validated FlowConfigurationFile object containing the complete configuration
+        flow_config_path: The file path to the flow configuration
         end_conversation_handler: Optional handler for ending conversations
 
     Returns:

@@ -1,5 +1,10 @@
 from typing import Optional, Any
 from pipecat.pipeline.pipeline import Pipeline
+from pipecat.processors.filters.stt_mute_filter import (
+    STTMuteConfig,
+    STTMuteFilter,
+    STTMuteStrategy,
+)
 from ..processors.video.processor import VideoProcessor
 from ..processors.video.buffer_processor import VideoBufferProcessor
 
@@ -61,6 +66,22 @@ class PipelineBuilder:
         if self.config.get("embodiment", "humanoid_avatar") == "humanoid_avatar":
             return lipsync_processor
         return None
+
+    def _create_stt_mute_processor(self) -> STTMuteFilter:
+        """Create STT mute processor with configured strategies.
+
+        Returns:
+            STTMuteFilter: Configured STT mute processor
+        """
+        return STTMuteFilter(
+            config=STTMuteConfig(
+                strategies={
+                    STTMuteStrategy.FIRST_SPEECH,
+                    # Mute only during the bot's first speech utterance.
+                    # Useful for introductions when you want the bot to complete its greeting before the user can speak.
+                }
+            ),
+        )
 
     def build_full_pipeline(
         self,
