@@ -211,8 +211,8 @@ class PipelineBuilder:
             return self.build_full_pipeline(
                 pipecat_transport,
                 rtvi,
-                stt,
                 stt_mute_processor,
+                stt,
                 llm,
                 tts,
                 transcript,
