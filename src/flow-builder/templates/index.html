@@ -58,42 +58,42 @@
                 </div>
             </div>
 
-            <!-- Session Variables Section -->
+            <!-- State Variables Section -->
             <div class="accordion-item">
-                <h2 class="accordion-header" id="headingSessionVars">
+                <h2 class="accordion-header" id="headingStateVars">
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                        data-bs-target="#collapseSessionVars" aria-expanded="false" aria-controls="collapseSessionVars">
-                        Session Variables
+                        data-bs-target="#collapseStateVars" aria-expanded="false" aria-controls="collapseStateVars">
+                        State Variables
                     </button>
                 </h2>
-                <div id="collapseSessionVars" class="accordion-collapse collapse" aria-labelledby="headingSessionVars">
+                <div id="collapseStateVars" class="accordion-collapse collapse" aria-labelledby="headingStateVars">
                     <div class="accordion-body">
                         <div class="row">
-                            <!-- Task Variables -->
+                            <!-- Activity Data -->
                             <div class="col-md-6 mb-3">
-                                <h5>Task Variables</h5>
-                                <p class="text-muted small">These are variables used throughout the conversation.</p>
+                                <h5>Activity Data</h5>
+                                <p class="text-muted small">Static content/context data for the activity (e.g., book content, vocab words).</p>
 
-                                <div id="taskVariablesContainer">
-                                    <!-- Task variables will be added here -->
+                                <div id="activityVariablesContainer">
+                                    <!-- Activity variables will be added here -->
                                 </div>
 
-                                <button type="button" class="btn btn-sm btn-primary mt-2" id="addTaskVarBtn">
-                                    <i class="bi bi-plus-circle"></i> Add Task Variable
+                                <button type="button" class="btn btn-sm btn-primary mt-2" id="addActivityVarBtn">
+                                    <i class="bi bi-plus-circle"></i> Add Activity Variable
                                 </button>
                             </div>
 
-                            <!-- Session Info -->
+                            <!-- User State -->
                             <div class="col-md-6 mb-3">
-                                <h5>Session Info</h5>
-                                <p class="text-muted small">These are state fields updated during the conversation.</p>
+                                <h5>User State</h5>
+                                <p class="text-muted small">Session-specific data that changes during conversation (e.g., progress tracking).</p>
 
-                                <div id="sessionInfoContainer">
-                                    <!-- Session info will be added here -->
+                                <div id="userVariablesContainer">
+                                    <!-- User variables will be added here -->
                                 </div>
 
-                                <button type="button" class="btn btn-sm btn-primary mt-2" id="addSessionInfoBtn">
-                                    <i class="bi bi-plus-circle"></i> Add Session Info Field
+                                <button type="button" class="btn btn-sm btn-primary mt-2" id="addUserVarBtn">
+                                    <i class="bi bi-plus-circle"></i> Add User Variable
                                 </button>
                             </div>
                         </div>
@@ -129,13 +129,24 @@
             <div>
                 <button type="button" class="btn btn-secondary me-2" id="resetBtn">Reset Form</button>
                 <label for="fileInput" class="btn btn-info me-2" id="loadFileBtn">
-                    <i class="bi bi-upload"></i> Load Config
+                    <i class="bi bi-upload"></i> Load Flow Config
                 </label>
                 <input type="file" id="fileInput" accept=".json" style="display: none;">
+                <label for="activityResourceInput" class="btn btn-warning me-2" id="loadActivityResourceBtn">
+                    <i class="bi bi-book"></i> Load Activity Resource
+                </label>
+                <input type="file" id="activityResourceInput" accept=".json" style="display: none;">
                 <input type="hidden" id="currentFilename" value="">
+                <input type="hidden" id="currentActivityResource" value="">
             </div>
             <div>
                 <button type="button" class="btn btn-success" id="generateBtn">Save Flow</button>
+            </div>
+        </div>
+
+        <div id="activityResourceStatus" class="mb-3" style="display: none;">
+            <div class="alert alert-info">
+                <i class="bi bi-book-fill"></i> <strong>Activity Resource Loaded:</strong> <span id="activityResourceName">None</span>
             </div>
         </div>
 
@@ -148,6 +159,83 @@
         </div>
 
     </div>
+
+    <!-- Activity Variable Template -->
+    <template id="activityVarTemplate">
+        <div class="card mb-2 activity-var-card">
+            <div class="card-body py-2">
+                <div class="row g-2">
+                    <div class="col-5">
+                        <input type="text" class="form-control form-control-sm activity-var-name" placeholder="Variable name">
+                    </div>
+                    <div class="col-4">
+                        <select class="form-select form-select-sm activity-var-type">
+                            <option value="string">String</option>
+                            <option value="number">Number</option>
+                            <option value="boolean">Boolean</option>
+                            <option value="array">List of Strings</option>
+                            <option value="number_array">List of Numbers</option>
+                            <option value="object">Object</option>
+                        </select>
+                    </div>
+                    <div class="col-3">
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-activity-var-btn">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="row mt-2 activity-var-value-row">
+                    <div class="col-12 activity-var-value-container">
+                        <!-- Value input will go here based on type -->
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <div class="form-check">
+                            <input class="form-check-input activity-var-indexable" type="checkbox"
+                                   title="Mark this variable as indexable (e.g., chapters, pages)">
+                            <label class="form-check-label small text-muted">
+                                Indexable (has chapters/pages/sections)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- User Variable Template -->
+    <template id="userVarTemplate">
+        <div class="card mb-2 user-var-card">
+            <div class="card-body py-2">
+                <div class="row g-2">
+                    <div class="col-5">
+                        <input type="text" class="form-control form-control-sm user-var-name" placeholder="Field name">
+                    </div>
+                    <div class="col-4">
+                        <select class="form-select form-select-sm user-var-type">
+                            <option value="string">String</option>
+                            <option value="number">Number</option>
+                            <option value="boolean">Boolean</option>
+                            <option value="array">List of Strings</option>
+                            <option value="number_array">List of Numbers</option>
+                            <option value="object">Object</option>
+                        </select>
+                    </div>
+                    <div class="col-3">
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-user-var-btn">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="row mt-2 user-var-value-row">
+                    <div class="col-12 user-var-value-container">
+                        <!-- Value input will go here based on type -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
 
     <!-- Task Variable Template -->
     <template id="taskVarTemplate">
@@ -251,8 +339,8 @@
                             role="tab">Tools</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" data-bs-toggle="tab" data-bs-target=".info-fields-tab" type="button"
-                            role="tab">Info Fields</button>
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target=".user-fields-tab" type="button"
+                            role="tab">User Fields</button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" data-bs-toggle="tab" data-bs-target=".transitions-tab" type="button"
@@ -279,8 +367,8 @@
                                         <i class="bi bi-plus-circle"></i> Add Function Pre-action
                                     </button>
                                     <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item add-pre-action-session-function" href="#">Get Session Variable</a></li>
-                                        <li><a class="dropdown-item add-pre-action-info-function" href="#">Get Session Info</a></li>
+                                        <li><a class="dropdown-item add-pre-action-activity-function" href="#">Get Activity Data</a></li>
+                                        <li><a class="dropdown-item add-pre-action-user-function" href="#">Get User State</a></li>
                                     </ul>
                                 </div>
                             </div>
@@ -302,20 +390,20 @@
                         </div>
                     </div>
 
-                    <div class="tab-pane fade info-fields-tab" role="tabpanel">
+                    <div class="tab-pane fade user-fields-tab" role="tabpanel">
                         <div class="mb-3">
-                            <div class="info-fields-container">
-                                <!-- Info fields will be added here -->
+                            <div class="user-fields-container">
+                                <!-- User fields will be added here -->
                             </div>
-                            <div class="mb-3 add-info-field-container">
-                                <!-- Dropdown and button will be rendered based on session info fields -->
+                            <div class="mb-3 add-user-field-container">
+                                <!-- Dropdown and button will be rendered based on user state fields -->
                             </div>
                         </div>
                     </div>
 
                     <div class="tab-pane fade functions-tab" role="tabpanel">
                         <div class="mb-3">
-                            <p class="small text-muted mb-2">Add functions to retrieve session variables for this node:
+                            <p class="small text-muted mb-2">Add functions to retrieve state variables for this node:
                             </p>
                             <div class="functions-container">
                                 <!-- Functions will be added here -->
@@ -325,8 +413,8 @@
                                     <i class="bi bi-plus-circle"></i> Add Function
                                 </button>
                                 <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item add-session-function" href="#">Get Session Variable</a></li>
-                                    <li><a class="dropdown-item add-info-function" href="#">Get Session Info</a></li>
+                                    <li><a class="dropdown-item add-activity-function" href="#">Get Activity Data</a></li>
+                                    <li><a class="dropdown-item add-user-function" href="#">Get User State</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -389,7 +477,28 @@
         </div>
     </template>
 
-    <!-- Info Field Item Template -->
+    <!-- User Field Item Template -->
+    <template id="userFieldItemTemplate">
+        <div class="card mb-2 user-field-item-card">
+            <div class="card-body py-2">
+                <div class="row g-2 align-items-center">
+                    <div class="col-5">
+                        <span class="user-field-name fw-bold"></span>
+                    </div>
+                    <div class="col-4">
+                        <span class="badge bg-secondary user-field-type"></span>
+                    </div>
+                    <div class="col-3">
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-user-field-btn">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Legacy Info Field Item Template (for backward compatibility) -->
     <template id="infoFieldItemTemplate">
         <div class="card mb-2 info-field-item-card">
             <div class="card-body py-2">
@@ -417,8 +526,8 @@
                     <div class="col-8">
                         <div class="input-group">
                             <span class="input-group-text">get_</span>
-                            <select class="form-select form-select-sm session-variable-select">
-                                <option value="">Select session variable...</option>
+                            <select class="form-select form-select-sm state-variable-select">
+                                <option value="">Select state variable...</option>
                             </select>
                         </div>
                     </div>
