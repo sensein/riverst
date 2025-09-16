@@ -40,7 +40,11 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
   const transportState = usePipecatClientTransportState();
   const [isValid, setIsValid] = useState(false);
   const [dynamicEnums, setDynamicEnums] = useState<{ books: { id: string; path: string; title: string }[] }>({ books: [] });
-  const [maxChapters, setMaxChapters] = useState<number | null>(null);
+
+  // Extract activity name from schema
+  const activityName = (schema?.properties as any)?.name?.const;
+  const [maxIndices, setMaxIndices] = useState<number | null>(null);
+  const [indexType, setIndexType] = useState<string>('chapters');
 
   // Defaults extracted from schema
   const defaultAnimations =
@@ -88,8 +92,16 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
 
     const fetchBooks = async () => {
       try {
-        const response = await axios.get(`/api/books`);
-        setDynamicEnums(prev => ({ ...prev, books: response.data }));
+        if (activityName) {
+          const response = await axios.get('/api/resources', {
+            params: { activity: activityName }
+          });
+          setDynamicEnums(prev => ({ ...prev, books: response.data }));
+        } else {
+          // Fallback to generic resources if no activity name
+          const response = await axios.get('/api/resources');
+          setDynamicEnums(prev => ({ ...prev, books: response.data }));
+        }
       } catch (error) {
         console.error('Failed to fetch books:', error);
       }
@@ -97,28 +109,31 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
 
     fetchBooks();
     validateSchema();
-  }, [form, validateSchema]);
+  }, [form, validateSchema, activityName]);
 
-  // Fetch chapter count when book selection changes
+  // Fetch index count when book selection changes
   useEffect(() => {
     if (!selectedBook) {
-      setMaxChapters(null);
+      setMaxIndices(null);
+      setIndexType('chapters');
       return;
     }
 
-    const fetchBookChapters = async () => {
+    const fetchResourceIndices = async () => {
       try {
-        const response = await axios.get('/api/book-chapters', {
-          params: { bookPath: selectedBook }
+        const response = await axios.get('/api/resources/indices', {
+          params: { resourcePath: selectedBook }
         });
-        setMaxChapters(response.data.maxChapters);
+        setMaxIndices(response.data.maxIndices);
+        setIndexType(response.data.indexType || 'chapters');
       } catch (error) {
-        console.error('Failed to fetch book chapters:', error);
-        setMaxChapters(null);
+        console.error('Failed to fetch resource indices:', error);
+        setMaxIndices(null);
+        setIndexType('chapters');
       }
     };
 
-    fetchBookChapters();
+    fetchResourceIndices();
   }, [selectedBook]);
 
   // Update field values based on pipeline modality
@@ -273,10 +288,11 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
 
     // Integer or nullable integer field
     if (config.type === 'integer' || (Array.isArray(config.type) && config.type.includes('integer'))) {
-      const max = key === 'index' && maxChapters ? maxChapters : config.maximum;
+      const max = key === 'index' && maxIndices ? maxIndices : config.maximum;
 
-      // Add validation rules for chapter index
-      if (key === 'index' && maxChapters) {
+      // Add validation rules for resource index
+      if (key === 'index' && maxIndices) {
+        const indexTypeSingular = indexType.slice(-1) === 's' ? indexType.slice(0, -1) : indexType;
         rules.push({
           validator: (_: any, value: any) => {
             if (value === undefined || value === null || value === '') {
@@ -287,13 +303,13 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
               return Promise.reject(new Error('Please enter a valid number'));
             }
             if (!Number.isInteger(numValue)) {
-              return Promise.reject(new Error('Chapter must be a whole number'));
+              return Promise.reject(new Error(`${indexTypeSingular} must be a whole number`));
             }
             if (numValue < 1) {
-              return Promise.reject(new Error('Chapter must be at least 1'));
+              return Promise.reject(new Error(`${indexTypeSingular} must be at least 1`));
             }
-            if (numValue > maxChapters) {
-              return Promise.reject(new Error(`Chapter must be no more than ${maxChapters}`));
+            if (numValue > maxIndices) {
+              return Promise.reject(new Error(`${indexTypeSingular} must be no more than ${maxIndices}`));
             }
             return Promise.resolve();
           }
@@ -306,7 +322,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
             type="number"
             min={config.minimum}
             max={max}
-            placeholder={key === 'index' && maxChapters ? `1-${maxChapters}` : undefined}
+            placeholder={key === 'index' && maxIndices ? `1-${maxIndices}` : undefined}
           />
         </Form.Item>
       );
