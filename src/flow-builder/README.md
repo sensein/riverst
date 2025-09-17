@@ -142,7 +142,7 @@ At runtime, the AI system uses the configuration file with embedded session vari
    - Store content directly in the configuration for easier management
 
 5. **Function Configuration:**
-   - Add `get_session_variable_handler` functions to nodes
+   - Add `get_activity_handler` functions to nodes
    - Retrieve specific session variables during the conversation
    - Handler field at the same level as other function properties
 
@@ -189,7 +189,7 @@ Here is an example of a generated handler function:
         "variable_name"
       ]
     },
-    "handler": "get_session_variable_handler"
+    "handler": "get_activity_handler"
   }
 }
 ```

@@ -557,8 +557,8 @@ function createNodeFromConfig(nodeName, node, stage, config) {
                 const handler = action.handler;
 
                 // Handle all variable getters: we'll transform these to get_variable_action_handler
-                if (handler === 'get_session_variable_handler' ||
-                    handler === 'get_info_variable_handler' ||
+                if (handler === 'get_activity_handler' ||
+                    handler === 'get_user_handler' ||
                     handler === 'get_variable_action_handler') {
 
                     // For simplified format, variable_name is directly on the action
@@ -566,7 +566,7 @@ function createNodeFromConfig(nodeName, node, stage, config) {
 
                     // Determine the source based on handler type or explicit source
                     let source = action.source ||
-                                (handler === 'get_info_variable_handler' ? 'info' : 'session_variables');
+                                (handler === 'get_user_handler' ? 'user' : 'activity');
 
                     if (!varName) {
                         // Try to extract from the old format if needed
@@ -941,8 +941,8 @@ function loadNodeFunctions(nodeEl, nodeName, node) {
         if (funcData.function && funcData.function.handler === "general_handler") return;
 
         if (funcData.function && (funcData.function.handler === "get_task_variable_handler" ||
-                                 funcData.function.handler === "get_session_variable_handler" ||
-                                 funcData.function.handler === "get_info_variable_handler")) {
+                                 funcData.function.handler === "get_activity_handler" ||
+                                 funcData.function.handler === "get_user_handler")) {
             // Extract variable name
             const varEnum = funcData.function.parameters?.properties?.variable_name?.enum;
             if (!varEnum || varEnum.length === 0) return;
@@ -955,8 +955,8 @@ function loadNodeFunctions(nodeEl, nodeName, node) {
             // Add function to node - make sure we're passing parameters that match what addNodeFunction expects
             const funcElement = addNodeFunction(nodeEl, varName, funcDescription);
 
-            // For info variables, update the dropdown class if needed
-            if (handlerType === "get_info_variable_handler") {
+            // For user variables, update the dropdown class if needed
+            if (handlerType === "get_user_handler") {
                 const select = funcElement.querySelector('.session-variable-select');
                 if (select) {
                     select.classList.add('info-variable-select');

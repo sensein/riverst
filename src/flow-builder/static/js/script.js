@@ -147,9 +147,53 @@ function updateConditionVariableDropdown(select) {
     }
 }
 
+// Update pre-action variable dropdown
+function updatePreActionVariableDropdown(select) {
+    // Get all variables based on context
+    const variables = [];
+
+    // Get info variables if this select has the info-variable-select class
+    const isInfoSelect = select.classList.contains('info-variable-select');
+
+    if (isInfoSelect) {
+        // Get user variables (new structure)
+        document.querySelectorAll('.user-var-name').forEach(input => {
+            const name = input.value.trim();
+            if (name) variables.push({name: name, type: 'user'});
+        });
+    } else {
+        // Get activity variables (new structure)
+        document.querySelectorAll('.activity-var-name').forEach(input => {
+            const name = input.value.trim();
+            if (name) variables.push({name: name, type: 'activity'});
+        });
+    }
+
+    // Save current selection
+    const currentValue = select.value;
+
+    // Clear current options
+    select.innerHTML = '<option value="">Select variable...</option>';
+
+    // Add options for each variable
+    variables.forEach(variable => {
+        const option = document.createElement('option');
+        option.value = variable.name;
+        option.text = variable.name;
+        select.appendChild(option);
+    });
+
+    // Restore selection if possible
+    const variableNames = variables.map(v => v.name);
+    if (currentValue && variableNames.includes(currentValue)) {
+        select.value = currentValue;
+    }
+}
+
 function updateAllStateVariableDropdowns() {
     document.querySelectorAll('.session-variable-select').forEach(updateSessionVariableDropdown);
     document.querySelectorAll('.condition-variable').forEach(updateConditionVariableDropdown);
+    document.querySelectorAll('.pre-action-variable-select').forEach(updatePreActionVariableDropdown);
 }
 
 function updateUserFieldDropdowns() {
@@ -232,6 +276,170 @@ function updateUserFieldDropdowns() {
 // Global variable to store activity resource data
 let currentActivityResource = null;
 
+// Function to auto-populate activity variables from resource data
+function populateActivityVariablesFromResource(activityData) {
+    console.log("Auto-populating activity variables from resource");
+
+    // Clear existing activity variables
+    const container = document.getElementById('activityVariablesContainer');
+    container.innerHTML = '';
+
+    // Function to determine appropriate type based on value
+    function getVariableType(value) {
+        if (Array.isArray(value)) {
+            if (value.length > 0 && typeof value[0] === 'number') {
+                return 'number_array';
+            }
+            return 'array';
+        }
+        if (typeof value === 'object' && value !== null) {
+            return 'object';
+        }
+        if (typeof value === 'number') {
+            return 'number';
+        }
+        if (typeof value === 'boolean') {
+            return 'boolean';
+        }
+        return 'string';
+    }
+
+    // Function to flatten nested objects and create variables
+    function createVariablesFromObject(obj, prefix = '') {
+        Object.keys(obj).forEach(key => {
+            const value = obj[key];
+            const variableName = prefix ? `${prefix}.${key}` : key;
+
+            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                // For nested objects, create a variable for the object itself
+                addActivityVariableWithData(variableName, value, 'object');
+                // Also create flattened variables for direct access to nested properties
+                createVariablesFromObject(value, variableName);
+            } else {
+                // Create variable for primitive values and arrays
+                addActivityVariableWithData(variableName, value, getVariableType(value));
+            }
+        });
+    }
+
+    // Start populating from the root of activityData
+    createVariablesFromObject(activityData);
+
+    // Update all dropdowns to include the new variables
+    updateAllStateVariableDropdowns();
+    updateUserFieldDropdowns();
+}
+
+// Function to add activity variable with pre-filled data
+function addActivityVariableWithData(name, value, type) {
+    const container = document.getElementById('activityVariablesContainer');
+    const varElement = createFromTemplate('activityVarTemplate');
+
+    // Set name and type
+    const nameInput = varElement.querySelector('.activity-var-name');
+    const typeSelect = varElement.querySelector('.activity-var-type');
+
+    nameInput.value = name;
+    typeSelect.value = type;
+
+    // Set up event handlers
+    const removeBtn = varElement.querySelector('.remove-activity-var-btn');
+    removeBtn.addEventListener('click', function () {
+        this.closest('.activity-var-card').remove();
+        updateAllStateVariableDropdowns();
+        updateUserFieldDropdowns();
+    });
+
+    nameInput.addEventListener('input', function () {
+        this.dataset.varType = 'activity';
+        updateAllStateVariableDropdowns();
+    });
+
+    typeSelect.addEventListener('change', function () {
+        const valueContainer = this.closest('.activity-var-card').querySelector('.activity-var-value-container');
+        updateValueInputForActivity(this.value, valueContainer);
+    });
+
+    nameInput.dataset.varType = 'activity';
+
+    // Add to container
+    container.appendChild(varElement);
+
+    // Initialize the value input with the actual data
+    const card = container.lastElementChild;
+    const valueContainer = card.querySelector('.activity-var-value-container');
+    updateValueInputForActivity(type, valueContainer, value);
+}
+
+// Function to update activity variable value input with optional pre-filled value
+function updateValueInputForActivity(type, container, value = null) {
+    container.innerHTML = '';
+
+    switch (type) {
+        case 'string':
+            const stringInput = document.createElement('input');
+            stringInput.type = 'text';
+            stringInput.className = 'form-control form-control-sm activity-var-value';
+            stringInput.placeholder = 'Value';
+            if (value !== null) stringInput.value = String(value);
+            container.appendChild(stringInput);
+            break;
+        case 'number':
+            const numberInput = document.createElement('input');
+            numberInput.type = 'number';
+            numberInput.className = 'form-control form-control-sm activity-var-value';
+            numberInput.placeholder = 'Value';
+            if (value !== null) numberInput.value = Number(value);
+            container.appendChild(numberInput);
+            break;
+        case 'boolean':
+            const checkDiv = document.createElement('div');
+            checkDiv.className = 'form-check';
+            const checkbox = document.createElement('input');
+            checkbox.className = 'form-check-input activity-var-value';
+            checkbox.type = 'checkbox';
+            checkbox.value = 'true';
+            if (value !== null) checkbox.checked = Boolean(value);
+            const label = document.createElement('label');
+            label.className = 'form-check-label';
+            label.textContent = 'True';
+            checkDiv.appendChild(checkbox);
+            checkDiv.appendChild(label);
+            container.appendChild(checkDiv);
+            break;
+        case 'array':
+            const arrayInput = document.createElement('input');
+            arrayInput.type = 'text';
+            arrayInput.className = 'form-control form-control-sm activity-var-value';
+            arrayInput.placeholder = 'Comma-separated values';
+            if (value !== null && Array.isArray(value)) {
+                arrayInput.value = value.join(', ');
+            }
+            container.appendChild(arrayInput);
+            break;
+        case 'number_array':
+            const numArrayInput = document.createElement('input');
+            numArrayInput.type = 'text';
+            numArrayInput.className = 'form-control form-control-sm activity-var-value';
+            numArrayInput.placeholder = 'Comma-separated numbers';
+            if (value !== null && Array.isArray(value)) {
+                numArrayInput.value = value.join(', ');
+            }
+            container.appendChild(numArrayInput);
+            break;
+        case 'object':
+            const textarea = document.createElement('textarea');
+            textarea.className = 'form-control form-control-sm activity-var-value';
+            textarea.rows = 2;
+            textarea.placeholder = '{"key": "value"}';
+            if (value !== null && typeof value === 'object') {
+                textarea.value = JSON.stringify(value, null, 2);
+            }
+            container.appendChild(textarea);
+            break;
+    }
+}
+
 // Function to load activity resource from file
 function loadActivityResourceFromFile(file) {
     console.log("Loading activity resource:", file.name);
@@ -260,6 +468,9 @@ function loadActivityResourceFromFile(file) {
 
             // Store filename for later use
             document.getElementById('currentActivityResource').value = file.name;
+
+            // Auto-populate activity variables from the loaded resource
+            populateActivityVariablesFromResource(activityData);
 
             console.log("Activity resource UI updated");
 
@@ -608,55 +819,6 @@ document.addEventListener('DOMContentLoaded', function () {
         return functionElement;
     }
 
-    // Update pre-action variable dropdown
-    function updatePreActionVariableDropdown(select) {
-        // Get all session variables
-        const sessionVars = [];
-
-        // Get info variables if this select has the info-variable-select class
-        const isInfoSelect = select.classList.contains('info-variable-select');
-
-        if (isInfoSelect) {
-            // Get info variables
-            document.querySelectorAll('.session-info-name').forEach(input => {
-                const name = input.value.trim();
-                if (name) sessionVars.push(name);
-            });
-        } else {
-            // Get from task variables that are marked as session
-            document.querySelectorAll('.task-var-name[data-var-type="session"]').forEach(input => {
-                const name = input.value.trim();
-                if (name) sessionVars.push(name);
-            });
-
-            // If no explicitly marked session variables, get all task variables as fallback
-            if (sessionVars.length === 0) {
-                document.querySelectorAll('.task-var-name').forEach(input => {
-                    const name = input.value.trim();
-                    if (name) sessionVars.push(name);
-                });
-            }
-        }
-
-        // Save current selection
-        const currentValue = select.value;
-
-        // Clear current options
-        select.innerHTML = '<option value="">Select a value...</option>';
-
-        // Add options for each session variable
-        sessionVars.forEach(name => {
-            const option = document.createElement('option');
-            option.value = name;
-            option.text = name;
-            select.appendChild(option);
-        });
-
-        // Restore selection if possible
-        if (currentValue && sessionVars.includes(currentValue)) {
-            select.value = currentValue;
-        }
-    }
 
     // Function to update session variable dropdown
     // Function moved to global scope for file-loader.js compatibility
@@ -881,8 +1043,8 @@ document.addEventListener('DOMContentLoaded', function () {
             // Skip the check_progress function which is automatically added
             if (funcData.function && funcData.function.handler === "general_handler") return;
 
-            if (funcData.function && (funcData.function.handler === "get_session_variable_handler" ||
-                funcData.function.handler === "get_info_variable_handler")) {
+            if (funcData.function && (funcData.function.handler === "get_activity_handler" ||
+                funcData.function.handler === "get_user_handler")) {
                 // Extract variable name
                 const varEnum = funcData.function.parameters?.properties?.variable_name?.enum;
                 if (!varEnum || varEnum.length === 0) return;
@@ -943,7 +1105,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // Update the task message preamble with new node name
             const currentValue = taskMessage.value;
             const nodeName = this.value || 'unnamed';
-            taskMessage.value = `TOOLS: \nYou may silently call the check_${nodeName}_progress() function only after all ${nodeName} conversation steps have been completed. Do not mention you are doing this. Look at the other tools you have available, and if you need a certain piece of information that they provide, you may call them (silently, do not mention you are doing so!)\n\n` +
+            taskMessage.value = `TOOLS:\nSilently call check_${nodeName}_progress() after completing all required steps. Do not mention this to the user.\n\n` +
             currentValue.split('\n\n').slice(1).join('\n\n');
 
             // Validate node name
@@ -1061,6 +1223,23 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
+        // Set up dropdown function handlers for tools tab (new structure)
+        const addActivityFunctionBtn = nodeElement.querySelector('.add-activity-function');
+        if (addActivityFunctionBtn) {
+            addActivityFunctionBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                addNodeFunction(this.closest('.node-card'), "", "Get activity data", false);
+            });
+        }
+
+        const addUserFunctionBtn = nodeElement.querySelector('.add-user-function');
+        if (addUserFunctionBtn) {
+            addUserFunctionBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                addNodeFunction(this.closest('.node-card'), "", "Get user state", true);
+            });
+        }
+
         // Initialize the default target node dropdown
         const defaultTargetSelect = nodeElement.querySelector('.default-target-node');
         if (defaultTargetSelect) {
@@ -1077,8 +1256,8 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
-        // Update info field dropdown
-        updateInfoFieldDropdowns();
+        // Update user field dropdown
+        updateUserFieldDropdowns();
 
         // Add the node to the container
         container.appendChild(nodeElement);
@@ -1279,7 +1458,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         name: funcName,
                         variable: sessionVar,
                         description: description || `Get the ${sessionVar} for the session`,
-                        handler: useInfoHandler ? "get_info_variable_handler" : "get_session_variable_handler"
+                        handler: useInfoHandler ? "get_user_handler" : "get_activity_handler"
                     });
                 }
             });
@@ -1383,7 +1562,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     // Create the function definition in the simplified format
                     const functionDef = {
                         type: "function",
-                        handler: useInfoHandler ? "get_info_variable_handler" : "get_session_variable_handler",
+                        handler: useInfoHandler ? "get_user_handler" : "get_activity_handler",
                         variable_name: sessionVar
                     };
 

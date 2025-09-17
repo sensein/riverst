@@ -110,13 +110,8 @@ def generate_json():
                     "description", f"Get the {variable} from {source}"
                 )
 
-                # Map old handler names to new ones
-                old_handler = func.get("handler", "get_activity_handler")
-                handler_mapping = {
-                    "get_session_variable_handler": "get_activity_handler",
-                    "get_info_variable_handler": "get_user_handler",
-                }
-                handler = handler_mapping.get(old_handler, old_handler)
+                # Use the handler as specified
+                handler = func.get("handler", "get_activity_handler")
 
                 if func_name and variable:
                     # Create parameters object based on source
@@ -197,8 +192,6 @@ def generate_json():
                         if handler_type in [
                             "get_activity_handler",
                             "get_user_handler",
-                            "get_session_variable_handler",  # Legacy support
-                            "get_info_variable_handler",  # Legacy support
                         ]:
                             # Extract variable name from parameters
                             variable_name = None
@@ -215,12 +208,9 @@ def generate_json():
                             if variable_name:
                                 # Create new post_action in the simplified format
                                 # Determine the source based on the handler type
-                                if handler_type in [
-                                    "get_user_handler",
-                                    "get_info_variable_handler",
-                                ]:
+                                if handler_type == "get_user_handler":
                                     source = "user"
-                                else:  # get_activity_handler, get_session_variable_handler
+                                else:  # get_activity_handler
                                     source = "activity"
 
                                 new_post_action = {
@@ -304,29 +294,6 @@ def generate_json():
 
                     schema["required"].append(user_field)
 
-            # Legacy support - still handle info_fields but map them to user state
-            for info_field in node.get("info_fields", []):
-                if info_field in data.get("info_descriptions", {}):
-                    field_type = data.get("info_types", {}).get(info_field, "boolean")
-
-                    # Create property based on field type
-                    if field_type == "array" or field_type == "number_array":
-                        # Handle array types
-                        schema["properties"][info_field] = {
-                            "type": "array",
-                            "items": {
-                                "type": "string" if field_type == "array" else "number"
-                            },
-                            "description": data["info_descriptions"][info_field],
-                        }
-                    else:
-                        schema["properties"][info_field] = {
-                            "type": field_type,
-                            "description": data["info_descriptions"][info_field],
-                        }
-
-                    schema["required"].append(info_field)
-
             # Remove special case for current_word_number in review nodes
 
         # Add end node if needed
@@ -337,11 +304,17 @@ def generate_json():
                         "role": "system",
                         "content": (
                             "The session is now complete. Say goodbye in a friendly and "
-                            "encouraging way. Please call the end_conversation function now."
+                            "encouraging way."
                         ),
                     }
                 ],
                 "functions": [],  # Empty functions array for end node
+                "post_actions": [
+                    {
+                        "type": "end_conversation",
+                        "text": "Thank you for learning with me today, have a wonderful day!",
+                    }
+                ],
             }
 
         # Create necessary directories
