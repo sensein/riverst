@@ -30,7 +30,7 @@ from fastapi.staticfiles import StaticFiles
 from loguru import logger
 
 from bot.core.bot_runner import run_bot
-from pipecat.transports.network.webrtc_connection import (
+from pipecat.transports.smallwebrtc.connection import (
     IceServer,
     SmallWebRTCConnection,
 )
@@ -270,7 +270,7 @@ async def get_resources(activity: str = Query(None)) -> JSONResponse:
         # Get resources for specific activity
         resources_dir = BASE_SESSION_DIR / "activities" / activity / "resources"
         if not resources_dir.is_dir():
-            logger.error(f"Resources directory not found for activity: {activity}")
+            logger.warning(f"Resources directory not found for activity: {activity}")
             return JSONResponse(
                 status_code=404, content={"error": "Resources directory not found"}
             )
