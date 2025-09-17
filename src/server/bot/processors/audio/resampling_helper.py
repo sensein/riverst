@@ -65,7 +65,7 @@ class AudioResamplingHelper:
             audio_array = np.frombuffer(frame.audio, dtype=np.int16)
             audio_tensor = torch.tensor(audio_array, device=device).float() / 32768.0
         except Exception as e:
-            logger.critical(e)
+            logger.critical(f"Failed to create audio tensor on device {device}: {e}")
             # Fallback to CPU processing on device error
             device = "cpu"
             audio_array = np.frombuffer(frame.audio, dtype=np.int16)
