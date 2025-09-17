@@ -1,0 +1,163 @@
+{
+  "title": "Dynamic Test Configuration",
+  "description": "Schema for configuring a dynamic test activity.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "const": "dynamic-test"
+    },
+    "description": {
+      "type": "string",
+      "const": "Dynamic test activity for development."
+    },
+    "options": {
+      "type": "object",
+      "properties": {
+        "advanced_flows": {
+          "type": "boolean",
+          "const": true,
+          "default": true,
+          "description": "This activity requires advanced flows for testing."
+        },
+        "advanced_flows_config_path": {
+          "type": "string",
+          "default": "./activities/dynamic-test/flow_config.json",
+          "const": "./activities/dynamic-test/flow_config.json",
+          "description": "Path to the advanced flows configuration file."
+        },
+        "prolific_campaign": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether the activity is part of a Prolific campaign."
+        },
+        "pipeline_modality": {
+          "type": "string",
+          "enum": ["classic"],
+          "default": "classic",
+          "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline. 'e2e' is not supported for advanced flows."
+        },
+        "stt_type": {
+          "type": "string",
+          "enum": ["whisper", "openai"],
+          "default": "openai",
+          "description": "The STT service to use."
+        },
+        "llm_type": {
+          "type": "string",
+          "enum": ["openai", "openai_gpt-realtime", "ollama/qwen3:4b-instruct-2507-q4_K_M"],
+          "default": "openai",
+          "description": "The LLM service to use."
+        },
+        "tts_type": {
+          "type": "string",
+          "enum": ["openai", "piper", "kokoro"],
+          "default": "openai",
+          "description": "The TTS service to use."
+        },
+        "embodiment": {
+          "type": "string",
+          "enum": ["humanoid_avatar", "waveform"],
+          "default": "humanoid_avatar",
+          "description": "The embodiment of the agent to use. This is used to determine the agent's appearance."
+        },
+        "body_animations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep"]
+          },
+          "default": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep"],
+          "description": "List of body animations that the avatar can perform."
+        },
+        "camera_settings": {
+          "type": "string",
+          "enum": ["full", "mid", "upper", "head"],
+          "default": "upper",
+          "const": "upper",
+          "description": "Select the camera framing used for the avatar during the interaction."
+        },
+        "user_description": {
+          "type": "string",
+          "maxLength": 500,
+          "default": "The user is testing dynamic functionality.",
+          "description": "Optional free-text field to describe the user."
+        },
+        "short_term_memory": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable or disable short-term memory."
+        },
+        "long_term_memory": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable or disable long-term memory."
+        },
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["english", "italian", "spanish", "german"]
+          },
+          "default": ["english"],
+          "const": ["english"],
+          "description": "List of languages supported by the avatar."
+        },
+        "video_flag": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable or disable video processing during the session."
+        },
+        "video_out_width": {
+          "type": "integer",
+          "const": 640,
+          "default": 640,
+          "description": "Width of the video output in pixels."
+        },
+        "video_out_height": {
+          "type": "integer",
+          "const": 320,
+          "default": 320,
+          "description": "Height of the video output in pixels."
+        },
+        "video_out_framerate": {
+          "type": "integer",
+          "const": 30,
+          "default": 30,
+          "description": "Framerate of the video output in frames per second."
+        },
+        "user_transcript": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable showing the transcript of the user's speech."
+        },
+        "bot_transcript": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable showing the transcript of the avatar's speech."
+        }
+      },
+      "required": [
+        "advanced_flows",
+        "advanced_flows_config_path",
+        "camera_settings",
+        "video_flag",
+        "user_transcript",
+        "bot_transcript"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "advanced_flows": { "enum": [true] }
+            }
+          },
+          "then": {
+            "required": ["advanced_flows_config_path"]
+          }
+        }
+      ]
+    }
+  },
+  "required": ["name", "description", "options"]
+}

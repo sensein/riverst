@@ -1,0 +1,545 @@
+{
+    "reading_context": {
+        "indexable_by": "chapters",
+        "key_information": {
+            "name": "Alice in Wonderland",
+            "author": "Lewis Carroll"
+        },
+        "book_summary": "In \"Alice in Wonderland,\" Lewis Carroll introduces readers to a whimsical and fantastical world through the eyes of a curious young girl named Alice. The story begins when Alice follows a hurried White Rabbit down a rabbit hole, leading her into a bizarre land filled with peculiar creatures and nonsensical events. Throughout her adventures, Alice encounters a variety of eccentric characters, including the Mad Hatter, the Cheshire Cat, and the Queen of Hearts, each presenting their own challenges and absurdities that contribute to the central conflict of Alice's struggle to make sense of her surroundings and assert her identity.\n\nAs Alice navigates this dreamlike landscape, she grapples with themes of curiosity, growing up, and the fluidity of reality. The narrative explores the importance of imagination and the absurdity of adult conventions, highlighting how children often perceive the world differently. Ultimately, Alice's journey culminates in a chaotic trial presided over by the Queen of Hearts, where she stands up for herself and declares that the events of Wonderland are nothing but a pack of cards. This declaration leads to her awakening from the dream, providing a resolution that emphasizes the power of self-assertion and the transition from childhood wonder to the complexities of adulthood. Alice's adventures serve as a reminder to embrace curiosity and the joy of exploration, even in the face of absurdity.",
+        "chapters": [
+            {
+                "chapter_summary": "In Chapter 1 of \"Alice in Wonderland,\" Alice, feeling bored and sleepy while sitting by her sister, encounters a hurried White Rabbit who speaks and carries a watch. Intrigued, she follows the Rabbit down a rabbit-hole, leading her to a deep fall filled with curiosities, where she muses about various topics and her surroundings. Upon landing, she finds herself in a hall with locked doors and a key that fits a small door leading to a beautiful garden, but she is too large to enter. After discovering a bottle labeled \"Drink Me\" and a cake marked \"Eat Me,\" she makes the decision to drink from the bottle, which causes her to shrink, setting the stage for her adventures in Wonderland. This chapter introduces the whimsical nature of the story and Alice's curiosity, propelling her into a fantastical world filled with possibilities.",
+                "image": ""
+            },
+            {
+                "chapter_summary": "In Chapter 2 of \"Alice in Wonderland,\" titled \"The Pool of Tears,\" Alice experiences rapid changes in size after consuming a mysterious potion and finds herself crying, creating a large pool of tears. As she swims in her own tears, she encounters a Mouse and attempts to communicate with it, but her references to cats and dogs offend the creature, causing it to swim away. The chapter highlights Alice's confusion about her identity and her attempts to navigate the absurdity of Wonderland, ultimately leading to the gathering of various animals in the pool. This chapter progresses the story by introducing new characters and setting the stage for Alice's interactions with them as she seeks a way out of her predicament.",
+                "image": ""
+            },
+            {
+                "chapter_summary": "In Chapter 3 of \"Alice in Wonderland,\" Alice finds herself among a group of wet and disgruntled animals and birds after a swim. The Mouse attempts to dry them by telling a historical tale, but the story fails to engage the listeners, leading to the Dodo proposing a nonsensical \"Caucus-race\" to dry off. After the chaotic race, the Dodo declares everyone a winner and insists that Alice distribute prizes, which she awkwardly does with some comfits and a thimble. The chapter highlights Alice's growing frustration with the absurdity of her new companions and culminates in her mention of her cat, Dinah, which frightens the birds away, leaving Alice feeling lonely and despondent. This chapter advances the story by showcasing the nonsensical nature of Wonderland and Alice's struggle to connect with its inhabitants.",
+                "image": ""
+            },
+            {
+                "chapter_summary": "In Chapter 4 of \"Alice in Wonderland,\" Alice encounters the White Rabbit, who mistakes her for his housemaid, Mary Ann, and sends her to fetch his gloves and fan. Upon entering the Rabbit's house, Alice drinks from a mysterious bottle, causing her to grow to an enormous size, which traps her inside. As she struggles to manage her size and the chaos around her, she inadvertently kicks the Rabbit's assistant, Bill, down the chimney, leading to further commotion. Eventually, Alice shrinks after eating a cake, escapes the house, and finds herself in a wood, where she hopes to grow to her proper size again and reach a lovely garden. This chapter highlights Alice's ongoing struggles with her changing size and introduces new characters and challenges, propelling her further into the whimsical and chaotic world of Wonderland.",
+                "image": ""
+            },
+            {
+                "chapter_summary": "In Chapter 5 of \"Alice in Wonderland,\" Alice encounters a Caterpillar who questions her identity, leading to a discussion about her feelings of confusion due to her constant size changes. The Caterpillar, unimpressed by Alice's explanations, eventually instructs her to eat from a mushroom to alter her size, suggesting one side will make her taller and the other shorter. After the Caterpillar leaves, Alice experiments with the mushroom pieces, resulting in rapid growth and a comically elongated neck, which attracts the attention of a Pigeon that mistakes her for a serpent. The chapter concludes with Alice successfully adjusting her size back to normal, contemplating her next move to enter a beautiful garden. This chapter deepens Alice's struggles with identity and transformation, while also advancing the plot by introducing the mushroom as a means for her to control her size.",
+                "image": ""
+            },
+            {
+                "chapter_summary": "In Chapter 6 of *Alice in Wonderland*, titled \"Pig and Pepper,\" Alice encounters two footmen who deliver an invitation from the Queen to the Duchess for a game of croquet, but their nonsensical conversation leaves her frustrated. She eventually enters the Duchess's chaotic kitchen, where the Duchess is nursing a baby while the cook throws kitchenware at them, creating a scene of absurdity and confusion. After a brief and tumultuous interaction, Alice is left holding the baby, which transforms into a pig, prompting her to release it into the woods. The chapter concludes with Alice meeting the Cheshire Cat, who engages her in a philosophical discussion about madness and directs her toward the March Hare's house, further advancing her journey through Wonderland.",
+                "image": ""
+            },
+            {
+                "chapter_summary": "In Chapter 7 of \"Alice in Wonderland,\" Alice encounters the March Hare, the Hatter, and the Dormouse at a chaotic tea party where they engage in nonsensical conversations and riddles. Alice becomes increasingly frustrated with their illogical exchanges and their rude behavior, particularly when they dismiss her attempts to understand their riddles and reasoning. The chapter showcases Alice's growing impatience with the absurdity of Wonderland, culminating in her decision to leave the tea party after feeling disrespected. This chapter propels the story forward as Alice, disillusioned by the madness around her, discovers a door in a tree that leads her back to a familiar setting, suggesting her desire to regain control and find clarity in her journey.",
+                "image": ""
+            },
+            {
+                "chapter_summary": "In Chapter 8 of \"Alice in Wonderland,\" Alice encounters a peculiar scene in the Queen’s croquet-ground where three gardeners are painting white roses red to avoid the Queen's wrath. As the Queen arrives with a grand procession, she questions Alice and, in a fit of rage, orders her execution for speaking out of turn, but Alice boldly stands her ground. The croquet game begins, characterized by chaos and absurdity, with live hedgehogs as balls and flamingos as mallets, leading to the Queen frequently calling for beheadings. Alice also converses with the Cheshire Cat, who adds to the confusion surrounding the game and the Queen's authority, ultimately highlighting the nonsensical nature of the court. This chapter advances the plot by deepening Alice's confrontation with the absurdity of Wonderland's authority and the arbitrary nature of its rules.",
+                "image": ""
+            },
+            {
+                "chapter_summary": "In Chapter 9 of \"Alice in Wonderland,\" Alice reunites with the Duchess, who is in a surprisingly pleasant mood compared to their previous encounter. As they converse, the Duchess shares nonsensical morals, and Alice reflects on the nature of temper and behavior. Their conversation is abruptly interrupted by the arrival of the Queen, who threatens the Duchess with execution, leading to her swift departure. Alice is then taken by the Queen to meet the Mock Turtle, who is described as sad and lonely, and the Gryphon, who insists that the Mock Turtle's sorrow is merely a fancy. The chapter concludes with the Mock Turtle beginning to recount his history, introducing whimsical themes of education and the absurd nature of their world. This chapter deepens Alice's exploration of Wonderland's bizarre characters and sets the stage for her encounter with the Mock Turtle's story.",
+                "image": ""
+            },
+            {
+                "chapter_summary": "In Chapter 10 of \"Alice in Wonderland,\" Alice meets the Mock Turtle and the Gryphon, who are both whimsical and melancholic creatures. They engage her in a discussion about the Lobster Quadrille, a nonsensical dance that involves lobsters and various sea creatures, illustrating their absurdity through playful dialogue and song. As Alice listens, she is drawn into their antics, but her attempts to share her own experiences are met with confusion and further nonsensical questions. The chapter concludes with the Gryphon abruptly pulling Alice away to a trial, propelling the story forward and hinting at the unfolding chaos in Wonderland.",
+                "image": ""
+            },
+            {
+                "chapter_summary": "In Chapter 11 of \"Alice in Wonderland,\" titled \"Who Stole the Tarts?\", Alice finds herself in a chaotic courtroom presided over by the King and Queen of Hearts, where the Knave of Hearts is accused of stealing tarts. As the trial begins, Alice observes the absurdity of the proceedings, including the jury's nonsensical behavior and the Hatter's nervous testimony. Alice grows larger during the trial, which adds to the confusion, and she ultimately learns that she herself has been called as a witness, setting the stage for her to confront the absurdity of the court's authority and the ridiculousness of the trial. This chapter advances the plot by highlighting the surreal nature of Wonderland's justice system and Alice's increasing involvement in its events.",
+                "image": ""
+            },
+            {
+                "chapter_summary": "In Chapter 12 of \"Alice in Wonderland,\" titled \"Alice’s Evidence,\" Alice finds herself in a chaotic trial where the Knave of Hearts is accused of stealing tarts. In a moment of frustration, she accidentally tips over the jury box, causing a flurry of confusion among the jurymen. As the trial progresses, Alice challenges the absurdity of the proceedings, particularly when the King invents rules and misinterprets evidence, ultimately leading to her assertion that the court is nonsensical. The chapter culminates in Alice standing up to the Queen's threats, declaring that they are merely cards, which causes the entire court to collapse around her, leading to her awakening from what she realizes was a dream. This chapter marks the climax of Alice's journey, showcasing her growth and confidence as she confronts authority and absurdity.",
+                "image": ""
+            }
+        ]
+    },
+    "vocab": {
+        "indexable_by": "chapters",
+        "chapters": [
+            {
+                "vocab_words": {
+                    "grade_4": [
+                        {
+                            "word": "hurry",
+                            "sentence": "Alice was not a bit hurt, and she jumped up on to her feet in a moment: she\nlooked up, but it was all dark overhead; before her was another long passage,\nand the White Rabbit was still in sight, hurrying down it.",
+                            "context_description": "In this moment, Alice has just fallen down the rabbit hole and is quickly regaining her composure. The sentence emphasizes her resilience and curiosity as she immediately gets up and notices the mysterious new environment around her, highlighting her determination to follow the White Rabbit and continue her adventure in Wonderland. This sets the stage for her journey into the unknown, filled with excitement and potential discoveries."
+                        },
+                        {
+                            "word": "climb",
+                            "sentence": "when she got to the door, she\nfound she had forgotten the little golden key, and when she went back to the\ntable for it, she found she could not possibly reach it: she could see it quite\nplainly through the glass, and she tried her best to climb up one of the legs\nof the table, but it was too slippery; and when she had tired herself out with\ntrying, the poor little thing sat down and cried.",
+                            "context_description": "In this part of the story, Alice is experiencing frustration and helplessness after shrinking to a tiny size, which prevents her from accessing the key needed to enter the beautiful garden. This moment emphasizes her struggles in Wonderland, highlighting themes of growth, the challenges of navigating her new environment, and her emotional state as she grapples with feelings of inadequacy and despair."
+                        }
+                    ],
+                    "grade_5": [
+                        {
+                            "word": "considering",
+                            "sentence": "So she was considering in her own mind (as well as she could, for the hot day\nmade her feel very sleepy and stupid), whether the pleasure of making a\ndaisy-chain would be worth the trouble of getting up and picking the daisies,\nwhen suddenly a White Rabbit with pink eyes ran close by her.",
+                            "context_description": "In this sentence, Alice is daydreaming and weighing the effort of making a daisy-chain against her feelings of lethargy caused by the heat. This moment illustrates her boredom and restlessness, setting the stage for the unexpected arrival of the White Rabbit, which propels her into the fantastical adventure that follows."
+                        },
+                        {
+                            "word": "advice",
+                            "sentence": "She generally gave herself very good advice, (though she very seldom followed\nit), and sometimes she scolded herself so severely as to bring tears into her\neyes; and once she remembered trying to box her own ears for having cheated\nherself in a game of croquet she was playing against herself, for this curious\nchild was very fond of pretending to be two people.",
+                            "context_description": "In this passage, Alice reflects on her tendency to give herself advice and the irony of not following it, highlighting her internal struggle and the whimsical nature of her character. This moment emphasizes her loneliness and confusion as she navigates a bizarre world, illustrating her imaginative play and the theme of identity as she feels increasingly diminished and disconnected from herself."
+                        }
+                    ],
+                    "grade_6": [
+                        {
+                            "word": "curiosity",
+                            "sentence": "(when she thought it over afterwards, it\noccurred to her that she ought to have wondered at this, but at the time it all\nseemed quite natural); but when the Rabbit actually took a watch out of its\nwaistcoat-pocket, and looked at it, and then hurried on, Alice started to\nher feet, for it flashed across her mind that she had never before seen a\nrabbit with either a waistcoat-pocket, or a watch to take out of it, and\nburning with curiosity, she ran across the field after it, and fortunately was\njust in time to see it pop down a large rabbit-hole under the hedge.",
+                            "context_description": "In this sentence, Alice reflects on her initial reaction to the unusual sight of the White Rabbit, highlighting her curiosity and the surreal nature of her surroundings. This moment serves as a pivotal point in the story, as it propels Alice into the fantastical adventure that follows, emphasizing the theme of curiosity leading to exploration and the blurring of reality and imagination."
+                        },
+                        {
+                            "word": "underneath",
+                            "sentence": "She took down a jar from one of the\nshelves as she passed; it was labelled “ORANGE MARMALADE”, but to\nher great disappointment it was empty: she did not like to drop the jar for\nfear of killing somebody underneath, so managed to put it into one of the\ncupboards as she fell past it.",
+                            "context_description": "In this sentence, Alice's curiosity leads her to interact with her surroundings as she falls down the rabbit-hole, highlighting her adventurous spirit and the whimsical nature of Wonderland. The empty jar of orange marmalade symbolizes the unexpected and often absurd experiences she encounters, while her concern about dropping it reflects her inherent kindness even in a bizarre situation, deepening her character and setting the tone for the fantastical journey ahead."
+                        }
+                    ]
+                }
+            },
+            {
+                "vocab_words": {
+                    "grade_4": [
+                        {
+                            "word": "curious",
+                            "sentence": "It was high time to go, for the pool was getting quite crowded with the birds\nand animals that had fallen into it: there were a Duck and a Dodo, a Lory and\nan Eaglet, and several other curious creatures.",
+                            "context_description": "In this part of the story, Alice recognizes that the chaotic situation in the pool, filled with various animals, is becoming overwhelming and potentially dangerous. The sentence emphasizes the urgency of leaving the crowded pool, highlighting the whimsical and surreal nature of Wonderland while also setting the stage for the diverse characters Alice will encounter as they swim to the shore."
+                        },
+                        {
+                            "word": "wonder",
+                            "sentence": "“Oh, my poor little feet, I\nwonder who will put on your shoes and stockings for you now, dears?",
+                            "context_description": "In this moment, Alice is experiencing a surreal transformation as she grows larger and larger in Wonderland, which causes her to reflect on her feet that are now far away from her. This sentence highlights her bewilderment and childlike concern for her feet, emphasizing her sense of loss and disconnection from her own body as she navigates the strange and confusing world around her."
+                        }
+                    ],
+                    "grade_5": [
+                        {
+                            "word": "improve",
+                            "sentence": "I’ll\ntry and say ‘How doth the little—’” and she\ncrossed her hands on her lap as if she were saying lessons, and began to repeat\nit, but her voice sounded hoarse and strange, and the words did not come the\nsame as they used to do:—\n\n“How doth the little crocodile\n    Improve his shining tail,\nAnd pour the waters of the Nile\n    On every golden scale!",
+                            "context_description": "In this passage, Alice is grappling with her identity and the confusion of her changing self after her experiences in Wonderland. As she attempts to recite a familiar poem, her struggle to remember the words correctly symbolizes her feelings of disorientation and the loss of her childhood innocence, highlighting the theme of identity and transformation in the story."
+                        },
+                        {
+                            "word": "escape",
+                            "sentence": "“That was a narrow escape!” said Alice, a good deal\nfrightened at the sudden change, but very glad to find herself still in\nexistence; “and now for the garden!”",
+                            "context_description": "In this moment, Alice reflects on her recent experience of shrinking, which has left her frightened but relieved to still be herself. This sentence highlights her emotional response to the unpredictable and often perilous nature of her adventures in Wonderland, emphasizing her determination to move forward and seek the garden despite the challenges she faces."
+                        }
+                    ],
+                    "grade_6": [
+                        {
+                            "word": "inquisitively",
+                            "sentence": "(Alice thought this must be the right way\nof speaking to a mouse: she had never done such a thing before, but she\nremembered having seen in her brother’s Latin Grammar, “A\nmouse—of a mouse—to a mouse—a mouse—O mouse!”)\nThe Mouse looked at her rather inquisitively, and seemed to her to wink with\none of its little eyes, but it said nothing.",
+                            "context_description": "In this passage, Alice reflects on how to communicate with the mouse she encounters, revealing her whimsical logic and the absurdity of her situation in Wonderland. This moment highlights her innocence and curiosity, as she tries to apply her academic knowledge to an unusual scenario, emphasizing the theme of language and understanding in a nonsensical world."
+                        },
+                        {
+                            "word": "sorrowful",
+                            "sentence": "He says it kills all the rats\nand—oh dear!” cried Alice in a sorrowful tone, “I’m\nafraid I’ve offended it again!”",
+                            "context_description": "In this sentence, Alice realizes that her mention of the dog, which is known for killing rats, has likely upset the Mouse, who is a character that harbors a strong dislike for cats and, by extension, anything associated with them, including dogs. This moment highlights Alice's growing awareness of the sensitivities of the creatures in Wonderland and her desire to maintain harmony in her conversation, showcasing her innocence and the misunderstandings that arise in this whimsical world."
+                        }
+                    ]
+                }
+            },
+            {
+                "vocab_words": {
+                    "grade_4": [
+                        {
+                            "word": "wonder",
+                            "sentence": "“It is a long tail, certainly,” said Alice, looking down\nwith wonder at the Mouse’s tail; “but why do you call it\nsad?”",
+                            "context_description": "In this part of the story, Alice is engaging with the Mouse, who has just expressed that his story is \"long and sad.\" Her playful misunderstanding of the word \"tale\" as referring to the Mouse's actual tail adds a layer of humor and highlights Alice's innocence and curiosity. This moment illustrates her whimsical perspective in the nonsensical world of Wonderland, setting the stage for the Mouse's story while emphasizing the theme of communication and misunderstanding in the narrative."
+                        },
+                        {
+                            "word": "patience",
+                            "sentence": "“You’re enough to try the patience of an\noyster!”\n\n“I wish I had our Dinah here, I know I do!” said Alice aloud,\naddressing nobody in particular.",
+                            "context_description": "In this passage, the young Crab expresses frustration with her mother, using the phrase \"You’re enough to try the patience of an oyster!\" to highlight how her mother's nagging is testing her limits. This moment reflects the theme of annoyance and misunderstandings among the characters, while Alice's longing for her cat Dinah adds a personal touch and emphasizes her desire for comfort in a chaotic and confusing situation."
+                        }
+                    ],
+                    "grade_5": [
+                        {
+                            "word": "venture",
+                            "sentence": "“She’d soon fetch it back!”\n\n“And who is Dinah, if I might venture to ask the question?” said\nthe Lory.",
+                            "context_description": "In this exchange, Alice expresses her longing for her pet cat, Dinah, who she believes could easily retrieve the Mouse after it walks away upset. This moment highlights Alice's desire for companionship and comfort in an increasingly chaotic and nonsensical situation. The Lory's question about Dinah serves to transition the conversation and allows Alice to share more about her life, emphasizing her innocence and the contrast between her familiar world and the bizarre Wonderland she finds herself in."
+                        },
+                        {
+                            "word": "adoption",
+                            "sentence": "“In that case,” said the Dodo solemnly, rising to its feet,\n“I move that the meeting adjourn, for the immediate adoption of more\nenergetic remedies—”\n\n“Speak English!” said the Eaglet.",
+                            "context_description": "In this part of the story, the Dodo is trying to take charge of the chaotic meeting by suggesting a formal motion to adjourn, but the Eaglet interrupts, expressing confusion about the Dodo's complicated language. This exchange highlights the absurdity and comedic misunderstandings among the characters, emphasizing the theme of nonsensical communication in Wonderland."
+                        }
+                    ],
+                    "grade_6": [
+                        {
+                            "word": "insolence",
+                            "sentence": "But the insolence of his Normans—’ How are you getting on now, my\ndear?”",
+                            "context_description": "In this part of the story, the Mouse is recounting a historical narrative about the Normans, specifically discussing their arrogance. The abrupt shift in focus to Alice, who is still struggling with her wetness, highlights the whimsical and chaotic nature of the conversation among the characters, contrasting the serious historical discussion with the nonsensical reality of Wonderland. This sentence serves to illustrate the confusion and absurdity that permeates the interactions in this fantastical setting."
+                        },
+                        {
+                            "word": "usurpation",
+                            "sentence": "Silence all round, if you please!\n‘William the Conqueror, whose cause was favoured by the pope, was soon\nsubmitted to by the English, who wanted leaders, and had been of late much\naccustomed to usurpation and conquest.",
+                            "context_description": "In this moment, the Mouse attempts to take charge of the group by reciting a historical account, believing it will effectively distract and dry them off. The sentence highlights the Mouse's authoritative demeanor and the absurdity of the situation, as Alice and the other animals are more concerned about their immediate discomfort than the historical content being presented. This adds to the whimsical and nonsensical tone of the story, showcasing how characters often engage in trivial discussions amidst more pressing concerns."
+                        }
+                    ]
+                }
+            },
+            {
+                "vocab_words": {
+                    "grade_4": [
+                        {
+                            "word": "wonder",
+                            "sentence": "Where\ncan I have dropped them, I wonder?”",
+                            "context_description": "In this sentence, the White Rabbit expresses his anxiety and frustration over losing important items—a fan and a pair of gloves—that he believes could lead to dire consequences with the Duchess. This moment highlights the Rabbit's frantic personality and sets the stage for Alice's involvement in the unfolding chaos, showcasing her willingness to help despite the bizarre circumstances of Wonderland."
+                        },
+                        {
+                            "word": "delight",
+                            "sentence": "“Poor little thing!”\nsaid Alice, in a coaxing tone, and she tried hard to whistle to it; but she was\nterribly frightened all the time at the thought that it might be hungry, in\nwhich case it would be very likely to eat her up in spite of all her coaxing.\n\nHardly knowing what she did, she picked up a little bit of stick, and held it\nout to the puppy; whereupon the puppy jumped into the air off all its feet at\nonce, with a yelp of delight, and rushed at the stick, and made believe to\nworry it; then Alice dodged behind a great thistle, to keep herself from being\nrun over; and the moment she appeared on the other side, the puppy made another\nrush at the stick, and tumbled head over heels in its hurry to get hold of it;",
+                            "context_description": "In this passage, Alice expresses her concern for the enormous puppy, demonstrating her nurturing instincts and kindness despite her fear of being harmed. The use of \"coaxing tone\" highlights her attempt to calm the puppy while also revealing her vulnerability in a strange and potentially dangerous situation, which adds tension to the scene as she navigates her feelings of fear and compassion."
+                        }
+                    ],
+                    "grade_5": [
+                        {
+                            "word": "expect",
+                            "sentence": "It did so indeed, and much sooner than she had expected: before she had drunk\nhalf the bottle, she found her head pressing against the ceiling, and had to\nstoop to save her neck from being broken.",
+                            "context_description": "In this sentence, Alice experiences the immediate and dramatic effects of drinking from the mysterious bottle, which causes her to grow unexpectedly large. This moment heightens the story's theme of transformation and the unpredictability of Wonderland, illustrating Alice's ongoing struggle with her identity and size in a bizarre world where normal rules do not apply."
+                        },
+                        {
+                            "word": "comfort",
+                            "sentence": "That’ll be a comfort, one way—never to be an\nold woman—but then—always to have lessons to learn!",
+                            "context_description": "In this moment of reflection, Alice grapples with the strange and uncomfortable reality of her current situation in Wonderland, where she is stuck in a room and unable to grow up. The sentence captures her mixed feelings about the prospect of remaining a child forever—finding comfort in avoiding the responsibilities of adulthood, yet feeling burdened by the idea of never escaping the need to learn and grow. This internal conflict highlights Alice's desire for both stability and the freedom that comes with maturity, emphasizing the theme of childhood versus adulthood in the story."
+                        }
+                    ],
+                    "grade_6": [
+                        {
+                            "word": "concluded",
+                            "sentence": "She did not get hold of\nanything, but she heard a little shriek and a fall, and a crash of broken\nglass, from which she concluded that it was just possible it had fallen into a\ncucumber-frame, or something of the sort.",
+                            "context_description": "In this part of the story, Alice is reacting to the Rabbit's attempts to enter the room where she is trapped. The sentence illustrates her clumsy yet determined attempt to interact with the outside world, highlighting her confusion and the chaos of the situation. The mention of the \"shriek,\" \"fall,\" and \"crash of broken glass\" emphasizes the absurdity and unpredictability of Wonderland, while also showcasing Alice's growing awareness of her own size and the consequences of her actions."
+                        },
+                        {
+                            "word": "trembled",
+                            "sentence": "Alice\nknew it was the Rabbit coming to look for her, and she trembled till she shook\nthe house, quite forgetting that she was now about a thousand times as large as\nthe Rabbit, and had no reason to be afraid of it.",
+                            "context_description": "In this moment, Alice is caught in a blend of fear and confusion as she hears the Rabbit approaching, despite her newfound size and power. This sentence highlights her internal struggle and the absurdity of her situation in Wonderland, emphasizing her vulnerability and the whimsical nature of her adventure as she grapples with her identity and the surreal environment around her."
+                        }
+                    ]
+                }
+            },
+            {
+                "vocab_words": {
+                    "grade_4": [
+                        {
+                            "word": "managed",
+                            "sentence": "Her chin was pressed so closely against\nher foot, that there was hardly room to open her mouth; but she did it at last,\nand managed to swallow a morsel of the lefthand bit.",
+                            "context_description": "In this sentence, Alice is experiencing a physical transformation after eating from the mushroom, which is central to the theme of change in \"Alice in Wonderland.\" The description highlights her struggle and determination to navigate her rapidly altering size, emphasizing the surreal and chaotic nature of her adventures in Wonderland, while also illustrating her resourcefulness as she attempts to regain her freedom of movement."
+                        },
+                        {
+                            "word": "pleaded",
+                            "sentence": "“But I’m not used to it!” pleaded poor Alice in a piteous\ntone.",
+                            "context_description": "In this moment, Alice expresses her frustration and discomfort with her current size, highlighting her vulnerability and desire for stability in a world that feels chaotic and unpredictable. The use of \"pleaded\" and \"piteous\" emphasizes her emotional state, illustrating her struggle to adapt to the changes around her and her longing for understanding from the Caterpillar, who seems indifferent to her plight."
+                        }
+                    ],
+                    "grade_5": [
+                        {
+                            "word": "opportunity",
+                            "sentence": "This was such a new idea to Alice, that she was quite silent for a minute or\ntwo, which gave the Pigeon the opportunity of adding, “You’re\nlooking for eggs, I know that well enough; and what does it matter to me\nwhether you’re a little girl or a serpent?”\n\n“It matters a good deal to me,” said Alice hastily;\n“but I’m not looking for eggs, as it happens; and if I was, I\nshouldn’t want yours: I don’t like them raw.”",
+                            "context_description": "In this moment, Alice is grappling with the absurdity of her situation and the Pigeon’s insistence that she is a serpent. The sentence highlights Alice's confusion and the whimsical logic of Wonderland, as she is momentarily taken aback by the Pigeon’s accusation and the idea that little girls could be considered serpents. This exchange emphasizes Alice's struggle to assert her identity amidst the bizarre interpretations of those around her, showcasing the theme of transformation and self-recognition in the story."
+                        },
+                        {
+                            "word": "important",
+                            "sentence": "“I’ve\nsomething important to say!”",
+                            "context_description": "In this moment, the Caterpillar's declaration, \"I’ve something important to say!\" serves as a turning point in the conversation between him and Alice. After a frustrating exchange filled with short and somewhat dismissive remarks, this statement piques Alice's curiosity and prompts her to return, indicating that despite her irritation, she still seeks knowledge and clarity about the strange world she is navigating. This highlights Alice's determination to understand her surroundings and the characters within them, even when faced with confusion and irritation."
+                        }
+                    ],
+                    "grade_6": [
+                        {
+                            "word": "subdued",
+                            "sentence": "“Let me alone!”\n\n“Serpent, I say again!” repeated the Pigeon, but in a more subdued\ntone, and added with a kind of sob, “I’ve tried every way, and\nnothing seems to suit them!”",
+                            "context_description": "In this moment, Alice is expressing her frustration and desire to be left alone after being mistaken for a serpent by the agitated pigeon. The Pigeon's repeated accusation highlights the confusion and absurdity of the situation, as it reveals its own struggles with finding a suitable place to nest, adding to the whimsical and chaotic nature of Alice's experiences in Wonderland."
+                        },
+                        {
+                            "word": "indignantly",
+                            "sentence": "“I’m not a serpent!” said Alice indignantly.",
+                            "context_description": "In this part of the story, Alice is experiencing a surreal transformation where her neck has elongated, leading a pigeon to mistakenly identify her as a serpent. Her exclamation, \"I’m not a serpent!” reflects her frustration and indignation at being misunderstood and unfairly accused, highlighting her struggle to assert her identity in a bizarre and confusing situation. This moment emphasizes the theme of identity and perception that runs throughout \"Alice in Wonderland.\""
+                        }
+                    ]
+                }
+            },
+            {
+                "vocab_words": {
+                    "grade_4": [
+                        {
+                            "word": "curious",
+                            "sentence": "She felt very curious to know\nwhat it was all about, and crept a little way out of the wood to listen.",
+                            "context_description": "In this moment, Alice's curiosity drives her actions as she observes the peculiar scene unfolding with the footmen. Her desire to understand the strange happenings in Wonderland reflects her adventurous spirit and sets the stage for her further encounters with the whimsical characters and events that define the story."
+                        },
+                        {
+                            "word": "considered",
+                            "sentence": "**Chapter 6 Pig and Pepper**\n\nFor a minute or two she stood looking at the house, and wondering what to do\nnext, when suddenly a footman in livery came running out of the wood—(she\nconsidered him to be a footman because he was in livery: otherwise, judging by\nhis face only, she would have called him a fish)—and rapped loudly at the\ndoor with his knuckles.",
+                            "context_description": "In this part of Chapter 6, Alice is in a moment of uncertainty, contemplating her next move in the whimsical and confusing world of Wonderland. The arrival of the footman in livery introduces a new character and adds to the absurdity of her surroundings, as Alice humorously compares the footman’s appearance to that of a fish, highlighting her bewilderment and the peculiar nature of the inhabitants she encounters. This sentence serves to emphasize Alice's ongoing struggle to make sense of the strange world around her."
+                        }
+                    ],
+                    "grade_5": [
+                        {
+                            "word": "opportunity",
+                            "sentence": "The Footman seemed to think this a good opportunity for repeating his remark,\nwith variations.",
+                            "context_description": "In this moment, Alice is becoming increasingly frustrated with the Footman’s dismissive attitude and nonsensical responses. The sentence highlights the absurdity of the conversation, emphasizing the Footman’s lack of helpfulness and his tendency to repeat himself, which adds to Alice's feelings of confusion and annoyance in this whimsical and chaotic world."
+                        },
+                        {
+                            "word": "absurd",
+                            "sentence": "This time there could be\nno mistake about it: it was neither more nor less than a pig, and she\nfelt that it would be quite absurd for her to carry it further.",
+                            "context_description": "In this moment, Alice realizes that the creature she has been holding is not a baby but has transformed into a pig. This revelation highlights the surreal and whimsical nature of Wonderland, as well as Alice's growing sense of absurdity regarding her experiences. It marks a turning point where she decides to let go of the creature, emphasizing her desire to distance herself from the nonsensical chaos of her surroundings."
+                        }
+                    ],
+                    "grade_6": [
+                        {
+                            "word": "violent",
+                            "sentence": "And with that she began nursing her child\nagain, singing a sort of lullaby to it as she did so, and giving it a violent\nshake at the end of every line:\n\n“Speak roughly to your little boy,\n    And beat him when he sneezes:\nHe only does it to annoy,\n    Because he knows it teases.”\n\nCHORUS.",
+                            "context_description": "In this chaotic scene, the Duchess's unconventional approach to parenting highlights the absurdity and surreal nature of Wonderland. Her violent shaking of the baby while singing a nonsensical lullaby emphasizes the theme of illogical behavior and the contrast between expected maternal care and the bizarre reality Alice encounters, further illustrating the madness of the characters in this whimsical world."
+                        },
+                        {
+                            "word": "agony",
+                            "sentence": "“Oh, please mind what you’re doing!” cried Alice,\njumping up and down in an agony of terror.",
+                            "context_description": "In this chaotic scene, Alice is overwhelmed by the Duchess's nonchalant attitude towards the cook's violent outburst, which involves throwing kitchen items at them. Her exclamation reflects her growing concern for the safety of the baby amidst the absurdity and danger of the situation, highlighting Alice's sense of responsibility and her discomfort with the madness surrounding her in Wonderland."
+                        }
+                    ]
+                }
+            },
+            {
+                "vocab_words": {
+                    "grade_4": [
+                        {
+                            "word": "considered",
+                            "sentence": "Alice considered a little, and then said “The fourth.”",
+                            "context_description": "In this moment, Alice's response to the Hatter's question about the date highlights the nonsensical and chaotic nature of the conversation at the tea party. It underscores her confusion and the absurdity of the situation, as the Hatter's unease about time and the mixed-up logic of the characters contribute to the whimsical atmosphere of Wonderland."
+                        },
+                        {
+                            "word": "pleaded",
+                            "sentence": "“Yes, please do!” pleaded Alice.",
+                            "context_description": "In this moment, Alice is feeling pressured to engage with the peculiar characters at the tea party, as they eagerly request a story from the Dormouse. Her plea, \"Yes, please do!\" reflects her desire to participate and connect with them, highlighting the whimsical and chaotic atmosphere of the scene while also showcasing her nervousness and willingness to please her unusual hosts."
+                        }
+                    ],
+                    "grade_5": [
+                        {
+                            "word": "disgust",
+                            "sentence": "This piece of rudeness was more than Alice could bear: she got up in great\ndisgust, and walked off; the Dormouse fell asleep instantly, and neither of the\nothers took the least notice of her going, though she looked back once or\ntwice, half hoping that they would call after her: the last time she saw them,\nthey were trying to put the Dormouse into the teapot.",
+                            "context_description": "In this sentence, Alice's frustration with the rudeness of the Hatter culminates in her decision to leave the chaotic tea party, highlighting her growing sense of alienation and disillusionment with the nonsensical behavior of the characters around her. Her disgust reflects her desire for rationality and civility, contrasting sharply with the absurdity of the situation, and marks a turning point in her journey through Wonderland as she seeks to distance herself from the madness."
+                        },
+                        {
+                            "word": "interrupt",
+                            "sentence": "“Suppose we change the subject,” the March Hare interrupted,\nyawning.",
+                            "context_description": "In this part of the story, the March Hare's interruption serves to shift the conversation away from the Hatter's melancholic discussion about time and the consequences of the Queen's outburst. It highlights the whimsical and nonsensical nature of their tea party, emphasizing the characters' tendency to avoid serious topics and their playful, chaotic interactions."
+                        }
+                    ],
+                    "grade_6": [
+                        {
+                            "word": "mournfully",
+                            "sentence": "The Hatter shook his head mournfully.",
+                            "context_description": "In this part of the chapter, the Hatter's mournful shake of the head conveys his deep sense of loss and regret regarding his relationship with Time, which has gone awry. This moment highlights the absurdity of the conversation and emphasizes the whimsical nature of Wonderland, as the Hatter reflects on a past quarrel that has left him unable to manage time effectively, further illustrating the theme of chaos and the nonsensical rules of this fantastical world."
+                        },
+                        {
+                            "word": "contemptuously",
+                            "sentence": "the Hatter said, tossing his head\ncontemptuously.",
+                            "context_description": "In this scene, the Hatter's action of tossing his head contemptuously emphasizes his disdain for Alice's confusion and lack of understanding. This moment highlights the absurdity of their conversation and the whimsical nature of Wonderland, where logic is often turned upside down, and it showcases the Hatter's eccentric character as he dismisses Alice's perspective."
+                        }
+                    ]
+                }
+            },
+            {
+                "vocab_words": {
+                    "grade_4": [
+                        {
+                            "word": "consider",
+                            "sentence": "The King laid his hand upon her arm, and timidly said “Consider, my dear:\nshe is only a child!”\n\nThe Queen turned angrily away from him, and said to the Knave “Turn them\nover!”",
+                            "context_description": "In this moment, the King is attempting to defend Alice against the Queen's harshness, highlighting her youth and innocence. His timid interjection contrasts with the Queen's aggressive demeanor, illustrating the power dynamics at play and underscoring the absurdity of their royal court, where even a child's safety is in jeopardy."
+                        },
+                        {
+                            "word": "humble",
+                            "sentence": "And then, turning to the rose-tree, she went on, “What\nhave you been doing here?”\n\n“May it please your Majesty,” said Two, in a very humble tone,\ngoing down on one knee as he spoke, “we were trying—”\n\n“I see!” said the Queen, who had meanwhile been examining\nthe roses.",
+                            "context_description": "In this scene, the Queen of Hearts is questioning the gardeners (who are depicted as playing a role in the absurdity of the court) about their actions regarding the rose-trees. This moment highlights the Queen's volatile nature and her authority, as she demands answers while simultaneously showcasing her irrational behavior, which is a recurring theme in \"Alice in Wonderland.\" The interaction sets the stage for the Queen's dramatic and often unjust responses, illustrating the chaotic and nonsensical world Alice finds herself in."
+                        }
+                    ],
+                    "grade_5": [
+                        {
+                            "word": "procession",
+                            "sentence": "Then followed the Knave of Hearts, carrying the\nKing’s crown on a crimson velvet cushion; and, last of all this grand\nprocession, came THE KING AND QUEEN OF HEARTS.",
+                            "context_description": "In this part of the story, the sentence highlights the grand and whimsical nature of the royal procession that Alice is observing. The mention of the Knave of Hearts carrying the King's crown emphasizes the importance of hierarchy and ceremony in Wonderland, while the arrival of the King and Queen of Hearts signifies the culmination of this spectacle, drawing Alice's attention and setting the stage for her interactions with these characters."
+                        },
+                        {
+                            "word": "complaining",
+                            "sentence": "“I don’t think they play at all fairly,” Alice began, in\nrather a complaining tone, “and they all quarrel so dreadfully one\ncan’t hear oneself speak—and they don’t seem to have any\nrules in particular; at least, if there are, nobody attends to them—and\nyou’ve no idea how confusing it is all the things being alive; for\ninstance, there’s the arch I’ve got to go through next walking\nabout at the other end of the ground—and I should have croqueted the\nQueen’s hedgehog just now, only it ran away when it saw mine\ncoming!”",
+                            "context_description": "In this passage, Alice expresses her frustration about the chaotic and unfair nature of the croquet game she is participating in, where the rules seem arbitrary and the players are constantly quarreling. This moment highlights Alice's growing sense of confusion and disillusionment with the nonsensical world of Wonderland, as she struggles to make sense of her surroundings and the bizarre behavior of its inhabitants."
+                        }
+                    ],
+                    "grade_6": [
+                        {
+                            "word": "execute",
+                            "sentence": "“Off with their heads!” and the procession moved on,\nthree of the soldiers remaining behind to execute the unfortunate gardeners,\nwho ran to Alice for protection.\n\n“You shan’t be beheaded!” said Alice, and she put them into a\nlarge flower-pot that stood near.",
+                            "context_description": "In this tense moment, the Queen's command \"Off with their heads!\" illustrates her tyrannical and irrational nature, heightening the absurdity and danger of the situation in Wonderland. Alice's immediate response to protect the gardeners by hiding them in a flower-pot showcases her growing bravery and sense of justice, contrasting sharply with the Queen's cruelty and emphasizing Alice's role as a defender of the innocent in a chaotic world."
+                        },
+                        {
+                            "word": "opportunity",
+                            "sentence": "The hedgehog was engaged in a fight with another hedgehog, which seemed to\nAlice an excellent opportunity for croqueting one of them with the other: the\nonly difficulty was, that her flamingo was gone across to the other side of the\ngarden, where Alice could see it trying in a helpless sort of way to fly up\ninto a tree.",
+                            "context_description": "In this sentence, Alice is observing a chaotic scene during the croquet game, where the hedgehogs are fighting each other. This moment highlights the absurdity and confusion of the game, reflecting the nonsensical nature of Wonderland and Alice's struggle to navigate the bizarre rules and characters around her. The mention of the flamingo being out of reach adds to the sense of frustration and disorder she feels in this whimsical yet chaotic environment."
+                        }
+                    ]
+                }
+            },
+            {
+                "vocab_words": {
+                    "grade_4": [
+                        {
+                            "word": "curious",
+                            "sentence": "“What a curious plan!” exclaimed Alice.",
+                            "context_description": "In this moment, Alice is reacting to the Mock Turtle's explanation of their unusual educational system, which involves a decreasing number of lesson hours each day. Her exclamation, \"What a curious plan!\" highlights her surprise and curiosity about the absurdity of the creatures' schooling, emphasizing the whimsical and nonsensical nature of the world she is in. This interaction also serves to illustrate Alice's role as an outsider, trying to make sense of the strange rules and customs of Wonderland."
+                        },
+                        {
+                            "word": "sorrow",
+                            "sentence": "“What is his sorrow?”",
+                            "context_description": "In this moment, Alice expresses concern for the Mock Turtle, who appears to be in distress. Her question highlights her empathetic nature and curiosity about the strange characters in Wonderland, while also emphasizing the Gryphon's dismissive attitude towards the Mock Turtle's feelings, which adds to the absurdity and whimsical nature of the story."
+                        }
+                    ],
+                    "grade_5": [
+                        {
+                            "word": "constant",
+                            "sentence": "“Once,” said the Mock Turtle at last, with a deep sigh, “I\nwas a real Turtle.”\n\nThese words were followed by a very long silence, broken only by an occasional\nexclamation of “Hjckrrh!” from the Gryphon, and the constant heavy\nsobbing of the Mock Turtle.",
+                            "context_description": "In this moment, the Mock Turtle finally begins to share his story, which is a pivotal point in the narrative as it sets the stage for his whimsical and melancholic tale. His declaration that he \"was a real Turtle\" introduces a blend of humor and sadness, highlighting the absurdity of Wonderland while deepening Alice's curiosity and empathy for his character, which reinforces the theme of identity and transformation in the story."
+                        },
+                        {
+                            "word": "imagine",
+                            "sentence": "It doesn’t look like one, but it\nis.”\n\n“I quite agree with you,” said the Duchess; “and the moral of\nthat is—‘Be what you would seem to be’—or if\nyou’d like it put more simply—‘Never imagine yourself not to\nbe otherwise than what it might appear to others that what you were or might\nhave been was not otherwise than what you had been would have appeared to them\nto be otherwise.’",
+                            "context_description": "In this whimsical exchange, Alice is trying to clarify her thoughts about mustard, which she believes is a vegetable despite its unconventional appearance. The Duchess's agreement and subsequent convoluted moral about authenticity reflects the nonsensical logic of Wonderland, emphasizing themes of identity and perception that are central to the story. This moment illustrates Alice's struggle to make sense of the absurdity around her while also highlighting the playful and often confusing nature of the conversations in Wonderland."
+                        }
+                    ],
+                    "grade_6": [
+                        {
+                            "word": "indignantly",
+                            "sentence": "“Certainly not!” said Alice indignantly.",
+                            "context_description": "In this part of the story, Alice is defending her own educational experience against the Mock Turtle's dismissive comments about her school. Her response, \"Certainly not!\" shows her indignation at the suggestion that washing was a necessary part of a good education, highlighting her sense of pride and the absurdity of the conversation in Wonderland. This moment emphasizes the whimsical and nonsensical nature of the characters' interactions, as well as Alice's growing frustration with their illogical reasoning."
+                        },
+                        {
+                            "word": "ambition",
+                            "sentence": "“Reeling and Writhing, of course, to begin with,” the Mock Turtle\nreplied; “and then the different branches of Arithmetic—Ambition,\nDistraction, Uglification, and Derision.”\n\n“I never heard of ‘Uglification,’”",
+                            "context_description": "In this whimsical exchange between Alice and the Mock Turtle, the sentence highlights the absurdity of the education system in Wonderland, using playful and nonsensical subjects like \"Uglification\" to emphasize the theme of illogical learning. Alice's confusion about \"Uglification\" reflects her struggle to understand the bizarre world around her, illustrating the contrast between her logical perspective and the fantastical elements of Wonderland."
+                        }
+                    ]
+                }
+            },
+            {
+                "vocab_words": {
+                    "grade_4": [
+                        {
+                            "word": "beautiful",
+                            "sentence": "Sing her ‘Turtle Soup,’\nwill you, old fellow?”\n\nThe Mock Turtle sighed deeply, and began, in a voice sometimes choked with\nsobs, to sing this:—\n\n“Beautiful Soup, so rich and green,\nWaiting in a hot tureen!",
+                            "context_description": "In this whimsical scene, the Gryphon suggests that the Mock Turtle sing a song to entertain Alice, highlighting the absurdity and playful nature of their conversation. The mention of \"Turtle Soup\" sets the stage for the Mock Turtle's melancholic yet humorous song, which reflects the nonsensical and surreal atmosphere of Wonderland, emphasizing themes of longing and the peculiarities of the characters."
+                        },
+                        {
+                            "word": "considered",
+                            "sentence": "“I mean, what makes them so shiny?”\n\nAlice looked down at them, and considered a little before she gave her answer.",
+                            "context_description": "In this whimsical exchange between Alice and the Gryphon, the sentence \"I mean, what makes them so shiny?\" highlights the Gryphon's playful and absurd logic, as he tries to explain the concept of whiting in a humorous way. This moment emphasizes the nonsensical nature of Wonderland, showcasing Alice's confusion while also inviting readers to engage with the playful language and imaginative reasoning that characterize the story."
+                        }
+                    ],
+                    "grade_5": [
+                        {
+                            "word": "impatient",
+                            "sentence": "The adventures first,” said the Gryphon in an impatient\ntone: “explanations take such a dreadful time.”",
+                            "context_description": "In this part of the story, the Gryphon is urging Alice to share her adventures rather than getting bogged down in explanations, reflecting the whimsical and nonsensical nature of Wonderland. His impatience highlights the playful absurdity of the conversation, emphasizing that in this curious world, storytelling is prioritized over logical reasoning."
+                        },
+                        {
+                            "word": "surprise",
+                            "sentence": "“If I’d been the whiting,” said Alice, whose thoughts were\nstill running on the song, “I’d have said to the porpoise,\n‘Keep back, please: we don’t want you with us!’”\n\n“They were obliged to have him with them,” the Mock Turtle said:\n“no wise fish would go anywhere without a porpoise.”\n\n“Wouldn’t it really?” said Alice in a tone of great surprise.",
+                            "context_description": "In this whimsical exchange, Alice reflects on a song she has been thinking about, using her imagination to humorously suggest that if she were a whiting, she would prefer not to have a porpoise accompany her. This moment highlights Alice's playful engagement with the absurdity of her surroundings, while also showcasing the Mock Turtle's insistence on the importance of a porpoise in the company of wise fish, further emphasizing the story's theme of nonsensical logic and the blending of reality with fantasy."
+                        }
+                    ],
+                    "grade_6": [
+                        {
+                            "word": "authority",
+                            "sentence": "He looked at the Gryphon as if he thought it had some kind of\nauthority over Alice.",
+                            "context_description": "In this moment, the Mock Turtle is expressing a desire for Alice to perform for them, and his glance at the Gryphon indicates that he believes the Gryphon has the power to command Alice. This highlights the theme of authority and control in Wonderland, where characters often exert influence over one another, leaving Alice feeling like she is back in a school setting, subject to their demands rather than being in charge of her own narrative."
+                        },
+                        {
+                            "word": "melancholy",
+                            "sentence": "Alice panted as she ran; but the Gryphon only\nanswered “Come on!” and ran the faster, while more and more faintly\ncame, carried on the breeze that followed them, the melancholy words:—\n\n“Soo—oop of the e—e—evening,\n    Beautiful, beautiful Soup!”",
+                            "context_description": "In this moment, Alice is caught up in the urgency of the Gryphon's call to hurry to a trial, highlighting the chaotic and whimsical nature of Wonderland. The repetition of the Mock Turtle's song, now fading into the distance, contrasts with the urgency of their situation, emphasizing the surreal blend of frivolity and seriousness that characterizes Alice's adventures."
+                        }
+                    ]
+                }
+            },
+            {
+                "vocab_words": {
+                    "grade_4": [
+                        {
+                            "word": "consider",
+                            "sentence": "“Consider your verdict,” the King said to the jury.",
+                            "context_description": "In this scene, the King is presiding over a whimsical trial in Wonderland, where the absurdity of the proceedings is highlighted. By instructing the jury to \"consider your verdict,\" the King emphasizes the chaotic and nonsensical nature of the trial, as the jury has not yet heard all the evidence, showcasing the playful satire of legal proceedings in the story."
+                        },
+                        {
+                            "word": "surprise",
+                            "sentence": "Imagine\nher surprise, when the White Rabbit read out, at the top of his shrill little\nvoice, the name “Alice!”",
+                            "context_description": "In this moment, Alice is caught off guard as her name is unexpectedly called as a witness in the chaotic court proceedings. This sentence heightens the tension and curiosity in the story, as it marks a pivotal shift where Alice's role becomes more central, prompting readers to wonder how she will navigate her newfound attention and the absurdity of the trial."
+                        }
+                    ],
+                    "grade_5": [
+                        {
+                            "word": "reduced",
+                            "sentence": "“Write that down,” the King said to the jury, and the jury eagerly\nwrote down all three dates on their slates, and then added them up, and reduced\nthe answer to shillings and pence.",
+                            "context_description": "In this scene from the trial in \"Alice in Wonderland,\" the King is conducting a chaotic and nonsensical court proceeding, and the sentence illustrates the absurdity of the situation. The jury's eagerness to record the irrelevant dates and then convert them into currency highlights the illogical nature of the trial, emphasizing the theme of absurdity and the arbitrary nature of authority in Wonderland."
+                        },
+                        {
+                            "word": "explanation",
+                            "sentence": "“I keep them to sell,” the Hatter added as an explanation;\n“I’ve none of my own.",
+                            "context_description": "In this part of the story, the Hatter is trying to clarify why he is wearing a hat that doesn't belong to him, which highlights the absurdity of the trial and the nonsensical rules of the court in Wonderland. This sentence serves to illustrate the Hatter's character as a quirky and confused figure, further emphasizing the chaotic and illogical nature of the proceedings in this whimsical setting."
+                        }
+                    ],
+                    "grade_6": [
+                        {
+                            "word": "indignant",
+                            "sentence": "Alice began in a loud, indignant voice, but she\nstopped hastily, for the White Rabbit cried out, “Silence in the\ncourt!” and the King put on his spectacles and looked anxiously round, to\nmake out who was talking.",
+                            "context_description": "In this part of the story, Alice is observing the absurdity of the trial and is ready to voice her frustration about the jurors' actions. However, she quickly realizes that her outburst could disrupt the proceedings, especially when the White Rabbit demands silence and the King shows concern for maintaining order. This moment highlights Alice's growing awareness of the nonsensical rules of the court while also emphasizing the chaotic atmosphere of Wonderland."
+                        },
+                        {
+                            "word": "ridiculous",
+                            "sentence": "“Don’t talk nonsense,” said Alice more boldly: “you\nknow you’re growing too.”\n\n“Yes, but I grow at a reasonable pace,” said the Dormouse:\n“not in that ridiculous fashion.”",
+                            "context_description": "In this part of the story, Alice is asserting herself as she confronts the Dormouse's criticism about her sudden growth. This exchange highlights Alice's increasing confidence in the chaotic court setting, while also emphasizing the absurdity of Wonderland, as both characters grapple with their unusual transformations. The dialogue showcases the theme of identity and the challenges of navigating a nonsensical world."
+                        }
+                    ]
+                }
+            },
+            {
+                "vocab_words": {
+                    "grade_4": [
+                        {
+                            "word": "consider",
+                            "sentence": "“Consider your\nverdict,” he said to the jury, in a low, trembling voice.",
+                            "context_description": "In this moment, the King is feeling overwhelmed and unsure of his authority as he addresses the jury, which highlights the absurdity and chaos of the trial. His low, trembling voice suggests his fear of Alice's defiance and the potential consequences of the trial's outcome, emphasizing the theme of nonsensical justice in the story."
+                        },
+                        {
+                            "word": "important",
+                            "sentence": "“That’s very important,” the King said, turning to the jury.",
+                            "context_description": "In this scene, the King is emphasizing Alice's claim of knowing \"nothing\" about the case, which he believes is significant for the trial. This moment highlights the absurdity of the court proceedings in Wonderland, as the King's serious demeanor contrasts with the nonsensical nature of the situation, illustrating the theme of illogical authority in the story."
+                        }
+                    ],
+                    "grade_5": [
+                        {
+                            "word": "remembering",
+                            "sentence": "Lastly, she pictured to herself how this same little sister of hers would, in\nthe after-time, be herself a grown woman; and how she would keep, through all\nher riper years, the simple and loving heart of her childhood: and how she\nwould gather about her other little children, and make their eyes bright\nand eager with many a strange tale, perhaps even with the dream of Wonderland\nof long ago: and how she would feel with all their simple sorrows, and find a\npleasure in all their simple joys, remembering her own child-life, and the\nhappy summer days.",
+                            "context_description": "In this reflective moment at the end of the chapter, Alice envisions her sister growing up and cherishing the innocence and wonder of childhood, much like she has experienced in Wonderland. This sentence emphasizes the theme of nostalgia and the importance of retaining a sense of wonder as one matures, connecting Alice's fantastical adventures to the real-world experiences of her sister and highlighting the lasting impact of childhood memories."
+                        },
+                        {
+                            "word": "accident",
+                            "sentence": "she exclaimed in a tone of great\ndismay, and began picking them up again as quickly as she could, for the\naccident of the goldfish kept running in her head, and she had a vague sort of\nidea that they must be collected at once and put back into the jury-box, or\nthey would die.",
+                            "context_description": "In this sentence, Alice's reaction to accidentally knocking over the jurymen reflects her growing concern and sense of responsibility in a chaotic situation. The mention of the goldfish accident serves to illustrate her emotional state and the urgency she feels to rectify her mistake, highlighting her innocence and the whimsical nature of the trial she is part of in Wonderland."
+                        }
+                    ],
+                    "grade_6": [
+                        {
+                            "word": "melancholy",
+                            "sentence": "“The trial cannot proceed,” said the King in a very grave voice,\n“until all the jurymen are back in their proper\nplaces—all,” he repeated with great emphasis, looking hard\nat Alice as he said so.\n\nAlice looked at the jury-box, and saw that, in her haste, she had put the\nLizard in head downwards, and the poor little thing was waving its tail about\nin a melancholy way, being quite unable to move.",
+                            "context_description": "In this part of the chapter, the King emphasizes the importance of order and proper conduct in the chaotic setting of the trial, highlighting the absurdity of the situation. Alice's clumsiness in handling the jurymen, especially the Lizard, underscores her growing frustration and confusion in a world where logic is turned upside down, mirroring her own struggle to regain control amidst the nonsensical proceedings."
+                        },
+                        {
+                            "word": "signifies",
+                            "sentence": "She soon got it out again, and\nput it right; “not that it signifies much,” she said to herself;\n“I should think it would be quite as much use in the trial one way\nup as the other.”\n\nAs soon as the jury had a little recovered from the shock of being upset, and\ntheir slates and pencils had been found and handed back to them, they set to\nwork very diligently to write out a history of the accident, all except the\nLizard, who seemed too much overcome to do anything but sit with its mouth\nopen, gazing up into the roof of the court.",
+                            "context_description": "In this part of the story, Alice is trying to rectify the chaos she caused by accidentally tipping over the jury box, which reflects her sense of responsibility and concern for the jurymen, even though they are whimsical characters. Her comment about the Lizard's position shows her lightheartedness and the absurdity of the trial, emphasizing the nonsensical nature of Wonderland as she contemplates the Lizard's relevance to the proceedings."
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+}

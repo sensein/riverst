@@ -158,9 +158,6 @@ conda create -n riverst python=3.11
 conda activate riverst
 cd riverst/src/server
 pip install -r requirements.txt
-sudo apt-get install git-lfs
-git lfs install
-git clone https://huggingface.co/pipecat-ai/smart-turn-v2 smart_turn_v2
 cp .env.example .env
 # Edit `.env` to configure your settings following .env.example
 # Edit the src/server/config/authorized_users.json
