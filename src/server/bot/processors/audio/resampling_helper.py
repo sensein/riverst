@@ -100,7 +100,7 @@ class AudioResamplingHelper:
                     .tobytes()
                 )
         except Exception as e:
-            logger.critical(e)
+            logger.critical(f"Audio resampling failed: {e}")
             return frame.audio
         return resampled_bytes
 
