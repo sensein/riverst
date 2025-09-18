@@ -39,7 +39,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  login: (googleToken?: string) => Promise<void>;
+  login: (googleToken: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
   authRequest: ReturnType<typeof makeAuthenticatedRequest>;
@@ -78,9 +78,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [googleAuthEnabled, setGoogleAuthEnabled] = useState(
-    import.meta.env.VITE_ENABLE_GOOGLE_AUTH !== 'false'
-  );
+  const [googleAuthEnabled, setGoogleAuthEnabled] = useState(true);
 
   useEffect(() => {
     // Check auth status and existing token on mount
@@ -89,6 +87,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Check if Google auth is enabled
         const statusResponse = await axios.get('/api/auth/status');
         setGoogleAuthEnabled(statusResponse.data.google_auth_enabled);
+
+        if (!statusResponse.data.google_auth_enabled) {
+          // If Google auth is disabled, automatically authenticate with bypass
+          const bypassResponse = await axios.post('/api/auth/bypass');
+          const { access_token, user: userData } = bypassResponse.data;
+
+          setToken(access_token);
+          setUser(userData);
+          localStorage.setItem('auth_token', access_token);
+          setIsLoading(false);
+          return;
+        }
 
         const savedToken = localStorage.getItem('auth_token');
         if (savedToken) {
@@ -128,24 +138,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   /**
    * login
-   * Authenticates the user with Google token or bypass mode.
+   * Authenticates the user with Google token.
    */
-  const login = async (googleToken?: string) => {
+  const login = async (googleToken: string) => {
     try {
       setIsLoading(true);
-      let response;
 
-      if (googleAuthEnabled && googleToken) {
-        // Use Google authentication
-        response = await axios.post('/api/auth/google', {
-          token: googleToken
-        });
-      } else if (!googleAuthEnabled) {
-        // Use bypass authentication
-        response = await axios.post('/api/auth/bypass');
-      } else {
-        throw new Error('Invalid authentication configuration');
-      }
+      // Use Google authentication
+      const response = await axios.post('/api/auth/google', {
+        token: googleToken
+      });
 
       const { access_token, user: userData } = response.data;
 
