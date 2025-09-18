@@ -27,7 +27,7 @@ interface TalkingHeadAPI {
   setMood: (mood: string) => void;
   stopSpeaking: () => void;
   playGesture: (gesture: string, duration?: number) => void;
-  playPose: (posePath: string, onprogress: any, dur?: number) => void;
+  playPose: (posePath: string, onprogress: ((event: ProgressEvent) => void) | null, dur?: number) => void;
   speakAudio: (args: {
     audio: AudioBuffer;
     words?: string[];
