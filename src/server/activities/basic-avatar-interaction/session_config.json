@@ -1,0 +1,163 @@
+{
+  "title": "Basic Avatar Interaction Configuration",
+  "description": "Schema for configuring a basic avatar interaction activity.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "const": "basic-avatar-interaction"
+    },
+    "description": {
+      "type": "string",
+      "const": "Basic avatar interaction activity."
+    },
+    "options": {
+      "type": "object",
+      "properties": {
+        "advanced_flows": {
+          "type": "boolean",
+          "const": false,
+          "default": false,
+          "description": "This activity only supports basic flows. Advanced flows are not allowed for the basic avatar interaction activity and must be set to false."
+        },
+        "prolific_campaign": {
+          "type": "boolean",
+          "default": false,
+          "description": "Wheather the activity is part of a Prolific campaign."
+        },
+        "pipeline_modality": {
+          "type": "string",
+          "enum": ["classic", "e2e"],
+          "default": "classic",
+          "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline."
+        },
+        "stt_type": {
+          "type": "string",
+          "enum": ["whisper", "openai"],
+          "default": "openai",
+          "description": "The STT service to use."
+        },
+        "llm_type": {
+          "type": "string",
+          "enum": ["openai", "openai_gpt-realtime", "ollama/qwen3:4b-instruct-2507-q4_K_M"],
+          "default": "openai",
+          "description": "The LLM service to use."
+        },
+        "tts_type": {
+          "type": "string",
+          "enum": ["openai", "kokoro"],
+          "default": "openai",
+          "description": "The TTS service to use. If you want to go with a local model, kokoro is better than piper (IMHO)"
+        },
+        "embodiment": {
+          "type": "string",
+          "enum": ["humanoid_avatar", "waveform"],
+          "default": "humanoid_avatar",
+          "description": "The embodiment of the agent to use. This is used to determine the agent's appearance."
+        },
+        "body_animations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep"]
+          },
+          "default": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep"],
+          "description": "List of body animations that the avatar can perform."
+        },
+        "camera_settings": {
+          "type": "string",
+          "enum": ["full", "mid", "upper", "head"],
+          "default": "upper",
+          "description": "Select the camera framing used for the avatar during the interaction."
+        },
+        "avatar_system_prompt": {
+          "type": "string",
+          "maxLength": 500,
+          "default": "You are an interactive robot. Keep your responses brief (one or two sentences at most). Your output will be converted to audio so don't include special characters in your answers. Respond to what the user said in a creative and helpful way. Start the conversation by introducing yourself.",
+          "description": "Instructions defining how the avatar should behave during the interaction."
+        },
+        "avatar_personality_description": {
+          "type": "string",
+          "maxLength": 500,
+          "default": "You are the 'River street' avatar, a friendly, helpful robot.",
+          "description": "Text describing the avatar’s personality and role."
+        },
+        "task_description": {
+          "type": "string",
+          "maxLength": 500,
+          "default": "Demonstrate how you can interact with the user in a short conversation. Assist the user with their requests.",
+          "description": "Free-text description of the task or goal of the interaction."
+        },
+        "user_description": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Optional free-text field to describe the user."
+        },
+        "short_term_memory": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable or disable short-term memory. If enabled, the avatar will remember information from previous interactions with this same link and use it to guide the conversation. If false, a session data is deleted after a new session with the same link is started."
+        },
+        "long_term_memory": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable or disable long-term memory. If enabled, the avatar will remember information from previous interactions with this same user and use it to guide the conversation."
+        },
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["english", "italian", "spanish", "german"]
+          },
+          "default": [],
+          "description": "List of languages supported by the avatar. If empty, the avatar supports all languages in the intersection of the languages supported by the STT, LLM and TTS services."
+        },
+        "video_flag": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable or disable video processing during the session."
+        },
+        "video_out_width": {
+          "type": "integer",
+          "const": 640,
+          "default": 640,
+          "description": "Width of the video output in pixels."
+        },
+        "video_out_height": {
+          "type": "integer",
+          "const": 320,
+          "default": 320,
+          "description": "Height of the video output in pixels."
+        },
+        "video_out_framerate": {
+          "type": "integer",
+          "const": 30,
+          "default": 30,
+          "description": "Framerate of the video output in frames per second."
+        },
+        "user_transcript": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable showing the transcript of the user’s speech."
+        },
+        "bot_transcript": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable showing the transcript of the avatar’s speech."
+        }
+      },
+      "required": [
+        "advanced_flows",
+        "embodiment",
+        "camera_settings",
+        "task_description",
+        "avatar_personality_description",
+        "avatar_system_prompt",
+        "video_flag",
+        "user_transcript",
+        "bot_transcript"
+      ]
+    }
+  },
+  "required": ["name", "description", "options"]
+}

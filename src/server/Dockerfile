@@ -1,5 +1,5 @@
 # Stage 1: Base Python image
-FROM python:3.11
+FROM python:3.12
 
 # Set working directory
 WORKDIR /app

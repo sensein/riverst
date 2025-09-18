@@ -1,0 +1,177 @@
+{
+  "title": "Italian as a second language for Americans Vocab Tutoring Configuration",
+  "description": "Schema for configuring a ISL vocab tutoring activity.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "const": "isl-vocab-tutoring"
+    },
+    "description": {
+      "type": "string",
+      "const": "Italian as a Second Language Vocab Tutoring for Americans."
+    },
+    "options": {
+      "type": "object",
+      "properties": {
+        "advanced_flows": {
+          "type": "boolean",
+          "const": false,
+          "default": false,
+          "description": "This activity only supports basic flows. Advanced flows are not allowed for the basic avatar interaction activity and must be set to false."
+        },
+        "prolific_campaign": {
+          "type": "boolean",
+          "default": false,
+          "description": "Wheather the activity is part of a Prolific campaign."
+        },
+        "pipeline_modality": {
+          "type": "string",
+          "enum": ["classic"],
+          "default": "classic",
+          "const": "classic",
+          "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline."
+        },
+        "stt_type": {
+          "type": "string",
+          "enum": ["whisper", "openai"],
+          "default": "openai",
+          "const": "openai",
+          "description": "The STT service to use."
+        },
+        "llm_type": {
+          "type": "string",
+          "enum": ["openai", "ollama/qwen3:4b-instruct-2507-q4_K_M"],
+          "default": "openai",
+          "const": "openai",
+          "description": "The LLM service to use."
+        },
+        "tts_type": {
+          "type": "string",
+          "enum": ["openai", "elevenlabs"],
+          "default": "openai",
+          "const": "openai",
+          "description": "The TTS service to use."
+        },
+        "embodiment": {
+          "type": "string",
+          "enum": ["humanoid_avatar", "waveform"],
+          "default": "humanoid_avatar",
+          "description": "The embodiment of the agent to use. This is used to determine the agent's appearance."
+        },
+        "body_animations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep"]
+          },
+          "default": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep"],
+          "const": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep"],
+          "description": "List of body animations that the avatar can perform."
+        },
+        "camera_settings": {
+          "type": "string",
+          "enum": ["full", "mid", "upper", "head"],
+          "default": "upper",
+          "const": "upper",
+          "description": "Select the camera framing used for the avatar during the interaction."
+        },
+        "avatar_system_prompt": {
+          "type": "string",
+          "maxLength": 500,
+          "default": "You are an interactive robot. Keep your responses brief (one or two sentences at most). Your output will be converted to audio so don't include special characters in your answers. Respond to what the user said in a creative and helpful way. Start the conversation by introducing yourself.",
+          "const": "You are an interactive robot. Keep your responses brief (one or two sentences at most). Your output will be converted to audio so don't include special characters in your answers. Respond to what the user said in a creative and helpful way. Start the conversation by introducing yourself.",
+          "description": "Instructions defining how the avatar should behave during the interaction."
+        },
+        "avatar_personality_description": {
+          "type": "string",
+          "maxLength": 500,
+          "default": "You are the 'River street' avatar, a friendly, helpful robot.",
+          "const": "You are the 'River street' avatar, a friendly, helpful robot.",
+          "description": "Text describing the avatar’s personality and role."
+        },
+        "task_description": {
+          "type": "string",
+          "maxLength": 500,
+          "default": "Demonstrate how you can teach the user some basic TIER 2 vocabulary in Italian in a short conversation. Provide them with definition, translation, examples and interactively ask them to repeat the words and use them in a sentence. Do NOT immediately provide the solution of your questions but guide the user to a correct answer.",
+          "const": "Demonstrate how you can teach the user some basic TIER 2 vocabulary in Italian in a short conversation. Provide them with definition, translation, examples and interactively ask them to repeat the words and use them in a sentence. Do NOT immediately provide the solution of your questions but guide the user to a correct answer.",
+          "description": "Free-text description of the task or goal of the interaction."
+        },
+        "user_description": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Optional free-text field to describe the user.",
+          "default": "The user is a native American speaker.",
+          "const": "The user is a native American speaker."
+        },
+        "short_term_memory": {
+          "type": "boolean",
+          "default": false,
+          "const": false,
+          "description": "Enable or disable short-term memory. If enabled, the avatar will remember information from previous interactions with this same link and use it to guide the conversation. If false, a session data is deleted after a new session with the same link is started."
+        },
+        "long_term_memory": {
+          "type": "boolean",
+          "default": false,
+          "const": false,
+          "description": "Enable or disable long-term memory. If enabled, the avatar will remember information from previous interactions with this same user and use it to guide the conversation."
+        },
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["english", "italian", "spanish", "german"]
+          },
+          "default": ["english", "italian"],
+          "const": ["english", "italian"],
+          "description": "List of languages supported by the avatar. If empty, the avatar supports all languages in the intersection of the languages supported by the STT, LLM and TTS services."
+        },
+        "video_flag": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable or disable video processing during the session."
+        },
+        "video_out_width": {
+          "type": "integer",
+          "const": 640,
+          "default": 640,
+          "description": "Width of the video output in pixels."
+        },
+        "video_out_height": {
+          "type": "integer",
+          "const": 320,
+          "default": 320,
+          "description": "Height of the video output in pixels."
+        },
+        "video_out_framerate": {
+          "type": "integer",
+          "const": 30,
+          "default": 30,
+          "description": "Framerate of the video output in frames per second."
+        },
+        "user_transcript": {
+          "type": "boolean",
+          "default": false,
+          "const": false,
+          "description": "Enable showing the transcript of the user’s speech."
+        },
+        "bot_transcript": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable showing the transcript of the avatar’s speech."
+        }
+      },
+      "required": [
+        "advanced_flows",
+        "camera_settings",
+        "task_description",
+        "avatar_personality_description",
+        "avatar_system_prompt",
+        "video_flag",
+        "user_transcript",
+        "bot_transcript"
+      ]
+    }
+  },
+  "required": ["name", "description", "options"]
+}

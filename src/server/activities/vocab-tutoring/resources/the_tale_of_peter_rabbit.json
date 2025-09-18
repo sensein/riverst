@@ -1,0 +1,276 @@
+{
+    "reading_context": {
+        "key_information": {
+            "name": "The Tale of Peter Rabbit",
+            "author": "Beatrix Potter"
+        },
+        "indexable_by": "chapters",
+        "book_summary": "In \"The Tale of Peter Rabbit\" by Beatrix Potter, the mischievous young rabbit, Peter, defies his mother's warning and sneaks into the garden of the grumpy farmer, Mr McGregor. The main conflict arises as Peter indulges in the delicious vegetables, only to be discovered by Mr McGregor, who chases him through the garden. Key characters include Peter, the adventurous and disobedient rabbit; his wise and cautious siblings, Flopsy, Mopsy, and Cotton-tail; and the antagonistic Mr McGregor, who represents the dangers of disobedience. The central theme revolves around the consequences of ignoring parental guidance and the importance of making wise choices. After a series of frantic escapades, Peter narrowly escapes capture, losing his jacket in the process, and eventually finds his way back home, where he learns a valuable lesson about listening to his mother. The story concludes with Peter safely back in his burrow, while his siblings enjoy their day, highlighting the contrast between Peter's reckless adventure and the safety of obedience.",
+        "chapters": [
+            {
+                "chapter_summary": "In the opening chapter of \"The Tale of Peter Rabbit,\" readers are introduced to the four little rabbits—Flopsy, Mopsy, Cotton-tail, and Peter—who live with their mother under a fir tree. Mrs Rabbit warns her children to avoid Mr McGregor's garden due to a past incident involving their father. While Flopsy, Mopsy, and Cotton-tail heed their mother's advice and go blackberry picking, Peter disobeys and sneaks into the garden. This decision sets the stage for Peter's subsequent adventures and mischief, propelling the story forward as it foreshadows the challenges he will face in Mr McGregor's garden.",
+                "image": "page1.png"
+            },
+            {
+                "chapter_summary": "In this chapter of \"The Tale of Peter Rabbit,\" Peter indulges in a variety of vegetables from Mr McGregor's garden, which leads to him feeling unwell. As he searches for parsley, he encounters Mr McGregor, who chases him while yelling \"Stop thief!\" This encounter causes Peter to panic and forget the way out, resulting in him losing both of his shoes in the garden. His desperate attempt to escape ultimately leads to him getting caught in a gooseberry net, which heightens the tension and propels the story forward by placing Peter in a precarious situation.",
+                "image": "page2.png"
+            },
+            {
+                "chapter_summary": "In this chapter of \"The Tale of Peter Rabbit,\" Peter finds himself in a precarious situation after losing his new blue jacket while trying to escape from Mr McGregor. Overcome with despair, he is encouraged by friendly sparrows to take action, prompting him to flee into a tool-shed. There, he hides in a water-filled can, but his cover is nearly blown when he sneezes, drawing Mr McGregor's attention as he searches for Peter. This chapter heightens the tension of Peter's predicament and showcases his resourcefulness, propelling the story forward as he continues to evade capture.",
+                "image": "page3.png"
+            },
+            {
+                "chapter_summary": "In this chapter of \"The Tale of Peter Rabbit,\" Peter narrowly escapes from Mr McGregor, who attempts to catch him after he jumps out of a window, knocking over plants in the process. After evading Mr McGregor, Peter finds himself exhausted and lost, unsure of where to go next. He encounters a locked door and an old mouse who is too busy to help him, highlighting Peter's isolation and the challenges he faces in navigating the garden. This chapter advances the story by emphasizing Peter's precarious situation and setting the stage for his continued adventures and struggles in the garden.",
+                "image": "page4.png"
+            },
+            {
+                "chapter_summary": "In this chapter of \"The Tale of Peter Rabbit,\" Peter Rabbit, feeling upset after being scolded, attempts to navigate Mr McGregor's garden but becomes confused and lost. He encounters a pond where a cat is watching goldfish, prompting him to cautiously avoid her, recalling warnings from his cousin Benjamin Bunny. After hiding from the sound of Mr McGregor hoeing, Peter eventually climbs onto a wheelbarrow to survey the garden and spots Mr McGregor with his back turned, revealing a potential escape route through the gate. This chapter heightens the tension as Peter's adventure in the garden continues, emphasizing his vulnerability and the dangers he faces.",
+                "image": "page5.png"
+            },
+            {
+                "chapter_summary": "In this chapter of \"The Tale of Peter Rabbit,\" Peter escapes from Mr McGregor's garden after a close encounter, running swiftly along a path and slipping under a gate to reach the safety of the woods. Despite being spotted by Mr McGregor, Peter's determination to flee keeps him focused on his escape. Upon returning home, exhausted and without his clothes, Peter's mother notices his missing jacket and shoes, highlighting his repeated disobedience. This chapter emphasizes the consequences of Peter's adventurous spirit and sets the stage for potential future conflicts with his mother regarding his reckless behavior.",
+                "image": "page6.png"
+            },
+            {
+                "chapter_summary": "In this chapter of \"The Tale of Peter Rabbit,\" Peter Rabbit is feeling unwell after his adventures, prompting his mother to put him to bed early. She prepares chamomile tea to help him feel better and administers a dose, emphasizing the importance of taking care of oneself when sick. Meanwhile, his sisters, Flopsy, Mopsy, and Cotton-tail, enjoy a more pleasant supper of bread, milk, and blackberries, highlighting the contrast between Peter's misfortune and their contentment. This chapter advances the story by illustrating the consequences of Peter's reckless behavior and setting the stage for his recovery and potential lessons learned.",
+                "image": "page7.png"
+            }
+        ]
+    },
+    "vocab": {
+        "indexable_by": "chapters",
+        "chapters": [
+            {
+                "vocab_words": {
+                    "grade_4": [
+                        {
+                            "word": "mischief",
+                            "sentence": "\"Now run along, and don't get into mischief.",
+                            "context_description": "In this opening chapter of \"The Tale of Peter Rabbit,\" Mrs Rabbit is giving her children permission to explore the outside world while also warning them against getting into trouble, particularly in Mr McGregor's garden. This sentence emphasizes her protective nature as a mother and sets the stage for the adventures that Peter, in particular, will soon embark on, highlighting the tension between curiosity and caution."
+                        },
+                        {
+                            "word": "gather",
+                            "sentence": "Flopsy, Mopsy, and Cotton-tail, who were good little bunnies, went down the lane to gather blackberries; But Peter, who was very naughty, ran straight away to Mr McGregor's garden, and squeezed under the gate!",
+                            "context_description": "In this sentence, the author contrasts the behavior of Peter Rabbit with that of his siblings, Flopsy, Mopsy, and Cotton-tail. This highlights Peter's mischievous nature and foreshadows the trouble he will encounter in Mr McGregor's garden, setting the stage for the central conflict of the story. The distinction between the \"good little bunnies\" and the \"very naughty\" Peter emphasizes themes of obedience and the consequences of disobedience."
+                        }
+                    ],
+                    "grade_5": [],
+                    "grade_6": []
+                }
+            },
+            {
+                "vocab_words": {
+                    "grade_4": [
+                        {
+                            "word": "lost",
+                            "sentence": "He lost one of his shoes among the cabbages, and the other shoe amongst the potatoes.",
+                            "context_description": "In this part of the story, Peter Rabbit is in a frantic escape from Mr McGregor, who is chasing him after he has eaten the vegetables from the garden. The sentence highlights Peter's desperation and the chaos of the moment, emphasizing his clumsiness and the urgency of his flight, as he loses his shoes while trying to navigate through the garden's obstacles. This detail adds to the tension and humor of the scene, illustrating the consequences of his mischief."
+                        },
+                        {
+                            "word": "frightened",
+                            "sentence": "Peter was most dreadfully frightened; he rushed all over the garden, for he had forgotten the way back to the gate.",
+                            "context_description": "In this sentence, Peter Rabbit's fear escalates as he realizes he is being chased by Mr McGregor, which heightens the tension of the story. His frantic search for the gate emphasizes his panic and the consequences of his earlier misadventures in the garden, illustrating the theme of the dangers of disobedience and the urgency of his escape."
+                        }
+                    ],
+                    "grade_5": [
+                        {
+                            "word": "altogether",
+                            "sentence": "After losing them, he ran on four legs and went faster, so that he might have got away altogether if he had not, unfortunately, run into a gooseberry net, and got caught by the large buttons on his jacket.",
+                            "context_description": "In this sentence, Peter Rabbit's desperation and fear are highlighted as he tries to escape from Mr McGregor. The imagery of him running on four legs emphasizes his frantic state and animal instincts, while the mention of the gooseberry net serves as a turning point in the story, illustrating how his predicament worsens despite his efforts to flee. This moment builds tension and showcases Peter's clumsiness, adding to the overall theme of the consequences of his mischievous behavior."
+                        },
+                        {
+                            "word": "unfortunately",
+                            "sentence": "After losing them, he ran on four legs and went faster, so that he might have got away altogether if he had not, unfortunately, run into a gooseberry net, and got caught by the large buttons on his jacket.",
+                            "context_description": "In this sentence, Peter Rabbit's frantic escape from Mr McGregor highlights his desperation and the chaos of the moment. By describing how he resorts to running on all fours, the text emphasizes his fear and instinctive response to danger, while the mention of the gooseberry net illustrates the humorous yet unfortunate obstacles he faces, adding tension and excitement to the story."
+                        }
+                    ],
+                    "grade_6": [
+                        {
+                            "word": "dreadfully",
+                            "sentence": "Peter was most dreadfully frightened; he rushed all over the garden, for he had forgotten the way back to the gate.",
+                            "context_description": "In this sentence, Peter Rabbit's fear escalates as he realizes he is being chased by Mr McGregor, highlighting the tension and urgency of the moment. His frantic search for the gate emphasizes his panic and the consequences of his earlier mischief, driving the story forward as he tries to escape the gardener's wrath."
+                        },
+                        {
+                            "word": "amongst",
+                            "sentence": "He lost one of his shoes among the cabbages, and the other shoe amongst the potatoes.",
+                            "context_description": "In this part of the story, Peter Rabbit is in a panic as he tries to escape from Mr McGregor, who is chasing him. The sentence highlights the chaos and urgency of the moment, illustrating Peter's frantic movements through the garden, which leads to the loss of his shoes. This detail emphasizes the danger he is in and adds to the tension of the chase, making the reader feel his fear and desperation."
+                        }
+                    ]
+                }
+            },
+            {
+                "vocab_words": {
+                    "grade_4": [
+                        {
+                            "word": "beautiful",
+                            "sentence": "It would have been a beautiful thing to hide in, if it had not had so much water in it.",
+                            "context_description": "In this sentence, Peter Rabbit reflects on the can he jumps into as a potential hiding spot from Mr McGregor. The phrase highlights Peter's desperate situation, emphasizing the irony of finding safety in a place that is ultimately unsuitable due to the water, which adds to the tension and humor of the scene as he tries to evade capture."
+                        },
+                        {
+                            "word": "carefully",
+                            "sentence": "He began to turn them over carefully, looking under each.",
+                            "context_description": "In this sentence, Mr McGregor is actively searching for Peter Rabbit in the tool-shed, reflecting the tension and danger of the situation. The carefulness of his actions highlights his determination to catch Peter, while also building suspense for the reader as they wonder whether Peter will be discovered."
+                        }
+                    ],
+                    "grade_5": [
+                        {
+                            "word": "intended",
+                            "sentence": "Mr McGregor came up with a sieve, which he intended to pop upon the top of Peter; but Peter wriggled out just in time, leaving his jacket behind him, and rushed into the tool-shed, and jumped into a can.",
+                            "context_description": "In this sentence, the tension in the story escalates as Mr McGregor approaches Peter with a sieve, signaling a moment of danger for Peter. This action illustrates the urgency of Peter's situation, emphasizing his quick thinking and agility as he narrowly escapes capture, which heightens the reader's excitement and concern for his safety."
+                        },
+                        {
+                            "word": "presently",
+                            "sentence": "Presently Peter sneezed—\"Kerchoo!\"",
+                            "context_description": "In this moment of tension, Peter sneezing serves as a pivotal point in the story, revealing his presence to Mr McGregor despite his attempts to hide. This sneeze not only heightens the suspense but also illustrates Peter's vulnerability and the precariousness of his situation as he tries to evade capture."
+                        }
+                    ],
+                    "grade_6": [
+                        {
+                            "word": "implored",
+                            "sentence": "Peter gave himself up for lost, and shed big tears; but his sobs were overheard by some friendly sparrows, who flew to him in great excitement, and implored him to exert himself.",
+                            "context_description": "In this sentence, Peter Rabbit is experiencing a moment of despair as he feels trapped and hopeless in the face of danger from Mr McGregor. His emotional reaction, highlighted by his tears and sobs, contrasts with the arrival of the friendly sparrows, who represent a glimmer of hope and support, encouraging him to muster the strength to escape. This moment underscores the themes of vulnerability and the importance of friendship in overcoming challenges."
+                        },
+                        {
+                            "word": "exert",
+                            "sentence": "Peter gave himself up for lost, and shed big tears; but his sobs were overheard by some friendly sparrows, who flew to him in great excitement, and implored him to exert himself.",
+                            "context_description": "In this part of the story, Peter Rabbit is feeling hopeless and scared after being chased by Mr McGregor. His emotional turmoil is highlighted through his tears, but the arrival of the friendly sparrows introduces a moment of support and encouragement, showing that even in his despair, help can come from unexpected places. This sentence emphasizes Peter's vulnerability while also setting up a turning point where he is motivated to take action and escape his predicament."
+                        }
+                    ]
+                }
+            },
+            {
+                "vocab_words": {
+                    "grade_4": [
+                        {
+                            "word": "trembling",
+                            "sentence": "Peter sat down to rest; he was out of breath and trembling with fright, and he had not the least idea which way to go.",
+                            "context_description": "In this sentence, Peter Rabbit is experiencing the aftermath of a frightening chase by Mr McGregor, highlighting his fear and disorientation. This moment emphasizes Peter's vulnerability and exhaustion, illustrating the tension in the story as he tries to escape danger and find his way, deepening the reader's empathy for his plight."
+                        },
+                        {
+                            "word": "found",
+                            "sentence": "He found a door in a wall; but it was locked, and there was no room for a fat little rabbit to squeeze underneath.",
+                            "context_description": "In this part of the story, Peter Rabbit is feeling lost and frightened after escaping from Mr McGregor. The sentence highlights his desperation as he searches for a way out, emphasizing his small size and the obstacles he faces, which adds to the tension and illustrates his vulnerability in this unfamiliar environment."
+                        }
+                    ],
+                    "grade_5": [
+                        {
+                            "word": "fright",
+                            "sentence": "Peter sat down to rest; he was out of breath and trembling with fright, and he had not the least idea which way to go.",
+                            "context_description": "In this sentence, Peter Rabbit is experiencing the aftermath of a frightening chase by Mr McGregor, highlighting his vulnerability and confusion. This moment emphasizes the tension in the story, showcasing Peter's fear and disorientation as he tries to navigate his escape, which adds to the overall suspense and empathy for his character."
+                        },
+                        {
+                            "word": "upsetting",
+                            "sentence": "Mr McGregor was after him in no time, And tried to put his foot upon Peter, who jumped out of a window, upsetting three plants.",
+                            "context_description": "In this sentence, the tension escalates as Mr McGregor actively pursues Peter Rabbit, highlighting the danger Peter is in. The action of Peter jumping out of the window and upsetting the plants emphasizes his desperation to escape and adds to the chaotic atmosphere of the chase, illustrating the theme of adventure and the consequences of mischief in the story."
+                        }
+                    ],
+                    "grade_6": [
+                        {
+                            "word": "squeeze",
+                            "sentence": "He found a door in a wall; but it was locked, and there was no room for a fat little rabbit to squeeze underneath.",
+                            "context_description": "In this part of the story, Peter Rabbit is feeling lost and frightened after narrowly escaping Mr McGregor. The sentence highlights his predicament as he encounters a locked door that symbolizes his obstacles and limitations, emphasizing his small size and vulnerability in a big world, which adds to the tension and urgency of his situation."
+                        },
+                        {
+                            "word": "locked",
+                            "sentence": "He found a door in a wall; but it was locked, and there was no room for a fat little rabbit to squeeze underneath.",
+                            "context_description": "In this part of the story, Peter Rabbit is feeling lost and frightened after narrowly escaping Mr McGregor. The sentence highlights his predicament as he discovers a door that could potentially lead him to safety, but it is locked and inaccessible to him, emphasizing his vulnerability and the challenges he faces in his quest to find a way out."
+                        }
+                    ]
+                }
+            },
+            {
+                "vocab_words": {
+                    "grade_4": [
+                        {
+                            "word": "presently",
+                            "sentence": "Presently, he came to a pond where Mr McGregor filled his water-cans.",
+                            "context_description": "In this part of the story, Peter Rabbit is navigating through the garden and encountering various obstacles. The sentence highlights his journey as he stumbles upon a pond, which serves as a setting that adds tension and potential danger, as Mr McGregor is nearby, emphasizing Peter's precarious situation and his need to be cautious."
+                        },
+                        {
+                            "word": "suddenly",
+                            "sentence": "He went back towards the tool-shed, but suddenly, quite close to him, he heard the noise of a hoe—scr-r-ritch, scratch, scratch, scritch.",
+                            "context_description": "In this part of the story, Peter Rabbit is navigating the dangers of Mr McGregor's garden. The sentence highlights the tension and suspense of the moment, as the sound of the hoe signals the presence of Mr McGregor, increasing Peter's fear and urgency to hide. This auditory detail emphasizes the perilous environment Peter is in, reinforcing the theme of adventure and the consequences of his mischief."
+                        }
+                    ],
+                    "grade_5": [
+                        {
+                            "word": "climbed",
+                            "sentence": "But presently, as nothing happened, he came out, and climbed upon a wheelbarrow, and peeped over.",
+                            "context_description": "In this sentence, Peter Rabbit is cautiously observing his surroundings after hiding from the noise of Mr McGregor's hoe. His decision to come out and climb onto the wheelbarrow shows his curiosity and determination to find a way out of the garden, while also highlighting the tension of the moment as he weighs the risks of being caught. This action propels the story forward by illustrating Peter's adventurous spirit and the dangers he faces in the garden."
+                        }
+                    ],
+                    "grade_6": []
+                }
+            },
+            {
+                "vocab_words": {
+                    "grade_4": [
+                        {
+                            "word": "tired",
+                            "sentence": "He was so tired that he flopped down upon the nice soft sand on the floor of the rabbit-hole and shut his eyes.",
+                            "context_description": "In this sentence, Peter Rabbit has just escaped from the dangerous Mr McGregor and is finally safe in his home. The use of \"flopped down\" emphasizes his exhaustion after the frantic chase, highlighting both the physical toll of his adventure and the relief he feels upon returning to the comfort of his rabbit-hole. This moment underscores the themes of adventure and the consequences of disobedience, as Peter reflects on the trouble he has caused by losing his clothes."
+                        },
+                        {
+                            "word": "wondered",
+                            "sentence": "His mother was busy cooking; she wondered what he had done with his clothes.",
+                            "context_description": "In this sentence, Peter's mother is depicted as preoccupied with her household duties, highlighting her role as a caring figure in Peter's life. Her concern about Peter's missing clothes emphasizes the trouble he often gets into, contrasting her nurturing nature with Peter's adventurous and reckless behavior, which adds to the story's theme of mischief and the consequences of disobedience."
+                        }
+                    ],
+                    "grade_5": [
+                        {
+                            "word": "frighten",
+                            "sentence": "Mr McGregor hung up the little jacket and the shoes for a scarecrow to frighten the blackbirds.",
+                            "context_description": "In this sentence, the action of Mr McGregor hanging up Peter Rabbit's jacket and shoes serves to highlight the tension between Peter and Mr McGregor, illustrating the danger Peter faced in the garden. It also emphasizes the consequences of Peter's misadventure, as his belongings are now used as a tool to deter other birds, reinforcing the idea that he narrowly escaped a perilous situation."
+                        },
+                        {
+                            "word": "slipped",
+                            "sentence": "He slipped underneath the gate, and was safe at last in the wood outside the garden.",
+                            "context_description": "In this sentence, Peter Rabbit is escaping from the danger posed by Mr McGregor, who has been chasing him. The phrase \"slipped underneath the gate\" emphasizes Peter's stealth and agility as he manages to evade capture, highlighting a moment of relief and triumph as he finally reaches the safety of the woods, away from the threats of the garden. This moment is crucial as it marks Peter's transition from danger to safety, reinforcing themes of adventure and the consequences of disobedience."
+                        }
+                    ],
+                    "grade_6": [
+                        {
+                            "word": "underneath",
+                            "sentence": "He slipped underneath the gate, and was safe at last in the wood outside the garden.",
+                            "context_description": "In this sentence, Peter Rabbit finally escapes from the dangers of Mr McGregor's garden by slipping under the gate, symbolizing his transition from a place of peril to safety. This moment is crucial for the story as it highlights Peter's resourcefulness and determination to evade capture, while also marking a turning point where he can finally relax after his frantic escape."
+                        },
+                        {
+                            "word": "scarecrow",
+                            "sentence": "Mr McGregor hung up the little jacket and the shoes for a scarecrow to frighten the blackbirds.",
+                            "context_description": "In this sentence, the action of Mr McGregor hanging up Peter's jacket and shoes serves to illustrate the tension and danger Peter faced in the garden. It emphasizes the consequences of Peter's misadventure, as his belongings are now used as a tool to deter other birds, highlighting both the threat he escaped and the seriousness of his situation. This moment adds to the story's theme of the dangers of disobedience and the cleverness of nature."
+                        }
+                    ]
+                }
+            },
+            {
+                "vocab_words": {
+                    "grade_4": [
+                        {
+                            "word": "some",
+                            "sentence": "His mother put him to bed, and made some chamomile tea; and she gave a dose of it to Peter!",
+                            "context_description": "In this part of the story, Peter Rabbit's mother is caring for him after he has had a difficult day, highlighting her nurturing role. The mention of chamomile tea suggests that she is trying to soothe him and help him feel better, contrasting with the more cheerful supper of his siblings, Flopsy, Mopsy, and Cotton-tail, which underscores Peter's unfortunate predicament."
+                        },
+                        {
+                            "word": "milk",
+                            "sentence": "But Flopsy, Mopsy, and Cotton-tail had bread and milk and blackberries for supper.",
+                            "context_description": "In this sentence, the author contrasts Peter's unfortunate situation with that of his siblings, Flopsy, Mopsy, and Cotton-tail, who are enjoying a wholesome meal while Peter is sick in bed. This highlights Peter's isolation and the consequences of his earlier misadventures in the garden, emphasizing themes of care and consequence within the story."
+                        }
+                    ],
+                    "grade_5": [
+                        {
+                            "word": "evening",
+                            "sentence": "I am sorry to say that Peter was not very well during the evening.",
+                            "context_description": "In this part of the story, the sentence highlights Peter Rabbit's unfortunate condition after his misadventures in Mr McGregor's garden. It sets the tone for Peter's need for care and comfort from his mother, emphasizing the consequences of his actions and foreshadowing the nurturing environment that contrasts with the earlier chaos he experienced."
+                        },
+                        {
+                            "word": "supper",
+                            "sentence": "But Flopsy, Mopsy, and Cotton-tail had bread and milk and blackberries for supper.",
+                            "context_description": "In this sentence, the author contrasts Peter's unfortunate situation with that of his siblings, Flopsy, Mopsy, and Cotton-tail, who are enjoying a healthy supper while Peter is sick in bed. This highlights Peter's isolation and the consequences of his earlier mischief, emphasizing the theme of consequences and care within the story."
+                        }
+                    ],
+                    "grade_6": []
+                }
+            }
+        ]
+    }
+}
