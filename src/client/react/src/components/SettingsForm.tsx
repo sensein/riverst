@@ -41,6 +41,11 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
   const [isValid, setIsValid] = useState(false);
   const [dynamicEnums, setDynamicEnums] = useState<{ books: { id: string; path: string; title: string }[] }>({ books: [] });
 
+  // Extract activity name from schema
+  const activityName = (schema?.properties as any)?.name?.const;
+  const [maxIndices, setMaxIndices] = useState<number | null>(null);
+  const [indexType, setIndexType] = useState<string>('chapters');
+
   // Defaults extracted from schema
   const defaultAnimations =
     (schema.properties?.options as any)?.properties?.body_animations?.default ?? [];
@@ -72,6 +77,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
 
   const pipelineModality = Form.useWatch(['options', 'pipeline_modality'], form);
   const embodiment = Form.useWatch(['options', 'embodiment'], form);
+  const selectedBook = Form.useWatch(['options', 'activity_variables_path'], form);
 
   // Schema validator
   const validateSchema = useCallback(async () => {
@@ -86,8 +92,16 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
 
     const fetchBooks = async () => {
       try {
-        const response = await axios.get(`/api/books`);
-        setDynamicEnums(prev => ({ ...prev, books: response.data }));
+        if (activityName) {
+          const response = await axios.get('/api/resources', {
+            params: { activity: activityName }
+          });
+          setDynamicEnums(prev => ({ ...prev, books: response.data }));
+        } else {
+          // Fallback to generic resources if no activity name
+          const response = await axios.get('/api/resources');
+          setDynamicEnums(prev => ({ ...prev, books: response.data }));
+        }
       } catch (error) {
         console.error('Failed to fetch books:', error);
       }
@@ -95,7 +109,32 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
 
     fetchBooks();
     validateSchema();
-  }, [form, validateSchema]);
+  }, [form, validateSchema, activityName]);
+
+  // Fetch index count when book selection changes
+  useEffect(() => {
+    if (!selectedBook) {
+      setMaxIndices(null);
+      setIndexType('chapters');
+      return;
+    }
+
+    const fetchResourceIndices = async () => {
+      try {
+        const response = await axios.get('/api/resources/indices', {
+          params: { resourcePath: selectedBook }
+        });
+        setMaxIndices(response.data.maxIndices);
+        setIndexType(response.data.indexType || 'chapters');
+      } catch (error) {
+        console.error('Failed to fetch resource indices:', error);
+        setMaxIndices(null);
+        setIndexType('chapters');
+      }
+    };
+
+    fetchResourceIndices();
+  }, [selectedBook]);
 
   // Update field values based on pipeline modality
   useEffect(() => {
@@ -112,7 +151,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
       updates.stt_type = getDefault('stt_type');
       updates.tts_type = getDefault('tts_type');
     } else if (pipelineModality === 'e2e') {
-      updates.llm_type = 'openai_realtime_beta';
+      updates.llm_type = 'openai_gpt-realtime';
       updates.stt_type = undefined;
       updates.tts_type = undefined;
     }
@@ -163,7 +202,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
     if (key === 'llm_type') {
       config.enum = pipelineModality === 'classic'
         ? ['openai', 'ollama/qwen3:4b-instruct-2507-q4_K_M']
-        : ['openai_realtime_beta'];
+        : ['openai_gpt-realtime'];
     }
 
     const rules = [];
@@ -235,12 +274,56 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
       );
     }
 
+
     // String (text or textarea)
     if (config.type === 'string') {
       const multiline = config.maxLength && config.maxLength > 100;
       return (
         <Form.Item key={key} name={namePath} label={labelWithTooltip} rules={rules}>
           {multiline ? <TextArea autoSize /> : <Input />}
+        </Form.Item>
+      );
+    }
+
+
+    // Integer or nullable integer field
+    if (config.type === 'integer' || (Array.isArray(config.type) && config.type.includes('integer'))) {
+      const max = key === 'index' && maxIndices ? maxIndices : config.maximum;
+
+      // Add validation rules for resource index
+      if (key === 'index' && maxIndices) {
+        const indexTypeSingular = indexType.slice(-1) === 's' ? indexType.slice(0, -1) : indexType;
+        rules.push({
+          validator: (_: any, value: any) => {
+            if (value === undefined || value === null || value === '') {
+              return Promise.resolve();
+            }
+            const numValue = Number(value);
+            if (isNaN(numValue)) {
+              return Promise.reject(new Error('Please enter a valid number'));
+            }
+            if (!Number.isInteger(numValue)) {
+              return Promise.reject(new Error(`${indexTypeSingular} must be a whole number`));
+            }
+            if (numValue < 1) {
+              return Promise.reject(new Error(`${indexTypeSingular} must be at least 1`));
+            }
+            if (numValue > maxIndices) {
+              return Promise.reject(new Error(`${indexTypeSingular} must be no more than ${maxIndices}`));
+            }
+            return Promise.resolve();
+          }
+        });
+      }
+
+      return (
+        <Form.Item key={key} name={namePath} label={labelWithTooltip} rules={rules}>
+          <Input
+            type="number"
+            min={config.minimum}
+            max={max}
+            placeholder={key === 'index' && maxIndices ? `1-${maxIndices}` : undefined}
+          />
         </Form.Item>
       );
     }

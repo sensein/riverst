@@ -143,18 +143,22 @@ export default function AvatarInteractionContent({
   )
 
 
-  useRTVIClientEvent(
-    RTVIEvent.ServerMessage,
-    useCallback(
-      async (message: { type: string }) => {
-        if (message.type === 'conversation-ended') {
-          enableMic(false);
-          await onSessionEnd(8000);
-        }
-      },
-      []
-    )
-  )
+  // Handle natural connection termination when server ends the conversation
+  const previousTransportStateRef = useRef(transportState)
+
+  useEffect(() => {
+    // Detect when connection naturally closes after being ready
+    if (
+      previousTransportStateRef.current === 'ready' &&
+      transportState === 'disconnected' &&
+      hasConnectedOnceRef.current
+    ) {
+      // Connection was established and naturally closed - end the session
+      enableMic(false);
+      onSessionEnd(0);
+    }
+    previousTransportStateRef.current = transportState;
+  }, [transportState, enableMic, onSessionEnd])
 
   useRTVIClientEvent(
     RTVIEvent.BotTranscript,

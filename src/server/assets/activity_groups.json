@@ -32,7 +32,7 @@
         "description": "Let's talk: no script, just connection.",
         "route": "/avatar-interaction-settings",
         "disabled": false,
-        "settings_options_filepath": "api/activities/settings/basic-avatar-interaction.json"
+        "settings_options_filepath": "api/activities/basic-avatar-interaction/session_config"
       },
       {
         "title": "Demo ready to go",
@@ -41,7 +41,7 @@
         "description": "See how easy it is to get started.",
         "route": "/avatar-interaction-settings",
         "disabled": false,
-        "settings_options_filepath": "api/activities/settings/basic-avatar-demo.json"
+        "settings_options_filepath": "api/activities/basic-avatar-demo/session_config"
       }
 
     ]
@@ -56,7 +56,7 @@
         "description": "Discover new words through fun, guided play with your avatar.",
         "route": "/avatar-interaction-settings",
         "disabled": false,
-        "settings_options_filepath": "api/activities/settings/vocab-tutoring.json"
+        "settings_options_filepath": "api/activities/vocab-tutoring/session_config"
       },
       {
         "title": "Listen to an audiobook",
@@ -73,7 +73,7 @@
         "description": "Discover new English words through fun, guided play with your avatar.",
         "route": "/avatar-interaction-settings",
         "disabled": false,
-        "settings_options_filepath": "api/activities/settings/esl-vocab-tutoring.json"
+        "settings_options_filepath": "api/activities/esl-vocab-tutoring/session_config"
       },
       {
         "title": "Italian as a second language for Americans",
@@ -82,7 +82,7 @@
         "description": "Discover new Italian words through fun, guided play with your avatar.",
         "route": "/avatar-interaction-settings",
         "disabled": false,
-        "settings_options_filepath": "api/activities/settings/isl-vocab-tutoring.json"
+        "settings_options_filepath": "api/activities/isl-vocab-tutoring/session_config"
       }
 
     ]
