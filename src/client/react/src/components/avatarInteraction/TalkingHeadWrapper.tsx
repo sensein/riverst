@@ -27,7 +27,7 @@ interface TalkingHeadAPI {
   setMood: (mood: string) => void;
   stopSpeaking: () => void;
   playGesture: (gesture: string, duration?: number) => void;
-  playPose: (posePath: string) => void;
+  playPose: (posePath: string, onprogress: any, dur?: number) => void;
   speakAudio: (args: {
     audio: AudioBuffer;
     words?: string[];
@@ -113,7 +113,7 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
   });
 
   // Helper to play animations or mood changes
-  const handleAnimationEvent = (animation: string) => {
+  const handleAnimationEvent = (animation: string, duration?: number) => {
     const head = headRef.current;
     if (!head) return;
 
@@ -133,12 +133,15 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
     if (gestureMap[animation]) {
       const val = gestureMap[animation];
       if (typeof val === "string") {
-        head.playGesture(val);
+        // Check if it's a file path
+        if (val.startsWith("/animations/")) {
+          head.playPose(val, null, duration); // for fbx animations
+        } else {
+          head.playGesture(val, duration);
+        }
       } else if (typeof val === "object") {
-        head.playGesture(val.gesture, val.duration);
-      } else {
-        head.playPose(val); // for dance
-      }
+        head.playGesture(val.gesture, duration || val.duration);
+      } 
     } else if (moodList.includes(animation)) {
       head.setMood(animation);
       setTimeout(() => head.setMood("neutral"), 4000);
@@ -178,7 +181,7 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
     RTVIEvent.ServerMessage,
     useCallback((msg: any) => {
       if (msg.type === "animation-event") {
-        handleAnimationEvent(msg.payload.animation_id);
+        handleAnimationEvent(msg.payload.animation_id, msg.payload.duration);
       } else if (msg.type === "visemes-event") {
         if (msg.payload) handleVisemeEvent(msg.payload);
         else console.warn("Invalid viseme payload:", msg.payload);

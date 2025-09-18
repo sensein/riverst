@@ -127,12 +127,18 @@ class AnimationHandler:
         ]
         return FunctionSchema(
             name="trigger_animation",
-            description="Trigger an avatar animation (only one at a time).",
+            description="Trigger an avatar animation (only one at a time). User can specify the duration for gestures and moods. If not specified, the duration should be determined by you based on the flow of the conversation.",
             properties={
                 "animation_id": {
                     "type": "string",
                     "enum": animations,
                     "description": "The animation ID to trigger.",
+                },
+                "duration": {
+                    "type": "number",
+                    "minimum": 0.5,
+                    "maximum": 10.0,
+                    "description": "Duration in seconds for the animation. Default is 3 seconds. Use shorter durations (0.5-3s) for quick gestures, longer durations (4-10s) for sustained moods or complex animations.",
                 }
             },
             required=["animation_id"],
@@ -145,15 +151,22 @@ class AnimationHandler:
         """Trigger avatar animation if allowed.
 
         Args:
-            params: FunctionCallParams or dict containing 'animation_id'.
+            params: FunctionCallParams or dict containing 'animation_id' and optional 'duration'.
 
         Returns:
             Response dict if not using result_callback.
         """
         args = params.arguments if isinstance(params, FunctionCallParams) else params
         animation_id = args.get("animation_id")
+        duration = args.get("duration", 3.0)  # Default duration of 3 seconds
 
-        if animation_id not in self.allowed_animations:
+        # Validate duration
+        if duration < 0.5 or duration > 10.0:
+            result = {
+                "status": "error",
+                "error": f"Invalid duration {duration}. Duration must be between 0.5 and 10.0 seconds.",
+            }
+        elif animation_id not in self.allowed_animations:
             result = {
                 "status": "error",
                 "error": f"Invalid animation ID. Valid IDs: {self.allowed_animations}",
@@ -163,11 +176,14 @@ class AnimationHandler:
                 frame = RTVIServerMessageFrame(
                     data={
                         "type": "animation-event",
-                        "payload": {"animation_id": animation_id},
+                        "payload": {
+                            "animation_id": animation_id,
+                            "duration": duration
+                        },
                     }
                 )
                 await self.rtvi.push_frame(frame)
-                result = {"status": "animation_triggered"}
+                result = {"status": "animation_triggered", "duration": duration}
             except Exception as e:
                 result = {
                     "status": "error",
