@@ -14,6 +14,7 @@ from loguru import logger
 # Configuration
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 SECRET_KEY = os.getenv("SECRET_KEY")
+ENABLE_GOOGLE_AUTH = os.getenv("ENABLE_GOOGLE_AUTH", "true").lower() == "true"
 if not SECRET_KEY:
     raise ValueError(
         "SECRET_KEY environment variable is not set. Please configure it before starting the application."
@@ -85,8 +86,19 @@ def log_rejected_login(email: str, name: str, reason: str):
         logger.error(f"Error saving rejection log: {e}")
 
 
+def is_google_auth_enabled() -> bool:
+    """Check if Google authentication is enabled."""
+    return ENABLE_GOOGLE_AUTH
+
+
 def verify_google_token(token: str) -> dict:
     """Verify Google OAuth token and return user info."""
+    if not ENABLE_GOOGLE_AUTH:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Google authentication is currently disabled",
+        )
+
     try:
         # Verify the token with Google
         idinfo = id_token.verify_oauth2_token(
@@ -136,6 +148,14 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) 
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid authentication token",
         )
+
+
+def create_bypass_token() -> str:
+    """Create a bypass token when Google auth is disabled."""
+    bypass_data = {"sub": "dev@localhost", "name": "Development User", "bypass": True}
+    return create_access_token(
+        bypass_data, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
 
 
 def get_current_user(token_data: dict = Depends(verify_token)) -> dict:

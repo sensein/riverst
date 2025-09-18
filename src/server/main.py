@@ -39,7 +39,9 @@ from authorization.auth import (
     load_authorized_users,
     log_rejected_login,
     create_access_token,
+    create_bypass_token,
     get_current_user,
+    is_google_auth_enabled,
     ACCESS_TOKEN_EXPIRE_MINUTES,
 )
 
@@ -95,6 +97,41 @@ if turn_url and turn_username and turn_credential:
 
 
 # Authentication routes
+@app.get("/api/auth/status")
+async def auth_status() -> JSONResponse:
+    """Get authentication status and configuration."""
+    return JSONResponse(
+        {
+            "google_auth_enabled": is_google_auth_enabled(),
+            "auth_methods": ["google"] if is_google_auth_enabled() else ["bypass"],
+        }
+    )
+
+
+@app.post("/api/auth/bypass")
+async def bypass_auth() -> JSONResponse:
+    """Bypass authentication when Google auth is disabled."""
+    if is_google_auth_enabled():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Bypass authentication is not available when Google auth is enabled",
+        )
+
+    # Create bypass token
+    # Create bypass token
+    access_token, user_data = create_bypass_token()
+
+    logger.info("Bypass authentication used")
+
+    return JSONResponse(
+        {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": user_data,
+        }
+    )
+
+
 @app.post("/api/auth/google")
 async def google_auth(request: Request) -> JSONResponse:
     """Authenticate with Google OAuth token."""
