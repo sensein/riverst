@@ -144,7 +144,7 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
       } 
     } else if (moodList.includes(animation)) {
       head.setMood(animation);
-      setTimeout(() => head.setMood("neutral"), 4000);
+      setTimeout(() => head.setMood("neutral"), duration ? duration * 1000 : 4000);
     }
   };
 
