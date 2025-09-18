@@ -24,7 +24,7 @@ declare global {
 const LoginPage: React.FC = () => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
-  const { login, isAuthenticated, googleAuthEnabled } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -36,13 +36,8 @@ const LoginPage: React.FC = () => {
     }
   }, [isAuthenticated, navigate, location]);
 
-  // Load Google Identity Services script only if Google auth is enabled
+  // Load Google Identity Services script
   useEffect(() => {
-    if (!googleAuthEnabled) {
-      setIsScriptLoaded(true); // Skip loading script
-      return;
-    }
-
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
@@ -57,14 +52,14 @@ const LoginPage: React.FC = () => {
         document.head.removeChild(script);
       }
     };
-  }, [googleAuthEnabled]);
+  }, []);
 
-  // Initialize Google Sign-In when script is loaded and Google auth is enabled
+  // Initialize Google Sign-In when script is loaded
   useEffect(() => {
-    if (isScriptLoaded && googleAuthEnabled) {
+    if (isScriptLoaded) {
       initializeGoogleSignIn();
     }
-  }, [isScriptLoaded, googleAuthEnabled]);
+  }, [isScriptLoaded]);
 
   const initializeGoogleSignIn = () => {
     if (window.google) {
@@ -99,18 +94,6 @@ const LoginPage: React.FC = () => {
     }
   };
 
-  const handleBypassLogin = async () => {
-    setIsGoogleLoading(true);
-    try {
-      await login(); // No token needed for bypass
-      message.success('Development mode login successful!');
-    } catch (error: any) {
-      message.error(error.message || 'Login failed. Please try again.');
-    } finally {
-      setIsGoogleLoading(false);
-    }
-  };
-
   return (
     <div style={{
       minHeight: '100vh',
@@ -135,35 +118,20 @@ const LoginPage: React.FC = () => {
               Welcome to Riverst
             </Title>
             <Paragraph type="secondary">
-              {googleAuthEnabled
-                ? "Sign in with your Google account to access the reserved area"
-                : "Development mode - Click below to continue"
-              }
+              Sign in with your Google account to access the reserved area
             </Paragraph>
           </div>
 
           {!isScriptLoaded ? (
             <Spin
               indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />}
-              tip={googleAuthEnabled ? "Loading Google Sign-In..." : "Initializing..."}
+              tip="Loading Google Sign-In..."
             />
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              {googleAuthEnabled ? (
-                <div id="google-signin-button" />
-              ) : (
-                <Button
-                  type="primary"
-                  size="large"
-                  onClick={handleBypassLogin}
-                  loading={isGoogleLoading}
-                  style={{ minWidth: '200px' }}
-                >
-                  Continue to App
-                </Button>
-              )}
+              <div id="google-signin-button" />
 
-              {isGoogleLoading && googleAuthEnabled && (
+              {isGoogleLoading && (
                 <div style={{ marginTop: '16px' }}>
                   <Spin
                     indicator={<LoadingOutlined style={{ fontSize: 24 }} spin  />}
@@ -175,16 +143,10 @@ const LoginPage: React.FC = () => {
 
           <div>
             <Paragraph type="secondary" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
-              {googleAuthEnabled ? (
-                <>
-                  Access is restricted to authorized users only.
-                  <br />
-                  To request access, please contact{' '}
-                  <a href="mailto:fabiocat@mit.edu">fabiocat@mit.edu</a>.
-                </>
-              ) : (
-                "Development mode is active. Google authentication is disabled."
-              )}
+              Access is restricted to authorized users only.
+              <br />
+              To request access, please contact{' '}
+              <a href="mailto:fabiocat@mit.edu">fabiocat@mit.edu</a>.
             </Paragraph>
           </div>
         </Space>

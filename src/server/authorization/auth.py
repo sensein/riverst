@@ -150,12 +150,14 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) 
         )
 
 
-def create_bypass_token() -> str:
+def create_bypass_token() -> tuple[str, dict]:
     """Create a bypass token when Google auth is disabled."""
     bypass_data = {"sub": "dev@localhost", "name": "Development User", "bypass": True}
-    return create_access_token(
+    user_data = {"email": "dev@localhost", "name": "Development User"}
+    access_token = create_access_token(
         bypass_data, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
+    return access_token, user_data
 
 
 def get_current_user(token_data: dict = Depends(verify_token)) -> dict:
