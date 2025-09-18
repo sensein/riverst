@@ -49,6 +49,8 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
   const onAvatarMountedRef = useRef(onAvatarMounted);
   const transportState = usePipecatClientTransportState();
 
+  const validAnimationExtensions = ['.fbx', '.glb', '.gltf'];
+
   useEffect(() => {
     onAvatarMountedRef.current = onAvatarMounted;
   }, [onAvatarMounted]);
@@ -134,7 +136,7 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
       const val = gestureMap[animation];
       if (typeof val === "string") {
         // Check if it's a file path
-        if (val.startsWith("/animations/")) {
+        if (validAnimationExtensions.includes(val.split('.').pop() || '')) {
           head.playPose(val, null, duration); // for fbx animations
         } else {
           head.playGesture(val, duration);
