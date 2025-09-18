@@ -38,6 +38,9 @@ interface TalkingHeadAPI {
     vdurations?: number[];
   }) => void;
   setView: (view: string) => void;
+  stopPose: () => void;
+  stopAnimation: () => void;
+  playAnimation: (url: string, onprogress?: any, dur?: number, ndx?: number, scale?: number) => Promise<any>;
 }
 
 const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
@@ -126,24 +129,28 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
       ok: "ok",
       thumbup: "thumbup",
       thumbdown: "thumbdown",
+      thinking: "/animations/thinking/thinking.fbx",
     };
 
     const moodList = ["happy", "angry", "sad", "fear", "disgust", "love", "sleep"];
 
-    if (gestureMap[animation]) {
-      const val = gestureMap[animation];
-      if (typeof val === "string") {
-        head.playGesture(val);
-      } else if (typeof val === "object") {
-        head.playGesture(val.gesture, val.duration);
-      } else {
-        head.playPose(val); // for dance
+      if (gestureMap[animation]) {
+        const val = gestureMap[animation];
+        if (typeof val === "string") {
+          // Check if it's a file path
+          if (val.startsWith("/animations/")) {
+            head.playPose(val);
+          } else {
+            head.playGesture(val);
+          }
+        } else if (typeof val === "object") {
+          head.playGesture(val.gesture, val.duration);
+        }
+      } else if (moodList.includes(animation)) {
+        head.setMood(animation);
+        setTimeout(() => head.setMood("neutral"), 4000);
       }
-    } else if (moodList.includes(animation)) {
-      head.setMood(animation);
-      setTimeout(() => head.setMood("neutral"), 4000);
-    }
-  };
+    };
 
   // Helper to play viseme or word timings
   const handleVisemeEvent = (payload: any) => {
@@ -178,7 +185,17 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
     RTVIEvent.ServerMessage,
     useCallback((msg: any) => {
       if (msg.type === "animation-event") {
-        handleAnimationEvent(msg.payload.animation_id);
+        if (msg.payload["stop"] === true) {
+          const head = headRef.current;
+          if (!head) return;
+          head.stopPose();
+          head.setMood("neutral");
+          head.stopAnimation();
+          // Log the stop animation event
+          console.log("Animation stop event received");
+        } else {
+          handleAnimationEvent(msg.payload.animation_id);
+        }
       } else if (msg.type === "visemes-event") {
         if (msg.payload) handleVisemeEvent(msg.payload);
         else console.warn("Invalid viseme payload:", msg.payload);

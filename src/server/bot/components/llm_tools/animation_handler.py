@@ -68,6 +68,14 @@ VALID_ANIMATIONS = [
         "id": "sleep",
         "description": "When you are sleepy, you can do the 'sleep' animation.",
     },
+    {
+        "id": "thinking",
+        "description": (
+            "When you are thinking, you can do the 'thinking' animation."
+            "When the user asked a question that is a bit thought-provoking or complicated question, trigger 'thinking' animation with params 'delay': 0, 'end_event': 'audio_playback_start'."
+        ),
+        
+    }
 ]
 
 
@@ -137,6 +145,20 @@ class AnimationHandler:
             },
             required=["animation_id"],
         )
+    
+    @staticmethod
+    def build_stop_animation_tools_schema() -> "FunctionSchema":
+        """Build JSON schema for stop animation tool.
+
+        Returns:
+            Schema dict for LLM tool registration.
+        """
+        return FunctionSchema(
+            name="stop_animation",
+            description="Trigger to stop any currently playing animation.",
+            properties={},
+            required=[],
+        )
 
     @function_call_debug
     async def handle_animation(
@@ -173,6 +195,40 @@ class AnimationHandler:
                     "status": "error",
                     "error": f"Failed to handle animation: {str(e)}",
                 }
+
+        if isinstance(params, FunctionCallParams):
+            await params.result_callback(result)
+            return None
+
+        return result
+
+    @staticmethod
+    async def handle_stop_animation(
+        params: Any, rtvi: RTVIProcessor
+    ) -> Optional[Dict[str, Any]]:
+        """Stop any currently playing animation.
+
+        Args:
+            params: FunctionCallParams or dict.
+            rtvi: RTVIProcessor to send the stop event.
+
+        Returns:
+            Response dict if not using result_callback.
+        """
+
+        try:
+            frame = RTVIServerMessageFrame(
+                data={"type": "animation-event", "payload": {"stop": True}}
+            )
+            
+            await rtvi.push_frame(frame)
+            
+            result = {"status": "animation_stopped"}
+        except Exception as e:
+            result = {
+                "status": "error",
+                "error": f"Failed to stop animation: {str(e)}",
+            }
 
         if isinstance(params, FunctionCallParams):
             await params.result_callback(result)
