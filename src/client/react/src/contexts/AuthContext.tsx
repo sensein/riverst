@@ -39,10 +39,11 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  login: (googleToken: string) => Promise<void>;
+  login: (googleToken?: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
   authRequest: ReturnType<typeof makeAuthenticatedRequest>;
+  googleAuthEnabled: boolean;
 }
 
 /**
@@ -77,18 +78,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [googleAuthEnabled, setGoogleAuthEnabled] = useState(
+    import.meta.env.VITE_ENABLE_GOOGLE_AUTH !== 'false'
+  );
 
   useEffect(() => {
-    // Check for existing token on mount
-    const savedToken = localStorage.getItem('auth_token');
-    if (savedToken) {
-      setToken(savedToken);
-      // Verify token and get user info
-      verifyToken(savedToken);
-    } else {
-      // No token - user is not authenticated, stop loading
-      setIsLoading(false);
-    }
+    // Check auth status and existing token on mount
+    const initializeAuth = async () => {
+      try {
+        // Check if Google auth is enabled
+        const statusResponse = await axios.get('/api/auth/status');
+        setGoogleAuthEnabled(statusResponse.data.google_auth_enabled);
+
+        const savedToken = localStorage.getItem('auth_token');
+        if (savedToken) {
+          setToken(savedToken);
+          // Verify token and get user info
+          await verifyToken(savedToken);
+        } else {
+          // No token - user is not authenticated, stop loading
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Failed to initialize auth:', error);
+        setIsLoading(false);
+      }
+    };
+
+    initializeAuth();
   }, []);
 
   /**
@@ -111,14 +128,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   /**
    * login
-   * Authenticates the user with a Google token and saves the access token.
+   * Authenticates the user with Google token or bypass mode.
    */
-  const login = async (googleToken: string) => {
+  const login = async (googleToken?: string) => {
     try {
       setIsLoading(true);
-      const response = await axios.post('/api/auth/google', {
-        token: googleToken
-      });
+      let response;
+
+      if (googleAuthEnabled && googleToken) {
+        // Use Google authentication
+        response = await axios.post('/api/auth/google', {
+          token: googleToken
+        });
+      } else if (!googleAuthEnabled) {
+        // Use bypass authentication
+        response = await axios.post('/api/auth/bypass');
+      } else {
+        throw new Error('Invalid authentication configuration');
+      }
 
       const { access_token, user: userData } = response.data;
 
@@ -154,7 +181,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     logout,
     isAuthenticated: !!user && !!token,
-    authRequest: makeAuthenticatedRequest(token)
+    authRequest: makeAuthenticatedRequest(token),
+    googleAuthEnabled
   };
 
   return (

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Typography, message, Spin, Space } from 'antd';
+import { Card, Typography, message, Spin, Space, Button } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -24,7 +24,7 @@ declare global {
 const LoginPage: React.FC = () => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, googleAuthEnabled } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -36,8 +36,13 @@ const LoginPage: React.FC = () => {
     }
   }, [isAuthenticated, navigate, location]);
 
-  // Load Google Identity Services script
+  // Load Google Identity Services script only if Google auth is enabled
   useEffect(() => {
+    if (!googleAuthEnabled) {
+      setIsScriptLoaded(true); // Skip loading script
+      return;
+    }
+
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
@@ -48,19 +53,21 @@ const LoginPage: React.FC = () => {
     document.head.appendChild(script);
 
     return () => {
-      document.head.removeChild(script);
+      if (document.head.contains(script)) {
+        document.head.removeChild(script);
+      }
     };
-  }, []);
+  }, [googleAuthEnabled]);
 
-  // Initialize Google Sign-In when script is loaded
+  // Initialize Google Sign-In when script is loaded and Google auth is enabled
   useEffect(() => {
-    if (isScriptLoaded) {
+    if (isScriptLoaded && googleAuthEnabled) {
       // Small delay to ensure DOM is ready
       setTimeout(() => {
         initializeGoogleSignIn();
       }, 100);
     }
-  }, [isScriptLoaded]);
+  }, [isScriptLoaded, googleAuthEnabled]);
 
   const initializeGoogleSignIn = () => {
     if (window.google) {
@@ -95,6 +102,18 @@ const LoginPage: React.FC = () => {
     }
   };
 
+  const handleBypassLogin = async () => {
+    setIsGoogleLoading(true);
+    try {
+      await login(); // No token needed for bypass
+      message.success('Development mode login successful!');
+    } catch (error: any) {
+      message.error(error.message || 'Login failed. Please try again.');
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -119,20 +138,35 @@ const LoginPage: React.FC = () => {
               Welcome to Riverst
             </Title>
             <Paragraph type="secondary">
-              Sign in with your Google account to access the reserved area
+              {googleAuthEnabled
+                ? "Sign in with your Google account to access the reserved area"
+                : "Development mode - Click below to continue"
+              }
             </Paragraph>
           </div>
 
           {!isScriptLoaded ? (
             <Spin
               indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />}
-              tip="Loading Google Sign-In..."
+              tip={googleAuthEnabled ? "Loading Google Sign-In..." : "Initializing..."}
             />
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div id="google-signin-button" />
+              {googleAuthEnabled ? (
+                <div id="google-signin-button" />
+              ) : (
+                <Button
+                  type="primary"
+                  size="large"
+                  onClick={handleBypassLogin}
+                  loading={isGoogleLoading}
+                  style={{ minWidth: '200px' }}
+                >
+                  Continue to App
+                </Button>
+              )}
 
-              {isGoogleLoading && (
+              {isGoogleLoading && googleAuthEnabled && (
                 <div style={{ marginTop: '16px' }}>
                   <Spin
                     indicator={<LoadingOutlined style={{ fontSize: 24 }} spin  />}
@@ -144,10 +178,16 @@ const LoginPage: React.FC = () => {
 
           <div>
             <Paragraph type="secondary" style={{ fontSize: '13px', margin: 0, lineHeight: '1.6' }}>
-              Access is restricted to authorized users only.
-              <br />
-              To request access, please contact{' '}
-              <a href="mailto:fabiocat@mit.edu">fabiocat@mit.edu</a>.
+              {googleAuthEnabled ? (
+                <>
+                  Access is restricted to authorized users only.
+                  <br />
+                  To request access, please contact{' '}
+                  <a href="mailto:fabiocat@mit.edu">fabiocat@mit.edu</a>.
+                </>
+              ) : (
+                "Development mode is active. Google authentication is disabled."
+              )}
             </Paragraph>
           </div>
         </Space>
