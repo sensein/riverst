@@ -62,10 +62,7 @@ const LoginPage: React.FC = () => {
   // Initialize Google Sign-In when script is loaded and Google auth is enabled
   useEffect(() => {
     if (isScriptLoaded && googleAuthEnabled) {
-      // Small delay to ensure DOM is ready
-      setTimeout(() => {
-        initializeGoogleSignIn();
-      }, 100);
+      initializeGoogleSignIn();
     }
   }, [isScriptLoaded, googleAuthEnabled]);
 
