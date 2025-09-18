@@ -127,7 +127,7 @@ class AnimationHandler:
         ]
         return FunctionSchema(
             name="trigger_animation",
-            description="Trigger an avatar animation (only one at a time). User can specify the duration for gestures and moods. If not specified, the duration should be determined by you based on the flow of the conversation.",
+            description="Trigger an avatar animation (only one at a time). The LLM determines the duration for gestures and moods based on the flow of the conversation. If duration is not specified, select an appropriate value according to context.",
             properties={
                 "animation_id": {
                     "type": "string",
