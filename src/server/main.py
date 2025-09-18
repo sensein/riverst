@@ -118,7 +118,8 @@ async def bypass_auth() -> JSONResponse:
         )
 
     # Create bypass token
-    access_token = create_bypass_token()
+    # Create bypass token
+    access_token, user_data = create_bypass_token()
 
     logger.info("Bypass authentication used")
 
@@ -126,7 +127,7 @@ async def bypass_auth() -> JSONResponse:
         {
             "access_token": access_token,
             "token_type": "bearer",
-            "user": {"email": "dev@localhost", "name": "Development User"},
+            "user": user_data,
         }
     )
 
