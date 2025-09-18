@@ -49,7 +49,7 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
   const onAvatarMountedRef = useRef(onAvatarMounted);
   const transportState = usePipecatClientTransportState();
 
-  const validAnimationExtensions = ['.fbx', '.glb', '.gltf'];
+  const validAnimationExtensions = ['fbx', 'glb', 'gltf'];
 
   useEffect(() => {
     onAvatarMountedRef.current = onAvatarMounted;
