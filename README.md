@@ -95,8 +95,9 @@ docker compose up --build
   npm run dev
   ```
 
-> **Note:** The server must be running before starting the client.
-> **Note 2:** For AWS EC2 deployment instructions, see [here](notes/first_steps_to_deploy.md).
+⚠️ **Note:** The server must be running before starting the client.
+
+ℹ️ **Note 2:** For AWS EC2 deployment instructions, see [here](notes/first_steps_to_deploy.md).
 
 ---
 
