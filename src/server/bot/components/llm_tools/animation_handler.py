@@ -79,6 +79,14 @@ VALID_ANIMATIONS = [
         "description": "When you are sleepy, you can do the 'sleep' animation.",
         "duration": 5.0,
     },
+    {
+        "id": "thinking",
+        "description": (
+            "When you are thinking, you can do the 'thinking' animation."
+            "When the user asked a question that is a bit thought-provoking or complicated question, trigger 'thinking' animation"
+        ),
+        "duration": 4.5,
+    },
 ]
 
 

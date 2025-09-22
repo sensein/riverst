@@ -28,6 +28,7 @@ interface TalkingHeadAPI {
   stopSpeaking: () => void;
   playGesture: (gesture: string, duration?: number) => void;
   playPose: (posePath: string, onprogress: ((event: ProgressEvent) => void) | null, dur?: number) => void;
+  playAnimation: (animationPath: string, onprogress: ((event: ProgressEvent) => void) | null, dur?: number) => void;
   speakAudio: (args: {
     audio: AudioBuffer;
     words?: string[];
@@ -128,6 +129,7 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
       ok: "ok",
       thumbup: "thumbup",
       thumbdown: "thumbdown",
+      thinking: "/animations/thinking/thinking.fbx",
     };
 
     const moodList = ["happy", "angry", "sad", "fear", "disgust", "love", "sleep"];
@@ -137,7 +139,7 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
       if (typeof val === "string") {
         // Check if it's a file path
         if (validAnimationExtensions.includes(val.split('.').pop() || '')) {
-          head.playPose(val, null, duration); // for fbx animations
+          head.playAnimation(val, null, duration); // use animation playback for FBX/GLB
         } else {
           head.playGesture(val, duration);
         }
