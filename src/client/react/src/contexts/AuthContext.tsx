@@ -43,6 +43,7 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   authRequest: ReturnType<typeof makeAuthenticatedRequest>;
+  googleAuthEnabled: boolean;
 }
 
 /**
@@ -77,18 +78,44 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [googleAuthEnabled, setGoogleAuthEnabled] = useState(true);
 
   useEffect(() => {
-    // Check for existing token on mount
-    const savedToken = localStorage.getItem('auth_token');
-    if (savedToken) {
-      setToken(savedToken);
-      // Verify token and get user info
-      verifyToken(savedToken);
-    } else {
-      // No token - user is not authenticated, stop loading
-      setIsLoading(false);
-    }
+    // Check auth status and existing token on mount
+    const initializeAuth = async () => {
+      try {
+        // Check if Google auth is enabled
+        const statusResponse = await axios.get('/api/auth/status');
+        setGoogleAuthEnabled(statusResponse.data.google_auth_enabled);
+
+        if (!statusResponse.data.google_auth_enabled) {
+          // If Google auth is disabled, automatically authenticate with bypass
+          const bypassResponse = await axios.post('/api/auth/bypass');
+          const { access_token, user: userData } = bypassResponse.data;
+
+          setToken(access_token);
+          setUser(userData);
+          localStorage.setItem('auth_token', access_token);
+          setIsLoading(false);
+          return;
+        }
+
+        const savedToken = localStorage.getItem('auth_token');
+        if (savedToken) {
+          setToken(savedToken);
+          // Verify token and get user info
+          await verifyToken(savedToken);
+        } else {
+          // No token - user is not authenticated, stop loading
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Failed to initialize auth:', error);
+        setIsLoading(false);
+      }
+    };
+
+    initializeAuth();
   }, []);
 
   /**
@@ -111,11 +138,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   /**
    * login
-   * Authenticates the user with a Google token and saves the access token.
+   * Authenticates the user with Google token.
    */
   const login = async (googleToken: string) => {
     try {
       setIsLoading(true);
+
+      // Use Google authentication
       const response = await axios.post('/api/auth/google', {
         token: googleToken
       });
@@ -154,7 +183,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     logout,
     isAuthenticated: !!user && !!token,
-    authRequest: makeAuthenticatedRequest(token)
+    authRequest: makeAuthenticatedRequest(token),
+    googleAuthEnabled
   };
 
   return (
