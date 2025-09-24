@@ -71,8 +71,8 @@ cd riverst
 
 ### 2. Set up environment variables
 
-- Copy `.env.example` to `.env` in both `src/server/` and `src/client/react/`
-- Fill in required API keys and configuration
+- Rename `.env.example` to `.env` in both `src/server/` and `src/client/react/`
+- Fill in required API keys and configuration (note: API KEYS are required only if you want to use the corresponding remote services)
 
 ### 3. Run with Docker (recommended)
 

@@ -310,11 +310,19 @@ class BotComponentFactory:
                 prompt=(self.stt_params or {}).get("prompt", None),
             )
         elif self.stt_type == "whisper":
-            return WhisperSTTService(
-                audio_passthrough=True,
-                device=str(get_best_device(options=["mps", "cpu"])),
-                model="tiny",
-            )
+            best_device = str(get_best_device(options=["mps", "cpu"]))
+            if best_device == "mps":
+                from pipecat.services.whisper.stt import WhisperSTTServiceMLX, MLXModel
+
+                return WhisperSTTServiceMLX(
+                    audio_passthrough=True, device=best_device, model=MLXModel.TINY
+                )
+            else:
+                return WhisperSTTService(
+                    audio_passthrough=True,
+                    device=best_device,
+                    model="tiny",
+                )
         return None
 
     def _build_llm_service(self, instruction: str, tools_schemas) -> object:
