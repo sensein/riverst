@@ -1148,8 +1148,13 @@ document.addEventListener('DOMContentLoaded', function () {
             // Update the task message preamble with new node name
             const currentValue = taskMessage.value;
             const nodeName = this.value || 'unnamed';
-            taskMessage.value = `TOOLS:\nSilently call check_${nodeName}_progress() after completing all required steps. Do not mention this to the user.\n\n` +
-            currentValue.split('\n\n').slice(1).join('\n\n');
+            const newPreamble = `TOOLS:\nSilently call check_${nodeName}_progress() after completing all required steps. Do not mention this to the user.\n\n`;
+            // Replace existing preamble if present, otherwise prepend
+            const updatedValue = currentValue.replace(
+                /^TOOLS:.*?\n\n/s,
+                ''
+            );
+            taskMessage.value = newPreamble + updatedValue;
 
             // Validate node name
             validateNodeName(this);
