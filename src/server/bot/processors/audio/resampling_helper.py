@@ -61,15 +61,18 @@ class AudioResamplingHelper:
         device = AudioResamplingHelper._device_cache
 
         # Convert audio to tensor on the target device
+        audio_array = np.frombuffer(frame.audio, dtype=np.int16)
         try:
-            audio_array = np.frombuffer(frame.audio, dtype=np.int16)
             audio_tensor = torch.tensor(audio_array, device=device).float() / 32768.0
         except Exception as e:
-            logger.critical(e)
+            logger.warning(
+                f"Failed to create tensor on device '{device}', falling back to CPU. Error: {e}"
+            )
             # Fallback to CPU processing on device error
             device = "cpu"
-            audio_array = np.frombuffer(frame.audio, dtype=np.int16)
+            AudioResamplingHelper._device_cache = device
             audio_tensor = torch.tensor(audio_array, device=device).float() / 32768.0
+
         audio_tensor = audio_tensor.unsqueeze(0)  # shape: (1, N)
 
         # Use cached device-aware resampler

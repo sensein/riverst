@@ -12,8 +12,7 @@
   {
     "id": 3,
     "modelUrl": "/avatars/fabio_avaturn.glb?morphTargets=ARKit,Oculus+Visemes,mouthOpen,mouthSmile,eyesClosed,eyesLookUp,eyesLookDown&textureSizeLimit=1024&textureFormat=png",
-    "gender": "masculine",
-    "elevenlabs_voice_id": "DpuzU7c2N5AA07HJWO9A"
+    "gender": "masculine"
   },
   {
     "id": 4,

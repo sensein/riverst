@@ -180,8 +180,8 @@ sudo vim /etc/systemd/system/riverst-server.service
 ```
 [Unit]
 Description=Riverst Python Server
-After=network.target ollama-server.service ollama-qwen3.service piper-alba.service piper-alan.service
-Requires=ollama-server.service ollama-qwen3.service piper-alba.service piper-alan.service
+After=network.target ollama-server.service ollama-qwen3.service
+Requires=ollama-server.service ollama-qwen3.service
 
 [Service]
 Type=simple
@@ -209,69 +209,7 @@ journalctl -u riverst-server.service -n 20 -f
 
 ---
 
-## 10. Setup Piper (open-source text-to-speech)
-
-Run:
-```bash
-pip install --no-deps piper-tts
-pip install piper_phonemize
-git clone https://github.com/rhasspy/piper.git
-cd piper/src/python_run
-mkdir voices
-cd voices
-
-# Download voices
-wget -O en_GB-alba-medium.onnx "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_GB/alba/medium/en_GB-alba-medium.onnx?download=true"
-wget -O en_GB-alba-medium.onnx.json "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_GB/alba/medium/en_GB-alba-medium.onnx.json?download=true"
-wget -O en_GB-alan-medium.onnx "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_GB/alan/medium/en_GB-alan-medium.onnx?download=true"
-wget -O en_GB-alan-medium.onnx.json "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_GB/alan/medium/en_GB-alan-medium.onnx.json?download=true"
-```
-
-Run Piper [in 2 tmux tabs]:
-
-```bash
-python3 -m piper.http_server --model voices/en_GB-alba-medium.onnx --port 5001
-python3 -m piper.http_server --model voices/en_GB-alan-medium.onnx --port 5002
-```
-
-Alternatively, you can run Piper servers as daemons. Here is an example with Alan:
-
-- Run:
-```bash
-sudo vim /etc/systemd/system/piper-alan.service
-```
-
-- Paste:
-
-```bash
-[Unit]
-Description=Piper HTTP Server - Alan
-After=network.target
-
-[Service]
-Type=simple
-User=ubuntu
-WorkingDirectory=/home/ubuntu/piper/src/python_run
-ExecStart=/home/ubuntu/miniconda3/envs/riverst/bin/python -m piper.http_server --model voices/en_GB-alan-medium.onnx --port 5002
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-```
-
-- Enable and start:
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable piper-alan.service
-sudo systemctl start piper-alan.service
-journalctl -u piper-alan.service -n 20 -f
-```
-
----
-
-## 11. Run ollama models
+## 10. Run ollama models
 
 Run interactively (only one at a time because `ollama run` by default connects to a single Ollama server running at localhost:11434):
 
@@ -344,7 +282,7 @@ journalctl -u ollama-qwen3.service -n 20 -f
 
 ---
 
-## 12. (Optional) COTURN Server Setup
+## 11. (Optional) COTURN Server Setup
 To ensure reliable WebRTC connections, especially when clients are behind firewalls or NATs, you may want to install and configure a TURN server using coturn.
 
 - Install and Configure COTURN
@@ -392,7 +330,7 @@ Use [Trickle ICE](https://webrtc.github.io/samples/src/content/peerconnection/tr
 
 ---
 
-## 13. SSL certificates with certbot
+## 12. SSL certificates with certbot
 
 ```bash
 sudo apt install certbot
@@ -410,7 +348,7 @@ sudo crontab -e
 
 ---
 
-## 14. Configure NGINX
+## 13. Configure NGINX
 
 ```bash
 sudo vim /etc/nginx/sites-available/play.kivaproject.org

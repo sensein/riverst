@@ -47,7 +47,7 @@
           "type": "string",
           "enum": ["openai", "kokoro"],
           "default": "openai",
-          "description": "The TTS service to use. If you want to go with a local model, kokoro is better than piper (IMHO)"
+          "description": "The TTS service to use."
         },
         "embodiment": {
           "type": "string",

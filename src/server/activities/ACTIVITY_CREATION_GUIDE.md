@@ -6,24 +6,19 @@ This comprehensive guide provides in-depth documentation for creating sophistica
 
 1. [System Architecture and Activity Flow](#system-architecture-and-activity-flow)
 2. [Prerequisites and Development Environment](#prerequisites-and-development-environment)
-3. [Activity System Overview](#activity-system-overview)
-4. [File Structure and Organization](#file-structure-and-organization)
-5. [Session Configuration Deep Dive](#session-configuration-deep-dive)
-6. [Flow Configuration Mastery](#flow-configuration-mastery)
-7. [Backend Integration Points](#backend-integration-points)
-8. [Frontend Integration](#frontend-integration)
-9. [Step-by-Step Creation Process](#step-by-step-creation-process)
-10. [Advanced Features](#advanced-features)
-11. [Testing and Validation](#testing-and-validation)
-12. [Deployment and Registration](#deployment-and-registration)
-13. [Best Practices](#best-practices)
-14. [Troubleshooting](#troubleshooting)
+3. [File Structure and Organization](#file-structure-and-organization)
+4. [Session Configuration Deep Dive](#session-configuration-deep-dive)
+5. [Flow Configuration Mastery](#flow-configuration-mastery)
+6. [Handler System](#handler-system)
+7. [Step-by-Step Creation Process](#step-by-step-creation-process)
+8. [Best Practices](#best-practices)
+9. [API Reference](#api-reference)
 
 ## System Architecture and Activity Flow
 
 ### How Activities Work in Riverst
 
-Riverst activities are sophisticated, interactive learning experiences that integrate multiple AI services (Speech-to-Text, Large Language Models, Text-to-Speech) with a conversational flow system. Understanding the complete system architecture is crucial for creating effective activities.
+Riverst activities are sophisticated, interactive learning experiences that integrate multiple AI services (Speech-to-Text, Large Language Models, Text-to-Speech) with a conversational flow system.
 
 #### The Complete Activity Lifecycle
 
@@ -70,52 +65,7 @@ Riverst activities are sophisticated, interactive learning experiences that inte
 - Support dynamic content adaptation and branching logic
 - Examples: `vocab-tutoring`, `esl-vocab-tutoring`, `isl-vocab-tutoring`
 
-## Prerequisites and Development Environment
-
-### Required Knowledge
-- **JSON Schema** - For activity configuration validation
-- **Python** - For custom handlers and backend integration
-- **TypeScript/React** - For frontend integration (if needed)
-- **Conversational AI Concepts** - Understanding of LLM interactions and flow design
-- **Pipecat Framework** - For advanced flow features
-
-### Development Tools
-- **JSON Validator** - For configuration syntax checking
-- **Python Environment** - For handler development and testing
-- **FastAPI** - Backend framework knowledge
-- **WebRTC Understanding** - For real-time communication features
-
-### System Dependencies
-- OpenAI API access (for LLM, STT, TTS services)
-- Google API access (optional, for Gemini LLM)
-- Pipecat and Pipecat-Flows libraries
-- FastAPI backend with WebRTC support
-
-## Activity System Overview
-
-### Directory Structure Deep Dive
-
-```
-server/activities/
-├── assets/
-│   ├── activity_groups.json      # Frontend activity organization
-│   └── avatars.json              # Available avatar configurations
-├── your-activity-name/           # Your activity directory
-│   ├── session_config.json       # REQUIRED: JSON Schema for activity options
-│   ├── flow_config.json          # OPTIONAL: Conversation flow definition
-│   ├── handlers.py               # OPTIONAL: Custom Python business logic
-│   └── resources/                # OPTIONAL: Activity-specific data files
-│       ├── resource_1.json       # Books, content, or other data
-│       └── resource_2.json       # Multiple resources supported
-└── existing-activities/          # Reference implementations
-    ├── vocab-tutoring/           # Complex flow example
-    ├── basic-avatar-demo/        # Simple configuration example
-    └── ...
-```
-
 ### Activity Registration and Discovery
-
-#### 1. Activity Groups Configuration
 
 Activities are organized into groups via `server/assets/activity_groups.json`:
 
@@ -137,25 +87,48 @@ Activities are organized into groups via `server/assets/activity_groups.json`:
 ]
 ```
 
-#### 2. Backend API Integration
+## Prerequisites and Development Environment
 
-The backend exposes several key endpoints:
+### Required Knowledge
+- **JSON Schema** - For activity configuration validation
+- **Python** - For custom handlers and backend integration
+- **TypeScript/React** - For frontend integration (if needed)
+- **Conversational AI Concepts** - Understanding of LLM interactions and flow design
+- **Pipecat Framework** - For advanced flow features
 
-- `GET /api/activities` - Returns activity groups for frontend display
-- `GET /api/activities/{name}/session_config` - Loads activity schema with API key filtering
-- `GET /api/resources?activity={name}` - Lists available resources for activity
-- `POST /api/session` - Creates new session with activity configuration
-- `POST /api/offer` - Establishes WebRTC connection and starts activity
+### Development Tools
+- **JSON Validator** - For configuration syntax checking
+- **Python Environment** - For handler development and testing
+- **FastAPI** - Backend framework knowledge
+- **WebRTC Understanding** - For real-time communication features
 
-#### 3. Frontend Integration Points
-
-Activities integrate with the frontend through:
-- Activity discovery via homepage components
-- Configuration interface generation from JSON Schema
-- WebRTC connection management for real-time interaction
-- Session state management and completion tracking
+### System Dependencies
+- OpenAI API access (for LLM, STT, TTS services)
+- Google API access (optional, for Gemini LLM)
+- Pipecat and Pipecat-Flows libraries
+- FastAPI backend with WebRTC support
 
 ## File Structure and Organization
+
+### Directory Structure
+
+```
+server/activities/
+├── assets/
+│   ├── activity_groups.json      # Frontend activity organization
+│   └── avatars.json              # Available avatar configurations
+├── your-activity-name/           # Your activity directory
+│   ├── session_config.json       # REQUIRED: JSON Schema for activity options
+│   ├── flow_config.json          # OPTIONAL: Conversation flow definition
+│   ├── handlers.py               # OPTIONAL: Custom Python business logic
+│   └── resources/                # OPTIONAL: Activity-specific data files
+│       ├── resource_1.json       # Books, content, or other data
+│       └── resource_2.json       # Multiple resources supported
+└── existing-activities/          # Reference implementations
+    ├── vocab-tutoring/           # Complex flow example
+    ├── basic-avatar-demo/        # Simple configuration example
+    └── ...
+```
 
 ### Required Files
 
@@ -169,13 +142,6 @@ Defines the activity's schema, configuration options, and metadata using JSON Sc
 - Enables dynamic UI generation in frontend
 - Filters available options based on API key availability
 
-**Key Properties:**
-- `title` - Human-readable activity name
-- `description` - Schema description for validation
-- `properties.name` - Unique activity identifier (must match directory name)
-- `properties.options` - All configurable activity options
-- `required` - Required configuration fields
-
 ### Optional Files
 
 #### flow_config.json (ADVANCED ACTIVITIES)
@@ -188,7 +154,7 @@ Defines sophisticated conversation flows with state management, function calling
 - Activities requiring custom business logic
 
 #### handlers.py (CUSTOM LOGIC)
-Contains Python functions for specialized business logic that built-in handlers cannot provide. These functions serve as handlers for functions defined in the flow_config.json file, which are callable by the LLM. These custom handlers are activity specifc, whereas the built-in handlers as in flows/handlers.py can be used in a variety of applications.
+Contains Python functions for specialized business logic that built-in handlers cannot provide.
 
 **Use Cases:**
 - Complex content generation algorithms
@@ -377,16 +343,6 @@ has_openai = os.getenv("OPENAI_API_KEY") is not None
 has_google = os.getenv("GOOGLE_API_KEY") is not None
 
 # Options are filtered to only show available services
-for key, model_list in {
-    "llm_type": ["openai", "openai_gpt-realtime", "gemini"],
-    "stt_type": ["openai"],
-    "tts_type": ["openai"]
-}.items():
-    # Remove options for unavailable services
-    filtered = [m for m in allowed if not (
-        (not has_openai and m in ["openai", "openai_gpt-realtime"]) or
-        (not has_google and m == "gemini")
-    )]
 ```
 
 ### Conditional Schema Logic
@@ -414,63 +370,9 @@ Use JSON Schema's `allOf`, `if/then` patterns for complex validation:
 ]
 ```
 
-### Key Properties Explained
-
-#### Required Properties
-
-- **name**: Unique identifier for the activity (must match directory name)
-- **description**: Human-readable activity name
-- **options**: Container for all activity configuration options
-
-#### Common Options
-
-```json
-"options": {
-  "type": "object",
-  "properties": {
-    "advanced_flows": {
-      "type": "boolean",
-      "const": true,
-      "default": true,
-      "description": "Enable advanced conversation flows"
-    },
-    "tts_enabled": {
-      "type": "boolean",
-      "default": true,
-      "description": "Enable text-to-speech output"
-    },
-    "stt_enabled": {
-      "type": "boolean",
-      "default": true,
-      "description": "Enable speech-to-text input"
-    },
-    "llm_model": {
-      "type": "string",
-      "enum": ["gpt-4", "gpt-3.5-turbo", "claude-3"],
-      "default": "gpt-4",
-      "description": "Language model to use"
-    },
-    "difficulty_level": {
-      "type": "string",
-      "enum": ["beginner", "intermediate", "advanced"],
-      "default": "beginner",
-      "description": "Activity difficulty level"
-    },
-    "session_duration": {
-      "type": "integer",
-      "minimum": 5,
-      "maximum": 60,
-      "default": 15,
-      "description": "Expected session duration in minutes"
-    }
-  }
-}
-```
-
-
 ## Flow Configuration Mastery
 
-The `flow_config.json` file defines the conversation flow for advanced activities. This is where the real power of activity customization lies.
+The `flow_config.json` file defines the conversation flow for advanced activities.
 
 ### Core Structure
 
@@ -493,50 +395,26 @@ The `flow_config.json` file defines the conversation flow for advanced activitie
 
 ### Understanding the State System
 
-Before diving into configuration details, it's important to understand what the flow state system does and how the different types of state work together.
-
-#### State System Overview
-
-The flow system uses three main types of state that serve different purposes in managing conversation flow and content delivery:
+The flow system uses three main types of state that serve different purposes:
 
 **1. User State - Session Memory**
 - **Purpose**: Tracks user progress and preferences throughout the conversation
-- **What it contains**: Current position (chapter, page), learning progress (words learned, tasks completed), user preferences, session-specific data
-- **How it works**: Initialized from user selections, updated continuously via function calls, persists across conversation turns
-- **Example**: `"user": {"index": 3, "vocab_words_learned": ["rabbit", "garden"], "current_progress": 0.6}`
+- **Contains**: Current position, learning progress, user preferences, session-specific data
+- **Example**: `"user": {"index": 3, "vocab_words_learned": ["rabbit", "garden"]}`
 
 **2. Activity State - Content Repository**
 - **Purpose**: Provides static content and resources for the activity
-- **What it contains**: Books, curricula, learning materials, structured content (chapters, vocabulary lists), reference data
-- **How it works**: Loaded from external JSON files in `resources/` directory, selected by user, accessed via handler functions with indexing support
+- **Contains**: Books, curricula, learning materials, structured content
 - **Example**: `"activity": {"reading_context": {"book_title": "Peter Rabbit", "chapters": [...]}}`
 
 **3. Stages State - Flow Control**
 - **Purpose**: Manages conversation progression and completion tracking
-- **What it contains**: Checklists of required tasks per stage, transition rules between phases, progress tracking
-- **How it works**: Defined in flow_config.json, updated as tasks complete, controls conversation progression
-- **Example**: `"stages": {"warm_up": {"checklist": {"greeting_done": true, "topic_introduced": false}}}`
+- **Contains**: Checklists of required tasks per stage, transition rules, progress tracking
+- **Example**: `"stages": {"warm_up": {"checklist": {"greeting_done": true}}}`
 
-#### How They Work Together
+### State Configuration
 
-**Integration Example**:
-```
-User picks chapter 3 → User State (index: 3) → Activity State provides chapter 3 content →
-Stages State tracks introduction completion → LLM gets context about current chapter and remaining tasks
-```
-
-**System Purpose**:
-- **User State**: "Where is the user in their learning journey?"
-- **Activity State**: "What content should be presented to them?"
-- **Stages State**: "What conversation tasks need to be completed?"
-
-The system automatically manages context injection, so the LLM always knows what content is relevant, where the user is in their progress, and what needs to happen next in the conversation flow.
-
-### State Configuration Deep Dive
-
-#### Stages
-
-Stages define the high-level progression of the activity with completion tracking:
+#### Stages with Transition Logic
 
 ```json
 "stages": {
@@ -565,54 +443,10 @@ Stages define the high-level progression of the activity with completion trackin
 }
 ```
 
-**Checklist Properties:**
-- Keys represent completion criteria that must be verified
-- Values start as `false` and are set to `true` via function calls
-- Used to ensure all required elements are covered before progression
-
-**Transition Logic:**
-- **conditions**: Array of conditional branches
-- **parameters**: Define the condition to evaluate
-  - `variable_path`: Path to the variable to check
-  - `operator`: Comparison operator (`==`, `!=`, `>=`, `<=`, `>`, `<`)
-  - `value`: Value to compare against
-- **target_node**: Which node to transition to if condition is met
-- **default_target_node**: Fallback node if no conditions match
-
-#### State Variables
-
-```json
-"user": {
-  "index": null,                     // Current chapter/page position
-  "confidence_level": 1,
-  "topics_mastered": [],
-  "current_progress": 0,
-  "preferences": {
-    "learning_style": "visual",
-    "pace": "moderate"
-  }
-},
-"activity": {
-  "reading_context": {               // Activity content with indexable navigation
-    "indexable_by": "chapters",      // Enables automatic chapter navigation
-    "book_title": "The Tale of Peter Rabbit",
-    "chapters": [                    // Array structure for indexed access
-      {
-        "chapter_number": 1,
-        "title": "Peter's Adventure Begins",
-        "content": "Once upon a time...",
-        "vocabulary": ["rabbit", "garden"]
-      }
-    ]
-  }
-},
-```
-
 #### Activity Data Indexable System
 
-The `indexable_by` system enables automatic navigation through structured content like books, chapters, or lessons:
+The `indexable_by` system enables automatic navigation through structured content:
 
-**How Indexable Data Works:**
 ```json
 "activity": {
   "reading_context": {
@@ -621,9 +455,7 @@ The `indexable_by` system enables automatic navigation through structured conten
     "total_chapters": 4,
     "chapters": [                         // Array that gets indexed
       {"chapter_number": 1, "title": "Chapter 1", "content": "..."},
-      {"chapter_number": 2, "title": "Chapter 2", "content": "..."},
-      {"chapter_number": 3, "title": "Chapter 3", "content": "..."},
-      {"chapter_number": 4, "title": "Chapter 4", "content": "..."}
+      {"chapter_number": 2, "title": "Chapter 2", "content": "..."}
     ]
   }
 }
@@ -634,86 +466,24 @@ The `indexable_by` system enables automatic navigation through structured conten
 2. **User Session State**: From user state `{"user": {"index": 3}}`
 3. **User Prompting**: System asks user "Which chapter would you like?"
 
-**Automatic Navigation:**
-- System automatically resolves which chapter to show
-- Validates index is within bounds (1 to total chapters)
-- Returns specific chapter data to LLM context
-- Handles navigation between chapters seamlessly
-
-**Usage in Functions:**
-```json
-{
-  "type": "function",
-  "function": {
-    "name": "get_current_chapter",
-    "description": "Get information about the current chapter",
-    "parameters": {
-      "type": "object",
-      "properties": {
-        "current_index": {
-          "type": "integer",
-          "description": "Specific chapter number (optional)"
-        }
-      }
-    },
-    "handler": "get_activity_handler"     // Handles indexable data automatically
-  }
-}
-```
-
-**Benefits:**
-- Users can navigate content naturally ("Let's go to chapter 3")
-- System remembers current position across conversation
-- Content adapts automatically based on user's current location
-- No manual content management required
-
 ### Flow Nodes
 
 Nodes define the actual conversation interactions and behaviors:
-
-role_messages carry across all nodes and must be present in the first node.
-task_messages describe the task for that node in particular.
-
-functions:
-  Each node should have a function to check the completion of the node. Functions define what actions the AI can perform, such as checking progress, retrieving data, or executing custom business logic.
-
-  **Built-in Handlers:**
-  - `"handler": "general_handler"` - Progress tracking and state management
-  - `"handler": "get_activity_handler"` - Activity-specific data retrieval
-  - `"handler": "get_user_handler"` - User session variable access
-  - `"handler": "get_variable_action_handler"` - Variable context management
-
-  **Custom Handlers:**
-  Create custom handlers in your activity's `handlers.py` file and reference them using the `"activity:"` prefix:
-  ```json
-  {
-    "type": "function",
-    "function": {
-      "name": "my_custom_function",
-      "handler": "activity:my_custom_handler"
-    }
-  }
-  ```
-
-
-pre-actions: execute functions automatically before the node transition process
-  - `tts_say`: Speak text aloud before conversation begins
-  - `get_variable`: Retrieve and prepare variables for the node
-  - Custom actions using `"handler": "activity:my_handler"`
-
-post-actions: execute functions automatically after the node transition process, use this for context adding functions
-  - `get_variable`: Add variables to AI context after node completion
-  - `end_conversation`: Terminate the conversation flow
-  - Custom cleanup or state management actions
 
 ```json
 "nodes": {
   "warm_up": {
     "name": "warm_up",
+    "role_messages": [
+      {
+        "role": "system",
+        "content": "You are a friendly tutor..."
+      }
+    ],
     "task_messages": [
       {
         "role": "system",
-        "content": "Detailed instructions for the AI agent..."
+        "content": "Detailed instructions for this specific node..."
       }
     ],
     "functions": [
@@ -736,12 +506,6 @@ post-actions: execute functions automatically after the node transition process,
         }
       }
     ],
-    "role_messages": [
-      {
-        "role": "system",
-        "content": "You are a friendly tutor..."
-      }
-    ],
     "pre_actions": [
       {
         "type": "tts_say",
@@ -751,7 +515,7 @@ post-actions: execute functions automatically after the node transition process,
     "post_actions": [
       {
         "type": "get_variable",
-        "variable_name": "user_progress",
+        "variable_name": "reading_context",
         "handler": "get_variable_action_handler"
       }
     ]
@@ -759,81 +523,35 @@ post-actions: execute functions automatically after the node transition process,
 }
 ```
 
-#### Node Components Explained
+#### Node Components
 
-**task_messages**: System instructions for the AI agent
-- Provide detailed, specific instructions for what the AI should do
-- Include tool usage instructions
-- Define the conversation flow and behavior
-
-**functions**: Available function calls for the node
-- **type**: Always "function" for custom functions
-- **function**: Function definition object
-  - **name**: Unique function identifier
-  - **description**: What the function does
-  - **parameters**: JSON Schema for function parameters
-  - **handler**: Backend handler to process the function call
-
-**role_messages**: Persistent system messages that define the AI's persona and behavior
-
-**pre_actions**: Actions executed before the node conversation begins
-- `tts_say`: Speak text aloud
-- `get_variable`: Retrieve state variables
-- `set_variable`: Set state variables
-- Custom actions via handlers
-
-**post_actions**: Actions executed after node completion
-- Similar types as pre_actions
-- Often used to save progress or prepare for next stage
-- **Context injection**: Automatically adds relevant data to LLM conversation context
+- **role_messages**: Persistent system messages defining AI persona (carry across all nodes)
+- **task_messages**: Node-specific instructions for the AI agent
+- **functions**: Available function calls for the node
+- **pre_actions**: Actions executed before node conversation begins
+- **post_actions**: Actions executed after node completion (often for context injection)
 
 #### Context Injection System
 
-Post-actions provide automatic context injection, making state data available to the LLM without manual management:
+Post-actions provide automatic context injection to the LLM:
 
-**Automatic Variable Injection:**
 ```json
 "post_actions": [
   {
     "type": "get_variable",
-    "variable_name": "reading_context",        // Variable to inject
-    "handler": "get_variable_action_handler"   // Context injection handler
+    "variable_name": "reading_context",
+    "handler": "get_variable_action_handler"
   }
 ]
 ```
 
-**What Happens:**
-1. **Node Completion**: Current conversation node finishes
-2. **Handler Execution**: `get_variable_action_handler` retrieves the specified variable
-3. **Data Formatting**: Variable data formatted for LLM consumption
-4. **Context Addition**: System message automatically queued to conversation
-5. **LLM Access**: Next LLM interaction includes structured context
+This automatically adds relevant data to the LLM's context without manual management.
 
-**Example Context Injection Result:**
-```
-SYSTEM: Current Reading Context:
-Book: The Tale of Peter Rabbit by Beatrix Potter
-Current Chapter: Chapter 2 - Meeting Mr. McGregor
-Content: Peter squeezed under the gate into Mr. McGregor's garden...
-Vocabulary Words: farmer, vegetables
-```
+## Handler System
 
-**Context Injection Types:**
-- **Activity Variables**: Content from resources (books, curricula)
-- **User Variables**: Session progress and preferences
-- **Dynamic Data**: Real-time calculated information
+### Built-in Handlers
 
-**Benefits:**
-- LLM always has relevant context
-- No manual context management required
-- Automatic adaptation to user's current state
-- Consistent information delivery
-
-### Function Handlers
-
-Function handlers process the function calls made by the AI:
-
-#### Built-in Handlers
+Built-in handlers are provided by the system and referenced directly by name:
 
 1. **general_handler**: Processes checklist progress functions
    - Updates stage completion status
@@ -846,19 +564,20 @@ Function handlers process the function calls made by the AI:
 
 3. **get_activity_handler**: Handles activity-specific data retrieval
    - Often used for content like reading contexts
-   - Manages resource access
+   - Manages resource access with indexable support
 
 4. **get_session_variable_handler**: Specialized session variable access
    - Retrieves session-specific data
    - Manages temporary conversation state
 
-#### Custom Handlers
+### Custom Handlers
 
-You can create custom handlers in your activity's `handlers.py` file. Custom handlers are referenced using the `"activity:"` prefix.
+Custom handlers are created in your activity's `handlers.py` file and referenced with the `"activity:"` prefix.
 
-**Creating Custom Handlers:**
+#### Creating Custom Handlers
 
 1. **Create handlers.py in your activity directory:**
+
 ```python
 # server/activities/my-activity/handlers.py
 
@@ -889,6 +608,7 @@ def custom_content_handler(function_name, parameters, conversation_state):
 ```
 
 2. **Reference custom handlers in flow_config.json:**
+
 ```json
 {
   "type": "function",
@@ -910,8 +630,10 @@ def custom_content_handler(function_name, parameters, conversation_state):
 }
 ```
 
-**Handler Function Signature:**
+#### Handler Function Signature
+
 All custom handlers must follow this signature:
+
 ```python
 def handler_name(function_name: str, parameters: dict, conversation_state) -> dict:
     """
@@ -926,73 +648,16 @@ def handler_name(function_name: str, parameters: dict, conversation_state) -> di
     pass
 ```
 
-**Built-in vs Custom Handler Reference:**
+#### Handler Reference Pattern
+
 - Built-in handlers: `"handler": "general_handler"`
 - Custom handlers: `"handler": "activity:my_custom_handler"`
 
-**Error Handling:**
-The system provides detailed error messages for custom handlers:
+The system provides detailed error messages for:
 - Missing handlers.py file
 - Handler function not found
 - Handler is not callable
 - Import/syntax errors in handlers.py
-
-### Advanced Configuration Options
-
-#### Conditional Content
-
-```json
-"functions": [
-  {
-    "type": "function",
-    "function": {
-      "name": "adaptive_content_selector",
-      "description": "Select content based on user performance",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "performance_score": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 100
-          },
-          "learning_style": {
-            "type": "string",
-            "enum": ["visual", "auditory", "kinesthetic"]
-          }
-        }
-      },
-      "handler": "adaptive_content_handler"
-    }
-  }
-]
-```
-
-#### Multi-path Conversations
-
-```json
-"transition_logic": {
-  "conditions": [
-    {
-      "parameters": {
-        "variable_path": "user.age_group",
-        "operator": "==",
-        "value": "child"
-      },
-      "target_node": "child_friendly_content"
-    },
-    {
-      "parameters": {
-        "variable_path": "user.experience_level",
-        "operator": ">=",
-        "value": "advanced"
-      },
-      "target_node": "advanced_challenges"
-    }
-  ],
-  "default_target_node": "standard_content"
-}
-```
 
 ## Step-by-Step Creation Process
 
@@ -1059,84 +724,24 @@ Start with this template and customize:
 
 ### Step 4: Create flow_config.json (if needed)
 
-For advanced activities, create the flow configuration:
+For advanced activities:
 
 1. **Define State Structure**
-   ```json
-   "state_config": {
-     "stages": {
-       "introduction": { /* stage config */ },
-       "main_content": { /* stage config */ },
-       "conclusion": { /* stage config */ }
-     },
-     "user": { /* user state */ },
-     "activity": { /* activity state */ }
-   }
-   ```
-
 2. **Create Flow Nodes**
-   ```json
-   "flow_config": {
-     "initial_node": "introduction",
-     "nodes": {
-       "introduction": { /* node config */ },
-       "main_content": { /* node config */ },
-       "conclusion": { /* node config */ }
-     }
-   }
-   ```
-
 3. **Add Functions and Handlers**
-   - Define progress tracking functions using built-in handlers
-   - Create custom handlers in `handlers.py` if needed
-   - Set up state management and transitions
+4. **Set up transitions**
 
 ### Step 5: Add Custom Handlers (Optional)
 
-If your activity needs custom business logic, create a `handlers.py` file:
-
-```python
-# server/activities/my-activity/handlers.py
-
-def validate_user_input(function_name, parameters, conversation_state):
-    """Custom validation for user responses."""
-    user_input = parameters.get("user_input", "")
-
-    # Custom validation logic
-    is_valid = len(user_input) >= 3 and user_input.isalpha()
-
-    if is_valid:
-        # Update conversation state
-        conversation_state.update_user_state({"last_valid_input": user_input})
-
-    return {
-        "status": "success",
-        "is_valid": is_valid,
-        "feedback": "Good input!" if is_valid else "Please provide at least 3 letters."
-    }
-```
+Create `handlers.py` if custom business logic is needed.
 
 ### Step 6: Add Resources
 
-Place any required assets in the `resources/` directory:
-These should be json files containing activity-specific content and data.
+Place JSON resources in the `resources/` directory.
 
 ### Step 7: Update Activity Registry
 
-Add your activity to `assets/activity_groups.json`:
-
-```json
-{
-  "groups": [
-    {
-      "name": "Your Group",
-      "activities": [
-        "your-activity-name"
-      ]
-    }
-  ]
-}
-```
+Add your activity to `assets/activity_groups.json`.
 
 ### Step 8: Test Your Activity
 
@@ -1203,46 +808,9 @@ Add your activity to `assets/activity_groups.json`:
    - Predictable data formats
    - Clear data organization
 
-## System Architecture and Activity Flow
+## API Reference
 
-### How Activities Work in Riverst
-
-Riverst activities integrate multiple AI services with a conversational flow system to create interactive learning experiences.
-
-#### The Complete Activity Lifecycle
-
-1. **Activity Discovery** → Frontend loads activity groups from `/api/activities`
-2. **Activity Configuration** → User selects activity and configures options via session schema
-3. **Session Creation** → Frontend calls `/api/session` with configuration
-4. **WebRTC Connection** → Real-time audio/video connection established via `/api/offer`
-5. **Flow Initialization** → Backend loads flow configuration and initializes conversation state
-6. **Conversational Loop** → AI agent follows flow logic, managing state transitions
-7. **Session Completion** → Flow reaches end node, session data is saved
-
-#### Core System Components
-
-**Frontend (React)**
-- `ActivityCard.tsx` - Displays activity options to users
-- `GroupedActivitySection.tsx` - Organizes activities by category
-- `AvatarInteractionSettings.tsx` - Activity configuration interface
-- WebRTC connection management for real-time interaction
-
-**Backend (FastAPI)**
-- `main.py` - Core API endpoints for activities and sessions
-- `bot_runner.py` - Orchestrates AI pipeline and flow management
-- `flow_factory.py` - Builds and configures flow managers
-- `loaders.py` - Loads and validates flow configurations
-- `handlers.py` - Built-in flow state management functions
-
-**Flow System (Pipecat-Flows)**
-- State management with stage progression tracking
-- Function calling system for dynamic behavior
-- Transition logic for adaptive conversation paths
-- Context management for maintaining conversation history
-
-#### API Integration
-
-The backend exposes key endpoints:
+### Core Endpoints
 
 - `GET /api/activities` - Returns activity groups for frontend display
 - `GET /api/activities/{name}/session_config` - Loads activity schema with API key filtering
@@ -1250,32 +818,10 @@ The backend exposes key endpoints:
 - `POST /api/session` - Creates new session with activity configuration
 - `POST /api/offer` - Establishes WebRTC connection and starts activity
 
-#### Frontend Integration
+### Frontend Integration Points
 
 Activities integrate with the frontend through:
 - Activity discovery via homepage components
 - Configuration interface generation from JSON Schema
 - WebRTC connection management for real-time interaction
 - Session state management and completion tracking
-
-#### Activity Groups Configuration
-
-Activities are organized into groups via `server/assets/activity_groups.json`:
-
-```json
-[
-  {
-    "title": "Your Activity Category",
-    "activities": [
-      {
-        "title": "Activity Display Name",
-        "images": ["/figures/icon1.svg", "/figures/icon2.svg"],
-        "description": "User-facing description",
-        "route": "/avatar-interaction-settings",
-        "disabled": false,
-        "settings_options_filepath": "api/activities/your-activity/session_config"
-      }
-    ]
-  }
-]
-```
