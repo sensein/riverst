@@ -304,26 +304,12 @@ function populateActivityVariablesFromResource(activityData) {
         return 'string';
     }
 
-    // Function to flatten nested objects and create variables
-    function createVariablesFromObject(obj, prefix = '') {
-        Object.keys(obj).forEach(key => {
-            const value = obj[key];
-            const variableName = prefix ? `${prefix}.${key}` : key;
-
-            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-                // For nested objects, create a variable for the object itself
-                addActivityVariableWithData(variableName, value, 'object');
-                // Also create flattened variables for direct access to nested properties
-                createVariablesFromObject(value, variableName);
-            } else {
-                // Create variable for primitive values and arrays
-                addActivityVariableWithData(variableName, value, getVariableType(value));
-            }
-        });
-    }
-
-    // Start populating from the root of activityData
-    createVariablesFromObject(activityData);
+    // Create activity variables only for outermost properties
+    Object.keys(activityData).forEach(key => {
+        const value = activityData[key];
+        const type = getVariableType(value);
+        addActivityVariableWithData(key, value, type);
+    });
 
     // Update all dropdowns to include the new variables
     updateAllStateVariableDropdowns();
@@ -493,6 +479,15 @@ window.updateAllStateVariableDropdowns = updateAllStateVariableDropdowns;
 window.updateUserFieldDropdowns = updateUserFieldDropdowns;
 window.loadActivityResourceFromFile = loadActivityResourceFromFile;
 
+// Helper function to create a DOM element from a template - moved outside DOMContentLoaded so it can be called by activity loading functions
+function createFromTemplate(templateId) {
+    const template = document.getElementById(templateId);
+    return document.importNode(template.content, true);
+}
+
+// Make createFromTemplate globally available
+window.createFromTemplate = createFromTemplate;
+
 document.addEventListener('DOMContentLoaded', function () {
     // Set up console logging
     setupConsoleLogging();
@@ -507,12 +502,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     });
-
-    // Helper function to create a DOM element from a template
-    function createFromTemplate(templateId) {
-        const template = document.getElementById(templateId);
-        return document.importNode(template.content, true);
-    }
 
     // Initialize UI components
     initActivityVariables();
@@ -531,9 +520,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Add initial node if none exists
+    // Add initial node and end node if none exist
     if (nodesContainer.children.length === 0) {
         addNode();
+        addEndNode();
     }
 
     // Function to update node order display
@@ -541,11 +531,21 @@ document.addEventListener('DOMContentLoaded', function () {
         const nodes = document.querySelectorAll('.node-card');
         nodes.forEach((node, index) => {
             const nodeHeader = node.querySelector('.node-header');
+            const nodeName = node.querySelector('.node-name').value;
+
+            // Reset classes
             nodeHeader.classList.remove('bg-primary', 'bg-success', 'bg-secondary');
 
+            // Don't modify the end node styling - it stays dark
+            if (nodeName === 'end') {
+                nodeHeader.classList.add('bg-dark', 'text-white');
+                return;
+            }
+
+            // Style regular nodes
             if (index === 0) {
                 nodeHeader.classList.add('bg-primary', 'text-white');
-            } else if (index === nodes.length - 1) {
+            } else if (index === nodes.length - 2) { // Second to last (since end is always last)
                 nodeHeader.classList.add('bg-success', 'text-white');
             }
         });
@@ -944,9 +944,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Update a target node dropdown with all available nodes
     function updateNodeTargetDropdown(select) {
-        const nodes = Array.from(document.querySelectorAll('.node-name')).map(input => input.value.trim()).filter(name => name !== '');
+        const allNodeNames = Array.from(document.querySelectorAll('.node-name')).map(input => input.value.trim()).filter(name => name !== '');
 
-        // Add "end" node always
+        // Filter out the current node from its own target dropdown
+        const currentNode = select.closest('.node-card');
+        const currentNodeName = currentNode ? currentNode.querySelector('.node-name').value : '';
+
+        const nodes = allNodeNames.filter(name => name !== currentNodeName);
+
+        // Ensure "end" is always available as a target
         if (!nodes.includes('end')) {
             nodes.push('end');
         }
@@ -1067,6 +1073,43 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Helper function to set up all event handlers for a node
+    function setupNodeEventHandlers(nodeElement) {
+        // Set up dropdown handlers for regular functions
+        const addActivityFunctionBtn = nodeElement.querySelector('.add-activity-function');
+        if (addActivityFunctionBtn) {
+            addActivityFunctionBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                addNodeFunction(this.closest('.node-card'), "", "Get activity data", false);
+            });
+        }
+
+        const addUserFunctionBtn = nodeElement.querySelector('.add-user-function');
+        if (addUserFunctionBtn) {
+            addUserFunctionBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                addNodeFunction(this.closest('.node-card'), "", "Get user state", true);
+            });
+        }
+
+        // Set up dropdown handlers for pre-action functions
+        const addPreActionActivityFunctionBtn = nodeElement.querySelector('.add-pre-action-activity-function');
+        if (addPreActionActivityFunctionBtn) {
+            addPreActionActivityFunctionBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                addPreActionFunction(this.closest('.node-card'), "", "Get activity data", false);
+            });
+        }
+
+        const addPreActionUserFunctionBtn = nodeElement.querySelector('.add-pre-action-user-function');
+        if (addPreActionUserFunctionBtn) {
+            addPreActionUserFunctionBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                addPreActionFunction(this.closest('.node-card'), "", "Get user state", true);
+            });
+        }
+    }
+
     function addNode() {
         const container = document.getElementById('nodesContainer');
         const nodeElement = createFromTemplate('nodeTemplate');
@@ -1117,13 +1160,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Set up remove node button
         nodeElement.querySelector('.remove-node-btn').addEventListener('click', function () {
-            if (document.querySelectorAll('.node-card').length <= 1) {
-                alert('You must have at least one node.');
+            const nodeCard = this.closest('.node-card');
+            const nodeName = nodeCard.querySelector('.node-name').value;
+
+            // Prevent removing the end node
+            if (nodeName === 'end') {
+                alert('The end node cannot be removed.');
+                return;
+            }
+
+            // Count non-end nodes
+            const nonEndNodes = Array.from(document.querySelectorAll('.node-card')).filter(card =>
+                card.querySelector('.node-name').value !== 'end'
+            );
+
+            if (nonEndNodes.length <= 1) {
+                alert('You must have at least one regular node in addition to the end node.');
                 return;
             }
 
             if (confirm('Are you sure you want to remove this node?')) {
-                this.closest('.node-card').remove();
+                nodeCard.remove();
                 updateNodeOrder();
                 updateAllNodeTargetDropdowns();
             }
@@ -1240,6 +1297,9 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
+        // Set up all dropdown event handlers for this node
+        setupNodeEventHandlers(nodeElement);
+
         // Initialize the default target node dropdown
         const defaultTargetSelect = nodeElement.querySelector('.default-target-node');
         if (defaultTargetSelect) {
@@ -1262,6 +1322,91 @@ document.addEventListener('DOMContentLoaded', function () {
         // Add the node to the container
         container.appendChild(nodeElement);
         updateAllNodeTargetDropdowns();
+        return nodeElement;
+    }
+
+    function addEndNode() {
+        const container = document.getElementById('nodesContainer');
+        const nodeElement = createFromTemplate('nodeTemplate');
+
+        // Set fixed end node name
+        const nodeNameInput = nodeElement.querySelector('.node-name');
+        const nodeNameDisplay = nodeElement.querySelector('.node-name-display');
+
+        nodeNameInput.value = 'end';
+        nodeNameDisplay.textContent = 'end';
+
+        // Make node name read-only
+        nodeNameInput.readOnly = true;
+        nodeNameInput.classList.add('bg-light');
+
+        // Set default task message for end node
+        const taskMessage = nodeElement.querySelector('.node-task-message');
+        taskMessage.value = "The session is now complete. Say goodbye in a friendly and encouraging way.";
+
+        // Set default pre-action text
+        const preActionText = nodeElement.querySelector('.pre-action-text');
+        if (preActionText) {
+            preActionText.value = "Thank you for learning with me today, have a wonderful day!";
+        }
+
+        // Hide tabs that shouldn't be available for end node
+        const tabsToHide = ['[data-bs-target=".functions-tab"]', '[data-bs-target=".checklist-tab"]', '[data-bs-target=".transitions-tab"]'];
+        tabsToHide.forEach(selector => {
+            const tab = nodeElement.querySelector(selector);
+            if (tab) {
+                tab.style.display = 'none';
+            }
+        });
+
+        // Hide the functions dropdown in pre-actions
+        const preActionFunctionDropdown = nodeElement.querySelector('.add-pre-action-function-btn');
+        if (preActionFunctionDropdown) {
+            preActionFunctionDropdown.style.display = 'none';
+        }
+
+        // Hide the entire functions container in pre-actions
+        const functionPreActionsContainer = nodeElement.querySelector('.function-pre-actions-container');
+        if (functionPreActionsContainer) {
+            functionPreActionsContainer.style.display = 'none';
+        }
+
+        // Set up remove node button - make it disabled and hidden
+        const removeBtn = nodeElement.querySelector('.remove-node-btn');
+        removeBtn.style.display = 'none';
+
+        // Make sure tab functionality works correctly
+        const tabButtons = nodeElement.querySelectorAll('[data-bs-toggle="tab"]');
+        tabButtons.forEach(button => {
+            button.addEventListener('click', function (event) {
+                event.preventDefault();
+
+                // Hide all tab panes in this node
+                const tabContentContainer = this.closest('.node-card').querySelector('.tab-content');
+                tabContentContainer.querySelectorAll('.tab-pane').forEach(pane => {
+                    pane.classList.remove('show', 'active');
+                });
+
+                // Show the selected pane
+                const targetSelector = this.getAttribute('data-bs-target');
+                const targetPane = this.closest('.node-card').querySelector(targetSelector);
+                if (targetPane) {
+                    targetPane.classList.add('show', 'active');
+                }
+
+                // Update active state on buttons
+                this.closest('ul').querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
+        });
+
+        // Add special styling to indicate this is the end node
+        nodeElement.querySelector('.node-header').classList.add('bg-dark', 'text-white');
+
+        // Add the node to the container
+        container.appendChild(nodeElement);
         return nodeElement;
     }
 
@@ -1755,8 +1900,9 @@ document.addEventListener('DOMContentLoaded', function () {
         // Hide result container
         document.getElementById('resultContainer').style.display = 'none';
 
-        // Add initial node
+        // Add initial node and end node
         addNode();
+        addEndNode();
     }
 
     // Validate node name uniqueness
@@ -2001,6 +2147,7 @@ document.addEventListener('DOMContentLoaded', function () {
     window.addNode = addNode;
     window.addNodeFunction = addNodeFunction;
     window.addPreActionFunction = addPreActionFunction;
+    window.setupNodeEventHandlers = setupNodeEventHandlers;
     window.updateSessionVariableDropdown = updateSessionVariableDropdown;
     window.updateAllStateVariableDropdowns = updateAllStateVariableDropdowns;
     window.updateUserFieldDropdowns = updateUserFieldDropdowns;

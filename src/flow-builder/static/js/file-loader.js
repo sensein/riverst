@@ -517,6 +517,11 @@ function loadNodes(config) {
 
         createNodeFromConfig(nodeName, node, stage, config);
     }
+
+    // Add end node if it exists in the config but wasn't processed
+    if (nodes.end && !sequence.includes('end')) {
+        createNodeFromConfig('end', nodes.end, {}, config);
+    }
 }
 
 function createNodeFromConfig(nodeName, node, stage, config) {
@@ -528,6 +533,43 @@ function createNodeFromConfig(nodeName, node, stage, config) {
     const nameDisplay = nodeEl.querySelector('.node-name-display');
     nameInput.value = nodeName;
     nameDisplay.textContent = nodeName;
+
+    // Handle end node specially
+    if (nodeName === 'end') {
+        // Make node name read-only
+        nameInput.readOnly = true;
+        nameInput.classList.add('bg-light');
+
+        // Hide tabs that shouldn't be available for end node
+        const tabsToHide = ['[data-bs-target=".functions-tab"]', '[data-bs-target=".checklist-tab"]', '[data-bs-target=".transitions-tab"]'];
+        tabsToHide.forEach(selector => {
+            const tab = nodeEl.querySelector(selector);
+            if (tab) {
+                tab.style.display = 'none';
+            }
+        });
+
+        // Hide the functions dropdown in pre-actions
+        const preActionFunctionDropdown = nodeEl.querySelector('.add-pre-action-function-btn');
+        if (preActionFunctionDropdown) {
+            preActionFunctionDropdown.style.display = 'none';
+        }
+
+        // Hide the entire functions container in pre-actions
+        const functionPreActionsContainer = nodeEl.querySelector('.function-pre-actions-container');
+        if (functionPreActionsContainer) {
+            functionPreActionsContainer.style.display = 'none';
+        }
+
+        // Hide remove button for end node
+        const removeBtn = nodeEl.querySelector('.remove-node-btn');
+        if (removeBtn) {
+            removeBtn.style.display = 'none';
+        }
+
+        // Add special styling to indicate this is the end node
+        nodeEl.querySelector('.node-header').classList.add('bg-dark', 'text-white');
+    }
 
     // Set node task message
     const taskMessages = node.task_messages || [];
@@ -865,23 +907,9 @@ function createNodeFromConfig(nodeName, node, stage, config) {
         }
     });
 
-    // Set up dropdown function buttons
-    // Dropdown buttons are set up via the event listeners in the template
-    // No need to add additional buttons here
-    const addSessionFunctionBtn = nodeEl.querySelector('.add-session-function');
-    if (addSessionFunctionBtn) {
-        addSessionFunctionBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            addNodeFunction(this.closest('.node-card'));
-        });
-    }
-
-    const addInfoFunctionBtn = nodeEl.querySelector('.add-info-function');
-    if (addInfoFunctionBtn) {
-        addInfoFunctionBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            addNodeFunction(this.closest('.node-card'), "", "", true);
-        });
+    // Set up dropdown function buttons using the centralized handler setup
+    if (window.setupNodeEventHandlers) {
+        window.setupNodeEventHandlers(nodeEl);
     }
 
     // Add info fields
