@@ -48,7 +48,7 @@ async def run_bot(
     logger.info("Starting bot with config: {}", config)
     logger.info("Session directory: {}", session_dir)
 
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession():
         # Instantiate the bot components using factory pattern
         factory = BotComponentFactory(
             session_dir=session_dir,
@@ -57,11 +57,7 @@ async def run_bot(
             llm_type=config["llm_type"],
             stt_type=config["stt_type"] if "stt_type" in config else None,
             tts_type=config["tts_type"] if "tts_type" in config else None,
-            tts_params=(
-                {"client_session": session}
-                if "tts_type" in config and config["tts_type"] == "piper"
-                else None
-            ),
+            tts_params=None,
             short_term_memory=config.get("short_term_memory", False),
             long_term_memory=config.get("long_term_memory", False),
             task_description=config.get("task_description", ""),

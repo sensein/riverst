@@ -42,7 +42,7 @@ src/
 ├── server/              # Bot server implementation (FastAPI)
 │   ├── main.py          # Server entrypoint
 │   └── requirements.txt
-└── flow-builder/        # Conversational flow builder
+└── flow-builder/        # Complex conversational flow/tree builder
 └── client/              # Client implementations
     └── react/           # React web client
         └── index.html   # Client main page
@@ -71,23 +71,30 @@ cd riverst
 
 ### 2. Set up environment variables
 
-- Rename `.env.example` to `.env` in both `src/server/` and `src/client/react/`
-- Fill in required API keys and configuration (note: API KEYS are required only if you want to use the corresponding remote services)
+- In `src/server/`, rename [`.env.example`](src/server/env.example) to `.env` and fill in the required API keys and configuration
+- In `src/client/react/`, rename [`.env.example`](src/client/react/env.example) to `.env` and fill in the required API keys and configuration
 
-### 3. Run with Docker (recommended)
+**Note**: Not all API KEYS are strictly required. Only if you want to use a remote service, you need to expose the corresponding API KEY
+
+### 3. Run
+
+#### 3a. Run with Docker
 
 ```bash
 docker compose up --build
 ```
 
-### 4. Or run manually
+#### 3b. Run manually in two different tabs of your terminal
 
 - **Start the server:**
   ```bash
   cd src/server
+  conda create -n riverst python=3.11
+  conda activate riverst
   pip install -r requirements.txt
   python main.py
   ```
+
 - **Start the client:**
   ```bash
   cd src/client/react

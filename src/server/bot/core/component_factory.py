@@ -13,7 +13,6 @@ from pipecat.services.openai_realtime_beta import (
     SemanticTurnDetection,
     SessionProperties,
 )
-from pipecat.services.piper.tts import PiperTTSService
 from pipecat.services.gemini_multimodal_live import GeminiMultimodalLiveLLMService
 from pipecat.services.whisper.stt import WhisperSTTService
 from pipecat.adapters.schemas.tools_schema import ToolsSchema
@@ -35,7 +34,7 @@ LLMType = Literal[
     "ollama/qwen3:4b-instruct-2507-q4_K_M",
 ]
 STTType = Literal["openai", "whisper"]
-TTSType = Literal["openai", "piper", "kokoro"]
+TTSType = Literal["openai", "kokoro"]
 
 ALLOWED_LLM = {
     "classic": {"openai", "ollama/qwen3:4b-instruct-2507-q4_K_M"},
@@ -127,9 +126,6 @@ class BotComponentFactory:
         if self.tts_type == "elevenlabs":
             if not os.getenv("ELEVENLABS_API_KEY"):
                 raise EnvironmentError("Missing ELEVENLABS_API_KEY in environment.")
-
-        if self.tts_type == "piper" and not self.tts_params.get("client_session"):
-            raise ValueError("Piper TTS requires 'client_session' in tts_params.")
 
         if self.body_animations:
             valid_ids = AnimationHandler.get_valid_animation_ids()
@@ -273,14 +269,6 @@ class BotComponentFactory:
             else "cjVigY5qzO86Huf0OWal"
         )
 
-    def _get_base_url_for_piper(self) -> str:
-        """Get Piper base URL based on avatar gender."""
-        return (
-            "http://localhost:5001/"
-            if "gender" in self.avatar and self.avatar["gender"] == "feminine"
-            else "http://localhost:5002/"
-        )
-
     def _get_voice_id_for_kokoro(self) -> str:
         """Get Kokoro voice based on avatar gender."""
         return (
@@ -385,11 +373,6 @@ class BotComponentFactory:
             return OpenAITTSService(
                 voice=self._get_voice_for_openai(),
                 model=(self.tts_params or {}).get("model", "gpt-4o-mini-tts"),
-            )
-        elif self.tts_type == "piper":
-            return PiperTTSService(
-                base_url=self._get_base_url_for_piper(),
-                aiohttp_session=(self.tts_params or {})["client_session"],
             )
         elif self.tts_type == "elevenlabs":
             return ElevenLabsTTSService(
