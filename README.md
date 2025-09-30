@@ -53,6 +53,11 @@ src/
 
 ## Requirements
 
+- **Supported OS:**
+  - ✅ Apple Silicon (M-chip) macOS
+  - ✅ Ubuntu Linux
+  - ❌ Not supported on Windows
+
 - Python 3.11+
 - Node.js 16+ (for React client)
 - API keys for 3rd party services (see .env.example files in both client and server)
