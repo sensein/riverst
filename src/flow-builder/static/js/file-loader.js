@@ -44,27 +44,40 @@ window.loadConfigFromFile = async function(file) {
                     };
                 }
 
+                // Check if activity resource is needed
+                if (!window.currentActivityResource && config.state_config?.activity) {
+                    // Show warning that activity resource should be loaded
+                    resultContainer.innerHTML = `
+                        <div class="alert alert-warning">
+                            <h4>Activity Resource Recommended</h4>
+                            <p>This flow config contains placeholder activity data. For best results, load an activity resource file first using the "Load Activity Resource" button.</p>
+                            <p>Flow config loaded: "${file.name}"</p>
+                        </div>
+                    `;
+                } else {
+                    // Show success message
+                    resultContainer.innerHTML = `
+                        <div class="alert alert-success">
+                            <h4>Configuration Loaded!</h4>
+                            <p>File "${file.name}" loaded successfully.</p>
+                            ${window.currentActivityResource ? '<p class="mb-0"><i class="bi bi-check-circle text-success"></i> Activity resource data will be used.</p>' : ''}
+                        </div>
+                    `;
+                }
+
                 // Start loading the configuration
                 loadBasicInfo(config);
-                loadTaskVariables(config);
+                loadStateVariables(config);
                 loadNodes(config);
 
                 // Update UI
                 updateOrderAndDropdowns();
-                updateAllSessionVariableDropdowns();
+                updateAllStateVariableDropdowns();
 
-                // Show success message
-                resultContainer.innerHTML = `
-                    <div class="alert alert-success">
-                        <h4>Configuration Loaded!</h4>
-                        <p>File "${file.name}" loaded successfully.</p>
-                    </div>
-                `;
-
-                // Hide success message after 3 seconds
+                // Hide success message after 5 seconds (longer to give user time to read)
                 setTimeout(() => {
                     resultContainer.style.display = 'none';
-                }, 3000);
+                }, 5000);
 
             } catch (error) {
                 console.error("Error parsing file:", error);
@@ -114,8 +127,8 @@ function loadBasicInfo(config) {
 
     // Reset form
     document.getElementById('nodesContainer').innerHTML = '';
-    document.getElementById('taskVariablesContainer').innerHTML = '';
-    document.getElementById('sessionInfoContainer').innerHTML = '';
+    document.getElementById('activityVariablesContainer').innerHTML = '';
+    document.getElementById('userVariablesContainer').innerHTML = '';
 
     // Load basic info
     document.getElementById('flowName').value = config.name || "";
@@ -131,8 +144,18 @@ function loadBasicInfo(config) {
     }
 }
 
-function loadTaskVariables(config) {
-    // We don't use task_variables anymore, but handle them if present in older files
+function loadStateVariables(config) {
+    // Handle new structure with user and activity variables
+    let activityVars = config.state_config?.activity || {};
+    const userVars = config.state_config?.user || {};
+
+    // If activity resource is loaded, replace activity variables with resource data
+    if (window.currentActivityResource) {
+        console.log("Replacing activity data with loaded resource");
+        activityVars = window.currentActivityResource;
+    }
+
+    // Handle legacy variables for backward compatibility
     const taskVars = config.state_config?.task_variables || {};
     const sessionVars = config.state_config?.session_variables || {};
     const infoFields = config.state_config?.info || {};
@@ -179,12 +202,12 @@ function loadTaskVariables(config) {
         // Add event listeners
         varEl.querySelector('.remove-task-var-btn').addEventListener('click', function() {
             this.closest('.task-var-card').remove();
-            updateAllSessionVariableDropdowns();
+            updateAllStateVariableDropdowns();
         });
 
         // Add input event listener to update function dropdowns
         varEl.querySelector('.task-var-name').addEventListener('input', function() {
-            updateAllSessionVariableDropdowns();
+            updateAllStateVariableDropdowns();
         });
 
         container.appendChild(varEl);
@@ -233,20 +256,136 @@ function loadTaskVariables(config) {
         // Add event listeners
         varEl.querySelector('.remove-task-var-btn').addEventListener('click', function() {
             this.closest('.task-var-card').remove();
-            updateAllSessionVariableDropdowns();
+            updateAllStateVariableDropdowns();
         });
 
         // Add input event listener to update function dropdowns
         varEl.querySelector('.task-var-name').addEventListener('input', function() {
-            updateAllSessionVariableDropdowns();
+            updateAllStateVariableDropdowns();
         });
 
         container.appendChild(varEl);
     }
 
-    // Load info fields
+    // Load activity variables (new structure)
+    for (const [name, value] of Object.entries(activityVars)) {
+        const container = document.getElementById('activityVariablesContainer');
+        const varEl = document.getElementById('activityVarTemplate').content.cloneNode(true);
+
+        // Set name
+        varEl.querySelector('.activity-var-name').value = name;
+        varEl.querySelector('.activity-var-name').dataset.varType = 'activity';
+
+        // Set type and value
+        const typeSelect = varEl.querySelector('.activity-var-type');
+        const valueContainer = varEl.querySelector('.activity-var-value-container');
+
+        // Determine type
+        let type = 'string';
+        if (typeof value === 'boolean') type = 'boolean';
+        else if (typeof value === 'number') type = 'number';
+        else if (Array.isArray(value)) {
+            if (value.length > 0 && typeof value[0] === 'number') type = 'number_array';
+            else type = 'array';
+        }
+        else if (typeof value === 'object' && value !== null) type = 'object';
+
+        typeSelect.value = type;
+
+        // Set value container
+        if (type === 'boolean') {
+            valueContainer.innerHTML = `
+                <div class="form-check">
+                    <input class="form-check-input activity-var-value" type="checkbox" ${value ? 'checked' : ''}>
+                    <label class="form-check-label">True</label>
+                </div>`;
+        } else if (type === 'array' || type === 'number_array') {
+            const arrayValue = Array.isArray(value) ? value.join(', ') : '';
+            valueContainer.innerHTML = `<input type="text" class="form-control form-control-sm activity-var-value" value="${arrayValue}">`;
+        } else if (type === 'object') {
+            valueContainer.innerHTML = `<textarea class="form-control form-control-sm activity-var-value" rows="2">${JSON.stringify(value, null, 2)}</textarea>`;
+        } else {
+            valueContainer.innerHTML = `<input type="${type === 'number' ? 'number' : 'text'}" class="form-control form-control-sm activity-var-value" value="${value}">`;
+        }
+
+        // Check if it's indexable
+        if (typeof value === 'object' && value !== null && value.indexable_by) {
+            const indexableCheckbox = varEl.querySelector('.activity-var-indexable');
+            if (indexableCheckbox) {
+                indexableCheckbox.checked = true;
+            }
+        }
+
+        // Add event listeners
+        varEl.querySelector('.remove-activity-var-btn').addEventListener('click', function() {
+            this.closest('.activity-var-card').remove();
+            updateAllStateVariableDropdowns();
+        });
+
+        varEl.querySelector('.activity-var-name').addEventListener('input', function() {
+            updateAllStateVariableDropdowns();
+        });
+
+        container.appendChild(varEl);
+    }
+
+    // Load user variables (new structure)
+    for (const [name, value] of Object.entries(userVars)) {
+        const container = document.getElementById('userVariablesContainer');
+        const varEl = document.getElementById('userVarTemplate').content.cloneNode(true);
+
+        // Set name
+        varEl.querySelector('.user-var-name').value = name;
+        varEl.querySelector('.user-var-name').dataset.varType = 'user';
+
+        // Set type and value
+        const typeSelect = varEl.querySelector('.user-var-type');
+        const valueContainer = varEl.querySelector('.user-var-value-container');
+
+        // Determine type
+        let type = 'string';
+        if (typeof value === 'boolean') type = 'boolean';
+        else if (typeof value === 'number') type = 'number';
+        else if (Array.isArray(value)) {
+            if (value.length > 0 && typeof value[0] === 'number') type = 'number_array';
+            else type = 'array';
+        }
+        else if (typeof value === 'object' && value !== null) type = 'object';
+
+        typeSelect.value = type;
+
+        // Set value container
+        if (type === 'boolean') {
+            valueContainer.innerHTML = `
+                <div class="form-check">
+                    <input class="form-check-input user-var-value" type="checkbox" ${value ? 'checked' : ''}>
+                    <label class="form-check-label">True</label>
+                </div>`;
+        } else if (type === 'array' || type === 'number_array') {
+            const arrayValue = Array.isArray(value) ? value.join(', ') : '';
+            valueContainer.innerHTML = `<input type="text" class="form-control form-control-sm user-var-value" value="${arrayValue}">`;
+        } else if (type === 'object') {
+            valueContainer.innerHTML = `<textarea class="form-control form-control-sm user-var-value" rows="2">${JSON.stringify(value, null, 2)}</textarea>`;
+        } else {
+            valueContainer.innerHTML = `<input type="${type === 'number' ? 'number' : 'text'}" class="form-control form-control-sm user-var-value" value="${value}">`;
+        }
+
+        // Add event listeners
+        varEl.querySelector('.remove-user-var-btn').addEventListener('click', function() {
+            this.closest('.user-var-card').remove();
+            updateUserFieldDropdowns();
+        });
+
+        varEl.querySelector('.user-var-name').addEventListener('input', function() {
+            updateUserFieldDropdowns();
+        });
+
+        container.appendChild(varEl);
+    }
+
+    // Load info fields (legacy support)
     for (const [name, value] of Object.entries(infoFields)) {
-        const container = document.getElementById('sessionInfoContainer');
+        const container = document.getElementById('userVariablesContainer');
         const infoEl = document.getElementById('sessionInfoTemplate').content.cloneNode(true);
 
         // Set name and type
@@ -288,13 +427,13 @@ function loadTaskVariables(config) {
         infoEl.querySelector('.remove-session-info-btn').addEventListener('click', function() {
             if (confirm('Remove this info field?')) {
                 this.closest('.session-info-card').remove();
-                updateAllSessionVariableDropdowns();
+                updateAllStateVariableDropdowns();
             }
         });
 
         // Add input event listener to update function dropdowns
         infoEl.querySelector('.session-info-name').addEventListener('input', function() {
-            updateAllSessionVariableDropdowns();
+            updateAllStateVariableDropdowns();
         });
 
         container.appendChild(infoEl);
@@ -378,6 +517,11 @@ function loadNodes(config) {
 
         createNodeFromConfig(nodeName, node, stage, config);
     }
+
+    // Add end node if it exists in the config but wasn't processed
+    if (nodes.end && !sequence.includes('end')) {
+        createNodeFromConfig('end', nodes.end, {}, config);
+    }
 }
 
 function createNodeFromConfig(nodeName, node, stage, config) {
@@ -389,6 +533,43 @@ function createNodeFromConfig(nodeName, node, stage, config) {
     const nameDisplay = nodeEl.querySelector('.node-name-display');
     nameInput.value = nodeName;
     nameDisplay.textContent = nodeName;
+
+    // Handle end node specially
+    if (nodeName === 'end') {
+        // Make node name read-only
+        nameInput.readOnly = true;
+        nameInput.classList.add('bg-light');
+
+        // Hide tabs that shouldn't be available for end node
+        const tabsToHide = ['[data-bs-target=".functions-tab"]', '[data-bs-target=".checklist-tab"]', '[data-bs-target=".transitions-tab"]'];
+        tabsToHide.forEach(selector => {
+            const tab = nodeEl.querySelector(selector);
+            if (tab) {
+                tab.style.display = 'none';
+            }
+        });
+
+        // Hide the functions dropdown in pre-actions
+        const preActionFunctionDropdown = nodeEl.querySelector('.add-pre-action-function-btn');
+        if (preActionFunctionDropdown) {
+            preActionFunctionDropdown.style.display = 'none';
+        }
+
+        // Hide the entire functions container in pre-actions
+        const functionPreActionsContainer = nodeEl.querySelector('.function-pre-actions-container');
+        if (functionPreActionsContainer) {
+            functionPreActionsContainer.style.display = 'none';
+        }
+
+        // Hide remove button for end node
+        const removeBtn = nodeEl.querySelector('.remove-node-btn');
+        if (removeBtn) {
+            removeBtn.style.display = 'none';
+        }
+
+        // Add special styling to indicate this is the end node
+        nodeEl.querySelector('.node-header').classList.add('bg-dark', 'text-white');
+    }
 
     // Set node task message
     const taskMessages = node.task_messages || [];
@@ -418,8 +599,8 @@ function createNodeFromConfig(nodeName, node, stage, config) {
                 const handler = action.handler;
 
                 // Handle all variable getters: we'll transform these to get_variable_action_handler
-                if (handler === 'get_session_variable_handler' ||
-                    handler === 'get_info_variable_handler' ||
+                if (handler === 'get_activity_handler' ||
+                    handler === 'get_user_handler' ||
                     handler === 'get_variable_action_handler') {
 
                     // For simplified format, variable_name is directly on the action
@@ -427,7 +608,7 @@ function createNodeFromConfig(nodeName, node, stage, config) {
 
                     // Determine the source based on handler type or explicit source
                     let source = action.source ||
-                                (handler === 'get_info_variable_handler' ? 'info' : 'session_variables');
+                                (handler === 'get_user_handler' ? 'user' : 'activity');
 
                     if (!varName) {
                         // Try to extract from the old format if needed
@@ -726,23 +907,9 @@ function createNodeFromConfig(nodeName, node, stage, config) {
         }
     });
 
-    // Set up dropdown function buttons
-    // Dropdown buttons are set up via the event listeners in the template
-    // No need to add additional buttons here
-    const addSessionFunctionBtn = nodeEl.querySelector('.add-session-function');
-    if (addSessionFunctionBtn) {
-        addSessionFunctionBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            addNodeFunction(this.closest('.node-card'));
-        });
-    }
-
-    const addInfoFunctionBtn = nodeEl.querySelector('.add-info-function');
-    if (addInfoFunctionBtn) {
-        addInfoFunctionBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            addNodeFunction(this.closest('.node-card'), "", "", true);
-        });
+    // Set up dropdown function buttons using the centralized handler setup
+    if (window.setupNodeEventHandlers) {
+        window.setupNodeEventHandlers(nodeEl);
     }
 
     // Add info fields
@@ -802,8 +969,8 @@ function loadNodeFunctions(nodeEl, nodeName, node) {
         if (funcData.function && funcData.function.handler === "general_handler") return;
 
         if (funcData.function && (funcData.function.handler === "get_task_variable_handler" ||
-                                 funcData.function.handler === "get_session_variable_handler" ||
-                                 funcData.function.handler === "get_info_variable_handler")) {
+                                 funcData.function.handler === "get_activity_handler" ||
+                                 funcData.function.handler === "get_user_handler")) {
             // Extract variable name
             const varEnum = funcData.function.parameters?.properties?.variable_name?.enum;
             if (!varEnum || varEnum.length === 0) return;
@@ -816,8 +983,8 @@ function loadNodeFunctions(nodeEl, nodeName, node) {
             // Add function to node - make sure we're passing parameters that match what addNodeFunction expects
             const funcElement = addNodeFunction(nodeEl, varName, funcDescription);
 
-            // For info variables, update the dropdown class if needed
-            if (handlerType === "get_info_variable_handler") {
+            // For user variables, update the dropdown class if needed
+            if (handlerType === "get_user_handler") {
                 const select = funcElement.querySelector('.session-variable-select');
                 if (select) {
                     select.classList.add('info-variable-select');
