@@ -25,7 +25,7 @@ VALID_ANIMATIONS = [
             "When you welcome the user or greet them or introduce yourself, "
             "you trigger the 'wave' animation."
         ),
-        "duration": 2.5, 
+        "duration": 2.5,
     },
     {
         "id": "i_have_a_question",
@@ -60,10 +60,26 @@ VALID_ANIMATIONS = [
         "description": "When you want to give a thumbs down, you can do the 'thumbdown' animation.",
         "duration": 2.0,
     },
-    {"id": "happy", "description": "When you are happy, you do the 'happy' animation.", "duration": 3.5},
-    {"id": "sad", "description": "When you are sad, you do the 'sad' animation.", "duration": 4.0},
-    {"id": "angry", "description": "When you are angry, you do the 'angry' animation.", "duration": 3.0},
-    {"id": "fear", "description": "When you are scared, you do the 'fear' animation.", "duration": 2.5},
+    {
+        "id": "happy",
+        "description": "When you are happy, you do the 'happy' animation.",
+        "duration": 3.5,
+    },
+    {
+        "id": "sad",
+        "description": "When you are sad, you do the 'sad' animation.",
+        "duration": 4.0,
+    },
+    {
+        "id": "angry",
+        "description": "When you are angry, you do the 'angry' animation.",
+        "duration": 3.0,
+    },
+    {
+        "id": "fear",
+        "description": "When you are scared, you do the 'fear' animation.",
+        "duration": 2.5,
+    },
     {
         "id": "disgust",
         "description": "When you are disgusted, you do the 'disgust' animation.",
@@ -83,9 +99,10 @@ VALID_ANIMATIONS = [
         "id": "thinking",
         "description": (
             "When you are thinking, you can do the 'thinking' animation."
-            "When the user asked a question that is a bit thought-provoking or complicated question, trigger 'thinking' animation"
+            "When the user asked a question that is a bit thought-provoking or complicated question, "
+            "sometimes you can trigger 'thinking' animation."
         ),
-        "duration": 4.5,
+        "duration": 4.0,
     },
 ]
 
@@ -147,7 +164,9 @@ class AnimationHandler:
         ]
         return FunctionSchema(
             name="trigger_animation",
-            description="Trigger an avatar animation (only one at a time). You determine the duration for gestures and moods based on the flow of the conversation. If duration is not specified, select an appropriate value according to context.",
+            description="Trigger an avatar animation (only one at a time). "
+            "You determine the duration for gestures and moods based on the flow of the conversation. "
+            "If duration is not specified, select an appropriate value according to context.",
             properties={
                 "animation_id": {
                     "type": "string",
@@ -156,10 +175,11 @@ class AnimationHandler:
                 },
                 "duration": {
                     "type": "number",
-                    "minimum": 0.5,
-                    "maximum": 10.0,
-                    "description": "Duration in seconds for the animation. Default is based on animation type. Use shorter durations (0.5-3s) for quick gestures, longer durations (4-10s) for sustained moods or complex animations.",
-                }
+                    "description": "Duration in seconds for the animation. "
+                    "Default is based on animation type. "
+                    "Use shorter durations (1.0-3s) for quick gestures, "
+                    "longer durations (4-10s) for sustained moods or complex animations.",
+                },
             },
             required=["animation_id"],
         )
@@ -198,10 +218,7 @@ class AnimationHandler:
                 frame = RTVIServerMessageFrame(
                     data={
                         "type": "animation-event",
-                        "payload": {
-                            "animation_id": animation_id,
-                            "duration": duration
-                        },
+                        "payload": {"animation_id": animation_id, "duration": duration},
                     }
                 )
                 await self.rtvi.push_frame(frame)
