@@ -327,6 +327,7 @@ sudo systemctl status coturn
 - Test your TURN server
 Use [Trickle ICE](https://webrtc.github.io/samples/src/content/peerconnection/trickle-ice/) to verify connectivity
 
+**Note**: [Extensive coturn setup guide](https://www.metered.ca/blog/coturn/)
 
 ---
 
