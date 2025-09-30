@@ -63,10 +63,10 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep"]
+            "enum": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep", "thinking"]
           },
-          "default": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep"],
-          "const": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep"],
+          "default": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep", "thinking"],
+          "const": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep", "thinking"],
           "description": "List of body animations that the avatar can perform."
         },
         "camera_settings": {

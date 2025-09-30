@@ -27,7 +27,8 @@ interface TalkingHeadAPI {
   setMood: (mood: string) => void;
   stopSpeaking: () => void;
   playGesture: (gesture: string, duration?: number) => void;
-  playPose: (posePath: string) => void;
+  playPose: (posePath: string, onprogress: ((event: ProgressEvent) => void) | null, dur?: number) => void;
+  playAnimation: (animationPath: string, onprogress: ((event: ProgressEvent) => void) | null, dur?: number) => void;
   speakAudio: (args: {
     audio: AudioBuffer;
     words?: string[];
@@ -48,6 +49,8 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
   const readyRef = useRef(false);
   const onAvatarMountedRef = useRef(onAvatarMounted);
   const transportState = usePipecatClientTransportState();
+
+  const validAnimationExtensions = ['fbx', 'glb', 'gltf'];
 
   useEffect(() => {
     onAvatarMountedRef.current = onAvatarMounted;
@@ -113,7 +116,7 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
   });
 
   // Helper to play animations or mood changes
-  const handleAnimationEvent = (animation: string) => {
+  const handleAnimationEvent = (animation: string, duration?: number) => {
     const head = headRef.current;
     if (!head) return;
 
@@ -126,6 +129,7 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
       ok: "ok",
       thumbup: "thumbup",
       thumbdown: "thumbdown",
+      thinking: "/animations/thinking/thinking.fbx",
     };
 
     const moodList = ["happy", "angry", "sad", "fear", "disgust", "love", "sleep"];
@@ -133,15 +137,18 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
     if (gestureMap[animation]) {
       const val = gestureMap[animation];
       if (typeof val === "string") {
-        head.playGesture(val);
+        // Check if it's a file path
+        if (validAnimationExtensions.includes(val.split('.').pop() || '')) {
+          head.playAnimation(val, null, duration); // use animation playback for FBX/GLB
+        } else {
+          head.playGesture(val, duration);
+        }
       } else if (typeof val === "object") {
-        head.playGesture(val.gesture, val.duration);
-      } else {
-        head.playPose(val); // for dance
-      }
+        head.playGesture(val.gesture, duration || val.duration);
+      } 
     } else if (moodList.includes(animation)) {
       head.setMood(animation);
-      setTimeout(() => head.setMood("neutral"), 4000);
+      setTimeout(() => head.setMood("neutral"), duration ? duration * 1000 : 4000);
     }
   };
 
@@ -178,7 +185,7 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
     RTVIEvent.ServerMessage,
     useCallback((msg: any) => {
       if (msg.type === "animation-event") {
-        handleAnimationEvent(msg.payload.animation_id);
+        handleAnimationEvent(msg.payload.animation_id, msg.payload.duration);
       } else if (msg.type === "visemes-event") {
         if (msg.payload) handleVisemeEvent(msg.payload);
         else console.warn("Invalid viseme payload:", msg.payload);
