@@ -12,7 +12,19 @@
 |---|---|
 | ![Session overview](public/session_summary_example.png) | ![Automated analysis](public/automated_audio_analysis.png) |
 
+
 **If so, Riverst is for you.**
+
+---
+
+## Video demos
+
+| Video Demo | Description |
+|---|---|
+| [Riverst Demo](https://drive.google.com/file/d/1r2LoBGbjBx1mdDIv-fPzGeZVEYf1kLw8/view?usp=sharing) | Demo of the Riverst platform in action. What can I do with Riverst? |
+| [KIVA Activity Demo](https://drive.google.com/file/d/1jTHvTXG4WWIYqgqjC4lp1LWMEnyZJQzr/view?usp=sharing) | Demonstration of a vocabulary teaching activity workflow, exploiting pipecat-ai-flows under the hood. |
+| [Riverst + KIVA Activity Summary](https://drive.google.com/file/d/1AvYnSq87neOYj_YSduYatN5D4rdO-7QG/view?usp=sharing) | Overview and summary of configuration pages in Riverst and automatically generated summary of the KIVA activity. |
+
 
 ---
 
