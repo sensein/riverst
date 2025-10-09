@@ -50,14 +50,14 @@ for book_dir in sorted(chapters_root.iterdir()):
             continue
 
         content = f"{title}\n\n{text}"
-        print("content: ", content[:100])
 
         messages = [
             Message(role="system", content=system_prompt),
-            Message(role="user", content=content),
+            Message(role="user", content=content[:1000]),
         ]
 
         out_path = out_dir / f"{chapter_file.stem}.wav"
+        print(f"processing {out_path}...")
         output: HiggsAudioResponse = serve_engine.generate(
             chat_ml_sample=ChatMLSample(messages=messages),
             max_new_tokens=1024,
