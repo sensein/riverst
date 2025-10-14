@@ -100,13 +100,16 @@ const ListenToAudioBookPage: React.FC = () => {
     };
     const params = new URLSearchParams({
       book: chapter.bookKey,
-      chapter: String(chapter.chapter),
+      chapter: String(chapter.key),
     });
     // Only add flags if they are false
     if (rowFlags.settings_flag === false) params.set("settings_flag", "false");
     if (rowFlags.audio_flag === false) params.set("audio_flag", "false");
     if (rowFlags.text_flag === false) params.set("text_flag", "false");
     if (rowFlags.text_flag === true && rowFlags.audio_flag === true && rowFlags.subtitles_flag === false) params.set("subtitles_flag", "false");
+
+    console.log("params", params.toString());
+
     return `/audio-player?${params.toString()}`;
   };
 
