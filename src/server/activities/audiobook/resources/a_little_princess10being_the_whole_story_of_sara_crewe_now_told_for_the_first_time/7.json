@@ -1,0 +1,30 @@
+{
+  "title": "A Little Princess",
+  "author": "Burnett",
+  "chapthersCount": 7,
+  "chapterTitle": "Chapter 7",
+  "chapters": [
+    {
+      "link": "https://archive.org/download/little_princess_krs/little_princess_07a_burnett.mp3",
+      "start": null,
+      "end": null,
+      "text": [
+        {
+          "start": 0,
+          "end": 2,
+          "text": "Hello"
+        },
+        {
+          "start": 2,
+          "end": 4,
+          "text": "there!"
+        }
+      ]
+    },
+    {
+      "link": "https://archive.org/download/little_princess_krs/little_princess_07b_burnett.mp3",
+      "start": null,
+      "end": null
+    }
+  ]
+}

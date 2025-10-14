@@ -1,0 +1,13 @@
+{
+  "title": "Alice in Wonderland",
+  "author": "Lewis Carroll",
+  "chapthersCount": 3,
+  "chapterTitle": "Chapter 3",
+  "chapters": [
+    {
+      "link": "https://archive.org/download/aliceinwonderland_2106_librivox/alicesadventuresinwonderland_03_carroll_128kb.mp3",
+      "start": null,
+      "end": null
+    }
+  ]
+}

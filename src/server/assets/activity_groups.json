@@ -63,8 +63,8 @@
         "images": ["/figures/audiobook_white.svg",
                    "/figures/audiobook_black.svg"],
         "description": "Follow along with visual cues that support reading, not just listening.",
-        "route": "/read-book",
-        "disabled": true
+        "route": "/listen-to-an-audio-book",
+        "disabled": false
       },
       {
         "title": "English as a second language for Italians",

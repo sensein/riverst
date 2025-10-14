@@ -1,0 +1,30 @@
+{
+  "title": "The Tale of Peter Rabbit",
+  "author": "Beatrix Potter",
+  "chapthersCount": 1,
+  "chapterTitle": "Chapter 1",
+  "chapters": [
+    {
+      "link": "/audios/the_tale_of_peter_rabbit/1.wav",
+      "start": null,
+      "end": null,
+      "text": [
+        {
+          "start": 0,
+          "end": 2,
+          "text": "Hello"
+        },
+        {
+          "start": 2,
+          "end": 3,
+          "text": "there!"
+        },
+        {
+          "start": null,
+          "end": null,
+          "text": "Goodbye!"
+        }
+      ]
+    }
+  ]
+}
