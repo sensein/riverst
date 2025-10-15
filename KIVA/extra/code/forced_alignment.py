@@ -2,6 +2,8 @@
 """
 Forced word alignment using torchaudio MMS_FA.
 
+This is good for aligning text books to audio narration.
+
 Usage:
   python forced_alignment.py --audio_path /path/to/audio.wav --json_path /path/to/transcript.json
 

@@ -19,6 +19,7 @@ and requires a GPU with at least 16GB of VRAM to run effectively.
 leading to occasional hallucinations and artifacts.
 - Hallucinatory outputs led me to opt for using naturalistic audio
 from https://archive.org/ instead of generating all audio via the model.
+Hopefully future model updates will improve this.
 """
 
 import json
@@ -27,8 +28,10 @@ import sys
 import traceback
 from pathlib import Path
 from typing import List, Optional
+import numpy as np
 
 import torch
+import torchaudio
 
 # chunking deps
 import langid
@@ -662,7 +665,6 @@ for book_dir in sorted(chapters_root.iterdir()):
             # print(chunks)
 
             # --- Call model_client.generate once per chapter (it loops over chunks) ---
-            """
             try:
                 concat_wv, sr, text_output = model_client.generate(
                     messages=messages_base,
@@ -685,7 +687,6 @@ for book_dir in sorted(chapters_root.iterdir()):
             wav_np = np.asarray(concat_wv).astype(np.float32).ravel()
             wav_tensor = torch.from_numpy(wav_np)[None, :]  # (1, T)
             torchaudio.save(str(out_path), wav_tensor, int(sr))
-            """
             print(f"[ok] {book_dir.name}/{chapter_file.name} → {out_path}")
 
         except Exception as e_chapter:

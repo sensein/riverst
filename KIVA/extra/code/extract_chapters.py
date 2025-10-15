@@ -1,4 +1,4 @@
-"""This module contains utilities for extracting chapters' text and titles from JSON files."""
+"""This module contains utilities for extracting chapters' text and titles from Bruce's JSON files."""
 
 import json
 import re
