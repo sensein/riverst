@@ -14,7 +14,7 @@ const ListenToAudioBookPage: React.FC = () => {
   const [books, setBooks] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [setCopying] = useState<string | null>(null);
+  const [_, setCopying] = useState<string | null>(null);
   // State for flags per chapter row: { [rowKey]: { settings_flag, audio_flag, text_flag, subtitles_flag } }
   const [flags, setFlags] = useState<{ [key: string]: any }>({});
   const navigate = useNavigate();

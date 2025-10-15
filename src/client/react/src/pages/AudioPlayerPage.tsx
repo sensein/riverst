@@ -30,7 +30,7 @@ const AudioPlayerPage: React.FC = () => {
     const base = getFlag("subtitles_flag", true);
     return (getFlag("audio_flag", true) && getFlag("text_flag", true)) ? base : false;
   });
-  const [settingsFlag] = useState<boolean>(getFlag("settings_flag", true));
+  const [settingsFlag, _] = useState<boolean>(getFlag("settings_flag", true));
 
   // Enforce subtitlesFlag logic: can only be true if both audioFlag and textFlag are true
   useEffect(() => {
