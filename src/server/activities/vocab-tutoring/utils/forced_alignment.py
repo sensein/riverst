@@ -243,3 +243,6 @@ if __name__ == "__main__":
 
     spans = align_words(args.audio_path, args.json_path)
     pprint.pp(spans)
+
+    with open("output_path.json", "w", encoding="utf-8") as f:
+        json.dump(spans, f, indent=2)
