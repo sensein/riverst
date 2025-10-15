@@ -13,7 +13,6 @@ const AudioPlayerPage: React.FC = () => {
   const [data, setData] = useState<any>({});
   const [loading, setLoading] = useState(false);
   const [current, setCurrent] = useState(1); // 1-based index for Pagination
-  const audioRef = useRef<HTMLAudioElement>(null);
 
   // Helper to parse boolean flags from URL params
   const getFlag = (param: string, defaultValue = true) => {
@@ -31,7 +30,7 @@ const AudioPlayerPage: React.FC = () => {
     const base = getFlag("subtitles_flag", true);
     return (getFlag("audio_flag", true) && getFlag("text_flag", true)) ? base : false;
   });
-  const [settingsFlag, setSettingsFlag] = useState<boolean>(getFlag("settings_flag", true));
+  const [settingsFlag] = useState<boolean>(getFlag("settings_flag", true));
 
   // Enforce subtitlesFlag logic: can only be true if both audioFlag and textFlag are true
   useEffect(() => {
