@@ -243,7 +243,6 @@ const AudioPlayer: React.FC<{
               style={{
                 background: subtitles_flag && i === highlightedIdx ? "#ffe066" : undefined,
                 borderRadius: 4,
-                padding: subtitles_flag && i === highlightedIdx ? "0 4px" : undefined,
                 transition: "background 0.2s",
                 cursor: w.start != null ? "pointer" : undefined
               }}

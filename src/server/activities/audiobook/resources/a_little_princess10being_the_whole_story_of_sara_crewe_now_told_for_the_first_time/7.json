@@ -8,23 +8,13 @@
       "link": "https://archive.org/download/little_princess_krs/little_princess_07a_burnett.mp3",
       "start": null,
       "end": null,
-      "text": [
-        {
-          "start": 0,
-          "end": 2,
-          "text": "Hello"
-        },
-        {
-          "start": 2,
-          "end": 4,
-          "text": "there!"
-        }
-      ]
+      "text": []
     },
     {
       "link": "https://archive.org/download/little_princess_krs/little_princess_07b_burnett.mp3",
       "start": null,
-      "end": null
+      "end": null,
+      "text": []
     }
   ]
 }

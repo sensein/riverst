@@ -692,7 +692,10 @@ async def get_audiobook_info(
     base_dir = BASE_SESSION_DIR / "activities" / "audiobook" / "resources" / book
     file_path = base_dir / f"{chapter}.json"
 
+    print("file_path", file_path)
+
     if not file_path.is_file():
+        print("A")
         return JSONResponse(
             status_code=404,
             content={
@@ -704,6 +707,7 @@ async def get_audiobook_info(
             data = json.load(f)
         return JSONResponse(content=data)
     except Exception as e:
+        print("B", e)
         return JSONResponse(
             status_code=500,
             content={"error": f"Failed to load audiobook info: {str(e)}"},

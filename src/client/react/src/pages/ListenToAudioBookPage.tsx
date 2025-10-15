@@ -108,8 +108,6 @@ const ListenToAudioBookPage: React.FC = () => {
     if (rowFlags.text_flag === false) params.set("text_flag", "false");
     if (rowFlags.text_flag === true && rowFlags.audio_flag === true && rowFlags.subtitles_flag === false) params.set("subtitles_flag", "false");
 
-    console.log("params", params.toString());
-
     return `/audio-player?${params.toString()}`;
   };
 
