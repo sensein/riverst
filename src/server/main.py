@@ -621,6 +621,99 @@ def end_session(session_id: str):
     return JSONResponse(content={"prolific_id": prolific_id})
 
 
+@app.get("/api/audiobooks")
+async def get_audiobooks() -> JSONResponse:
+    """
+    Returns a list of all audiobooks and their chapters.
+    Each book contains: key, title, author, chapters (each with key, chapterTitle, bookKey, chapter).
+    """
+    resources_dir = BASE_SESSION_DIR / "activities" / "audiobook" / "resources"
+    if not resources_dir.is_dir():
+        return JSONResponse(
+            status_code=404, content={"error": "Resources directory not found"}
+        )
+
+    books = []
+    for book_dir in sorted(resources_dir.iterdir()):
+        if not book_dir.is_dir():
+            continue
+        book_key = book_dir.name
+        chapter_files = sorted(
+            [f for f in book_dir.iterdir() if f.is_file() and f.suffix == ".json"],
+            key=lambda x: int(x.stem) if x.stem.isdigit() else x.stem,
+        )
+        if not chapter_files:
+            continue
+        # Read first chapter file for book metadata
+        try:
+            with chapter_files[0].open("r", encoding="utf-8") as f:
+                first_chapter_data = json.load(f)
+            title = first_chapter_data.get("title", book_key.replace("_", " ").title())
+            author = first_chapter_data.get("author", "Unknown")
+        except Exception:
+            title = book_key.replace("_", " ").title()
+            author = "Unknown"
+
+        chapters = []
+        for chapter_file in chapter_files:
+            chapter_key = chapter_file.stem
+            try:
+                with chapter_file.open("r", encoding="utf-8") as f:
+                    chapter_data = json.load(f)
+                chapter_title = chapter_data.get(
+                    "chapterTitle", f"Chapter {chapter_key}"
+                )
+                chapter_content = chapter_data.get("chapters", [])
+            except Exception:
+                chapter_title = f"Chapter {chapter_key}"
+                chapter_content = []
+            chapters.append(
+                {
+                    "key": chapter_key,
+                    "chapterTitle": chapter_title,
+                    "bookKey": book_key,
+                    "chapter": chapter_content,
+                }
+            )
+        books.append(
+            {"key": book_key, "title": title, "author": author, "chapters": chapters}
+        )
+    return JSONResponse(content=books)
+
+
+@app.get("/api/audiobook_info")
+async def get_audiobook_info(
+    book: str = Query(..., description="Book directory name"),
+    chapter: str = Query(..., description="Chapter number as string"),
+) -> JSONResponse:
+    """
+    Returns audiobook info for a given book and chapter.
+    """
+    base_dir = BASE_SESSION_DIR / "activities" / "audiobook" / "resources" / book
+    file_path = base_dir / f"{chapter}.json"
+
+    print("file_path", file_path)
+
+    if not file_path.is_file():
+        print("A")
+        return JSONResponse(
+            status_code=404,
+            content={
+                "error": f"Audiobook info not found for book '{book}', chapter '{chapter}'"
+            },
+        )
+    try:
+        with file_path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+        return JSONResponse(content=data)
+    except Exception as e:
+        print("B", e)
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Failed to load audiobook info: {str(e)}"},
+        )
+
+
 @app.get("/api/session/{session_id}")
 async def get_session_data(
     session_id: str, current_user: dict = Depends(get_current_user)

@@ -108,6 +108,7 @@ docker compose up --build
   cd src/server
   conda create -n riverst python=3.11
   conda activate riverst
+  conda install -c conda-forge "ffmpeg=7.*"
   pip install -r requirements.txt
   python main.py
   ```
