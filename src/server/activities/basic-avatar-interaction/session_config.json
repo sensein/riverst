@@ -47,7 +47,7 @@
           "type": "string",
           "enum": ["openai", "kokoro"],
           "default": "openai",
-          "description": "The TTS service to use. If you want to go with a local model, kokoro is better than piper (IMHO)"
+          "description": "The TTS service to use."
         },
         "embodiment": {
           "type": "string",
@@ -59,9 +59,9 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep"]
+            "enum": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep", "thinking"]
           },
-          "default": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep"],
+          "default": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep", "thinking"],
           "description": "List of body animations that the avatar can perform."
         },
         "camera_settings": {

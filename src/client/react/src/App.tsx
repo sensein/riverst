@@ -25,6 +25,8 @@ const SessionsList = lazy(() => import('./pages/SessionsList'));
 const SessionDetail = lazy(() => import('./pages/SessionDetail'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const ErrorPage = lazy(() => import('./pages/ErrorPage'));
+const AudioPlayerPage = lazy(() => import('./pages/AudioPlayerPage'));
+const ListenToAudioBookPage = lazy(() => import('./pages/ListenToAudioBookPage'));
 
 /**
  * AuthenticatedRoutes
@@ -86,6 +88,14 @@ const AuthenticatedRoutes = () => (
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/listen-to-an-audio-book"
+        element={
+          <ProtectedRoute>
+            <ListenToAudioBookPage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="*" element={<ErrorPage />} />
     </Routes>
   </AuthProvider>
@@ -95,6 +105,7 @@ const AuthenticatedRoutes = () => (
  * App
  * Sets up the global Ant Design theme, router, and suspense fallback.
  * - /avatar-interaction/:sessionId is accessible without authentication.
+ * - /audio-player is accessible without authentication.
  * - All other routes are wrapped in AuthProvider and may require authentication.
  */
 const App = () => {
@@ -105,6 +116,12 @@ const App = () => {
           <Routes>
             {/* Completely unauthenticated route - NO AuthProvider */}
             <Route path="/avatar-interaction/:sessionId" element={<AvatarInteraction />} />
+            <Route
+              path="/audio-player"
+              element={
+                <AudioPlayerPage />
+              }
+            />
 
             <Route path="/error" element={<ErrorPage />} />
             {/* All other routes - WITH AuthProvider (including login) */}
