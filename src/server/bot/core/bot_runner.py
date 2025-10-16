@@ -69,6 +69,7 @@ async def run_bot(
             body_animations=config["body_animations"],
             languages=config["languages"] if "languages" in config else None,
             avatar=config["avatar"],
+            natural_speech_params=config.get("natural_speech_params", None),
         )
 
         components = await factory.build()
@@ -78,6 +79,7 @@ async def run_bot(
         context_aggregator = components.context_aggregator
         allowed_animations = components.used_animations
         lipsync_processor = components.lipsync_processor
+        natural_speech_processor = components.natural_speech_processor
         metrics_logger = MetricsLoggerProcessor(session_dir=session_dir)
 
         # Setup WebRTC transport using configuration manager
@@ -126,6 +128,7 @@ async def run_bot(
             stt=stt,
             stt_mute_processor=stt_mute_processor,
             llm=llm,
+            natural_speech_processor=natural_speech_processor,
             tts=tts,
             transcript=transcript,
             context_aggregator=context_aggregator,

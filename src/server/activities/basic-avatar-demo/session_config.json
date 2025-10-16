@@ -158,6 +158,64 @@
           "type": "boolean",
           "default": true,
           "description": "Enable showing the transcript of the avatar’s speech."
+        },
+        "natural_speech_params": {
+          "type": "object",
+          "default": {
+            "enabled": true,
+            "interjection_probability": 0.15,
+            "discourse_marker_probability": 0.20,
+            "filled_pause_probability": 0.12,
+            "hesitation_probability": 0.08,
+            "vary_intensity": true,
+            "preserve_formality": false
+          },
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Enable or disable natural speech patterns (interjections, discourse markers, filled pauses)."
+            },
+            "interjection_probability": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "default": 0.15,
+              "description": "Probability of adding interjections like 'oh', 'hmm', 'wow' (0.0-1.0)."
+            },
+            "discourse_marker_probability": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "default": 0.20,
+              "description": "Probability of adding discourse markers like 'well', 'you know', 'I mean' (0.0-1.0)."
+            },
+            "filled_pause_probability": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "default": 0.12,
+              "description": "Probability of adding filled pauses like 'um', 'uh', 'er' (0.0-1.0)."
+            },
+            "hesitation_probability": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "default": 0.08,
+              "description": "Probability of adding hesitation patterns for uncertainty (0.0-1.0)."
+            },
+            "vary_intensity": {
+              "type": "boolean",
+              "default": true,
+              "description": "Automatically adjust pattern frequency based on sentence complexity and context."
+            },
+            "preserve_formality": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, reduces informal patterns like filled pauses for more formal speech."
+            }
+          },
+          "description": "Configuration for natural speech patterns to make avatar speech more realistic and human-like."
         }
       },
       "required": [

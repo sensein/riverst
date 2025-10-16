@@ -1,0 +1,200 @@
+{
+  "title": "Natural Speech Configuration Examples",
+  "description": "Example configurations for different use cases",
+  "examples": {
+    "default": {
+      "name": "Default (Balanced Naturalness)",
+      "description": "Good for general educational contexts with adult learners",
+      "config": {
+        "enabled": true,
+        "interjection_probability": 0.15,
+        "discourse_marker_probability": 0.20,
+        "filled_pause_probability": 0.12,
+        "hesitation_probability": 0.08,
+        "vary_intensity": true,
+        "preserve_formality": false
+      },
+      "example_outputs": [
+        {
+          "original": "Let me explain the vocabulary word.",
+          "enhanced": "Well, let me explain the vocabulary word."
+        },
+        {
+          "original": "That's a great answer.",
+          "enhanced": "Oh, that's a great answer."
+        }
+      ]
+    },
+    "kids_friendly": {
+      "name": "Kids Friendly (High Naturalness)",
+      "description": "More casual and engaging for younger students",
+      "config": {
+        "enabled": true,
+        "interjection_probability": 0.25,
+        "discourse_marker_probability": 0.30,
+        "filled_pause_probability": 0.18,
+        "hesitation_probability": 0.12,
+        "vary_intensity": true,
+        "preserve_formality": false
+      },
+      "use_case": "Elementary school vocabulary tutoring",
+      "example_outputs": [
+        {
+          "original": "Let's learn some new words today.",
+          "enhanced": "So, hmm... let's, you know, learn some new words today."
+        },
+        {
+          "original": "Can you tell me what this word means?",
+          "enhanced": "Well, can you, um... tell me what this word means?"
+        }
+      ]
+    },
+    "professional_tutor": {
+      "name": "Professional Tutor (Moderate Formal)",
+      "description": "Balanced naturalness with professional tone",
+      "config": {
+        "enabled": true,
+        "interjection_probability": 0.12,
+        "discourse_marker_probability": 0.15,
+        "filled_pause_probability": 0.08,
+        "hesitation_probability": 0.05,
+        "vary_intensity": true,
+        "preserve_formality": true
+      },
+      "use_case": "High school or adult education",
+      "example_outputs": [
+        {
+          "original": "The vocabulary word appears frequently in literature.",
+          "enhanced": "Actually, the vocabulary word appears frequently in literature."
+        },
+        {
+          "original": "Let's review the definitions we covered.",
+          "enhanced": "Well, let's review the definitions we covered."
+        }
+      ]
+    },
+    "business_coach": {
+      "name": "Business Coach (Low Formal)",
+      "description": "Minimal patterns with professional demeanor",
+      "config": {
+        "enabled": true,
+        "interjection_probability": 0.08,
+        "discourse_marker_probability": 0.10,
+        "filled_pause_probability": 0.04,
+        "hesitation_probability": 0.03,
+        "vary_intensity": true,
+        "preserve_formality": true
+      },
+      "use_case": "Corporate training or executive coaching",
+      "example_outputs": [
+        {
+          "original": "The key metrics demonstrate significant improvement.",
+          "enhanced": "Actually, the key metrics demonstrate significant improvement."
+        },
+        {
+          "original": "Let's discuss the quarterly objectives.",
+          "enhanced": "Let's discuss the quarterly objectives."
+        }
+      ]
+    },
+    "formal_presentation": {
+      "name": "Formal Presentation (Minimal)",
+      "description": "Very minimal patterns for professional presentations",
+      "config": {
+        "enabled": true,
+        "interjection_probability": 0.03,
+        "discourse_marker_probability": 0.05,
+        "filled_pause_probability": 0.02,
+        "hesitation_probability": 0.01,
+        "vary_intensity": false,
+        "preserve_formality": true
+      },
+      "use_case": "Formal announcements, presentations, or lectures",
+      "example_outputs": [
+        {
+          "original": "The results demonstrate exceptional growth across all sectors.",
+          "enhanced": "The results demonstrate exceptional growth across all sectors."
+        },
+        {
+          "original": "We will now proceed to the next section.",
+          "enhanced": "We will now proceed to the next section."
+        }
+      ]
+    },
+    "casual_conversation": {
+      "name": "Casual Conversation (Very Natural)",
+      "description": "Maximum naturalness for friendly, informal interactions",
+      "config": {
+        "enabled": true,
+        "interjection_probability": 0.30,
+        "discourse_marker_probability": 0.35,
+        "filled_pause_probability": 0.22,
+        "hesitation_probability": 0.15,
+        "vary_intensity": true,
+        "preserve_formality": false
+      },
+      "use_case": "Informal study sessions or peer tutoring",
+      "example_outputs": [
+        {
+          "original": "That word is really interesting.",
+          "enhanced": "Wow, you know, that word is, like, really, um... interesting."
+        },
+        {
+          "original": "Let me help you understand it better.",
+          "enhanced": "Well, hmm... let me, I mean, help you, sort of, understand it better."
+        }
+      ]
+    },
+    "disabled": {
+      "name": "Disabled (No Enhancement)",
+      "description": "Pure LLM output without modifications",
+      "config": {
+        "enabled": false
+      },
+      "use_case": "Formal scripts, announcements, or when exact wording is critical",
+      "example_outputs": [
+        {
+          "original": "Please remain seated until the session ends.",
+          "enhanced": "Please remain seated until the session ends."
+        },
+        {
+          "original": "The vocabulary test will begin in five minutes.",
+          "enhanced": "The vocabulary test will begin in five minutes."
+        }
+      ]
+    },
+    "testing": {
+      "name": "Testing (Guaranteed Patterns)",
+      "description": "Very high probabilities for testing and demonstration",
+      "config": {
+        "enabled": true,
+        "interjection_probability": 0.90,
+        "discourse_marker_probability": 0.90,
+        "filled_pause_probability": 0.80,
+        "hesitation_probability": 0.70,
+        "vary_intensity": false,
+        "preserve_formality": false
+      },
+      "use_case": "Testing and verifying processor functionality",
+      "note": "Not recommended for production use",
+      "example_outputs": [
+        {
+          "original": "The vocabulary word is important.",
+          "enhanced": "Well, hmm, the, you know, vocabulary word is, um... kind of important."
+        }
+      ]
+    }
+  },
+  "usage_instructions": {
+    "how_to_apply": "Copy the desired config into your session_config.json under 'natural_speech_params'",
+    "customization": "Feel free to adjust individual probability values to fine-tune behavior",
+    "recommendation": "Start with 'default' or 'professional_tutor' and adjust based on feedback"
+  },
+  "quick_tuning_guide": {
+    "more_natural": "Increase all probability values by 0.05-0.10",
+    "less_natural": "Decrease all probability values by 0.05-0.10",
+    "more_formal": "Set preserve_formality to true and reduce filled_pause_probability by 50%",
+    "disable": "Set enabled to false"
+  }
+}
+
