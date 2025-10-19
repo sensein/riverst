@@ -22,7 +22,6 @@ from pipecat.services.elevenlabs.tts import ElevenLabsTTSService
 from ..components.llm_tools.animation_handler import AnimationHandler
 from ..components.llm_tools.end_conversation_handler import EndConversationHandler
 from ..processors.speech.lipsync_processor import LipsyncProcessor
-from ..processors.speech.natural_speech_processor import NaturalSpeechProcessor
 from ..transport.custom_services.kokoro_service import KokoroTTSService
 from ..utils.device_utils import get_best_device
 from ..transport.custom_services.ollama_service import CustomOLLamaLLMService
@@ -152,6 +151,11 @@ class BotComponentFactory:
         )
         if end_conversation_instruction:
             instruction += end_conversation_instruction
+
+        # Add natural speech instruction
+        natural_speech_instruction = self._build_natural_speech_instruction()
+        if natural_speech_instruction:
+            instruction += natural_speech_instruction
 
         if self.languages:
             # print(f"Supported languages: {self.languages}")
@@ -292,28 +296,77 @@ class BotComponentFactory:
             else "Charon"
         )
 
-    def _build_natural_speech_processor(self) -> NaturalSpeechProcessor:
-        """Build natural speech processor with configuration.
+    def _build_natural_speech_instruction(self) -> str:
+        """Build natural speech instruction for LLM system prompt.
         
         Returns:
-            NaturalSpeechProcessor: Configured natural speech processor
+            str: Instruction text for natural speech patterns, or empty string if disabled
         """
-        # Default parameters
-        params = {
-            "enabled": True,
-            "interjection_probability": 0.15,
-            "discourse_marker_probability": 0.20,
-            "filled_pause_probability": 0.12,
-            "hesitation_probability": 0.08,
-            "vary_intensity": True,
-            "preserve_formality": False,
-        }
+        # Get configuration with defaults
+        config = self.natural_speech_params or {}
+        enabled = config.get("enabled", True)
         
-        # Override with user-provided parameters
-        if self.natural_speech_params:
-            params.update(self.natural_speech_params)
+        if not enabled:
+            return ""
         
-        return NaturalSpeechProcessor(**params)
+        # Determine formality level
+        preserve_formality = config.get("preserve_formality", False)
+        intensity_level = config.get("intensity_level", "moderate")  # low, moderate, high
+        
+        # Build instruction based on configuration
+        instruction = "\n\n## Natural Speech Guidelines\n"
+        instruction += "Speak naturally and conversationally like a real human would. "
+        
+        if preserve_formality:
+            # Formal/professional mode
+            instruction += (
+                "While maintaining a professional tone, use occasional discourse markers "
+                "to make your speech sound more natural and less robotic:\n"
+                "- Start sentences with: 'Well', 'Actually', 'So', 'You know' (use sparingly)\n"
+                "- Use transition words: 'However', 'Also', 'Plus'\n"
+                "- Add mild interjections when appropriate: 'Ah', 'Right', 'I see'\n"
+                "- Keep language clear and professional, avoid excessive informal patterns\n"
+            )
+        else:
+            # Casual/natural mode
+            if intensity_level == "high":
+                instruction += (
+                    "Be very conversational and natural in your speech:\n"
+                    "- Frequently use interjections: 'Oh', 'Hmm', 'Wow', 'Ah', 'Um', 'Uh'\n"
+                    "- Start sentences with discourse markers: 'Well', 'So', 'You know', 'I mean', 'Actually'\n"
+                    "- Use filled pauses naturally: 'um...', 'uh...', 'er...', 'let me think...'\n"
+                    "- Add hesitation when thinking: 'kind of', 'sort of', 'maybe', 'perhaps'\n"
+                    "- Use clarifications: 'I mean', 'that is', 'in other words'\n"
+                    "- React naturally to content: 'oh wow' for surprises, 'hmm' when thinking, 'ah' when understanding\n"
+                )
+            elif intensity_level == "low":
+                instruction += (
+                    "Speak in a natural but measured way:\n"
+                    "- Occasionally use discourse markers: 'Well', 'So', 'Actually'\n"
+                    "- Add interjections when contextually appropriate: 'Oh', 'Hmm', 'Ah'\n"
+                    "- Use mild hesitation markers sparingly: 'maybe', 'perhaps'\n"
+                    "- Keep speech clear while sounding human\n"
+                )
+            else:  # moderate (default)
+                instruction += (
+                    "Use natural speech patterns to sound more human and engaging:\n"
+                    "- Start sentences with discourse markers: 'Well', 'So', 'You know', 'Actually', 'Honestly'\n"
+                    "- Use interjections contextually: 'Oh' for surprise, 'Hmm' for thinking, 'Ah' for understanding\n"
+                    "- Add occasional filled pauses in longer explanations: 'um', 'uh', 'let me think'\n"
+                    "- Use hedging when uncertain: 'kind of', 'sort of', 'maybe'\n"
+                    "- Add clarifying phrases: 'I mean', 'in other words'\n"
+                )
+        
+        instruction += (
+            "\nKey principles:\n"
+            "- Use these patterns naturally - don't overuse them in every sentence\n"
+            "- Match your speech pattern to the context (more formal for serious topics, more casual for light conversation)\n"
+            "- React authentically to surprising or interesting information\n"
+            "- Show thinking process with 'hmm' or 'let me think' when considering questions\n"
+            "- Vary your patterns - don't repeat the same interjection/marker constantly\n"
+        )
+        
+        return instruction
 
     def _build_stt_service(self) -> Optional[object]:
         """Build STT service based on configuration."""
