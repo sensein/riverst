@@ -51,7 +51,7 @@
         },
         "tts_type": {
           "type": "string",
-          "enum": ["openai", "piper", "kokoro"],
+          "enum": ["openai", "kokoro"],
           "default": "openai",
           "description": "The TTS service to use."
         },

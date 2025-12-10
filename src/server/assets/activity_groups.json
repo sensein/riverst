@@ -50,6 +50,14 @@
     "title": "Knowledge Integration and Vocabulary Acquisition through AI (KIVA)",
     "activities": [
       {
+        "title": "Listen to an audiobook",
+        "images": ["/figures/audiobook_white.svg",
+                   "/figures/audiobook_black.svg"],
+        "description": "Follow along with visual cues that support reading, not just listening.",
+        "route": "/listen-to-an-audio-book",
+        "disabled": false
+      },
+      {
         "title": "Child vocabulary training",
         "images": ["/figures/avatar_interaction_black.svg",
                    "/figures/avatar_interaction_white.svg"],
@@ -57,15 +65,12 @@
         "route": "/avatar-interaction-settings",
         "disabled": false,
         "settings_options_filepath": "api/activities/vocab-tutoring/session_config"
-      },
-      {
-        "title": "Listen to an audiobook",
-        "images": ["/figures/audiobook_white.svg",
-                   "/figures/audiobook_black.svg"],
-        "description": "Follow along with visual cues that support reading, not just listening.",
-        "route": "/read-book",
-        "disabled": true
-      },
+      }
+    ]
+  },
+  {
+    "title": "L2 learning activities",
+    "activities": [
       {
         "title": "English as a second language for Italians",
         "images": ["/figures/avatar_interaction_black.svg",
@@ -84,7 +89,6 @@
         "disabled": false,
         "settings_options_filepath": "api/activities/isl-vocab-tutoring/session_config"
       }
-
     ]
   }
 ]

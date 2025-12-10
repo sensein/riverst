@@ -13,6 +13,7 @@ import { LoadingOutlined } from '@ant-design/icons';
 const UserProfileDropdown: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout, authRequest } = useAuth();
+  console.log(" UserProfileDropdown user:", user);
   const [sessions, setSessions] = useState<object[]>([]);
   const [loading, setLoading] = useState(true);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -82,7 +83,8 @@ const UserProfileDropdown: React.FC = () => {
       key: 'logout',
       label: 'Logout',
       icon: <LogoutOutlined />,
-      onClick: handleLogout
+      onClick: handleLogout,
+      disabled: user?.email === "dev@localhost"
     }
   ];
 
