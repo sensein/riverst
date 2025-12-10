@@ -90,7 +90,6 @@ class PipelineBuilder:
         stt_mute_processor,
         stt,
         llm,
-        natural_speech_processor,
         tts,
         transcript,
         context_aggregator,
@@ -107,7 +106,6 @@ class PipelineBuilder:
             stt: Speech-to-text processor
             stt_mute_processor: STT mute processor
             llm: Language model processor
-            natural_speech_processor: Natural speech pattern processor
             tts: Text-to-speech processor
             transcript: Transcript processor
             context_aggregator: Context aggregation processor
@@ -131,7 +129,6 @@ class PipelineBuilder:
             transcript.user(),
             context_aggregator.user(),
             llm,
-            natural_speech_processor,  # Add natural speech patterns after LLM
             tts,
             lipsync,
             video_buffer,
@@ -150,7 +147,6 @@ class PipelineBuilder:
         pipecat_transport,
         rtvi,
         llm,
-        natural_speech_processor,
         transcript,
         context_aggregator,
         lipsync_processor,
@@ -164,7 +160,6 @@ class PipelineBuilder:
             pipecat_transport: WebRTC transport
             rtvi: RTVI processor
             llm: Language model processor
-            natural_speech_processor: Natural speech pattern processor
             transcript: Transcript processor
             context_aggregator: Context aggregation processor
             lipsync_processor: Lip sync processor
@@ -188,7 +183,6 @@ class PipelineBuilder:
             video_processor,
             stt_mute_processor,  # Add the mute processor before LLM
             llm,
-            natural_speech_processor,  # Add natural speech patterns after LLM
             lipsync,
             transcript.user(),
             pipecat_transport.output(),
@@ -207,7 +201,6 @@ class PipelineBuilder:
         stt,
         stt_mute_processor,
         llm,
-        natural_speech_processor,
         tts,
         transcript,
         context_aggregator,
@@ -224,7 +217,6 @@ class PipelineBuilder:
             stt: Speech-to-text processor (can be None)
             stt_mute_processor: STT mute processor
             llm: Language model processor
-            natural_speech_processor: Natural speech pattern processor
             tts: Text-to-speech processor (can be None)
             transcript: Transcript processor
             context_aggregator: Context aggregation processor
@@ -243,7 +235,6 @@ class PipelineBuilder:
                 stt_mute_processor,
                 stt,
                 llm,
-                natural_speech_processor,
                 tts,
                 transcript,
                 context_aggregator,
@@ -257,7 +248,6 @@ class PipelineBuilder:
                 pipecat_transport,
                 rtvi,
                 llm,
-                natural_speech_processor,
                 transcript,
                 context_aggregator,
                 lipsync_processor,

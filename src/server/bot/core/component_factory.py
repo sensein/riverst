@@ -22,7 +22,6 @@ from pipecat.services.elevenlabs.tts import ElevenLabsTTSService
 from ..components.llm_tools.animation_handler import AnimationHandler
 from ..components.llm_tools.end_conversation_handler import EndConversationHandler
 from ..processors.speech.lipsync_processor import LipsyncProcessor
-from ..processors.speech.natural_speech_processor import NaturalSpeechProcessor
 from ..transport.custom_services.kokoro_service import KokoroTTSService
 from ..utils.device_utils import get_best_device
 from ..transport.custom_services.ollama_service import CustomOLLamaLLMService
@@ -56,7 +55,6 @@ class BotComponents(NamedTuple):
     used_animations: List[str]
     animation_instruction: str
     lipsync_processor: object
-    natural_speech_processor: object
 
 
 class FixedOpenAIRealtimeBetaLLMService(OpenAIRealtimeBetaLLMService):
@@ -99,7 +97,6 @@ class BotComponentFactory:
     languages: Optional[List[str]] = None
     avatar: Dict[str, Any] = None
     animation_instruction: str = ""
-    natural_speech_params: Optional[Dict[str, Any]] = None
 
     def __post_init__(self):
         if self.llm_type not in ALLOWED_LLM[self.modality]:
@@ -240,9 +237,6 @@ class BotComponentFactory:
         )
         context_aggregator = llm.create_context_aggregator(context=context)
 
-        # Build natural speech processor with configuration
-        natural_speech_processor = self._build_natural_speech_processor()
-
         return BotComponents(
             stt=stt,
             llm=llm,
@@ -254,7 +248,6 @@ class BotComponentFactory:
             used_animations=self.used_animations,
             animation_instruction=self.animation_instruction,
             lipsync_processor=LipsyncProcessor(),
-            natural_speech_processor=natural_speech_processor,
         )
 
     def _get_voice_for_openai(self) -> str:
@@ -291,29 +284,6 @@ class BotComponentFactory:
             if "gender" in self.avatar and self.avatar["gender"] == "feminine"
             else "Charon"
         )
-
-    def _build_natural_speech_processor(self) -> NaturalSpeechProcessor:
-        """Build natural speech processor with configuration.
-        
-        Returns:
-            NaturalSpeechProcessor: Configured natural speech processor
-        """
-        # Default parameters
-        params = {
-            "enabled": True,
-            "interjection_probability": 0.15,
-            "discourse_marker_probability": 0.20,
-            "filled_pause_probability": 0.12,
-            "hesitation_probability": 0.08,
-            "vary_intensity": True,
-            "preserve_formality": False,
-        }
-        
-        # Override with user-provided parameters
-        if self.natural_speech_params:
-            params.update(self.natural_speech_params)
-        
-        return NaturalSpeechProcessor(**params)
 
     def _build_stt_service(self) -> Optional[object]:
         """Build STT service based on configuration."""
