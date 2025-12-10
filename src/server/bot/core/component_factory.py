@@ -171,6 +171,14 @@ class BotComponentFactory:
         instruction += f"Task description: {self.task_description}\n"
         if self.user_description:
             instruction += f"User description: {self.user_description}\n"
+
+        # Natural spoken-language style for the avatar
+        instruction += (
+            "Speech style: Speak naturally with occasional interjections (oh, well, so), "
+            "discourse markers (you know, I mean), and brief pauses (uh, um). "
+            "Use sparingly; never in numbers or names.\n"
+        )
+
         return instruction.strip()
 
     def build_tools_schemas(self) -> ToolsSchema:
