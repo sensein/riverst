@@ -107,6 +107,11 @@
           "default": false,
           "description": "Enable or disable long-term memory. If enabled, the avatar will remember information from previous interactions with this same user and use it to guide the conversation."
         },
+        "speech_emotion_recognition": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable or disable speech emotion recognition. If enabled, the avatar will analyze the user's emotional state from their speech and adapt its tone accordingly."
+        },
         "languages": {
           "type": "array",
           "items": {
