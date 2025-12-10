@@ -2,17 +2,13 @@ python-dotenv
 aiofiles
 uvicorn
 fastapi[all]
-pipecat-ai[google,elevenlabs,silero,webrtc,whisper,anthropic]==0.0.89
-pipecat-ai[mlx-whisper]==0.0.89; sys_platform == "darwin" and platform_machine == "arm64"
+pipecat-ai[google,elevenlabs,silero,webrtc,whisper,anthropic]==0.0.85
+pipecat-ai[mlx-whisper]==0.0.85; sys_platform == "darwin" and platform_machine == "arm64"
 pipecat-ai-small-webrtc-prebuilt
 kokoro
 noisereduce
 pipecat-ai-flows
-senselab
-torchaudio
-praat-parselmouth
-speechbrain
-opensmile
+senselab[audio]
 opencv-python
 ultralytics
 google-auth

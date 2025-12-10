@@ -281,7 +281,7 @@ The `session_config.json` file is the cornerstone of every activity. It defines 
     "type": "string",
     "enum": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know",
              "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear",
-             "disgust", "love", "sleep", "thinking"]
+             "disgust", "love", "sleep"]
   },
   "default": ["wave", "thumbup", "happy"],
   "description": "Available avatar animations for expression"

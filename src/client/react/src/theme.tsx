@@ -18,7 +18,7 @@ export const appTheme = {
   components: {
     // Component-specific customizations
     Layout: {
-      bodyBg: '#f7fafd', // Light blue background for layout
+      bodyBg: '#e6f4ff', // Light blue background for layout
     },
     Card: {
       borderRadius: 12,

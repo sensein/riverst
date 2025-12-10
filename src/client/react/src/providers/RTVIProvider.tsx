@@ -15,9 +15,6 @@ export function RTVIProvider({
   enableCam,
   children
 }: PropsWithChildren<RTVIProviderProps>) {
-  // Access environment variable correctly for React
-  const waitForICEGathering = import.meta.env.VITE_WAIT_FOR_ICE_GATHERING === 'true'
-
   // keep the same transport instance
   const transport = new SmallWebRTCTransport({
     connectionUrl: `/api/offer?session_id=${encodeURIComponent(
@@ -39,7 +36,7 @@ export function RTVIProvider({
         ],
       },
     ],
-    waitForICEGathering,
+    waitForICEGathering: true
   });
 
   const navigate = useNavigate()

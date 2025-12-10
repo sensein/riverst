@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Typography, message, Spin, Space, Button } from 'antd';
+import { Card, Typography, message, Spin, Space } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -24,7 +24,7 @@ declare global {
 const LoginPage: React.FC = () => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
-  const { login, isAuthenticated, googleAuthEnabled, isLoading } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -38,10 +38,6 @@ const LoginPage: React.FC = () => {
 
   // Load Google Identity Services script
   useEffect(() => {
-    if (!googleAuthEnabled) {
-      return;
-    }
-
     const script = document.createElement('script');
     script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
@@ -52,18 +48,19 @@ const LoginPage: React.FC = () => {
     document.head.appendChild(script);
 
     return () => {
-      if (document.head.contains(script)) {
-        document.head.removeChild(script);
-      }
+      document.head.removeChild(script);
     };
-  }, [googleAuthEnabled]);
+  }, []);
 
   // Initialize Google Sign-In when script is loaded
   useEffect(() => {
-    if (isScriptLoaded && googleAuthEnabled) {
-      initializeGoogleSignIn();
+    if (isScriptLoaded) {
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        initializeGoogleSignIn();
+      }, 100);
     }
-  }, [isScriptLoaded, googleAuthEnabled]);
+  }, [isScriptLoaded]);
 
   const initializeGoogleSignIn = () => {
     if (window.google) {
@@ -122,19 +119,16 @@ const LoginPage: React.FC = () => {
               Welcome to Riverst
             </Title>
             <Paragraph type="secondary">
-              {googleAuthEnabled
-                ? "Sign in with your Google account to access the reserved area"
-                : "Authentication is currently being processed..."
-              }
+              Sign in with your Google account to access the reserved area
             </Paragraph>
           </div>
 
-          {googleAuthEnabled && !isScriptLoaded ? (
+          {!isScriptLoaded ? (
             <Spin
               indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />}
               tip="Loading Google Sign-In..."
             />
-          ) : googleAuthEnabled ? (
+          ) : (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div id="google-signin-button" />
 
@@ -145,29 +139,6 @@ const LoginPage: React.FC = () => {
                     tip="Signing in..." />
                 </div>
               )}
-            </div>
-          ) : !isLoading && !isAuthenticated && !googleAuthEnabled ? (
-            <div style={{ textAlign: 'center', color: '#ff4d4f' }}>
-              <Title level={4} style={{ color: '#ff4d4f', marginBottom: '16px' }}>
-                Authentication Error
-              </Title>
-              <Paragraph>
-                Automatic login failed. Please refresh the page to try again.
-              </Paragraph>
-              <Button
-                type="primary"
-                onClick={() => window.location.reload()}
-                style={{ marginTop: '8px' }}
-              >
-                Refresh Page
-              </Button>
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center' }}>
-              <Spin
-                indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />}
-                tip="Authenticating..."
-              />
             </div>
           )}
 

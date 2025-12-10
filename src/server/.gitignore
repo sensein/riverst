@@ -26,7 +26,5 @@ en_GB-alba-medium.onnx.json
 
 # smart_turn model files
 src/server/config/authorized_users.json
-src/server/authorization/authorized_users.json
-src/server/authorization/logs/
 logs/*
 turn_credentials.json

@@ -3,4 +3,3 @@ __pycache__/
 .qodo
 piper/
 src/server/authorization/authorized_users.json
-src/server/activities/vocab-tutoring/utils/higgs-audio

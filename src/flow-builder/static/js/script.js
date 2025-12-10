@@ -53,441 +53,6 @@ function addToDebugOutput(type, args) {
     debugOutput.scrollTop = debugOutput.scrollHeight;
 }
 
-// ============== Global Functions for file-loader.js ==============
-// These functions need to be available immediately when the script loads
-// so that file-loader.js can use them even before DOMContentLoaded fires
-
-function updateSessionVariableDropdown(select) {
-    const currentValue = select.value;
-    select.innerHTML = '<option value="">Select variable...</option>';
-
-    // Get activity variables (new structure)
-    const activityVars = Array.from(document.querySelectorAll('.activity-var-name')).map(
-        input => ({ name: input.value, type: 'activity' })
-    ).filter(field => field.name.trim() !== '');
-
-    // Get user variables (new structure)
-    const userVars = Array.from(document.querySelectorAll('.user-var-name')).map(
-        input => ({ name: input.value, type: 'user' })
-    ).filter(field => field.name.trim() !== '');
-
-    // Get task variables (legacy support)
-    const taskVars = Array.from(document.querySelectorAll('.task-var-name')).map(
-        input => ({ name: input.value, type: 'session_variables' })
-    ).filter(field => field.name.trim() !== '');
-
-    // Add activity variables
-    if (activityVars.length > 0) {
-        const activityGroup = document.createElement('optgroup');
-        activityGroup.label = 'Activity Variables';
-        activityVars.forEach(variable => {
-            const option = document.createElement('option');
-            option.value = variable.name;
-            option.text = variable.name;
-            option.dataset.source = 'activity';
-            activityGroup.appendChild(option);
-        });
-        select.appendChild(activityGroup);
-    }
-
-    // Add user variables
-    if (userVars.length > 0) {
-        const userGroup = document.createElement('optgroup');
-        userGroup.label = 'User Variables';
-        userVars.forEach(variable => {
-            const option = document.createElement('option');
-            option.value = variable.name;
-            option.text = variable.name;
-            option.dataset.source = 'user';
-            userGroup.appendChild(option);
-        });
-        select.appendChild(userGroup);
-    }
-
-    // Add task variables (legacy)
-    if (taskVars.length > 0) {
-        const taskGroup = document.createElement('optgroup');
-        taskGroup.label = 'Legacy Variables';
-        taskVars.forEach(variable => {
-            const option = document.createElement('option');
-            option.value = variable.name;
-            option.text = variable.name;
-            option.dataset.source = 'session_variables';
-            taskGroup.appendChild(option);
-        });
-        select.appendChild(taskGroup);
-    }
-
-    // Restore selection if it still exists
-    if (currentValue) {
-        select.value = currentValue;
-    }
-}
-
-function updateConditionVariableDropdown(select) {
-    const currentValue = select.value;
-    select.innerHTML = '<option value="">Select variable...</option>';
-
-    // Get user state fields (info variables)
-    const userFields = Array.from(document.querySelectorAll('.user-var-name')).map(
-        input => input.value
-    ).filter(name => name.trim() !== '');
-
-    // Add user state fields
-    userFields.forEach(field => {
-        const option = document.createElement('option');
-        option.value = field;
-        option.text = field;
-        select.appendChild(option);
-    });
-
-    // Restore selection
-    if (currentValue) {
-        select.value = currentValue;
-    }
-}
-
-// Update pre-action variable dropdown
-function updatePreActionVariableDropdown(select) {
-    // Get all variables based on context
-    const variables = [];
-
-    // Get info variables if this select has the info-variable-select class
-    const isInfoSelect = select.classList.contains('info-variable-select');
-
-    if (isInfoSelect) {
-        // Get user variables (new structure)
-        document.querySelectorAll('.user-var-name').forEach(input => {
-            const name = input.value.trim();
-            if (name) variables.push({name: name, type: 'user'});
-        });
-    } else {
-        // Get activity variables (new structure)
-        document.querySelectorAll('.activity-var-name').forEach(input => {
-            const name = input.value.trim();
-            if (name) variables.push({name: name, type: 'activity'});
-        });
-    }
-
-    // Save current selection
-    const currentValue = select.value;
-
-    // Clear current options
-    select.innerHTML = '<option value="">Select variable...</option>';
-
-    // Add options for each variable
-    variables.forEach(variable => {
-        const option = document.createElement('option');
-        option.value = variable.name;
-        option.text = variable.name;
-        select.appendChild(option);
-    });
-
-    // Restore selection if possible
-    const variableNames = variables.map(v => v.name);
-    if (currentValue && variableNames.includes(currentValue)) {
-        select.value = currentValue;
-    }
-}
-
-function updateAllStateVariableDropdowns() {
-    document.querySelectorAll('.session-variable-select').forEach(updateSessionVariableDropdown);
-    document.querySelectorAll('.condition-variable').forEach(updateConditionVariableDropdown);
-    document.querySelectorAll('.pre-action-variable-select').forEach(updatePreActionVariableDropdown);
-}
-
-function updateUserFieldDropdowns() {
-    const sessionInfoFields = Array.from(document.querySelectorAll('.session-info-name')).map(
-        input => ({
-            name: input.value,
-            type: input.closest('.session-info-card').querySelector('.session-info-type').value
-        })
-    ).filter(field => field.name.trim() !== '');
-
-    // Update each node's info field dropdown
-    document.querySelectorAll('.add-info-field-container').forEach(container => {
-        container.innerHTML = '';
-
-        if (sessionInfoFields.length > 0) {
-            // Create a select with available fields
-            const selectGroup = document.createElement('div');
-            selectGroup.className = 'input-group mb-2';
-
-            const select = document.createElement('select');
-            select.className = 'form-select info-field-select';
-
-            // Default option
-            const defaultOption = document.createElement('option');
-            defaultOption.text = 'Select an info field...';
-            defaultOption.value = '';
-            select.appendChild(defaultOption);
-
-            // Add options for each field
-            sessionInfoFields.forEach(field => {
-                const option = document.createElement('option');
-                option.value = field.name;
-                option.text = `${field.name} (${field.type})`;
-                option.dataset.type = field.type;
-                select.appendChild(option);
-            });
-
-            // Add button
-            const button = document.createElement('button');
-            button.className = 'btn btn-outline-primary add-info-field-btn';
-            button.type = 'button';
-            button.innerHTML = 'Add';
-
-            // Add event listener
-            button.addEventListener('click', function() {
-                const select = this.closest('.input-group').querySelector('select');
-                const selectedOption = select.options[select.selectedIndex];
-
-                if (select.value) {
-                    // Add the selected field
-                    const nodeCard = this.closest('.node-card');
-                    const container = nodeCard.querySelector('.info-fields-container');
-                    const fieldEl = document.getElementById('infoFieldItemTemplate').content.cloneNode(true);
-
-                    fieldEl.querySelector('.info-field-name').textContent = select.value;
-                    fieldEl.querySelector('.info-field-type').textContent = selectedOption.dataset.type;
-
-                    fieldEl.querySelector('.remove-info-field-btn').addEventListener('click', function() {
-                        this.closest('.info-field-item-card').remove();
-                    });
-
-                    container.appendChild(fieldEl);
-                    select.value = '';
-                }
-            });
-
-            selectGroup.appendChild(select);
-            selectGroup.appendChild(button);
-            container.appendChild(selectGroup);
-        } else {
-            // No fields message
-            const message = document.createElement('div');
-            message.className = 'alert alert-info py-2 small';
-            message.textContent = 'Add session info fields first to make them available here.';
-            container.appendChild(message);
-        }
-    });
-}
-
-// Global variable to store activity resource data
-let currentActivityResource = null;
-
-// Function to auto-populate activity variables from resource data
-function populateActivityVariablesFromResource(activityData) {
-    console.log("Auto-populating activity variables from resource");
-
-    // Clear existing activity variables
-    const container = document.getElementById('activityVariablesContainer');
-    container.innerHTML = '';
-
-    // Function to determine appropriate type based on value
-    function getVariableType(value) {
-        if (Array.isArray(value)) {
-            if (value.length > 0 && typeof value[0] === 'number') {
-                return 'number_array';
-            }
-            return 'array';
-        }
-        if (typeof value === 'object' && value !== null) {
-            return 'object';
-        }
-        if (typeof value === 'number') {
-            return 'number';
-        }
-        if (typeof value === 'boolean') {
-            return 'boolean';
-        }
-        return 'string';
-    }
-
-    // Create activity variables only for outermost properties
-    Object.keys(activityData).forEach(key => {
-        const value = activityData[key];
-        const type = getVariableType(value);
-        addActivityVariableWithData(key, value, type);
-    });
-
-    // Update all dropdowns to include the new variables
-    updateAllStateVariableDropdowns();
-    updateUserFieldDropdowns();
-}
-
-// Function to add activity variable with pre-filled data
-function addActivityVariableWithData(name, value, type) {
-    const container = document.getElementById('activityVariablesContainer');
-    const varElement = createFromTemplate('activityVarTemplate');
-
-    // Set name and type
-    const nameInput = varElement.querySelector('.activity-var-name');
-    const typeSelect = varElement.querySelector('.activity-var-type');
-
-    nameInput.value = name;
-    typeSelect.value = type;
-
-    // Set up event handlers
-    const removeBtn = varElement.querySelector('.remove-activity-var-btn');
-    removeBtn.addEventListener('click', function () {
-        this.closest('.activity-var-card').remove();
-        updateAllStateVariableDropdowns();
-        updateUserFieldDropdowns();
-    });
-
-    nameInput.addEventListener('input', function () {
-        this.dataset.varType = 'activity';
-        updateAllStateVariableDropdowns();
-    });
-
-    typeSelect.addEventListener('change', function () {
-        const valueContainer = this.closest('.activity-var-card').querySelector('.activity-var-value-container');
-        updateValueInputForActivity(this.value, valueContainer);
-    });
-
-    nameInput.dataset.varType = 'activity';
-
-    // Add to container
-    container.appendChild(varElement);
-
-    // Initialize the value input with the actual data
-    const card = container.lastElementChild;
-    const valueContainer = card.querySelector('.activity-var-value-container');
-    updateValueInputForActivity(type, valueContainer, value);
-}
-
-// Function to update activity variable value input with optional pre-filled value
-function updateValueInputForActivity(type, container, value = null) {
-    container.innerHTML = '';
-
-    switch (type) {
-        case 'string':
-            const stringInput = document.createElement('input');
-            stringInput.type = 'text';
-            stringInput.className = 'form-control form-control-sm activity-var-value';
-            stringInput.placeholder = 'Value';
-            if (value !== null) stringInput.value = String(value);
-            container.appendChild(stringInput);
-            break;
-        case 'number':
-            const numberInput = document.createElement('input');
-            numberInput.type = 'number';
-            numberInput.className = 'form-control form-control-sm activity-var-value';
-            numberInput.placeholder = 'Value';
-            if (value !== null) numberInput.value = Number(value);
-            container.appendChild(numberInput);
-            break;
-        case 'boolean':
-            const checkDiv = document.createElement('div');
-            checkDiv.className = 'form-check';
-            const checkbox = document.createElement('input');
-            checkbox.className = 'form-check-input activity-var-value';
-            checkbox.type = 'checkbox';
-            checkbox.value = 'true';
-            if (value !== null) checkbox.checked = Boolean(value);
-            const label = document.createElement('label');
-            label.className = 'form-check-label';
-            label.textContent = 'True';
-            checkDiv.appendChild(checkbox);
-            checkDiv.appendChild(label);
-            container.appendChild(checkDiv);
-            break;
-        case 'array':
-            const arrayInput = document.createElement('input');
-            arrayInput.type = 'text';
-            arrayInput.className = 'form-control form-control-sm activity-var-value';
-            arrayInput.placeholder = 'Comma-separated values';
-            if (value !== null && Array.isArray(value)) {
-                arrayInput.value = value.join(', ');
-            }
-            container.appendChild(arrayInput);
-            break;
-        case 'number_array':
-            const numArrayInput = document.createElement('input');
-            numArrayInput.type = 'text';
-            numArrayInput.className = 'form-control form-control-sm activity-var-value';
-            numArrayInput.placeholder = 'Comma-separated numbers';
-            if (value !== null && Array.isArray(value)) {
-                numArrayInput.value = value.join(', ');
-            }
-            container.appendChild(numArrayInput);
-            break;
-        case 'object':
-            const textarea = document.createElement('textarea');
-            textarea.className = 'form-control form-control-sm activity-var-value';
-            textarea.rows = 2;
-            textarea.placeholder = '{"key": "value"}';
-            if (value !== null && typeof value === 'object') {
-                textarea.value = JSON.stringify(value, null, 2);
-            }
-            container.appendChild(textarea);
-            break;
-    }
-}
-
-// Function to load activity resource from file
-function loadActivityResourceFromFile(file) {
-    console.log("Loading activity resource:", file.name);
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const activityData = JSON.parse(e.target.result);
-            console.log("Activity resource loaded successfully", activityData);
-
-            // Store the activity resource globally
-            currentActivityResource = activityData;
-
-            // Update UI to show resource is loaded
-            const statusDiv = document.getElementById('activityResourceStatus');
-            const nameSpan = document.getElementById('activityResourceName');
-
-            // Try to extract a meaningful name from the resource
-            let resourceName = file.name;
-            if (activityData.reading_context?.key_information?.name) {
-                resourceName = `${file.name} (${activityData.reading_context.key_information.name})`;
-            }
-
-            nameSpan.textContent = resourceName;
-            statusDiv.style.display = 'block';
-
-            // Store filename for later use
-            document.getElementById('currentActivityResource').value = file.name;
-
-            // Auto-populate activity variables from the loaded resource
-            populateActivityVariablesFromResource(activityData);
-
-            console.log("Activity resource UI updated");
-
-        } catch (error) {
-            console.error("Error parsing activity resource file:", error);
-            alert(`Error parsing activity resource file: ${error.message}`);
-        }
-    };
-
-    reader.onerror = function(e) {
-        console.error("FileReader error:", e);
-        alert("There was an error reading the activity resource file. Please try again.");
-    };
-
-    reader.readAsText(file);
-}
-
-// Make these functions available globally immediately
-window.updateAllStateVariableDropdowns = updateAllStateVariableDropdowns;
-window.updateUserFieldDropdowns = updateUserFieldDropdowns;
-window.loadActivityResourceFromFile = loadActivityResourceFromFile;
-
-// Helper function to create a DOM element from a template - moved outside DOMContentLoaded so it can be called by activity loading functions
-function createFromTemplate(templateId) {
-    const template = document.getElementById(templateId);
-    return document.importNode(template.content, true);
-}
-
-// Make createFromTemplate globally available
-window.createFromTemplate = createFromTemplate;
-
 document.addEventListener('DOMContentLoaded', function () {
     // Set up console logging
     setupConsoleLogging();
@@ -503,9 +68,15 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // Helper function to create a DOM element from a template
+    function createFromTemplate(templateId) {
+        const template = document.getElementById(templateId);
+        return document.importNode(template.content, true);
+    }
+
     // Initialize UI components
-    initActivityVariables();
-    initUserVariables();
+    initTaskVariables();
+    initSessionInfo();
     initNodes();
     initButtons();
 
@@ -520,10 +91,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Add initial node and end node if none exist
+    // Add initial node if none exists
     if (nodesContainer.children.length === 0) {
         addNode();
-        addEndNode();
     }
 
     // Function to update node order display
@@ -531,56 +101,46 @@ document.addEventListener('DOMContentLoaded', function () {
         const nodes = document.querySelectorAll('.node-card');
         nodes.forEach((node, index) => {
             const nodeHeader = node.querySelector('.node-header');
-            const nodeName = node.querySelector('.node-name').value;
-
-            // Reset classes
             nodeHeader.classList.remove('bg-primary', 'bg-success', 'bg-secondary');
 
-            // Don't modify the end node styling - it stays dark
-            if (nodeName === 'end') {
-                nodeHeader.classList.add('bg-dark', 'text-white');
-                return;
-            }
-
-            // Style regular nodes
             if (index === 0) {
                 nodeHeader.classList.add('bg-primary', 'text-white');
-            } else if (index === nodes.length - 2) { // Second to last (since end is always last)
+            } else if (index === nodes.length - 1) {
                 nodeHeader.classList.add('bg-success', 'text-white');
             }
         });
     }
 
     // ============== Task Variables Management ==============
-    function initActivityVariables() {
-        const addActivityVarBtn = document.getElementById('addActivityVarBtn');
-        addActivityVarBtn.addEventListener('click', addActivityVariable);
+    function initTaskVariables() {
+        const addTaskVarBtn = document.getElementById('addTaskVarBtn');
+        addTaskVarBtn.addEventListener('click', addTaskVariable);
     }
 
-    function addActivityVariable() {
-        const container = document.getElementById('activityVariablesContainer');
-        const varElement = createFromTemplate('activityVarTemplate');
+    function addTaskVariable() {
+        const container = document.getElementById('taskVariablesContainer');
+        const varElement = createFromTemplate('taskVarTemplate');
 
         // Set up event handlers
-        const typeSelect = varElement.querySelector('.activity-var-type');
-        const valueContainer = varElement.querySelector('.activity-var-value-container');
+        const typeSelect = varElement.querySelector('.task-var-type');
+        const valueContainer = varElement.querySelector('.task-var-value-container');
 
         // Validate name input - prevent spaces
-        const nameInput = varElement.querySelector('.activity-var-name');
+        const nameInput = varElement.querySelector('.task-var-name');
         nameInput.addEventListener('input', function () {
             this.value = this.value.replace(/\s+/g, '_');
-            // Mark as an activity variable
-            this.dataset.varType = 'activity';
-            updateAllStateVariableDropdowns(); // Update function dropdowns when name changes
+            // Mark as a session variable by default for backward compatibility
+            this.dataset.varType = 'session';
+            updateAllSessionVariableDropdowns(); // Update function dropdowns when name changes
         });
 
-        // Mark as an activity variable
-        nameInput.dataset.varType = 'activity';
+        // Mark as a session variable by default for backward compatibility
+        nameInput.dataset.varType = 'session';
 
         // Set up remove button
-        varElement.querySelector('.remove-activity-var-btn').addEventListener('click', function () {
-            this.closest('.activity-var-card').remove();
-            updateAllStateVariableDropdowns(); // Update function dropdowns when variable removed
+        varElement.querySelector('.remove-task-var-btn').addEventListener('click', function () {
+            this.closest('.task-var-card').remove();
+            updateAllSessionVariableDropdowns(); // Update function dropdowns when variable removed
         });
 
         // Add change handler for type select
@@ -625,65 +185,118 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============== Session Info Management ==============
-    function initUserVariables() {
-        const addUserVarBtn = document.getElementById('addUserVarBtn');
-        addUserVarBtn.addEventListener('click', addUserVariable);
+    function initSessionInfo() {
+        const addSessionInfoBtn = document.getElementById('addSessionInfoBtn');
+        addSessionInfoBtn.addEventListener('click', addSessionInfo);
     }
 
-    function addUserVariable() {
-        const container = document.getElementById('userVariablesContainer');
-        const infoElement = createFromTemplate('userVarTemplate');
-
-        // Set up event handlers
-        const typeSelect = infoElement.querySelector('.user-var-type');
-        const valueContainer = infoElement.querySelector('.user-var-value-container');
+    function addSessionInfo() {
+        const container = document.getElementById('sessionInfoContainer');
+        const infoElement = createFromTemplate('sessionInfoTemplate');
 
         // Validate name input - prevent spaces
-        const nameInput = infoElement.querySelector('.user-var-name');
+        const nameInput = infoElement.querySelector('.session-info-name');
         nameInput.addEventListener('input', function () {
             this.value = this.value.replace(/\s+/g, '_');
-            // Mark as a user variable
-            this.dataset.varType = 'user';
-            updateUserFieldDropdowns();
+            updateInfoFieldDropdowns();
         });
 
-        // Mark as a user variable
-        nameInput.dataset.varType = 'user';
-
         // Set up remove button
-        infoElement.querySelector('.remove-user-var-btn').addEventListener('click', function () {
-            if (confirm('Removing this user field will also remove it from any nodes that use it. Continue?')) {
-                const varName = this.closest('.user-var-card').querySelector('.user-var-name').value;
+        infoElement.querySelector('.remove-session-info-btn').addEventListener('click', function () {
+            if (confirm('Removing this info field will also remove it from any nodes that use it. Continue?')) {
+                const infoName = this.closest('.session-info-card').querySelector('.session-info-name').value;
 
-                // Remove corresponding user fields from nodes
-                if (varName) {
-                    document.querySelectorAll('.user-field-item-card').forEach(field => {
-                        if (field.querySelector('.user-field-name').textContent === varName) {
+                // Remove corresponding info fields from nodes
+                if (infoName) {
+                    document.querySelectorAll('.info-field-item-card').forEach(field => {
+                        if (field.querySelector('.info-field-name').textContent === infoName) {
                             field.remove();
                         }
                     });
                 }
 
-                this.closest('.user-var-card').remove();
-                updateUserFieldDropdowns();
+                this.closest('.session-info-card').remove();
+                updateInfoFieldDropdowns();
             }
         });
 
-        // Add change handler for type select
-        typeSelect.addEventListener('change', function () {
-            updateValueInput(this.value, valueContainer);
+        // Add change handler for name to update dropdowns
+        infoElement.querySelector('.session-info-name').addEventListener('input', function () {
+            updateInfoFieldDropdowns();
         });
 
-        // Initial value input
-        updateValueInput(typeSelect.value, valueContainer);
-
         container.appendChild(infoElement);
-        updateUserFieldDropdowns();
+        updateInfoFieldDropdowns();
         return infoElement;
     }
 
     // Update all "Add Info Field" dropdowns in nodes with current session info fields
-    // Function moved to global scope for file-loader.js compatibility
+    function updateInfoFieldDropdowns() {
+        const sessionInfoFields = Array.from(document.querySelectorAll('.session-info-name')).map(
+            input => ({
+                name: input.value,
+                type: input.closest('.session-info-card').querySelector('.session-info-type').value
+            })
+        ).filter(field => field.name.trim() !== '');
+
+        // Update each node's info field dropdown
+        document.querySelectorAll('.add-info-field-container').forEach(container => {
+            container.innerHTML = '';
+
+            if (sessionInfoFields.length > 0) {
+                // Create a select with available fields
+                const selectGroup = document.createElement('div');
+                selectGroup.className = 'input-group mb-2';
+
+                const select = document.createElement('select');
+                select.className = 'form-select info-field-select';
+
+                // Add option for each field
+                const defaultOption = document.createElement('option');
+                defaultOption.text = 'Select an info field...';
+                defaultOption.value = '';
+                select.appendChild(defaultOption);
+
+                sessionInfoFields.forEach(field => {
+                    const option = document.createElement('option');
+                    option.value = field.name;
+                    option.text = `${field.name} (${field.type})`;
+                    option.dataset.type = field.type;
+                    select.appendChild(option);
+                });
+
+                const button = document.createElement('button');
+                button.className = 'btn btn-outline-primary add-info-field-btn';
+                button.type = 'button';
+                button.innerHTML = 'Add';
+
+                // Add event listener to button
+                button.addEventListener('click', function () {
+                    const select = this.closest('.input-group').querySelector('select');
+                    const selectedOption = select.options[select.selectedIndex];
+
+                    if (select.value) {
+                        addInfoFieldToNode(
+                            this.closest('.node-card'),
+                            select.value,
+                            selectedOption.dataset.type
+                        );
+                        select.value = '';
+                    }
+                });
+
+                selectGroup.appendChild(select);
+                selectGroup.appendChild(button);
+                container.appendChild(selectGroup);
+            } else {
+                // No fields available message
+                const message = document.createElement('div');
+                message.className = 'alert alert-info py-2 small';
+                message.textContent = 'Add session info fields first to make them available here.';
+                container.appendChild(message);
+            }
+        });
+    }
 
     function addInfoFieldToNode(nodeCard, fieldName, fieldType) {
         const container = nodeCard.querySelector('.info-fields-container');
@@ -819,13 +432,111 @@ document.addEventListener('DOMContentLoaded', function () {
         return functionElement;
     }
 
+    // Update pre-action variable dropdown
+    function updatePreActionVariableDropdown(select) {
+        // Get all session variables
+        const sessionVars = [];
+
+        // Get info variables if this select has the info-variable-select class
+        const isInfoSelect = select.classList.contains('info-variable-select');
+
+        if (isInfoSelect) {
+            // Get info variables
+            document.querySelectorAll('.session-info-name').forEach(input => {
+                const name = input.value.trim();
+                if (name) sessionVars.push(name);
+            });
+        } else {
+            // Get from task variables that are marked as session
+            document.querySelectorAll('.task-var-name[data-var-type="session"]').forEach(input => {
+                const name = input.value.trim();
+                if (name) sessionVars.push(name);
+            });
+
+            // If no explicitly marked session variables, get all task variables as fallback
+            if (sessionVars.length === 0) {
+                document.querySelectorAll('.task-var-name').forEach(input => {
+                    const name = input.value.trim();
+                    if (name) sessionVars.push(name);
+                });
+            }
+        }
+
+        // Save current selection
+        const currentValue = select.value;
+
+        // Clear current options
+        select.innerHTML = '<option value="">Select a value...</option>';
+
+        // Add options for each session variable
+        sessionVars.forEach(name => {
+            const option = document.createElement('option');
+            option.value = name;
+            option.text = name;
+            select.appendChild(option);
+        });
+
+        // Restore selection if possible
+        if (currentValue && sessionVars.includes(currentValue)) {
+            select.value = currentValue;
+        }
+    }
 
     // Function to update session variable dropdown
-    // Function moved to global scope for file-loader.js compatibility
+    function updateSessionVariableDropdown(select) {
+        // Get all session variables
+        const sessionVars = [];
+
+        // Get info variables if this select has the info-variable-select class
+        const isInfoSelect = select.classList.contains('info-variable-select');
+
+        if (isInfoSelect) {
+            // Get info variables
+            document.querySelectorAll('.session-info-name').forEach(input => {
+                const name = input.value.trim();
+                if (name) sessionVars.push(name);
+            });
+        } else {
+            // Get from task variables that are marked as session
+            document.querySelectorAll('.task-var-name[data-var-type="session"]').forEach(input => {
+                const name = input.value.trim();
+                if (name) sessionVars.push(name);
+            });
+
+            // If no explicitly marked session variables, get all task variables as fallback
+            if (sessionVars.length === 0) {
+                document.querySelectorAll('.task-var-name').forEach(input => {
+                    const name = input.value.trim();
+                    if (name) sessionVars.push(name);
+                });
+            }
+        }
+
+        // Save current selection
+        const currentValue = select.value;
+
+        // Clear current options
+        select.innerHTML = '<option value="">Select a value...</option>';
+
+        // Add options for each session variable
+        sessionVars.forEach(name => {
+            const option = document.createElement('option');
+            option.value = name;
+            option.text = name;
+            select.appendChild(option);
+        });
+
+        // Restore selection if possible
+        if (currentValue && sessionVars.includes(currentValue)) {
+            select.value = currentValue;
+        }
+    }
 
     // Update all session variable dropdowns
-    // Function moved to global scope for file-loader.js compatibility
-
+    function updateAllSessionVariableDropdowns() {
+        document.querySelectorAll('.session-variable-select').forEach(updateSessionVariableDropdown);
+        document.querySelectorAll('.condition-variable').forEach(updateConditionVariableDropdown);
+    }
 
     // Function to add a transition condition
     function addTransitionCondition(nodeCard) {
@@ -888,7 +599,35 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Update the condition variable dropdown with info fields
-    // Function moved to global scope for file-loader.js compatibility
+    function updateConditionVariableDropdown(select) {
+        // Get all info fields
+        const infoFields = Array.from(document.querySelectorAll('.session-info-name')).map(input => {
+            return {
+                name: input.value.trim(),
+                type: input.closest('.session-info-card').querySelector('.session-info-type').value
+            };
+        }).filter(field => field.name !== '');
+
+        // Save current selection
+        const currentValue = select.value;
+
+        // Clear current options
+        select.innerHTML = '<option value="">Select variable...</option>';
+
+        // Add options for each info field
+        infoFields.forEach(field => {
+            const option = document.createElement('option');
+            option.value = field.name;
+            option.text = field.name;
+            option.dataset.type = field.type;
+            select.appendChild(option);
+        });
+
+        // Restore selection if possible
+        if (currentValue && infoFields.some(field => field.name === currentValue)) {
+            select.value = currentValue;
+        }
+    }
 
     // Update the value input based on the selected variable and operator
     function updateConditionValueInput(variableName, operator, container) {
@@ -944,15 +683,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Update a target node dropdown with all available nodes
     function updateNodeTargetDropdown(select) {
-        const allNodeNames = Array.from(document.querySelectorAll('.node-name')).map(input => input.value.trim()).filter(name => name !== '');
+        const nodes = Array.from(document.querySelectorAll('.node-name')).map(input => input.value.trim()).filter(name => name !== '');
 
-        // Filter out the current node from its own target dropdown
-        const currentNode = select.closest('.node-card');
-        const currentNodeName = currentNode ? currentNode.querySelector('.node-name').value : '';
-
-        const nodes = allNodeNames.filter(name => name !== currentNodeName);
-
-        // Ensure "end" is always available as a target
+        // Add "end" node always
         if (!nodes.includes('end')) {
             nodes.push('end');
         }
@@ -1049,8 +782,8 @@ document.addEventListener('DOMContentLoaded', function () {
             // Skip the check_progress function which is automatically added
             if (funcData.function && funcData.function.handler === "general_handler") return;
 
-            if (funcData.function && (funcData.function.handler === "get_activity_handler" ||
-                funcData.function.handler === "get_user_handler")) {
+            if (funcData.function && (funcData.function.handler === "get_session_variable_handler" ||
+                funcData.function.handler === "get_info_variable_handler")) {
                 // Extract variable name
                 const varEnum = funcData.function.parameters?.properties?.variable_name?.enum;
                 if (!varEnum || varEnum.length === 0) return;
@@ -1071,43 +804,6 @@ document.addEventListener('DOMContentLoaded', function () {
             addNode();
             updateNodeOrder();
         });
-    }
-
-    // Helper function to set up all event handlers for a node
-    function setupNodeEventHandlers(nodeElement) {
-        // Set up dropdown handlers for regular functions
-        const addActivityFunctionBtn = nodeElement.querySelector('.add-activity-function');
-        if (addActivityFunctionBtn) {
-            addActivityFunctionBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                addNodeFunction(this.closest('.node-card'), "", "Get activity data", false);
-            });
-        }
-
-        const addUserFunctionBtn = nodeElement.querySelector('.add-user-function');
-        if (addUserFunctionBtn) {
-            addUserFunctionBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                addNodeFunction(this.closest('.node-card'), "", "Get user state", true);
-            });
-        }
-
-        // Set up dropdown handlers for pre-action functions
-        const addPreActionActivityFunctionBtn = nodeElement.querySelector('.add-pre-action-activity-function');
-        if (addPreActionActivityFunctionBtn) {
-            addPreActionActivityFunctionBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                addPreActionFunction(this.closest('.node-card'), "", "Get activity data", false);
-            });
-        }
-
-        const addPreActionUserFunctionBtn = nodeElement.querySelector('.add-pre-action-user-function');
-        if (addPreActionUserFunctionBtn) {
-            addPreActionUserFunctionBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                addPreActionFunction(this.closest('.node-card'), "", "Get user state", true);
-            });
-        }
     }
 
     function addNode() {
@@ -1148,13 +844,8 @@ document.addEventListener('DOMContentLoaded', function () {
             // Update the task message preamble with new node name
             const currentValue = taskMessage.value;
             const nodeName = this.value || 'unnamed';
-            const newPreamble = `TOOLS:\nSilently call check_${nodeName}_progress() after completing all required steps. Do not mention this to the user.\n\n`;
-            // Replace existing preamble if present, otherwise prepend
-            const updatedValue = currentValue.replace(
-                /^TOOLS:.*?\n\n/s,
-                ''
-            );
-            taskMessage.value = newPreamble + updatedValue;
+            taskMessage.value = `TOOLS: \nYou may silently call the check_${nodeName}_progress() function only after all ${nodeName} conversation steps have been completed. Do not mention you are doing this. Look at the other tools you have available, and if you need a certain piece of information that they provide, you may call them (silently, do not mention you are doing so!)\n\n` +
+            currentValue.split('\n\n').slice(1).join('\n\n');
 
             // Validate node name
             validateNodeName(this);
@@ -1165,27 +856,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Set up remove node button
         nodeElement.querySelector('.remove-node-btn').addEventListener('click', function () {
-            const nodeCard = this.closest('.node-card');
-            const nodeName = nodeCard.querySelector('.node-name').value;
-
-            // Prevent removing the end node
-            if (nodeName === 'end') {
-                alert('The end node cannot be removed.');
-                return;
-            }
-
-            // Count non-end nodes
-            const nonEndNodes = Array.from(document.querySelectorAll('.node-card')).filter(card =>
-                card.querySelector('.node-name').value !== 'end'
-            );
-
-            if (nonEndNodes.length <= 1) {
-                alert('You must have at least one regular node in addition to the end node.');
+            if (document.querySelectorAll('.node-card').length <= 1) {
+                alert('You must have at least one node.');
                 return;
             }
 
             if (confirm('Are you sure you want to remove this node?')) {
-                nodeCard.remove();
+                this.closest('.node-card').remove();
                 updateNodeOrder();
                 updateAllNodeTargetDropdowns();
             }
@@ -1268,43 +945,6 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
-        // Set up dropdown pre-action function handlers (new structure)
-        const addPreActionActivityFunctionBtn = nodeElement.querySelector('.add-pre-action-activity-function');
-        if (addPreActionActivityFunctionBtn) {
-            addPreActionActivityFunctionBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                addPreActionFunction(this.closest('.node-card'), "", "Get activity data", false);
-            });
-        }
-
-        const addPreActionUserFunctionBtn = nodeElement.querySelector('.add-pre-action-user-function');
-        if (addPreActionUserFunctionBtn) {
-            addPreActionUserFunctionBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                addPreActionFunction(this.closest('.node-card'), "", "Get user state", true);
-            });
-        }
-
-        // Set up dropdown function handlers for tools tab (new structure)
-        const addActivityFunctionBtn = nodeElement.querySelector('.add-activity-function');
-        if (addActivityFunctionBtn) {
-            addActivityFunctionBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                addNodeFunction(this.closest('.node-card'), "", "Get activity data", false);
-            });
-        }
-
-        const addUserFunctionBtn = nodeElement.querySelector('.add-user-function');
-        if (addUserFunctionBtn) {
-            addUserFunctionBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                addNodeFunction(this.closest('.node-card'), "", "Get user state", true);
-            });
-        }
-
-        // Set up all dropdown event handlers for this node
-        setupNodeEventHandlers(nodeElement);
-
         // Initialize the default target node dropdown
         const defaultTargetSelect = nodeElement.querySelector('.default-target-node');
         if (defaultTargetSelect) {
@@ -1321,97 +961,12 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
-        // Update user field dropdown
-        updateUserFieldDropdowns();
+        // Update info field dropdown
+        updateInfoFieldDropdowns();
 
         // Add the node to the container
         container.appendChild(nodeElement);
         updateAllNodeTargetDropdowns();
-        return nodeElement;
-    }
-
-    function addEndNode() {
-        const container = document.getElementById('nodesContainer');
-        const nodeElement = createFromTemplate('nodeTemplate');
-
-        // Set fixed end node name
-        const nodeNameInput = nodeElement.querySelector('.node-name');
-        const nodeNameDisplay = nodeElement.querySelector('.node-name-display');
-
-        nodeNameInput.value = 'end';
-        nodeNameDisplay.textContent = 'end';
-
-        // Make node name read-only
-        nodeNameInput.readOnly = true;
-        nodeNameInput.classList.add('bg-light');
-
-        // Set default task message for end node
-        const taskMessage = nodeElement.querySelector('.node-task-message');
-        taskMessage.value = "The session is now complete. Say goodbye in a friendly and encouraging way.";
-
-        // Set default pre-action text
-        const preActionText = nodeElement.querySelector('.pre-action-text');
-        if (preActionText) {
-            preActionText.value = "Thank you for learning with me today, have a wonderful day!";
-        }
-
-        // Hide tabs that shouldn't be available for end node
-        const tabsToHide = ['[data-bs-target=".functions-tab"]', '[data-bs-target=".checklist-tab"]', '[data-bs-target=".transitions-tab"]'];
-        tabsToHide.forEach(selector => {
-            const tab = nodeElement.querySelector(selector);
-            if (tab) {
-                tab.style.display = 'none';
-            }
-        });
-
-        // Hide the functions dropdown in pre-actions
-        const preActionFunctionDropdown = nodeElement.querySelector('.add-pre-action-function-btn');
-        if (preActionFunctionDropdown) {
-            preActionFunctionDropdown.style.display = 'none';
-        }
-
-        // Hide the entire functions container in pre-actions
-        const functionPreActionsContainer = nodeElement.querySelector('.function-pre-actions-container');
-        if (functionPreActionsContainer) {
-            functionPreActionsContainer.style.display = 'none';
-        }
-
-        // Set up remove node button - make it disabled and hidden
-        const removeBtn = nodeElement.querySelector('.remove-node-btn');
-        removeBtn.style.display = 'none';
-
-        // Make sure tab functionality works correctly
-        const tabButtons = nodeElement.querySelectorAll('[data-bs-toggle="tab"]');
-        tabButtons.forEach(button => {
-            button.addEventListener('click', function (event) {
-                event.preventDefault();
-
-                // Hide all tab panes in this node
-                const tabContentContainer = this.closest('.node-card').querySelector('.tab-content');
-                tabContentContainer.querySelectorAll('.tab-pane').forEach(pane => {
-                    pane.classList.remove('show', 'active');
-                });
-
-                // Show the selected pane
-                const targetSelector = this.getAttribute('data-bs-target');
-                const targetPane = this.closest('.node-card').querySelector(targetSelector);
-                if (targetPane) {
-                    targetPane.classList.add('show', 'active');
-                }
-
-                // Update active state on buttons
-                this.closest('ul').querySelectorAll('.nav-link').forEach(link => {
-                    link.classList.remove('active');
-                });
-                this.classList.add('active');
-            });
-        });
-
-        // Add special styling to indicate this is the end node
-        nodeElement.querySelector('.node-header').classList.add('bg-dark', 'text-white');
-
-        // Add the node to the container
-        container.appendChild(nodeElement);
         return nodeElement;
     }
 
@@ -1608,7 +1163,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         name: funcName,
                         variable: sessionVar,
                         description: description || `Get the ${sessionVar} for the session`,
-                        handler: useInfoHandler ? "get_user_handler" : "get_activity_handler"
+                        handler: useInfoHandler ? "get_info_variable_handler" : "get_session_variable_handler"
                     });
                 }
             });
@@ -1712,7 +1267,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     // Create the function definition in the simplified format
                     const functionDef = {
                         type: "function",
-                        handler: useInfoHandler ? "get_user_handler" : "get_activity_handler",
+                        handler: useInfoHandler ? "get_info_variable_handler" : "get_session_variable_handler",
                         variable_name: sessionVar
                     };
 
@@ -1735,106 +1290,18 @@ document.addEventListener('DOMContentLoaded', function () {
             nodes.push(nodeData);
         });
 
-        // Collect activity variables (new structure)
-        const activityVariables = {};
-        document.querySelectorAll('.activity-var-card').forEach(card => {
-            const varName = cleanString(card.querySelector('.activity-var-name').value);
-            if (!varName) return;
-
-            const varType = card.querySelector('.activity-var-type').value;
-            let varValue;
-
-            // Get value based on type
-            const valueInput = card.querySelector('.activity-var-value');
-            switch (varType) {
-                case 'boolean':
-                    varValue = valueInput.checked;
-                    break;
-                case 'number':
-                    varValue = parseFloat(valueInput.value) || 0;
-                    break;
-                case 'array':
-                    varValue = cleanArray(valueInput.value);
-                    break;
-                case 'number_array':
-                    varValue = cleanArray(valueInput.value).map(item => parseFloat(item)).filter(item => !isNaN(item));
-                    break;
-                case 'object':
-                    try {
-                        varValue = JSON.parse(valueInput.value || '{}');
-                    } catch (e) {
-                        varValue = {};
-                    }
-                    break;
-                default: // string
-                    varValue = cleanString(valueInput.value) || '';
-            }
-
-            activityVariables[varName] = varValue;
-        });
-
-        // Collect user variables (new structure)
-        const userVariables = {};
-        document.querySelectorAll('.user-var-card').forEach(card => {
-            const varName = cleanString(card.querySelector('.user-var-name').value);
-            if (!varName) return;
-
-            const varType = card.querySelector('.user-var-type').value;
-            let varValue;
-
-            // Get value based on type
-            const valueInput = card.querySelector('.user-var-value');
-            switch (varType) {
-                case 'boolean':
-                    varValue = valueInput.checked;
-                    break;
-                case 'number':
-                    varValue = parseFloat(valueInput.value) || 0;
-                    break;
-                case 'array':
-                    varValue = cleanArray(valueInput.value);
-                    break;
-                case 'number_array':
-                    varValue = cleanArray(valueInput.value).map(item => parseFloat(item)).filter(item => !isNaN(item));
-                    break;
-                case 'object':
-                    try {
-                        varValue = JSON.parse(valueInput.value || '{}');
-                    } catch (e) {
-                        varValue = {};
-                    }
-                    break;
-                default: // string
-                    varValue = cleanString(valueInput.value) || '';
-            }
-
-            userVariables[varName] = varValue;
-        });
-
-        // Return the complete data structure with new structure
-        const result = {
+        // Return the complete data structure - no task_variables
+        return {
             filename: currentFilename,
             name,
             description,
             role_message: roleMessage,
-            // Legacy support
             session_variables: sessionVariables,
             info: info,
             info_types: infoTypes,
             info_descriptions: infoDescriptions,
-            // New structure
-            user_variables: userVariables,
-            activity_variables: activityVariables,
             nodes
         };
-
-        // Include activity resource data if available
-        if (window.currentActivityResource) {
-            result.activity_resource_data = window.currentActivityResource;
-            console.log("Including activity resource data in form submission");
-        }
-
-        return result;
     }
 
     // ============== Form Management ==============
@@ -1862,16 +1329,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        // Activity resource input change handler
-        const activityResourceInput = document.getElementById('activityResourceInput');
-        activityResourceInput.addEventListener('change', function (event) {
-            console.log("Activity resource selected:", event.target.files[0]?.name);
-            const file = event.target.files[0];
-            if (file) {
-                loadActivityResourceFromFile(file);
-            }
-        });
-
     }
 
     function resetForm() {
@@ -1880,24 +1337,10 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('flowDescription').value = '';
         document.getElementById('roleMessage').value = '';
         document.getElementById('currentFilename').value = '';
-        document.getElementById('currentActivityResource').value = '';
 
-        // Clear activity resource data
-        window.currentActivityResource = null;
-        document.getElementById('activityResourceStatus').style.display = 'none';
-
-        // Clear all variable containers (legacy and new)
-        const taskVarsContainer = document.getElementById('taskVariablesContainer');
-        if (taskVarsContainer) taskVarsContainer.innerHTML = '';
-
-        const sessionInfoContainer = document.getElementById('sessionInfoContainer');
-        if (sessionInfoContainer) sessionInfoContainer.innerHTML = '';
-
-        const activityVarsContainer = document.getElementById('activityVariablesContainer');
-        if (activityVarsContainer) activityVarsContainer.innerHTML = '';
-
-        const userVarsContainer = document.getElementById('userVariablesContainer');
-        if (userVarsContainer) userVarsContainer.innerHTML = '';
+        // Clear task variables and session info
+        document.getElementById('taskVariablesContainer').innerHTML = '';
+        document.getElementById('sessionInfoContainer').innerHTML = '';
 
         // Clear nodes
         document.getElementById('nodesContainer').innerHTML = '';
@@ -1905,9 +1348,8 @@ document.addEventListener('DOMContentLoaded', function () {
         // Hide result container
         document.getElementById('resultContainer').style.display = 'none';
 
-        // Add initial node and end node
+        // Add initial node
         addNode();
-        addEndNode();
     }
 
     // Validate node name uniqueness
@@ -2146,16 +1588,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Make these functions globally available for file-loader.js
-    window.addActivityVariable = addActivityVariable;
-    window.addUserVariable = addUserVariable;
+    // Make these functions globally available
+    window.addTaskVariable = addTaskVariable;
     window.addNode = addNode;
     window.addNodeFunction = addNodeFunction;
-    window.addPreActionFunction = addPreActionFunction;
-    window.setupNodeEventHandlers = setupNodeEventHandlers;
     window.updateSessionVariableDropdown = updateSessionVariableDropdown;
-    window.updateAllStateVariableDropdowns = updateAllStateVariableDropdowns;
-    window.updateUserFieldDropdowns = updateUserFieldDropdowns;
+    window.updateAllSessionVariableDropdowns = updateAllSessionVariableDropdowns;
     window.collectFormData = collectFormData;
     window.loadNodeFunctions = loadNodeFunctions;
 });

@@ -1,48 +1,54 @@
-# Lip sync resources
+## Lip sync notes and resources
 
-This file collects references and tools for implementing lip sync.
+- https://github.com/readyplayerme/animation-library/
+- https://github.com/TMElyralab/MuseTalk?tab=readme-ov-file
+- https://harlanhong.github.io/publications/dagan.html
+- https://github.com/OpenTalker/SadTalker
+- https://github.com/yerfor/GeneFace
+- https://medium.com/@phototech/lip-sync-application-f529ae7e59ca
+- https://github.com/webaverse-studios/CharacterCreator/blob/stable/src/library/lipsync.js (volume based)
+- https://build.nvidia.com/nvidia/audio2face-3d/deploy
+- https://www.mascot.bot/#features (commercial solution. Note: see pricing!!!)
+- https://github.com/maxrmorrison/promonet
+- https://github.com/interactiveaudiolab/ppgs
+- https://gooey.ai/
+- https://github.com/huggingface/optimum/issues/2250 (related issue i opened on optimum)
+- https://docs.readyplayer.me/ready-player-me/api-reference/avatars/morph-targets/apple-arkit
+- https://docs.readyplayer.me/ready-player-me/api-reference/avatars/morph-targets/oculus-ovr-libsync
+- https://readyplayer.me/developers/video-tutorials/face-animations-generated-from-audio-with-oculus-lipsync
+- https://community.openai.com/t/how-to-implement-real-time-lip-sync-of-avatar-chatbot-powered-by-gpt/534035/10
+- https://github.com/pipecat-ai/pipecat/issues/1516
+- https://colab.research.google.com/drive/1eFEqb8Tbq9DlSrZt9-KbGwFSTAHQP_Uz#scrollTo=CMN7o6OgBcNL
+- https://huggingface.co/Tabahi/CUPE-2i
 
-- [overview-of-avatar-creation+animation-tools-options.pdf](overview-of-avatar-creation+animation-tools-options.pdf)
-  Literature review of existing methods to create and animate avatars.
+- For Apple Silicon or Mac, PyTorch with MPS is currently the fastest and most reliable option for real-time inference.
+- ONNX Runtime is only advantageous on CPU or with CUDA (NVIDIA GPU).
+- There is no practical way to combine ONNX optimizations with PyTorch MPS, nor to use ONNX Runtime with MPS for this use case.
 
-- [phoneme_viseme_map.json](phoneme_viseme_map.json)
-  Mapping between phonemes and visemes following Microsoft’s [Speech SDK viseme mapping](https://learn.microsoft.com/en-us/azure/ai-services/speech-service/how-to-speech-synthesis-viseme?tabs=visemeid&pivots=programming-language-python).
+## Code:
 
----
+- optimum-cli export onnx --model bookbot/wav2vec2-ljspeech-gruut onnx-wav2vec2/
 
-## More resources
+-
 
-### General animation libraries and docs
-- [Ready Player Me Animation library](https://github.com/readyplayerme/animation-library/)
-- [Apple ARKit morph targets](https://docs.readyplayer.me/ready-player-me/api-reference/avatars/morph-targets/apple-arkit)
-- [Oculus OVR LipSync morph targets](https://docs.readyplayer.me/ready-player-me/api-reference/avatars/morph-targets/oculus-ovr-libsync)
-- [Video tutorial: Face animations from audio](https://readyplayer.me/developers/video-tutorials/face-animations-generated-from-audio-with-oculus-lipsync)
+from optimum.onnxruntime import ORTModelForCTC
+import onnxruntime as ort
+from transformers import AutoProcessor, pipeline as transformers_pipeline
+import numpy as np
+import time
+import torch
 
+processor = AutoProcessor.from_pretrained("bookbot/wav2vec2-ljspeech-gruut")
+model = ORTModelForCTC.from_pretrained(
+    "onnx-wav2vec2/",
+    file_name="model.onnx"
+)
 
-### Lip sync animation libraries and models
-- [MuseTalk](https://github.com/TMElyralab/MuseTalk?tab=readme-ov-file)
-- [SadTalker](https://github.com/OpenTalker/SadTalker)
-- [GeneFace](https://github.com/yerfor/GeneFace)
-- [ProMoNet](https://github.com/maxrmorrison/promonet)
-
-
-### Time-stamped phoneme extraction libraries and models
-- [PPGs](https://github.com/interactiveaudiolab/ppgs)
-- [CUPE-2i](https://huggingface.co/Tabahi/CUPE-2i)
-- [wav2vec2-ljspeech-gruut](https://huggingface.co/bookbot/wav2vec2-ljspeech-gruut)
-- [Berkeley Speech Group: Speech-Articulatory-Coding](https://github.com/Berkeley-Speech-Group/Speech-Articulatory-Coding) — this one actually does timestamped articulatory coding.
-
-### Commercial / Cloud lip sync solutions
-- [NVIDIA Audio2Face](https://build.nvidia.com/nvidia/audio2face-3d/deploy)
-- [Mascot Bot](https://www.mascot.bot/#features)
-- [Gooey AI](https://gooey.ai/)
-
-
-### Other References
-- [DAGAN (paper page)](https://harlanhong.github.io/publications/dagan.html)
-- [Lip Sync Application (Medium article)](https://medium.com/@phototech/lip-sync-application-f529ae7e59ca)
-- [LipSync.js (volume-based example)](https://github.com/webaverse-studios/CharacterCreator/blob/stable/src/library/lipsync.js)
-- [OpenAI community discussion](https://community.openai.com/t/how-to-implement-real-time-lip-sync-of-avatar-chatbot-powered-by-gpt/534035/10)
-- [Pipecat issue #1516](https://github.com/pipecat-ai/pipecat/issues/1516)
-- [Colab demo](https://colab.research.google.com/drive/1eFEqb8Tbq9DlSrZt9-KbGwFSTAHQP_Uz#scrollTo=CMN7o6OgBcNL)
-- [Optimum issue #2250](https://github.com/huggingface/optimum/issues/2250)
+model.main_input_name = "input_values" # Patch for pipeline compatibility
+asr_pipeline = transformers_pipeline(
+    "automatic-speech-recognition",
+    model=model,
+    tokenizer=processor.tokenizer,
+    feature_extractor=processor.feature_extractor,
+)
+asr_pipeline(dummy_audio, return_timestamps="char")

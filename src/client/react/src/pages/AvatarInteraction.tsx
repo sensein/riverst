@@ -116,7 +116,7 @@ const onSessionEnd = async (delay: number) => {
         style={{
           minHeight: '100vh',
           width: '100%',
-          backgroundColor: '#f7fafd',
+          backgroundColor: '#e6f4ff',
           display: 'flex',
           padding: 24,
         }}
@@ -136,7 +136,7 @@ const onSessionEnd = async (delay: number) => {
         style={{
           minHeight: '100vh',
           width: '100%',
-          backgroundColor: '#f7fafd',
+          backgroundColor: '#e6f4ff',
           display: 'flex',
           padding: 24,
         }}

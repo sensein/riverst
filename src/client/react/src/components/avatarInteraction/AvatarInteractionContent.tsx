@@ -243,7 +243,7 @@ export default function AvatarInteractionContent({
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            backgroundColor: '#f7fafd',
+            backgroundColor: '#e6f4ff',
             zIndex: 5,
           }}
         >

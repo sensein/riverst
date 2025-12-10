@@ -34,24 +34,17 @@ def generate_json():
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             base_name = f"flow_{timestamp}"
 
-        # Create the user and activity variables content
-        user_variables = data.get("user_variables", {})
-        activity_variables = data.get("activity_variables", {})
+        # Create the session variables content
+        session_variables = data.get("session_variables", {})
 
-        # If activity resource data is provided, use it instead of activity_variables
-        activity_resource_data = data.get("activity_resource_data")
-        if activity_resource_data:
-            print("Using provided activity resource data instead of form variables")
-            activity_variables = activity_resource_data
-
-        # Format the flow data using new user/activity structure
+        # Format the flow data - NO task_variables
         flow_data = {
             "name": data.get("name", ""),
             "description": data.get("description", ""),
             "state_config": {
                 "stages": {},
-                "user": user_variables,  # New user state structure
-                "activity": activity_variables,  # New activity state structure
+                "info": data.get("info", {}),
+                "session_variables": session_variables,  # Keep session variables in config
             },
             "flow_config": {
                 "initial_node": (
@@ -105,46 +98,43 @@ def generate_json():
                 print(f"Processing function: {func}")
                 func_name = func.get("name", "")
                 variable = func.get("variable", "")
-                source = func.get("source", "activity")  # Default to activity
                 description = func.get(
-                    "description", f"Get the {variable} from {source}"
+                    "description", f"Get the {variable} for the session"
                 )
-
-                # Use the handler as specified
-                handler = func.get("handler", "get_activity_handler")
+                handler = func.get("handler", "get_session_variable_handler")
 
                 if func_name and variable:
-                    # Create parameters object based on source
-                    if handler == "get_user_handler":
+                    # Create parameters object
+                    if handler == "get_info_variable_handler":
                         parameters = {
                             "type": "object",
                             "properties": {
                                 "variable_name": {
                                     "type": "string",
-                                    "description": "The name of the user variable to retrieve",
+                                    "description": "The name of the info variable to retrieve",
                                     "enum": [variable],
                                 }
                             },
                             "required": ["variable_name"],
                         }
-                    else:  # get_activity_handler
+                    else:
                         parameters = {
                             "type": "object",
                             "properties": {
                                 "variable_name": {
                                     "type": "string",
-                                    "description": "The name of the activity variable to retrieve",
+                                    "description": "The name of the session variable to retrieve",
                                     "enum": [variable],
                                 }
                             },
                             "required": ["variable_name"],
                         }
 
-                        # Add current_index parameter for activity handlers (for indexable variables)
-                        if handler == "get_activity_handler":
+                        # Add current_index parameter for get_session_variable functions only
+                        if handler == "get_session_variable_handler":
                             parameters["properties"]["current_index"] = {
                                 "type": "integer",
-                                "description": "The current index for indexable content",
+                                "description": "The current index of the reading context",
                             }
 
                     func_data = {
@@ -188,10 +178,10 @@ def generate_json():
                             "handler"
                         )
 
-                        # If it's a variable getter, use get_variable_action_handler instead
+                        # If it's a variable getter, use add_to_context_handler instead
                         if handler_type in [
-                            "get_activity_handler",
-                            "get_user_handler",
+                            "get_session_variable_handler",
+                            "get_info_variable_handler",
                         ]:
                             # Extract variable name from parameters
                             variable_name = None
@@ -208,13 +198,14 @@ def generate_json():
                             if variable_name:
                                 # Create new post_action in the simplified format
                                 # Determine the source based on the handler type
-                                if handler_type == "get_user_handler":
-                                    source = "user"
-                                else:  # get_activity_handler
-                                    source = "activity"
+                                source = (
+                                    "info"
+                                    if handler_type == "get_info_variable_handler"
+                                    else "session_variables"
+                                )
 
                                 new_post_action = {
-                                    "type": "get_variable",
+                                    "type": "function",
                                     "handler": "get_variable_action_handler",
                                     "variable_name": variable_name,
                                     "source": source,
@@ -269,30 +260,28 @@ def generate_json():
                     }
                     schema["required"].append(checklist_item)
 
-            # Add user state fields to properties (these were previously called info_fields)
-            for user_field in node.get("user_fields", []):
-                if user_field in data.get("user_field_descriptions", {}):
-                    field_type = data.get("user_field_types", {}).get(
-                        user_field, "boolean"
-                    )
+            # Add info fields to properties
+            for info_field in node.get("info_fields", []):
+                if info_field in data.get("info_descriptions", {}):
+                    field_type = data.get("info_types", {}).get(info_field, "boolean")
 
                     # Create property based on field type
                     if field_type == "array" or field_type == "number_array":
                         # Handle array types
-                        schema["properties"][user_field] = {
+                        schema["properties"][info_field] = {
                             "type": "array",
                             "items": {
                                 "type": "string" if field_type == "array" else "number"
                             },
-                            "description": data["user_field_descriptions"][user_field],
+                            "description": data["info_descriptions"][info_field],
                         }
                     else:
-                        schema["properties"][user_field] = {
+                        schema["properties"][info_field] = {
                             "type": field_type,
-                            "description": data["user_field_descriptions"][user_field],
+                            "description": data["info_descriptions"][info_field],
                         }
 
-                    schema["required"].append(user_field)
+                    schema["required"].append(info_field)
 
             # Remove special case for current_word_number in review nodes
 
@@ -304,17 +293,11 @@ def generate_json():
                         "role": "system",
                         "content": (
                             "The session is now complete. Say goodbye in a friendly and "
-                            "encouraging way."
+                            "encouraging way. Please call the end_conversation function now."
                         ),
                     }
                 ],
                 "functions": [],  # Empty functions array for end node
-                "post_actions": [
-                    {
-                        "type": "end_conversation",
-                        "text": "Thank you for learning with me today, have a wonderful day!",
-                    }
-                ],
             }
 
         # Create necessary directories
