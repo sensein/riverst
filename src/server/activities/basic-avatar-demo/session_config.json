@@ -163,28 +163,59 @@
           "type": "object",
           "default": {
             "enabled": true,
-            "intensity_level": "moderate",
+            "interjection_probability": 0.15,
+            "discourse_marker_probability": 0.20,
+            "filled_pause_probability": 0.12,
+            "hesitation_probability": 0.08,
+            "vary_intensity": true,
             "preserve_formality": false
           },
           "properties": {
             "enabled": {
               "type": "boolean",
               "default": true,
-              "description": "Enable or disable natural speech patterns (interjections, discourse markers, filled pauses). The LLM will be instructed to speak naturally with conversational patterns."
+              "description": "Enable or disable natural speech patterns (interjections, discourse markers, filled pauses)."
             },
-            "intensity_level": {
-              "type": "string",
-              "enum": ["low", "moderate", "high"],
-              "default": "moderate",
-              "description": "Control how much natural speech patterns to use: 'low' = minimal patterns for clearer speech, 'moderate' = balanced natural speech (recommended), 'high' = very conversational with frequent patterns."
+            "interjection_probability": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "default": 0.15,
+              "description": "Probability of adding interjections like 'oh', 'hmm', 'wow' (0.0-1.0)."
+            },
+            "discourse_marker_probability": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "default": 0.20,
+              "description": "Probability of adding discourse markers like 'well', 'you know', 'I mean' (0.0-1.0)."
+            },
+            "filled_pause_probability": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "default": 0.12,
+              "description": "Probability of adding filled pauses like 'um', 'uh', 'er' (0.0-1.0)."
+            },
+            "hesitation_probability": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0,
+              "default": 0.08,
+              "description": "Probability of adding hesitation patterns for uncertainty (0.0-1.0)."
+            },
+            "vary_intensity": {
+              "type": "boolean",
+              "default": true,
+              "description": "Automatically adjust pattern frequency based on sentence complexity and context."
             },
             "preserve_formality": {
               "type": "boolean",
               "default": false,
-              "description": "If true, maintains professional tone with fewer informal patterns (reduces 'um', 'uh' etc). Recommended for formal educational or business contexts."
+              "description": "If true, reduces informal patterns like filled pauses for more formal speech."
             }
           },
-          "description": "Configure natural speech patterns via LLM instructions. The avatar will speak more naturally with interjections (oh, hmm), discourse markers (well, you know), and conversational patterns."
+          "description": "Configuration for natural speech patterns to make avatar speech more realistic and human-like."
         }
       },
       "required": [
