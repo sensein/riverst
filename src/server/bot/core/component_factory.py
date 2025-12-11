@@ -22,6 +22,7 @@ from pipecat.services.elevenlabs.tts import ElevenLabsTTSService
 from ..components.llm_tools.animation_handler import AnimationHandler
 from ..components.llm_tools.end_conversation_handler import EndConversationHandler
 from ..processors.speech.lipsync_processor import LipsyncProcessor
+from ..processors.audio.speech_emotion import get_current_emotion_state
 from ..transport.custom_services.kokoro_service import KokoroTTSService
 from ..utils.device_utils import get_best_device
 from ..transport.custom_services.ollama_service import CustomOLLamaLLMService
@@ -88,6 +89,7 @@ class BotComponentFactory:
     flow_params: Optional[Dict[str, Any]] = None
     short_term_memory: bool = False
     long_term_memory: bool = False
+    speech_emotion_recognition: bool = False
 
     task_description: str = ""
     user_description: Optional[str] = None
@@ -178,6 +180,14 @@ class BotComponentFactory:
             "discourse markers (you know, I mean), and brief pauses (uh, um). "
             "Use sparingly; never in numbers or names.\n"
         )
+
+        # Add emotion-aware instruction if SER is enabled
+        if self.speech_emotion_recognition:
+            emotion_state = get_current_emotion_state(enabled=True)
+            if emotion_state:
+                emotion_prompt = emotion_state.to_prompt_string()
+                if emotion_prompt:
+                    instruction += f"\n{emotion_prompt}"
 
         return instruction.strip()
 

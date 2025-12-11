@@ -60,6 +60,7 @@ async def run_bot(
             tts_params=None,
             short_term_memory=config.get("short_term_memory", False),
             long_term_memory=config.get("long_term_memory", False),
+            speech_emotion_recognition=config.get("speech_emotion_recognition", False),
             task_description=config.get("task_description", ""),
             user_description=config.get("user_description", ""),
             avatar_personality_description=config.get(
@@ -174,7 +175,10 @@ async def run_bot(
         flow_manager = flow_factory.build()
 
         # Setup event handlers using event handler manager
-        event_manager = EventHandlerManager(session_dir)
+        event_manager = EventHandlerManager(
+            session_dir,
+            speech_emotion_recognition=config.get("speech_emotion_recognition", False),
+        )
         event_manager.register_all_handlers(
             transcript=transcript,
             transcript_handler=transcript_handler,

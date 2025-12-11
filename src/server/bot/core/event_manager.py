@@ -1,21 +1,33 @@
 import os
 import datetime
 import asyncio
+from typing import Optional
 from loguru import logger
 from ..utils.audio_utils import save_audio_file
 from ..processors.audio.analyzer import AudioAnalyzer
+from ..processors.audio.speech_emotion import get_emotion_recognizer, SpeechEmotionRecognizer
 
 
 class EventHandlerManager:
     """Manages event handler registration and audio processing callbacks."""
 
-    def __init__(self, session_dir: str):
+    def __init__(
+        self, session_dir: str, speech_emotion_recognition: bool = False
+    ):
         """Initialize event handler manager.
 
         Args:
             session_dir: Directory for session artifacts
+            speech_emotion_recognition: Whether to enable speech emotion recognition
         """
         self.session_dir = session_dir
+        self.speech_emotion_recognition = speech_emotion_recognition
+        self._emotion_recognizer: Optional[SpeechEmotionRecognizer] = None
+
+        if speech_emotion_recognition:
+            self._emotion_recognizer = get_emotion_recognizer(enabled=True)
+            if self._emotion_recognizer:
+                self._emotion_recognizer.initialize()
 
     def register_transcript_handlers(self, transcript, transcript_handler):
         """Register transcript-related event handlers.
@@ -35,6 +47,7 @@ class EventHandlerManager:
         Args:
             audiobuffer: Audio buffer processor instance
         """
+        emotion_recognizer = self._emotion_recognizer
 
         @audiobuffer.event_handler("on_user_turn_audio_data")
         async def on_user_audio(_, audio, sr, ch):
@@ -42,6 +55,13 @@ class EventHandlerManager:
             os.makedirs(audios_dir, exist_ok=True)
             path = f"{audios_dir}/{datetime.datetime.now():%Y%m%d_%H%M%S_%f}_USER.wav"
             await save_audio_file(audio, path, sr, ch)
+
+            # Run speech emotion recognition on user audio
+            if emotion_recognizer is not None:
+                try:
+                    await emotion_recognizer.predict_async(audio, sr)
+                except Exception as e:
+                    logger.warning(f"Speech emotion recognition failed: {e}")
 
         @audiobuffer.event_handler("on_bot_turn_audio_data")
         async def on_bot_audio(_, audio, sr, ch):
