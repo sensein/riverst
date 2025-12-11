@@ -41,7 +41,7 @@ class SpeechEmotionRecognizer:
     model_name: str = "ehcalabres/wav2vec2-lg-xlsr-en-speech-emotion-recognition"
     device: Optional[str] = None
     _model: Optional[object] = field(default=None, init=False, repr=False)
-    _processor: Optional[object] = field(default=None, init=False, repr=False)
+    _feature_extractor: Optional[object] = field(default=None, init=False, repr=False)
     _current_emotion: EmotionState = field(default_factory=EmotionState, init=False)
     _initialized: bool = field(default=False, init=False)
 
@@ -55,21 +55,21 @@ class SpeechEmotionRecognizer:
     @lru_cache(maxsize=1)
     def _load_model(model_name: str, device: str):
         """Load and cache the emotion recognition model."""
-        from transformers import Wav2Vec2ForSequenceClassification, Wav2Vec2Processor
+        from transformers import Wav2Vec2ForSequenceClassification, Wav2Vec2FeatureExtractor
 
         logger.info(f"Loading SER model: {model_name} on {device}")
-        processor = Wav2Vec2Processor.from_pretrained(model_name)
+        feature_extractor = Wav2Vec2FeatureExtractor.from_pretrained(model_name)
         model = Wav2Vec2ForSequenceClassification.from_pretrained(model_name)
         model = model.to(device)
         model.eval()
-        return processor, model
+        return feature_extractor, model
 
     def initialize(self) -> bool:
         """Initialize the model (lazy loading)."""
         if self._initialized:
             return True
         try:
-            self._processor, self._model = self._load_model(self.model_name, self.device)
+            self._feature_extractor, self._model = self._load_model(self.model_name, self.device)
             self._initialized = True
             logger.info("Speech emotion recognizer initialized successfully")
             return True
@@ -102,18 +102,22 @@ class SpeechEmotionRecognizer:
         Returns:
             Tuple of (emotion_label, confidence)
         """
+        import time
+
         if not self._initialized:
             if not self.initialize():
                 return ("neutral", 0.0)
 
         try:
+            start_time = time.perf_counter()
+
             audio_array = self._preprocess_audio(audio_bytes, sample_rate)
 
             # Skip very short audio
             if len(audio_array) < sample_rate * 0.5:  # < 0.5 seconds
                 return (self._current_emotion.label, self._current_emotion.confidence)
 
-            inputs = self._processor(
+            inputs = self._feature_extractor(
                 audio_array,
                 sampling_rate=sample_rate,
                 return_tensors="pt",
@@ -129,14 +133,16 @@ class SpeechEmotionRecognizer:
 
             label = self._model.config.id2label[predicted_id]
 
-            # Update current emotion state
-            import time
+            elapsed_ms = (time.perf_counter() - start_time) * 1000
 
+            # Update current emotion state
             self._current_emotion = EmotionState(
                 label=label, confidence=confidence, timestamp=time.time()
             )
 
-            logger.debug(f"Detected emotion: {label} ({confidence:.2%})")
+            logger.info(
+                f"[SER] Detected emotion: {label} ({confidence:.2%}) in {elapsed_ms:.1f}ms"
+            )
             return (label, confidence)
 
         except Exception as e:
