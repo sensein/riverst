@@ -78,7 +78,7 @@ More detailed instructions for setting up the [client](src/client/react/README.m
 
 **Note**: Not all API KEYS are strictly required. Only if you want to use a remote service, you need to expose the corresponding API KEY
 
-**Note 2**: If you want to run local models, then you will need make sure that you have Ollama or some other method for running models locally. Please see [#5 under Getting Started for the server setup](src/server/README.md#getting-started).
+**Note**: If you want to run local models, you will need to have Ollama or another method for running models locally. Please see [#5 under Getting Started for the server setup](src/server/README.md#getting-started).
 
 ### 3. Run
 
