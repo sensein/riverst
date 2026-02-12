@@ -22,7 +22,7 @@ pip install -r requirements.txt
 
 **Note**: `.env` is gitignored for security
 
-**Note**: Using OpenAPI for all of the services with a free user plan will likely cause a Pipecat 500 issue shortly after generating a session as OpenAI rate limits free users to 3 requests per minute, which the initial setup of the models alone might exceed.
+**Note**: Using OpenAI for all of the services with a free user plan will likely cause a Pipecat 500 issue shortly after generating a session as OpenAI rate limits free users to 3 requests per minute, which the initial setup of the models alone might exceed.
 
 4. [Optional] If you want to use Google authentication (ENABLE_GOOGLE_AUTH is `true`), you need to set it up:
    - Copy `authorization/authorized_users.json.example` to `authorization/authorized_users.json`
