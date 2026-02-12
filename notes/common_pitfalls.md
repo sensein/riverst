@@ -1,6 +1,6 @@
 # Common Pitfalls and Issues
 
-This document is meant to share some of the common pitfalls, issues, and errors that we have encountered while helping others setup Riverst on their local systems and some possible ways to go about solving them.
+This document is meant to share some of the common pitfalls, issues, and errors that we have encountered while helping others set up Riverst on their local systems and some possible ways to go about solving them.
 
 ## Google OAuth
 
