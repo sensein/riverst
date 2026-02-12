@@ -25,7 +25,7 @@ In the case that you can't find the Riverst site at all from another machine, th
 
 This might have occurred for a number of reasons. Make sure to check the server logs as well as the browser logs. A notable error that we have found is `crypto.randomUUID is not a function`. On the surface this might seem like a versioning issue, but it is actually because the crypto package requires a secure context. This can either be through `https://` URLs or using `http://localhost` (or similarly `http://127.0.0.1`) which might have been why initial tests worked but when doing cross machine connections, things failed.
 
-There are a few possible solutions for for this. One is using ngrok or some other service to expose the local server over HTTPS. A quick workaround can also be to provide self-signed certificates. Any users will have to accept security warnings but this will allow cross machine connections.
+There are a few possible solutions for this. One is using ngrok or some other service to expose the local server over HTTPS. A quick workaround can also be to provide self-signed certificates. Any users will have to accept security warnings but this will allow cross machine connections.
 
 Go to `src/client/react/`, open `vite.config.ts` add the following to `server` section:
 ```javascript
