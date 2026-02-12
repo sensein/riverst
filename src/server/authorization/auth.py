@@ -14,7 +14,7 @@ from loguru import logger
 # Configuration
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 SECRET_KEY = os.getenv("SECRET_KEY")
-ENABLE_GOOGLE_AUTH = os.getenv("ENABLE_GOOGLE_AUTH", "true").lower() == "true"
+ENABLE_GOOGLE_AUTH = os.getenv("ENABLE_GOOGLE_AUTH", "false").lower() == "true"
 if not SECRET_KEY:
     raise ValueError(
         "SECRET_KEY environment variable is not set. Please configure it before starting the application."
