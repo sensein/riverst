@@ -112,7 +112,7 @@ docker compose up --build
 
 ### 4. Run into issues?
 
-It's possible some issues might have arisen along the way. Feel free to post an issue asking for help as well as checkout our [Common Pitfalls Guide](notes/common_pitfalls.md) for some issues that we have seen pop-up.
+It's possible some issues might have arisen along the way. Feel free to post an issue asking for help as well as check out our [Common Pitfalls Guide](notes/common_pitfalls.md) for some issues that we have seen pop up.
 
 ---
 
