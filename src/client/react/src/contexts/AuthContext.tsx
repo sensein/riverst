@@ -78,7 +78,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [googleAuthEnabled, setGoogleAuthEnabled] = useState(true);
+  const [googleAuthEnabled, setGoogleAuthEnabled] = useState(false);
 
   useEffect(() => {
     // Check auth status and existing token on mount
