@@ -27,7 +27,7 @@ This might have occured for a number of reasons. Make sure to check the server l
 
 There are a few possible solutions for for this. One is using ngrok or some other service to expose the local server over HTTPS. A quick workaround can also be to provide self-signed certificates. Any users will have to accept security warnings but this will allow cross machine connections.
 
-Go to `src/client/react/`, open `vite.config.js` add the following to `server` section:
+Go to `src/client/react/`, open `vite.config.ts` add the following to `server` section:
 ```javascript
 https: {
       key: fs.readFileSync('./cert/key.pem'),
