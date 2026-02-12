@@ -36,9 +36,7 @@ https: {
 ```
 
 You will also likely need to add the following to the top of the file
-
-```import fs from 'fs'```
-
+import fs from 'fs'
 Within that same folder, run the following:
 
 ```
