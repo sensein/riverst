@@ -24,6 +24,10 @@ pip install -r requirements.txt
 
 **Note**: Using OpenAI for all of the services with a free user plan will likely cause a Pipecat 500 issue shortly after generating a session as OpenAI rate limits free users to 3 requests per minute, which the initial setup of the models alone might exceed.
 
+**Note**: The HuggingFace API key is not necessary for all models, but adding the key will allow access to models that might be gated behind permission requests or even your own private models. A `Read` token should allow this, but if you would like to use a more fine-grained access token for security reasons, then you should enable:
+- `Make calls to Inference Providers` under `Inference`
+- `Read access to contents of all public gated repos you can access` under `Repositories`
+
 4. [Optional] If you want to use Google authentication (ENABLE_GOOGLE_AUTH is `true`), you need to set it up:
    - Copy `authorization/authorized_users.json.example` to `authorization/authorized_users.json`
    - Add authorized user email addresses to the JSON array
