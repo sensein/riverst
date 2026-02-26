@@ -91,7 +91,11 @@ cd riverst
 - In `src/server/`, rename [`.env.example`](src/server/env.example) to `.env` and fill in the required API keys and configuration
 - In `src/client/react/`, rename [`.env.example`](src/client/react/env.example) to `.env` and fill in the required API keys and configuration
 
+More detailed instructions for setting up the [client](src/client/react/README.md) and [server](src/server/README.md) can be found in their respective README documents.
+
 **Note**: Not all API KEYS are strictly required. Only if you want to use a remote service, you need to expose the corresponding API KEY
+
+**Note**: If you want to run local models, you will need to have Ollama or another method for running models locally. Please see [#5 under Getting Started for the server setup](src/server/README.md#getting-started).
 
 ### 3. Run
 
@@ -101,7 +105,7 @@ cd riverst
 docker compose up --build
 ```
 
-#### 3b. Run manually in two different tabs of your terminal
+#### 3b. Run manually in two different tabs of your terminal (recommended)
 
 - **Start the server:**
   ```bash
@@ -123,6 +127,10 @@ docker compose up --build
 ⚠️ **Note:** The server must be running before starting the client.
 
 ℹ️ **Note 2:** For AWS EC2 deployment instructions, see [here](notes/first_steps_to_deploy.md).
+
+### 4. Run into issues?
+
+It's possible some issues might have arisen along the way. Feel free to post an issue asking for help as well as check out our [Common Pitfalls Guide](notes/common_pitfalls.md) for some issues that we have seen pop up.
 
 ---
 
