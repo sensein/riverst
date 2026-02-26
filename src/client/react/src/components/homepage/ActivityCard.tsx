@@ -19,6 +19,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ title, images, description,
     <div
       style={{
         position: 'relative',
+        flex: 1,
         opacity: disabled ? 0.6 : 1,
         cursor: disabled ? 'not-allowed' : 'pointer',
         pointerEvents: disabled ? 'none' : 'auto',
@@ -41,6 +42,7 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ title, images, description,
       <Card
         style={{
           width: 400,
+          height: '100%',
           borderRadius: 12,
           overflow: 'hidden',
           boxShadow: '0 2px 10px rgba(0, 0, 0, 0.06)',
@@ -57,20 +59,18 @@ const ActivityCard: React.FC<ActivityCardProps> = ({ title, images, description,
             ))}
           </Carousel>
         </div>
-        <Paragraph style={{ fontSize: 16, textAlign: 'left' }}>{description}</Paragraph>
+        <Paragraph style={{ fontSize: 16, textAlign: 'left', flex: 1 }}>{description}</Paragraph>
       </Card>
     </div>
   );
 
   return disabled ? (
-    <div>{cardContent}
-        <p>{settings_options_filepath}</p>
-    </div>
+    <div style={{ display: 'flex', flex: 1 }}>{cardContent}</div>
   ) : (
     <Link
       to={route}
       state={settings_options_filepath ? { settingsUrl: settings_options_filepath } : undefined}
-      style={{ textDecoration: 'none' }}
+      style={{ textDecoration: 'none', display: 'flex', flex: 1 }}
     >
       {cardContent}
     </Link>

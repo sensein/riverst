@@ -4,6 +4,7 @@ import datetime
 import json
 import math
 import os
+import re
 import sys
 import uuid
 from contextlib import asynccontextmanager
@@ -17,11 +18,14 @@ from dotenv import load_dotenv
 from fastapi import (
     BackgroundTasks,
     FastAPI,
+    File as FastAPIFile,
+    Form,
     Request,
     Query,
     Body,
     Depends,
     HTTPException,
+    UploadFile,
     status,
 )
 from fastapi.responses import JSONResponse
@@ -58,6 +62,14 @@ app.mount(
     "/api/sessions",
     StaticFiles(directory=BASE_SESSION_DIR / "sessions"),
     name="sessions",
+)
+
+AVATAR_UPLOADS_BASE = BASE_SESSION_DIR / "uploads"
+AVATAR_UPLOADS_BASE.mkdir(exist_ok=True)
+app.mount(
+    "/uploads",
+    StaticFiles(directory=AVATAR_UPLOADS_BASE),
+    name="uploads",
 )
 
 # Enable CORS for all origins
@@ -298,6 +310,219 @@ async def get_avatars() -> JSONResponse:
         return JSONResponse(
             status_code=500, content={"error": "Unable to load avatars"}
         )
+
+
+MAX_AVATAR_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
+MAX_AVATARS_PER_USER = 10
+_UUID_GLB_RE = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.glb$"
+)
+
+
+def _email_to_dirname(email: str) -> str:
+    """Convert an email to a filesystem/URL-safe directory name."""
+    return email.replace("@", "_at_")
+
+
+def _user_upload_dir(email: str) -> Path:
+    """Returns the upload directory for a given user, creating it if needed."""
+    user_dir = AVATAR_UPLOADS_BASE / _email_to_dirname(email)
+    user_dir.mkdir(parents=True, exist_ok=True)
+    return user_dir
+
+
+def _extract_glb_external_uris(content: bytes) -> list[str]:
+    """Parse the JSON chunk of a GLB file and return any external URI values found.
+
+    GLB layout: 12-byte file header, then chunks of (4-byte length + 4-byte type + data).
+    The first chunk is always the JSON chunk (type 0x4E4F534A).
+    """
+    if len(content) < 20:
+        return []
+
+    chunk_length = int.from_bytes(content[12:16], "little")
+    chunk_type = int.from_bytes(content[16:20], "little")
+
+    if chunk_type != 0x4E4F534A:  # "JSON"
+        return []
+
+    json_bytes = content[20 : 20 + chunk_length]
+    try:
+        gltf = json.loads(json_bytes)
+    except Exception as e:
+        logger.warning(f"Failed to parse GLB JSON chunk: {e}")
+        return []
+
+    external_uris: list[str] = []
+
+    def _collect(obj: object) -> None:
+        if isinstance(obj, dict):
+            for key, value in obj.items():
+                if key == "uri" and isinstance(value, str):
+                    if "://" in value and not value.startswith("data:"):
+                        external_uris.append(value)
+                else:
+                    _collect(value)
+        elif isinstance(obj, list):
+            for item in obj:
+                _collect(item)
+
+    _collect(gltf)
+    return external_uris
+
+
+@app.post("/api/upload-avatar")
+async def upload_avatar(
+    file: UploadFile = FastAPIFile(...),
+    gender: str = Form(default="masculine"),
+    current_user: dict = Depends(get_current_user),
+) -> JSONResponse:
+    """Accepts a GLB file upload, validates it, and saves to the user's upload directory."""
+    if gender not in ("masculine", "feminine"):
+        gender = "masculine"
+
+    if not file.filename or not file.filename.lower().endswith(".glb"):
+        raise HTTPException(status_code=400, detail="Only .glb files are accepted.")
+
+    content = await file.read()
+
+    if len(content) > MAX_AVATAR_FILE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File too large. Maximum size is {MAX_AVATAR_FILE_SIZE // (1024 * 1024)} MB.",
+        )
+
+    if len(content) < 12 or content[:4] != b"glTF":
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid GLB file. The file does not have a valid glTF binary header.",
+        )
+
+    external_uris = _extract_glb_external_uris(content)
+    if external_uris:
+        logger.warning(
+            f"Rejected GLB upload from {current_user['sub']}: "
+            f"contains {len(external_uris)} external URI(s): {external_uris[:3]}"
+        )
+        raise HTTPException(
+            status_code=400,
+            detail="GLB file contains external URI references, which are not permitted.",
+        )
+
+    user_dir = _user_upload_dir(current_user["sub"])
+    existing_count = sum(1 for f in user_dir.iterdir() if f.suffix == ".glb")
+    if existing_count >= MAX_AVATARS_PER_USER:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Upload limit reached. Maximum {MAX_AVATARS_PER_USER} avatars per user.",
+        )
+
+    file_id = str(uuid.uuid4())
+    unique_filename = f"{file_id}.glb"
+
+    with open(user_dir / unique_filename, "wb") as f:
+        f.write(content)
+
+    with open(user_dir / f"{file_id}.json", "w") as f:
+        json.dump({"gender": gender}, f)
+
+    encoded_email = _email_to_dirname(current_user["sub"])
+    model_url = f"/uploads/{encoded_email}/{unique_filename}"
+    logger.info(f"Avatar uploaded by {current_user['sub']}: {unique_filename} ({len(content)} bytes)")
+
+    return JSONResponse(content={"modelUrl": model_url})
+
+
+@app.delete("/api/upload-avatar/{filename}")
+async def delete_avatar(
+    filename: str,
+    current_user: dict = Depends(get_current_user),
+) -> JSONResponse:
+    """Deletes a user-uploaded avatar. Only the owning user's UUID-named files can be deleted."""
+    if not _UUID_GLB_RE.match(filename):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid filename. Only user-uploaded avatars can be deleted.",
+        )
+
+    user_dir = _user_upload_dir(current_user["sub"])
+    file_path = user_dir / filename
+
+    try:
+        file_path.resolve().relative_to(user_dir.resolve())
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid filename.")
+
+    stem = filename[:-4]
+    sidecar = user_dir / f"{stem}.json"
+
+    glb_deleted = False
+    json_deleted = False
+
+    if file_path.exists():
+        file_path.unlink()
+        glb_deleted = True
+    if sidecar.exists():
+        sidecar.unlink()
+        json_deleted = True
+
+    if not glb_deleted and not json_deleted:
+        raise HTTPException(status_code=404, detail="Avatar file not found.")
+
+    logger.info(
+        f"Avatar deleted by {current_user['sub']}: {filename} "
+        f"(glb={glb_deleted}, json={json_deleted})"
+    )
+    return JSONResponse(content={"deleted": filename})
+
+
+@app.get("/api/my-avatars")
+async def get_my_avatars(
+    current_user: dict = Depends(get_current_user),
+) -> JSONResponse:
+    """Returns the list of avatars uploaded by the current user, with gender metadata."""
+    encoded_email = _email_to_dirname(current_user["sub"])
+    user_dir = AVATAR_UPLOADS_BASE / encoded_email
+
+    if not user_dir.exists():
+        return JSONResponse(content=[])
+
+    glb_stems = {
+        f.stem for f in user_dir.iterdir()
+        if f.suffix == ".glb" and _UUID_GLB_RE.match(f.name)
+    }
+    json_stems = {
+        f.stem for f in user_dir.iterdir()
+        if f.suffix == ".json" and _UUID_GLB_RE.match(f.stem + ".glb")
+    }
+    all_stems = sorted(glb_stems | json_stems)
+
+    avatars = []
+    for stem in all_stems:
+        has_glb = stem in glb_stems
+        has_json = stem in json_stems
+        corrupted = not (has_glb and has_json)
+
+        if corrupted:
+            missing = ".glb" if has_json else ".json"
+            logger.warning(
+                f"Corrupted avatar pair for {current_user['sub']}: {stem} missing {missing}"
+            )
+
+        gender = "masculine"
+        if has_json:
+            try:
+                gender = json.load((user_dir / f"{stem}.json").open())["gender"]
+            except Exception as e:
+                logger.warning(f"Failed to read gender sidecar {stem}.json: {e}")
+
+        avatars.append({
+            "modelUrl": f"/uploads/{encoded_email}/{stem}.glb",
+            "gender": gender,
+            "corrupted": corrupted,
+        })
+
+    return JSONResponse(content=avatars)
 
 
 @app.get("/api/resources")

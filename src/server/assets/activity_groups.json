@@ -13,11 +13,11 @@
         "disabled": false
       },
       {
-        "title": "Create your avatar",
+        "title": "Upload your avatar",
         "images": ["/figures/create_avatar_black.svg",
                    "/figures/create_avatar_white.svg"],
-        "description": "Design the avatar you'll engage with: style, look, and voice are all up to you.",
-        "route": "/advanced-avatar-creation",
+        "description": "Upload a GLB avatar file to use in your interactions.",
+        "route": "/avatar-upload",
         "disabled": false
       }
     ]
