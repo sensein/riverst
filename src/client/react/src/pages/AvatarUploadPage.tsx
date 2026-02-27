@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Typography, Button, message, Layout } from 'antd';
-import { ArrowLeftOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, LinkOutlined } from '@ant-design/icons';
 import AvatarUploader from '../components/AvatarUploader';
 
 const { Title, Paragraph } = Typography;
@@ -47,6 +47,25 @@ const AvatarUploadPage = () => {
             Upload a GLB avatar file to use in the app. The avatar should be a humanoid model
             with morph targets for lip sync and facial expressions.
           </Paragraph>
+          <Paragraph>
+            Need an avatar? Try one of these free tools to create a GLB file:
+          </Paragraph>
+          <ul style={{ fontSize: '16px', lineHeight: '2' }}>
+            <li>
+              <LinkOutlined style={{ marginRight: 6 }} />
+              <a href="https://demo.readyplayer.me" target="_blank" rel="noopener noreferrer">
+                Ready Player Me
+              </a>
+              {' '}— create a stylized avatar from a variety of customizable characters
+            </li>
+            <li>
+              <LinkOutlined style={{ marginRight: 6 }} />
+              <a href="https://avaturn.me" target="_blank" rel="noopener noreferrer">
+                Avaturn
+              </a>
+              {' '}— create a realistic avatar of yourself using selfies from your smartphone
+            </li>
+          </ul>
         </div>
 
         <div style={{ flexGrow: 1, overflow: 'hidden' }}>

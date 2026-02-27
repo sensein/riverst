@@ -21,8 +21,9 @@ import {
   message,
   Button,
   Layout,
+  Tag,
 } from 'antd';
-import { ArrowLeftOutlined, DeleteOutlined, WarningOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, CheckCircleFilled, DeleteOutlined, WarningOutlined } from '@ant-design/icons';
 import AvatarRenderer from '../components/AvatarRenderer';
 
 const { Title, Paragraph } = Typography;
@@ -41,9 +42,19 @@ type UploadedAvatar = {
   corrupted?: boolean;
 };
 
+const readSelectedModelUrl = (): string | null => {
+  try {
+    const raw = localStorage.getItem('selectedAvatar');
+    return raw ? JSON.parse(raw).modelUrl ?? null : null;
+  } catch {
+    return null;
+  }
+};
+
 const AvatarCreatorPage = () => {
   const [avatars, setAvatars] = useState<Avatar[]>([]);
   const [uploadedAvatars, setUploadedAvatars] = useState<UploadedAvatar[]>([]);
+  const [selectedModelUrl, setSelectedModelUrl] = useState<string | null>(readSelectedModelUrl);
   const navigate = useNavigate();
   const { authRequest } = useAuth();
 
@@ -80,6 +91,7 @@ const AvatarCreatorPage = () => {
             const stillExists = !!serverEntry && !serverEntry.corrupted;
             if (isUpload && !stillExists) {
               localStorage.removeItem('selectedAvatar');
+              setSelectedModelUrl(null);
             }
           } catch { /* ignore */ }
         }
@@ -111,6 +123,7 @@ const AvatarCreatorPage = () => {
       try {
         if (JSON.parse(selected).modelUrl === modelUrl) {
           localStorage.removeItem('selectedAvatar');
+          setSelectedModelUrl(null);
         }
       } catch { /* ignore */ }
     }
@@ -121,6 +134,7 @@ const AvatarCreatorPage = () => {
   // Save avatar choice and navigate back
   const handleAvatarSelect = (avatar: Avatar | UploadedAvatar): void => {
     localStorage.setItem('selectedAvatar', JSON.stringify(avatar));
+    setSelectedModelUrl(avatar.modelUrl);
     message.success(`Avatar selected`);
     navigate('/');
   };
@@ -205,13 +219,23 @@ const AvatarCreatorPage = () => {
                   );
                 }
 
+                const isSelected = avatar.modelUrl === selectedModelUrl;
                 return (
                   <Col xs={24} sm={12} lg={6} key={avatar.modelUrl}>
                     <Card
-                      title={`Uploaded Avatar ${idx + 1}`}
+                      title={
+                        <span>
+                          {`Uploaded Avatar ${idx + 1}`}
+                          {isSelected && (
+                            <Tag color="success" icon={<CheckCircleFilled />} style={{ marginLeft: 8 }}>
+                              Selected
+                            </Tag>
+                          )}
+                        </span>
+                      }
                       hoverable
                       onClick={() => handleAvatarSelect(avatar)}
-                      style={{ height: '100%', cursor: 'pointer' }}
+                      style={{ height: '100%', cursor: 'pointer', ...(isSelected && { borderColor: '#52c41a', boxShadow: '0 0 0 2px rgba(82,196,26,0.2)' }) }}
                       extra={deleteButton}
                     >
                       <div style={{ height: '600px' }}>
@@ -231,13 +255,24 @@ const AvatarCreatorPage = () => {
 
         <Title level={3}>Pre-configured Avatars</Title>
         <Row gutter={[24, 24]}>
-          {avatars.map((avatar) => (
+          {avatars.map((avatar) => {
+            const isSelected = avatar.modelUrl === selectedModelUrl;
+            return (
             <Col xs={24} sm={12} lg={6} key={avatar.id}>
               <Card
-                title={avatar.name}
+                title={
+                  <span>
+                    {avatar.name}
+                    {isSelected && (
+                      <Tag color="success" icon={<CheckCircleFilled />} style={{ marginLeft: 8 }}>
+                        Selected
+                      </Tag>
+                    )}
+                  </span>
+                }
                 hoverable
                 onClick={() => handleAvatarSelect(avatar)}
-                style={{ height: '100%', cursor: 'pointer' }}
+                style={{ height: '100%', cursor: 'pointer', ...(isSelected && { borderColor: '#52c41a', boxShadow: '0 0 0 2px rgba(82,196,26,0.2)' }) }}
               >
                 <div style={{ height: '600px' }}>
                   <AvatarRenderer
@@ -247,7 +282,8 @@ const AvatarCreatorPage = () => {
                 </div>
               </Card>
             </Col>
-          ))}
+            );
+          })}
         </Row>
       </Content>
     </Layout>
