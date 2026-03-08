@@ -5,8 +5,8 @@
 1. Set up and activate your virtual environment:
 
 ```bash
-conda create -n riverst python=3.11 -y
-conda activate riverst
+python -m venv .venv
+source .venv/bin/activate
 ```
 
 2. Install python dependencies
@@ -14,9 +14,15 @@ conda activate riverst
 pip install -r requirements.txt
 ```
 
+For a GPU-oriented Linux deployment, install:
+```bash
+pip install -r requirements.gpu.txt
+```
+
 3. Copy `env.example` to `.env` and configure params:
    - Set your `OPENAI_API_KEY` for LLM and TTS services
    - Set your env variables (you can follow the instructions in the `.env.example` file)
+   - Set `RIVERST_COMPUTE_DEVICE=cpu` if you want to disable GPU/MPS usage at runtime
 
 **Note**: Not all API KEYS are strictly required. Only if you want to use a remote service, you need to expose the corresponding API KEY
 
@@ -55,4 +61,11 @@ python main.py
 ```bash
 docker build --no-cache -t fastapi-server .
 docker run -p 7860:7860 --env-file .env fastapi-server
+```
+
+To build a GPU-oriented image instead:
+
+```bash
+docker build --no-cache --build-arg RIVERST_DEPLOYMENT_TARGET=gpu -t fastapi-server .
+docker run --gpus all -p 7860:7860 --env-file .env fastapi-server
 ```

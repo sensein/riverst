@@ -105,6 +105,14 @@ More detailed instructions for setting up the [client](src/client/react/README.m
 docker compose up --build
 ```
 
+This default Docker setup builds the server for CPU / non-GPU deployment.
+
+To build with GPU-oriented extras and request a GPU-enabled container runtime:
+
+```bash
+docker compose -f docker-compose.yaml -f docker-compose.gpu.yaml up --build
+```
+
 #### 3b. Run manually in two different tabs of your terminal (recommended)
 
 - **Start the server:**
@@ -115,6 +123,16 @@ docker compose up --build
   conda install -c conda-forge "ffmpeg=7.*"
   pip install -r requirements.txt
   python main.py
+  ```
+
+  For a GPU-oriented install on Linux, use:
+  ```bash
+  pip install -r requirements.gpu.txt
+  ```
+
+  To force local inference onto CPU even on a machine with an accelerator, set:
+  ```bash
+  export RIVERST_COMPUTE_DEVICE=cpu
   ```
 
 - **Start the client:**

@@ -1,0 +1,8 @@
+services:
+  server:
+    build:
+      args:
+        RIVERST_DEPLOYMENT_TARGET: gpu
+    environment:
+      RIVERST_COMPUTE_DEVICE: auto
+    gpus: all
