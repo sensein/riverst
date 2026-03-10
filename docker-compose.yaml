@@ -5,11 +5,15 @@ services:
     build:
       context: ./src/server
       dockerfile: Dockerfile
+      args:
+        RIVERST_DEPLOYMENT_TARGET: ${RIVERST_DEPLOYMENT_TARGET:-cpu}
     container_name: riverst_server
     ports:
       - "7860:7860"
     env_file:
       - ./src/server/.env
+    environment:
+      RIVERST_COMPUTE_DEVICE: ${RIVERST_COMPUTE_DEVICE:-auto}
     volumes:
       - ./src/server/sessions:/app/sessions
 

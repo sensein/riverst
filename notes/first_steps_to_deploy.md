@@ -6,7 +6,8 @@ This guide explains step-by-step how to deploy the Riverst project on AWS using 
 
 ## 1. Create an AWS EC2 instance
 
-- Choose `g4dn.xlarge` as the instance type or more powerful (you may need a more powerful gpu if you want to run models locally without experiencing any unpleasant delay).
+- For GPU deployment, choose `g4dn.xlarge` as the instance type or more powerful.
+- For non-GPU deployment, choose a general-purpose Ubuntu instance sized for your traffic and disable accelerator usage with `RIVERST_COMPUTE_DEVICE=cpu`.
 - Use a Linux (Ubuntu) machine.
 - Set the storage volume to **64 GB** (or larger).
 - Open these ports in the security group:
@@ -36,6 +37,8 @@ ssh -i your-key.pem ubuntu@your-elastic-ip
 ---
 
 ## 4. Install NVIDIA drivers
+
+Only required for GPU deployment.
 
 ```bash
 sudo apt update
@@ -160,6 +163,7 @@ cd riverst/src/server
 pip install -r requirements.txt
 cp .env.example .env
 # Edit `.env` to configure your settings following .env.example
+# For CPU-only deployment add: RIVERST_COMPUTE_DEVICE=cpu
 # Edit the src/server/config/authorized_users.json
 
 # [In a tmux tab]
