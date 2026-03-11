@@ -25,7 +25,10 @@ class DeviceUtilsTest(unittest.TestCase):
             "bot": sys.modules.get("bot"),
         }
         sys.modules["torch"] = make_fake_torch()
-        self.device_utils = importlib.import_module("bot.utils.device_utils")
+        if "bot.utils.device_utils" in sys.modules:
+            self.device_utils = importlib.reload(sys.modules["bot.utils.device_utils"])
+        else:
+            self.device_utils = importlib.import_module("bot.utils.device_utils")
 
     def tearDown(self):
         for module_name, module in self.modules_backup.items():
