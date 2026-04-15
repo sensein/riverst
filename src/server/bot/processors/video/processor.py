@@ -41,15 +41,27 @@ class VideoProcessor(FrameProcessor):
 
         if self.enable_pose:
             logger.info("Initializing YOLO pose model...")
-            yolo_model = YOLO("yolo11n-pose.pt")
-            yolo_model.export(format="onnx")  # Creates 'yolo11n-pose.onnx'
-            self.pose_inferencer = YOLO("yolo11n-pose.onnx")
+            self.pose_inferencer = self._load_pose_inferencer()
 
             dummy_img = np.random.randint(
                 0, 255, (camera_out_height, camera_out_width, 3), dtype=np.uint8
             )
             _ = self.pose_inferencer(dummy_img)
             logger.info("YOLO warmed up.")
+
+    def _load_pose_inferencer(self):
+        """Prefer ONNX when available, but keep CPU deployments functional without it."""
+        yolo_model = YOLO("yolo11n-pose.pt")
+        try:
+            yolo_model.export(format="onnx")  # Creates 'yolo11n-pose.onnx'
+            logger.info("Using ONNX-backed YOLO pose inferencer.")
+            return YOLO("yolo11n-pose.onnx")
+        except Exception as exc:
+            logger.warning(
+                "ONNX pose export unavailable, falling back to PyTorch YOLO pose model: "
+                f"{exc}"
+            )
+            return yolo_model
 
     async def _run_pose_in_background(self, img: np.ndarray) -> None:
         if self._pose_lock.locked():

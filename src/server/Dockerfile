@@ -4,6 +4,9 @@ FROM python:3.12
 # Set working directory
 WORKDIR /app
 
+ARG RIVERST_DEPLOYMENT_TARGET=cpu
+ENV RIVERST_DEPLOYMENT_TARGET=${RIVERST_DEPLOYMENT_TARGET}
+
 # System packages and Rust installation
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git build-essential g++ curl \
@@ -14,8 +17,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy application code
 COPY . .
 
-# Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+# Install dependencies for the selected deployment target
+RUN case "$RIVERST_DEPLOYMENT_TARGET" in \
+      cpu) requirements_file="requirements.txt" ;; \
+      gpu) requirements_file="requirements.gpu.txt" ;; \
+      *) echo "Unsupported RIVERST_DEPLOYMENT_TARGET: $RIVERST_DEPLOYMENT_TARGET" >&2; exit 1 ;; \
+    esac \
+    && pip install --no-cache-dir -r "$requirements_file"
 
 
 # Expose port
