@@ -48,16 +48,9 @@ const AvatarUploadPage = () => {
             with morph targets for lip sync and facial expressions.
           </Paragraph>
           <Paragraph>
-            Need an avatar? Try one of these free tools to create a GLB file:
+            Need an avatar? Try this free tool to create a GLB file:
           </Paragraph>
           <ul style={{ fontSize: '16px', lineHeight: '2' }}>
-            <li>
-              <LinkOutlined style={{ marginRight: 6 }} />
-              <a href="https://demo.readyplayer.me" target="_blank" rel="noopener noreferrer">
-                Ready Player Me
-              </a>
-              {' '}— create a stylized avatar from a variety of customizable characters
-            </li>
             <li>
               <LinkOutlined style={{ marginRight: 6 }} />
               <a href="https://avaturn.me" target="_blank" rel="noopener noreferrer">
