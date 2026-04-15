@@ -17,8 +17,8 @@ import { Suspense, lazy } from 'react';
 /**
  * Lazy-loaded pages for code-splitting and faster initial load.
  */
-const AdvancedAvatarCreatorPage = lazy(() => import('./pages/AdvancedAvatarCreatorPage'));
 const AvatarCreatorPage = lazy(() => import('./pages/AvatarCreatorPage'));
+const AvatarUploadPage = lazy(() => import('./pages/AvatarUploadPage'));
 const AvatarInteraction = lazy(() => import('./pages/AvatarInteraction'));
 const AvatarInteractionSettings = lazy(() => import('./pages/AvatarInteractionSettings'));
 const SessionsList = lazy(() => import('./pages/SessionsList'));
@@ -49,10 +49,10 @@ const AuthenticatedRoutes = () => (
         }
       />
       <Route
-        path="/advanced-avatar-creation"
+        path="/avatar-upload"
         element={
           <ProtectedRoute>
-            <AdvancedAvatarCreatorPage />
+            <AvatarUploadPage />
           </ProtectedRoute>
         }
       />

@@ -54,4 +54,5 @@ padding: 16px;
 
 .activity-inline-card {
 flex: 0 0 auto;
+display: flex;
 }
