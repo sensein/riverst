@@ -16,6 +16,18 @@ const withAuthHeaders = (token: string | null, config: any = {}) => ({
   headers: { ...config.headers, Authorization: `Bearer ${token}` }
 });
 
+const STORAGE_KEYS = {
+  AUTH_TOKEN: 'auth_token',
+  SELECTED_AVATAR: 'selectedAvatar',
+  UPLOADED_AVATARS: 'uploadedAvatars',
+} as const;
+
+const clearUserSessionStorage = () => {
+  localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+  localStorage.removeItem(STORAGE_KEYS.SELECTED_AVATAR);
+  localStorage.removeItem(STORAGE_KEYS.UPLOADED_AVATARS);
+};
+
 export const makeAuthenticatedRequest = (token: string | null) => ({
   get: (url: string, config = {}) => axios.get(url, withAuthHeaders(token, config)),
   post: (url: string, data: any, config = {}) => axios.post(url, data, withAuthHeaders(token, config)),
@@ -93,16 +105,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const bypassResponse = await axios.post('/api/auth/bypass');
           const { access_token, user: userData } = bypassResponse.data;
 
-          localStorage.setItem('auth_token', access_token);
-          localStorage.removeItem('selectedAvatar');
-          localStorage.removeItem('uploadedAvatars');
+          clearUserSessionStorage();
+          localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, access_token);
           setToken(access_token);
           setUser(userData);
           setIsLoading(false);
           return;
         }
 
-        const savedToken = localStorage.getItem('auth_token');
+        const savedToken = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
         if (savedToken) {
           setToken(savedToken);
           // Verify token and get user info
@@ -153,10 +164,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const { access_token, user: userData } = response.data;
 
-      // Clear avatar state before updating React state to prevent stale reads.
-      localStorage.setItem('auth_token', access_token);
-      localStorage.removeItem('selectedAvatar');
-      localStorage.removeItem('uploadedAvatars');
+      clearUserSessionStorage();
+      localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, access_token);
       setToken(access_token);
       setUser(userData);
 
@@ -174,9 +183,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * Clears user and token from state and localStorage.
    */
   const logout = () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('selectedAvatar');
-    localStorage.removeItem('uploadedAvatars');
+    clearUserSessionStorage();
     setUser(null);
     setToken(null);
   };
