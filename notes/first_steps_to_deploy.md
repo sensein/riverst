@@ -179,10 +179,8 @@ cp env.example .env
 # For CPU-only deployment add: RIVERST_COMPUTE_DEVICE=cpu
 # Edit the src/server/config/authorized_users.json
 
-# [In a tmux tab]
-sudo /home/ubuntu/miniconda3/envs/riverst/bin/python main.py \
-  --ssl-certfile /etc/letsencrypt/live/play.kivaproject.org/fullchain.pem \
-  --ssl-keyfile /etc/letsencrypt/live/play.kivaproject.org/privkey.pem
+# [In a tmux tab — nginx handles SSL, so no cert args needed]
+/home/ubuntu/miniconda3/envs/riverst/bin/python main.py
 ```
 
 
@@ -201,12 +199,10 @@ After=network.target
 
 [Service]
 Type=simple
-User=root
+User=ubuntu
 WorkingDirectory=/home/ubuntu/riverst/src/server
 Environment=RIVERST_COMPUTE_DEVICE=cpu
-ExecStart=/home/ubuntu/miniconda3/envs/riverst/bin/python main.py \
-  --ssl-certfile /etc/letsencrypt/live/play.kivaproject.org/fullchain.pem \
-  --ssl-keyfile /etc/letsencrypt/live/play.kivaproject.org/privkey.pem
+ExecStart=/home/ubuntu/miniconda3/envs/riverst/bin/python main.py
 Restart=always
 RestartSec=5
 
@@ -223,11 +219,9 @@ Requires=ollama-server.service ollama-qwen3.service
 
 [Service]
 Type=simple
-User=root
+User=ubuntu
 WorkingDirectory=/home/ubuntu/riverst/src/server
-ExecStart=/home/ubuntu/miniconda3/envs/riverst/bin/python main.py \
-  --ssl-certfile /etc/letsencrypt/live/play.kivaproject.org/fullchain.pem \
-  --ssl-keyfile /etc/letsencrypt/live/play.kivaproject.org/privkey.pem
+ExecStart=/home/ubuntu/miniconda3/envs/riverst/bin/python main.py
 Restart=always
 RestartSec=5
 
@@ -239,13 +233,9 @@ WantedBy=multi-user.target
 ```
 sudo systemctl daemon-reload
 sudo systemctl enable riverst-server.service
+sudo systemctl start riverst-server.service
+journalctl -u riverst-server.service -n 20 -f
 ```
-
-> **Note**: Do not run `sudo systemctl start riverst-server.service` yet — the SSL certificates referenced above do not exist until Step 12. Complete Steps 10–12 first, then start the service:
-> ```
-> sudo systemctl start riverst-server.service
-> journalctl -u riverst-server.service -n 20 -f
-> ```
 
 
 ---
@@ -435,22 +425,18 @@ server {
     }
 
     location /api/ {
-        proxy_pass https://localhost:7860/api/;
+        proxy_pass http://localhost:7860/api/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
         proxy_set_header Host $host;
         proxy_cache_bypass $http_upgrade;
-
-        # Because it's a self-signed or custom cert:
-        proxy_ssl_verify off;
     }
 
     location /uploads/ {
-        proxy_pass https://localhost:7860/uploads/;
+        proxy_pass http://localhost:7860/uploads/;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
-        proxy_ssl_verify off;
     }
 }
 ```
