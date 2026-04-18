@@ -139,6 +139,8 @@ nvm install 22
 ## 8. Install more system dependencies (required by riverst and for serving web apps - a.k.a. nginx)
 
 ```bash
+sudo add-apt-repository universe
+sudo apt update
 sudo apt install -y build-essential python3-dev ffmpeg git
 sudo apt install -y libsndfile1-dev pkg-config
 sudo apt install -y nginx
@@ -157,8 +159,8 @@ git clone https://github.com/sensein/riverst.git
 ```bash
 cd riverst/src/client/react/
 npm install
-cp .env.example .env
-# Edit `.env` to configure your settings following .env.example
+cp env.example .env
+# Edit `.env` to configure your settings following env.example
 npm run build
 sudo mkdir -p /var/www
 sudo ln -s /home/ubuntu/riverst/src/client/react/dist /var/www/play.kivaproject.org
@@ -171,8 +173,8 @@ conda create -n riverst python=3.11
 conda activate riverst
 cd riverst/src/server
 pip install -r requirements.txt
-cp .env.example .env
-# Edit `.env` to configure your settings following .env.example
+cp env.example .env
+# Edit `.env` to configure your settings following env.example
 # Required: OPENAI_API_KEY, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, SECRET_KEY
 # For CPU-only deployment add: RIVERST_COMPUTE_DEVICE=cpu
 # Edit the src/server/config/authorized_users.json
@@ -210,7 +212,6 @@ RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
-Then enable and start:
 ```
 
 - **GPU deployment** — include Ollama as a dependency instead:
@@ -232,7 +233,6 @@ RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
-Then enable and start:
 ```
 
 - Run:
@@ -415,6 +415,7 @@ server {
 
     root /var/www/play.kivaproject.org;
     index index.html;
+    client_max_body_size 50M;
 
     #location / {
     #    proxy_pass http://localhost:5173;
@@ -440,6 +441,13 @@ server {
         # Because it's a self-signed or custom cert:
         proxy_ssl_verify off;
     }
+
+    location /uploads/ {
+        proxy_pass https://localhost:7860/uploads/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_ssl_verify off;
+    }
 }
 ```
 
@@ -451,6 +459,7 @@ sudo systemctl start nginx
 sudo systemctl status nginx
 ```
 
+> **Note on user-uploaded avatars**: Avatars uploaded by users are stored locally at `src/server/uploads/` on the EC2 instance and are gitignored. They will be lost if the instance is terminated or replaced. Consider snapshotting the EBS volume before replacing an instance, or migrating uploads to S3 in the future.
 
 ---
 
