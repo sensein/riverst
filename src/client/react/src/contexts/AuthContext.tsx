@@ -93,9 +93,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const bypassResponse = await axios.post('/api/auth/bypass');
           const { access_token, user: userData } = bypassResponse.data;
 
+          localStorage.setItem('auth_token', access_token);
+          localStorage.removeItem('selectedAvatar');
+          localStorage.removeItem('uploadedAvatars');
           setToken(access_token);
           setUser(userData);
-          localStorage.setItem('auth_token', access_token);
           setIsLoading(false);
           return;
         }
@@ -151,13 +153,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const { access_token, user: userData } = response.data;
 
-      setToken(access_token);
-      setUser(userData);
-
-      // Save token; clear any avatar state left by a previous user's session.
+      // Clear avatar state before updating React state to prevent stale reads.
       localStorage.setItem('auth_token', access_token);
       localStorage.removeItem('selectedAvatar');
       localStorage.removeItem('uploadedAvatars');
+      setToken(access_token);
+      setUser(userData);
 
     } catch (error: any) {
       console.error('Login failed:', error);
@@ -173,11 +174,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * Clears user and token from state and localStorage.
    */
   const logout = () => {
-    setUser(null);
-    setToken(null);
     localStorage.removeItem('auth_token');
     localStorage.removeItem('selectedAvatar');
     localStorage.removeItem('uploadedAvatars');
+    setUser(null);
+    setToken(null);
   };
 
   const value: AuthContextType = {
