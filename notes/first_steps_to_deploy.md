@@ -2,14 +2,17 @@
 
 This guide explains step-by-step how to deploy the Riverst project on AWS using a Linux EC2 machine.
 
+> **CPU-only deployment**: All activities are now configured to use OpenAI APIs by default (STT, LLM, TTS). No GPU, NVIDIA drivers, or Ollama is required. Skip steps 4 and 5, use the CPU-only service config in step 9, and skip step 10.
+
 ---
 
 ## 1. Create an AWS EC2 instance
 
-- For GPU deployment, choose `g4dn.xlarge` as the instance type or more powerful.
-- For non-GPU deployment, choose a general-purpose Ubuntu instance sized for your traffic and disable accelerator usage with `RIVERST_COMPUTE_DEVICE=cpu`.
-- Use a Linux (Ubuntu) machine.
-- Set the storage volume to **64 GB** (or larger).
+**CPU-only (recommended):** Use `c6i.2xlarge` (8 vCPU, 16 GB RAM, ~$0.34/hr) or `m6i.xlarge` (4 vCPU, 16 GB RAM, ~$0.19/hr). Set storage to **30 GB**.
+
+**GPU deployment:** Choose `g4dn.xlarge` or more powerful. Set storage to **64 GB** (or larger).
+
+- Use a Linux (Ubuntu 22.04 LTS) machine.
 - Open these ports in the security group:
   - **22** (SSH)
   - **80** (HTTP)
@@ -20,10 +23,15 @@ This guide explains step-by-step how to deploy the Riverst project on AWS using 
 
 ## 2. Create and assign an Elastic IP
 
-- Go to the AWS console.
-- Create a new **Elastic IP**.
-- Associate it with your EC2 instance.
-- (Optional) If you have a domain or subdomain (like our `kivaproject.org` and `play.kivaproject.org`), connect it to the Elastic IP.
+**If replacing an existing instance (zero-downtime domain cutover):**
+1. Go to EC2 → Elastic IPs in the AWS console.
+2. Disassociate the existing Elastic IP from the old instance.
+3. Associate it with your new instance.
+4. DNS propagates instantly — no TTL wait needed since the IP address does not change.
+
+**If creating a fresh deployment:**
+- Create a new **Elastic IP** and associate it with your EC2 instance.
+- Point your domain or subdomain (e.g., `play.kivaproject.org`) DNS A record to the new Elastic IP.
 
 ---
 
@@ -38,7 +46,7 @@ ssh -i your-key.pem ubuntu@your-elastic-ip
 
 ## 4. Install NVIDIA drivers
 
-Only required for GPU deployment.
+**GPU deployment only — skip for CPU-only instances.**
 
 ```bash
 sudo apt update
@@ -50,6 +58,8 @@ sudo reboot
 ---
 
 ## 5. Install ollama
+
+**GPU deployment only — skip for CPU-only instances.**
 
 ```bash
 curl -fsSL https://ollama.com/install.sh | sh
@@ -163,6 +173,7 @@ cd riverst/src/server
 pip install -r requirements.txt
 cp .env.example .env
 # Edit `.env` to configure your settings following .env.example
+# Required: OPENAI_API_KEY, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, SECRET_KEY
 # For CPU-only deployment add: RIVERST_COMPUTE_DEVICE=cpu
 # Edit the src/server/config/authorized_users.json
 
@@ -175,12 +186,34 @@ sudo /home/ubuntu/miniconda3/envs/riverst/bin/python main.py \
 
 Instead of starting the backend manually, you can run it as a service.
 
-- Run Riverst backend as a daemon
+- **CPU-only** — Run Riverst backend as a daemon (no Ollama dependency):
 ```
 sudo vim /etc/systemd/system/riverst-server.service
 ```
 
 - Paste:
+```
+[Unit]
+Description=Riverst Python Server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/ubuntu/riverst/src/server
+Environment=RIVERST_COMPUTE_DEVICE=cpu
+ExecStart=/home/ubuntu/miniconda3/envs/riverst/bin/python main.py \
+  --ssl-certfile /etc/letsencrypt/live/play.kivaproject.org/fullchain.pem \
+  --ssl-keyfile /etc/letsencrypt/live/play.kivaproject.org/privkey.pem
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+Then enable and start:
+```
+
+- **GPU deployment** — include Ollama as a dependency instead:
 ```
 [Unit]
 Description=Riverst Python Server
@@ -214,6 +247,8 @@ journalctl -u riverst-server.service -n 20 -f
 ---
 
 ## 10. Run ollama models
+
+**GPU deployment only — skip for CPU-only instances.**
 
 Run interactively (only one at a time because `ollama run` by default connects to a single Ollama server running at localhost:11434):
 
