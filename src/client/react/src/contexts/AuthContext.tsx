@@ -154,8 +154,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setToken(access_token);
       setUser(userData);
 
-      // Save token to localStorage
+      // Save token; clear any avatar state left by a previous user's session.
       localStorage.setItem('auth_token', access_token);
+      localStorage.removeItem('selectedAvatar');
+      localStorage.removeItem('uploadedAvatars');
 
     } catch (error: any) {
       console.error('Login failed:', error);
@@ -174,6 +176,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(null);
     setToken(null);
     localStorage.removeItem('auth_token');
+    localStorage.removeItem('selectedAvatar');
+    localStorage.removeItem('uploadedAvatars');
   };
 
   const value: AuthContextType = {
