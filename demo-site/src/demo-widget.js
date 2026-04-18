@@ -594,9 +594,11 @@ async function endSession() {
 function registerUnloadHandler() {
   window.addEventListener('beforeunload', () => {
     if (state.sessionId && state.authToken) {
-      try {
-        navigator.sendBeacon(`${API_URL}/api/end_session/${state.sessionId}`);
-      } catch (_) {}
+      fetch(`${API_URL}/api/end_session/${state.sessionId}`, {
+        method: 'POST',
+        keepalive: true,
+        headers: { Authorization: `Bearer ${state.authToken}` },
+      });
     }
   });
 }
