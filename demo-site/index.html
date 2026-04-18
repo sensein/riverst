@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Riverst — Interactive Avatar Conversation Platform</title>
+    <meta name="description" content="Riverst is an open-source platform for building, running, and analyzing interactive user-avatar conversations. Built for research, education, and language learning." />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Riverst — Interactive Avatar Conversation Platform" />
+    <meta property="og:description" content="Build, run, and analyze interactive avatar conversations powered by WebRTC and AI." />
+    <meta property="og:image" content="/riverst/screenshots/fabio_says_hi.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://sensein.github.io/riverst/" />
+
+    <!-- Canonical -->
+    <link rel="canonical" href="https://sensein.github.io/riverst/" />
+
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <!-- Skip to main content (accessibility) -->
+    <a class="skip-link" href="#hero">Skip to main content</a>
+
+    <!-- Sticky navigation header -->
+    <header class="site-header" role="banner">
+      <nav class="site-nav" aria-label="Main navigation">
+        <a class="nav-logo" href="#hero" aria-label="Riverst — back to top">
+          <img src="/riverst/logo/riverst_black.svg" alt="Riverst" class="nav-logo-img nav-logo-dark" />
+          <img src="/riverst/logo/riverst_white.svg" alt="Riverst" class="nav-logo-img nav-logo-light" />
+        </a>
+        <button class="nav-hamburger" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="nav-links">
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+        </button>
+        <ul class="nav-links" id="nav-links" role="list">
+          <li><a href="#about" class="nav-link">About</a></li>
+          <li><a href="#background" class="nav-link">Background</a></li>
+          <li><a href="#activities" class="nav-link">Activities</a></li>
+          <li><a href="#demo" class="nav-link">Demo</a></li>
+          <li><a href="#team" class="nav-link">Team</a></li>
+          <li><a href="#get-started" class="nav-link">Get Started</a></li>
+          <li>
+            <a href="https://github.com/sensein/riverst" class="nav-link nav-github" target="_blank" rel="noopener noreferrer" aria-label="View Riverst on GitHub (opens in new tab)">
+              GitHub
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </header>
+
+    <main id="main-content">
+      <!-- ========== HERO ========== -->
+      <section id="hero" class="section section-hero" aria-labelledby="hero-heading">
+        <!-- Hero content injected by main.js -->
+      </section>
+
+      <!-- ========== ABOUT ========== -->
+      <section id="about" class="section section-about" aria-labelledby="about-heading">
+        <div class="container">
+          <h2 id="about-heading" class="section-title">What is Riverst?</h2>
+          <p class="section-intro">Riverst is an open-source research platform that makes it easy to create, deploy, and study interactive user–avatar conversations powered by AI and real-time voice.</p>
+
+          <div class="pillars-grid" role="list">
+            <article class="pillar-card" role="listitem">
+              <div class="pillar-icon" aria-hidden="true">🛠️</div>
+              <h3 class="pillar-title">Build</h3>
+              <p class="pillar-description">Configure multi-modal AI pipelines with speech-to-text, language models, and text-to-speech. Define custom system prompts, activity flows, and avatar behaviors — no ML expertise required.</p>
+            </article>
+            <article class="pillar-card" role="listitem">
+              <div class="pillar-icon" aria-hidden="true">▶️</div>
+              <h3 class="pillar-title">Run</h3>
+              <p class="pillar-description">Deploy avatar interactions over WebRTC with real-time lip-sync, body animations, and low-latency audio. Works on CPU or GPU, in the cloud or on-premise.</p>
+            </article>
+            <article class="pillar-card" role="listitem">
+              <div class="pillar-icon" aria-hidden="true">📊</div>
+              <h3 class="pillar-title">Analyze</h3>
+              <p class="pillar-description">Every session is automatically logged, transcribed, and summarized. Review conversation analytics, download session data, and iterate on your activity design.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== BACKGROUND ========== -->
+      <section id="background" class="section section-background" aria-labelledby="background-heading">
+        <div class="container">
+          <h2 id="background-heading" class="section-title">Research Background</h2>
+          <div id="background-content">
+            <!-- Injected by renderBackground() in main.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== ACTIVITIES ========== -->
+      <section id="activities" class="section section-activities" aria-labelledby="activities-heading">
+        <div class="container">
+          <h2 id="activities-heading" class="section-title">Activities</h2>
+          <p class="section-intro">Riverst ships with ready-to-use activity templates. Each activity configures the avatar's personality, goals, and conversation flow.</p>
+          <div id="activities-grid" class="activities-grid" role="list" aria-label="Available activities">
+            <!-- Injected by renderActivities() in main.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== DEMO ========== -->
+      <section id="demo" class="section section-demo" aria-labelledby="demo-heading">
+        <div class="container">
+          <h2 id="demo-heading" class="section-title">See Riverst in Action</h2>
+          <p class="section-intro">Watch Riverst in action, then try it yourself with a live avatar session.</p>
+
+          <!-- Video subsection -->
+          <div id="demo-videos" class="demo-subsection">
+            <h3 class="subsection-title">Watch the Demo</h3>
+            <div id="video-grid" class="video-grid" role="list" aria-label="Demo videos">
+              <!-- Injected by renderVideos() in main.js -->
+            </div>
+          </div>
+
+          <!-- Live widget subsection -->
+          <div id="demo-widget-container" class="demo-subsection demo-widget-section">
+            <h3 class="subsection-title">Live Demo</h3>
+            <p class="section-intro">An interactive demo is coming soon. Watch the videos above to see Riverst in action.</p>
+
+            <div id="demo-widget" class="demo-widget">
+              <!-- State: idle (hidden until JS enables live demo) -->
+              <div id="widget-idle" class="widget-state" aria-live="polite" hidden>
+                <button id="demo-cta-btn" class="btn btn-primary btn-large" type="button">
+                  Try Live Demo
+                </button>
+                <p class="mic-note">Microphone access required. Authorized accounts only.</p>
+              </div>
+
+              <!-- State: active/expiring — TalkingHead canvas -->
+              <div id="talkinghead-canvas-container" class="talkinghead-container" aria-label="Avatar interaction canvas" hidden></div>
+
+              <!-- Countdown + end-session controls (shown only during active/expiring) -->
+              <div id="demo-session-controls" class="demo-session-controls" hidden>
+                <span id="demo-countdown" class="demo-countdown" role="timer" aria-live="polite" aria-label="Remaining session time"></span>
+                <button id="demo-end-btn" type="button" class="btn btn-ghost btn-sm">End Session</button>
+              </div>
+
+              <!-- Status / message area — default content shown before JS loads -->
+              <div id="demo-status" class="demo-status" role="status" aria-live="polite" aria-atomic="true">
+                <div class="widget-message">
+                  <div class="widget-message-icon" aria-hidden="true">🚧</div>
+                  <p class="widget-message-title">Live Demo Coming Soon</p>
+                  <p class="widget-message-text">
+                    The interactive demo is currently in progress.
+                    Watch our videos below to see Riverst in action.
+                  </p>
+                  <a href="#demo-videos" class="btn btn-primary">Watch Videos</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== TEAM ========== -->
+      <section id="team" class="section section-team" aria-labelledby="team-heading">
+        <div class="container">
+          <h2 id="team-heading" class="section-title">The Team</h2>
+          <div id="team-grid" class="team-grid" role="list" aria-label="Team members">
+            <!-- Injected by renderTeam() in main.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== GET STARTED ========== -->
+      <section id="get-started" class="section section-get-started" aria-labelledby="get-started-heading">
+        <div class="container">
+          <h2 id="get-started-heading" class="section-title">Deploy Your Own Instance</h2>
+          <p class="section-intro">Riverst is fully open source. Run it on your own infrastructure in minutes.</p>
+
+          <ol class="steps-list">
+            <li class="step">
+              <span class="step-number" aria-hidden="true">1</span>
+              <div class="step-content">
+                <h3 class="step-title">Clone the repository</h3>
+                <pre class="code-block"><code>git clone https://github.com/sensein/riverst.git
+cd riverst</code></pre>
+              </div>
+            </li>
+            <li class="step">
+              <span class="step-number" aria-hidden="true">2</span>
+              <div class="step-content">
+                <h3 class="step-title">Configure environment variables</h3>
+                <p>Copy the example env files and fill in your API keys:</p>
+                <pre class="code-block"><code>cp src/server/.env.example src/server/.env
+cp src/client/react/.env.example src/client/react/.env</code></pre>
+                <p class="env-note">Required variables: <code>OPENAI_API_KEY</code>, <code>GOOGLE_CLIENT_ID</code>, <code>GOOGLE_CLIENT_SECRET</code></p>
+              </div>
+            </li>
+            <li class="step">
+              <span class="step-number" aria-hidden="true">3</span>
+              <div class="step-content">
+                <h3 class="step-title">Launch with Docker Compose</h3>
+                <aside class="callout" aria-label="CPU and GPU deployment options">
+                  <p class="callout-title">CPU or GPU deployment</p>
+                  <div class="callout-options">
+                    <div>
+                      <p class="callout-option-label">CPU (default):</p>
+                      <pre class="code-block"><code>docker compose up</code></pre>
+                    </div>
+                    <div>
+                      <p class="callout-option-label">GPU (NVIDIA):</p>
+                      <pre class="code-block"><code>docker compose -f docker-compose.gpu.yml up</code></pre>
+                    </div>
+                  </div>
+                </aside>
+                <p>Then open <a href="http://localhost:3000" target="_blank" rel="noopener noreferrer">http://localhost:3000</a> in your browser.</p>
+              </div>
+            </li>
+          </ol>
+
+          <div class="get-started-links">
+            <a href="https://github.com/sensein/riverst" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
+              View on GitHub
+            </a>
+            <a href="https://github.com/sensein/riverst/issues" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+              Report a Bug or Request a Feature
+            </a>
+            <a href="https://github.com/sensein/riverst/blob/main/CONTRIBUTING.md" class="btn btn-ghost" target="_blank" rel="noopener noreferrer">
+              Contributing Guide
+            </a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+      <div class="container footer-inner">
+        <div class="footer-logo">
+          <img src="/riverst/logo/riverst_black.svg" alt="Riverst" class="footer-logo-img footer-logo-dark" width="100" />
+          <img src="/riverst/logo/riverst_white.svg" alt="Riverst" class="footer-logo-img footer-logo-light" width="100" />
+        </div>
+        <p class="footer-tagline">An open-source platform for interactive avatar conversations.</p>
+        <p class="footer-links">
+          <a href="https://github.com/sensein/riverst" target="_blank" rel="noopener noreferrer">GitHub</a>
+          &nbsp;·&nbsp;
+          <a href="https://github.com/sensein/riverst/issues" target="_blank" rel="noopener noreferrer">Issues</a>
+          &nbsp;·&nbsp;
+          <a href="https://github.com/sensein/riverst/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">License</a>
+        </p>
+      </div>
+    </footer>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
