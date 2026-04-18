@@ -239,9 +239,13 @@ WantedBy=multi-user.target
 ```
 sudo systemctl daemon-reload
 sudo systemctl enable riverst-server.service
-sudo systemctl start riverst-server.service
-journalctl -u riverst-server.service -n 20 -f
 ```
+
+> **Note**: Do not run `sudo systemctl start riverst-server.service` yet — the SSL certificates referenced above do not exist until Step 12. Complete Steps 10–12 first, then start the service:
+> ```
+> sudo systemctl start riverst-server.service
+> journalctl -u riverst-server.service -n 20 -f
+> ```
 
 
 ---
