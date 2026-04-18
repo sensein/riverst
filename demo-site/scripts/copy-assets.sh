@@ -26,6 +26,16 @@ cp "$REPO_ROOT/src/client/react/src/components/avatarInteraction/talkinghead/tal
 cp "$REPO_ROOT/src/client/react/src/components/avatarInteraction/talkinghead/dynamicbones.mjs" \
    "$DEMO_SITE_DIR/src/talkinghead/"
 
+# playback-worklet.js is required by talkinghead.mjs for audio streaming but is
+# not bundled in the Riverst repo. Fetch it from the TalkingHead library.
+WORKLET_DST="$DEMO_SITE_DIR/src/talkinghead/playback-worklet.js"
+if [ ! -f "$WORKLET_DST" ]; then
+  echo "Fetching playback-worklet.js from TalkingHead..."
+  curl -fsSL \
+    "https://raw.githubusercontent.com/met4citizen/TalkingHead/main/modules/playback-worklet.js" \
+    -o "$WORKLET_DST"
+fi
+
 # Default avatar
 cp "$REPO_ROOT/src/client/react/public/avatars/fabio_avaturn.glb" \
    "$DEMO_SITE_DIR/public/avatars/"
@@ -46,10 +56,5 @@ cp "$REPO_ROOT/src/client/react/public/animations/dance/dance.fbx" \
    "$DEMO_SITE_DIR/public/animations/dance/"
 cp "$REPO_ROOT/src/client/react/public/animations/thinking/thinking.fbx" \
    "$DEMO_SITE_DIR/public/animations/thinking/"
-
-# NOTE: talkinghead.mjs references playback-worklet.js (for audio streaming) but
-# this file does not exist in the repo. Audio streaming via AudioWorklet will not
-# function until playback-worklet.js is sourced from the TalkingHead library and
-# added alongside talkinghead.mjs in src/talkinghead/.
 
 echo "Asset copy complete."
