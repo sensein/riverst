@@ -17,6 +17,8 @@ mkdir -p "$DEMO_SITE_DIR/src/talkinghead"
 mkdir -p "$DEMO_SITE_DIR/public/avatars"
 mkdir -p "$DEMO_SITE_DIR/public/logo"
 mkdir -p "$DEMO_SITE_DIR/public/screenshots"
+mkdir -p "$DEMO_SITE_DIR/public/animations/dance"
+mkdir -p "$DEMO_SITE_DIR/public/animations/thinking"
 
 # TalkingHead modules — copied to src/ so Vite bundles them and resolves 'three'
 cp "$REPO_ROOT/src/client/react/src/components/avatarInteraction/talkinghead/talkinghead.mjs" \
@@ -38,5 +40,16 @@ cp "$REPO_ROOT/src/client/react/public/logo/riverst_white.svg" \
 cp "$REPO_ROOT/public/fabio_says_hi.png" "$DEMO_SITE_DIR/public/screenshots/"
 cp "$REPO_ROOT/public/session_summary_example.png" "$DEMO_SITE_DIR/public/screenshots/"
 cp "$REPO_ROOT/public/automated_audio_analysis.png" "$DEMO_SITE_DIR/public/screenshots/"
+
+# Body animations referenced by demo-widget.js
+cp "$REPO_ROOT/src/client/react/public/animations/dance/dance.fbx" \
+   "$DEMO_SITE_DIR/public/animations/dance/"
+cp "$REPO_ROOT/src/client/react/public/animations/thinking/thinking.fbx" \
+   "$DEMO_SITE_DIR/public/animations/thinking/"
+
+# NOTE: talkinghead.mjs references playback-worklet.js (for audio streaming) but
+# this file does not exist in the repo. Audio streaming via AudioWorklet will not
+# function until playback-worklet.js is sourced from the TalkingHead library and
+# added alongside talkinghead.mjs in src/talkinghead/.
 
 echo "Asset copy complete."
