@@ -16,6 +16,18 @@ const withAuthHeaders = (token: string | null, config: any = {}) => ({
   headers: { ...config.headers, Authorization: `Bearer ${token}` }
 });
 
+const STORAGE_KEYS = {
+  AUTH_TOKEN: 'auth_token',
+  SELECTED_AVATAR: 'selectedAvatar',
+  UPLOADED_AVATARS: 'uploadedAvatars',
+} as const;
+
+const clearUserSessionStorage = () => {
+  localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+  localStorage.removeItem(STORAGE_KEYS.SELECTED_AVATAR);
+  localStorage.removeItem(STORAGE_KEYS.UPLOADED_AVATARS);
+};
+
 export const makeAuthenticatedRequest = (token: string | null) => ({
   get: (url: string, config = {}) => axios.get(url, withAuthHeaders(token, config)),
   post: (url: string, data: any, config = {}) => axios.post(url, data, withAuthHeaders(token, config)),
@@ -93,14 +105,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const bypassResponse = await axios.post('/api/auth/bypass');
           const { access_token, user: userData } = bypassResponse.data;
 
+          clearUserSessionStorage();
+          localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, access_token);
           setToken(access_token);
           setUser(userData);
-          localStorage.setItem('auth_token', access_token);
           setIsLoading(false);
           return;
         }
 
-        const savedToken = localStorage.getItem('auth_token');
+        const savedToken = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
         if (savedToken) {
           setToken(savedToken);
           // Verify token and get user info
@@ -151,11 +164,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const { access_token, user: userData } = response.data;
 
+      clearUserSessionStorage();
+      localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, access_token);
       setToken(access_token);
       setUser(userData);
-
-      // Save token to localStorage
-      localStorage.setItem('auth_token', access_token);
 
     } catch (error: any) {
       console.error('Login failed:', error);
@@ -171,9 +183,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * Clears user and token from state and localStorage.
    */
   const logout = () => {
+    clearUserSessionStorage();
     setUser(null);
     setToken(null);
-    localStorage.removeItem('auth_token');
   };
 
   const value: AuthContextType = {
