@@ -39,19 +39,21 @@
         },
         "stt_type": {
           "type": "string",
-          "enum": ["whisper", "openai"],
+          "enum": ["openai"],
+          "const": "openai",
           "default": "openai",
           "description": "The STT service to use."
         },
         "llm_type": {
           "type": "string",
-          "enum": ["openai", "openai_gpt-realtime", "ollama/qwen3:4b-instruct-2507-q4_K_M"],
+          "enum": ["openai", "openai_gpt-realtime"],
           "default": "openai",
           "description": "The LLM service to use."
         },
         "tts_type": {
           "type": "string",
-          "enum": ["openai", "kokoro"],
+          "enum": ["openai"],
+          "const": "openai",
           "default": "openai",
           "description": "The TTS service to use."
         },

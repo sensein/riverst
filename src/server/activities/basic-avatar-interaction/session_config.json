@@ -28,24 +28,26 @@
         "pipeline_modality": {
           "type": "string",
           "enum": ["classic", "e2e"],
-          "default": "classic",
+          "default": "e2e",
           "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline."
         },
         "stt_type": {
           "type": "string",
-          "enum": ["whisper", "openai"],
+          "enum": ["openai"],
+          "const": "openai",
           "default": "openai",
           "description": "The STT service to use."
         },
         "llm_type": {
           "type": "string",
-          "enum": ["openai", "openai_gpt-realtime", "ollama/qwen3:4b-instruct-2507-q4_K_M"],
+          "enum": ["openai", "openai_gpt-realtime"],
           "default": "openai",
           "description": "The LLM service to use."
         },
         "tts_type": {
           "type": "string",
-          "enum": ["openai", "kokoro"],
+          "enum": ["openai"],
+          "const": "openai",
           "default": "openai",
           "description": "The TTS service to use."
         },

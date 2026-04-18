@@ -34,14 +34,14 @@
         },
         "stt_type": {
           "type": "string",
-          "enum": ["whisper", "openai"],
+          "enum": ["openai"],
           "default": "openai",
           "const": "openai",
           "description": "The STT service to use."
         },
         "llm_type": {
           "type": "string",
-          "enum": ["openai", "ollama/qwen3:4b-instruct-2507-q4_K_M"],
+          "enum": ["openai"],
           "default": "openai",
           "const": "openai",
           "description": "The LLM service to use."
