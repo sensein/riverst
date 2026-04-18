@@ -12,8 +12,13 @@ REPO_ROOT="$(cd "$DEMO_SITE_DIR/.." && pwd)"
 
 echo "Copying assets from repo root: $REPO_ROOT"
 
-# TalkingHead modules — copied to src/ so Vite bundles them and resolves 'three'
+# Ensure all destination directories exist
 mkdir -p "$DEMO_SITE_DIR/src/talkinghead"
+mkdir -p "$DEMO_SITE_DIR/public/avatars"
+mkdir -p "$DEMO_SITE_DIR/public/logo"
+mkdir -p "$DEMO_SITE_DIR/public/screenshots"
+
+# TalkingHead modules — copied to src/ so Vite bundles them and resolves 'three'
 cp "$REPO_ROOT/src/client/react/src/components/avatarInteraction/talkinghead/talkinghead.mjs" \
    "$DEMO_SITE_DIR/src/talkinghead/"
 cp "$REPO_ROOT/src/client/react/src/components/avatarInteraction/talkinghead/dynamicbones.mjs" \
