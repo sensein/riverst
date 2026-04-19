@@ -48,7 +48,7 @@ ollama run <model_uri>
 
 For instance,
 ```bash
-ollama run ollama/qwen3:4b-instruct-2507-q4_K_M
+ollama pull qwen3:4b-instruct-2507-q4_K_M
 ```
 
 6. Run the server:
