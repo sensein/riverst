@@ -43,12 +43,12 @@ pip install -r requirements.gpu.txt
 5. [Optional] If you want to use local LLMs through `ollama` (e.g., `qwen3`), you need first to [install ollama on your machine](https://ollama.com/) and then run
 
 ```bash
-ollama run <model_uri>
+ollama pull <model_uri>
 ```
 
 For instance,
 ```bash
-ollama run ollama/qwen3:4b-instruct-2507-q4_K_M
+ollama pull qwen3:4b-instruct-2507-q4_K_M
 ```
 
 6. Run the server:
