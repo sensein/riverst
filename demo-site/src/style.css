@@ -576,6 +576,30 @@ a:hover {
   }
 }
 
+/* ── KIVA Section ────────────────────────────────────── */
+.section-kiva {
+  background: var(--color-bg-alt);
+}
+
+.kiva-video-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  margin: var(--space-8) auto 0;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+.kiva-video-wrapper iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
 /* ── Background Section ──────────────────────────────── */
 .section-background {
   background: var(--color-bg-page);

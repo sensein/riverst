@@ -4,13 +4,6 @@
  */
 export const videos = [
   {
-    id: 'kiva-pitch',
-    title: 'KIVA Project Pitch',
-    description: 'An overview of the KIVA project — what it is, the problem it solves, and where it\'s headed.',
-    youtubeId: 'LMfxs7uhNnE',
-    posterUrl: null,
-  },
-  {
     id: 'platform-overview',
     title: 'Riverst Platform Demo',
     description: 'See Riverst in action — build, run, and analyze an avatar conversation.',
