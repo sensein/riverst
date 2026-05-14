@@ -182,6 +182,11 @@ export function renderKiva() {
       ></iframe>
     </div>
   `;
+
+  const iframe = container.querySelector('.kiva-video-wrapper iframe');
+  if (iframe) {
+    iframe.addEventListener('load', () => iframe.classList.add('loaded'));
+  }
 }
 
 // ── Activities Section ────────────────────────────────
