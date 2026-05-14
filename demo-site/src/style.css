@@ -578,7 +578,7 @@ a:hover {
 
 /* ── KIVA Section ────────────────────────────────────── */
 .section-kiva {
-  background: var(--color-bg-alt);
+  background: var(--color-bg-page);
 }
 
 .kiva-video-wrapper {
@@ -602,7 +602,7 @@ a:hover {
 
 /* ── Background Section ──────────────────────────────── */
 .section-background {
-  background: var(--color-bg-page);
+  background: var(--color-bg-alt);
 }
 
 #background-content p {
