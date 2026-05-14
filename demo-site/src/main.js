@@ -1,5 +1,6 @@
 import './style.css';
 import { activities } from './content/activities.js';
+import { kiva } from './content/kiva.js';
 import { videos } from './content/videos.js';
 import { background } from './content/background.js';
 import { team } from './content/team.js';
@@ -160,6 +161,27 @@ export function renderBackground() {
   }
 
   container.innerHTML = paragraphsHtml + citationsHtml;
+}
+
+// ── KIVA Section ─────────────────────────────────────
+
+export function renderKiva() {
+  const container = document.getElementById('kiva-content');
+  if (!container) return;
+
+  container.innerHTML = `
+    <p class="section-intro">${escapeHtml(kiva.tagline)}</p>
+    <div class="kiva-video-wrapper">
+      <iframe
+        src="https://www.youtube.com/embed/${encodeURIComponent(kiva.pitchVideo.youtubeId)}"
+        title="${escapeHtml(kiva.pitchVideo.title)}"
+        loading="lazy"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
+        allowfullscreen
+      ></iframe>
+    </div>
+  `;
 }
 
 // ── Activities Section ────────────────────────────────
@@ -336,6 +358,7 @@ async function initDemoWidget() {
 
 document.addEventListener('DOMContentLoaded', () => {
   renderHero();
+  renderKiva();
   renderBackground();
   renderActivities();
   renderVideos();
