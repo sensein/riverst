@@ -1,7 +1,7 @@
 import './style.css';
 import { activities } from './content/activities.js';
 import { kiva } from './content/kiva.js';
-import { videos } from './content/videos.js';
+import { demoVideo } from './content/videos.js';
 import { background } from './content/background.js';
 import { team } from './content/team.js';
 
@@ -211,79 +211,30 @@ export function renderActivities() {
     .join('');
 }
 
-// ── Videos Section ────────────────────────────────────
+// ── Demo Video Section ────────────────────────────────
 
-export function renderVideos() {
-  const grid = document.getElementById('video-grid');
-  if (!grid) return;
+export function renderDemoVideo() {
+  const container = document.getElementById('demo-video-container');
+  if (!container) return;
 
-  grid.innerHTML = videos
-    .map((video, index) => {
-      const isPlaceholder = !video.youtubeId || video.youtubeId === 'PLACEHOLDER';
-      const screenshotImages = [
-        '/riverst/screenshots/fabio_says_hi.png',
-        '/riverst/screenshots/session_summary_example.png',
-        '/riverst/screenshots/automated_audio_analysis.png',
-      ];
-      const posterSrc = video.posterUrl || screenshotImages[index] || screenshotImages[0];
+  container.innerHTML = `
+    <div class="demo-video-wrapper">
+      <iframe
+        src="https://www.youtube.com/embed/${encodeURIComponent(demoVideo.youtubeId)}"
+        title="${escapeHtml(demoVideo.title)}"
+        loading="lazy"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
+        allowfullscreen
+      ></iframe>
+    </div>
+    <p class="demo-video-description">${escapeHtml(demoVideo.description)}</p>
+  `;
 
-      if (isPlaceholder) {
-        return `
-          <div class="video-item" role="listitem">
-            <div class="video-wrapper">
-              <div class="video-placeholder" aria-label="${escapeHtml(video.title)} — coming soon">
-                <div class="video-placeholder-icon" aria-hidden="true">▶️</div>
-                <p class="video-placeholder-label">Coming soon</p>
-              </div>
-              <img
-                class="video-poster"
-                src="${escapeHtml(posterSrc)}"
-                alt=""
-                aria-hidden="true"
-                style="opacity:0.25"
-              />
-            </div>
-            <p class="video-title">${escapeHtml(video.title)}</p>
-            <p class="video-description">${escapeHtml(video.description)}</p>
-          </div>
-        `;
-      }
-
-      return `
-        <div class="video-item" role="listitem">
-          <div class="video-wrapper">
-            <img
-              class="video-poster"
-              src="${escapeHtml(posterSrc)}"
-              alt=""
-              aria-hidden="true"
-            />
-            <iframe
-              src="https://www.youtube.com/embed/${encodeURIComponent(video.youtubeId)}"
-              title="${escapeHtml(video.title)}"
-              loading="lazy"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
-              allowfullscreen
-            ></iframe>
-          </div>
-          <p class="video-title">${escapeHtml(video.title)}</p>
-          <p class="video-description">${escapeHtml(video.description)}</p>
-        </div>
-      `;
-    })
-    .join('');
-
-  // Fade in iframes on load, hide poster
-  grid.querySelectorAll('.video-wrapper iframe').forEach((iframe) => {
-    iframe.addEventListener('load', () => {
-      iframe.classList.add('loaded');
-      const poster = iframe.previousElementSibling;
-      if (poster && poster.classList.contains('video-poster')) {
-        poster.style.opacity = '0';
-      }
-    });
-  });
+  const iframe = container.querySelector('iframe');
+  if (iframe) {
+    iframe.addEventListener('load', () => iframe.classList.add('loaded'));
+  }
 }
 
 // ── Team Section ──────────────────────────────────────
@@ -366,7 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderKiva();
   renderBackground();
   renderActivities();
-  renderVideos();
+  renderDemoVideo();
   renderTeam();
   initStickyNav();
   initHamburger();

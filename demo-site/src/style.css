@@ -718,32 +718,20 @@ a:hover {
 }
 
 /* Video grid */
-.video-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-5);
-}
-
-.video-item {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.video-wrapper {
+.demo-video-wrapper {
   position: relative;
   width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
   aspect-ratio: 16 / 9;
-  overflow: hidden;
   border-radius: var(--radius-lg);
-  background: var(--color-gray-200);
-  border: 1px solid var(--color-border);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
 }
 
-.video-wrapper iframe {
+.demo-video-wrapper iframe {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
   border: none;
@@ -751,63 +739,16 @@ a:hover {
   transition: opacity var(--transition-base);
 }
 
-.video-wrapper iframe.loaded {
+.demo-video-wrapper iframe.loaded {
   opacity: 1;
 }
 
-.video-placeholder {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-3);
-  background: var(--color-gray-100);
-  color: var(--color-text-muted);
-}
-
-.video-placeholder-icon {
-  font-size: 3rem;
-  opacity: 0.4;
-}
-
-.video-placeholder-label {
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  color: var(--color-text-muted);
-}
-
-.video-poster {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: opacity var(--transition-base);
-}
-
-.video-title {
-  font-size: var(--font-size-base);
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.video-description {
+.demo-video-description {
+  max-width: 800px;
+  margin: var(--space-4) auto 0;
+  text-align: center;
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
-}
-
-@media (max-width: 1024px) {
-  .video-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 600px) {
-  .video-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* ── Live Demo Widget ────────────────────────────────── */
