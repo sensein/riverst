@@ -2,7 +2,6 @@ import './style.css';
 import { activities } from './content/activities.js';
 import { kiva } from './content/kiva.js';
 import { demoVideo } from './content/videos.js';
-import { background } from './content/background.js';
 import { team } from './content/team.js';
 
 // ── Sticky Nav: highlight active section on scroll ────
@@ -92,14 +91,7 @@ function renderHero() {
         <a href="#demo" class="btn btn-primary btn-large" id="hero-demo-cta">
           Watch Demo
         </a>
-        <button
-          id="hero-try-live"
-          class="btn btn-secondary btn-large"
-          type="button"
-        >
-          Try Live Demo
-        </button>
-        <a
+        <
           href="https://github.com/sensein/riverst"
           class="btn btn-ghost btn-large"
           target="_blank"
@@ -120,47 +112,6 @@ function renderHero() {
     </div>
   `;
 
-  // Wire "Try Live Demo" hero button to scroll to #demo and trigger the widget
-  const heroDemoBtn = document.getElementById('hero-try-live');
-  if (heroDemoBtn) {
-    heroDemoBtn.addEventListener('click', () => {
-      const demoSection = document.getElementById('demo');
-      if (demoSection) {
-        demoSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-      // Give scroll time to complete, then trigger widget
-      setTimeout(() => {
-        const demoCta = document.getElementById('demo-cta-btn');
-        if (demoCta && !demoCta.hidden) demoCta.click();
-      }, 600);
-    });
-  }
-}
-
-// ── Background Section ────────────────────────────────
-
-export function renderBackground() {
-  const container = document.getElementById('background-content');
-  if (!container) return;
-
-  const paragraphsHtml = background.paragraphs
-    .map((p) => `<p>${escapeHtml(p)}</p>`)
-    .join('');
-
-  let citationsHtml = '';
-  if (background.citations && background.citations.length > 0) {
-    const items = background.citations
-      .map((c) => `<li><a href="${escapeHtml(c.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(c.text)}</a></li>`)
-      .join('');
-    citationsHtml = `
-      <div class="background-citations">
-        <p class="background-citations-title">References</p>
-        <ol>${items}</ol>
-      </div>
-    `;
-  }
-
-  container.innerHTML = paragraphsHtml + citationsHtml;
 }
 
 // ── KIVA Section ─────────────────────────────────────
@@ -291,35 +242,14 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
-// ── Demo Widget Wiring ────────────────────────────────
-
-async function initDemoWidget() {
-  try {
-    const { initWidget, triggerAuth } = await import('./demo-widget.js');
-    const container = document.getElementById('talkinghead-canvas-container');
-    if (container) initWidget(container);
-
-    const ctaBtn = document.getElementById('demo-cta-btn');
-    if (ctaBtn) {
-      ctaBtn.addEventListener('click', () => {
-        triggerAuth();
-      });
-    }
-  } catch (err) {
-    console.error('Failed to load demo widget:', err);
-  }
-}
-
 // ── Boot ──────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
   renderHero();
   renderKiva();
-  renderBackground();
   renderActivities();
   renderDemoVideo();
   renderTeam();
   initStickyNav();
   initHamburger();
-  initDemoWidget();
 });

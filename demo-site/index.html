@@ -37,7 +37,6 @@
         <ul class="nav-links" id="nav-links" role="list">
           <li><a href="#about" class="nav-link">About</a></li>
           <li><a href="#kiva" class="nav-link">KIVA</a></li>
-          <li><a href="#background" class="nav-link">Background</a></li>
           <li><a href="#activities" class="nav-link">Activities</a></li>
           <li><a href="#demo" class="nav-link">Demo</a></li>
           <li><a href="#team" class="nav-link">Team</a></li>
@@ -93,17 +92,7 @@
         </div>
       </section>
 
-      <!-- ========== BACKGROUND ========== -->
-      <section id="background" class="section section-background" aria-labelledby="background-heading">
-        <div class="container">
-          <h2 id="background-heading" class="section-title">Research Background</h2>
-          <div id="background-content">
-            <!-- Injected by renderBackground() in main.js -->
-          </div>
-        </div>
-      </section>
-
-      <!-- ========== ACTIVITIES ========== -->
+<!-- ========== ACTIVITIES ========== -->
       <section id="activities" class="section section-activities" aria-labelledby="activities-heading">
         <div class="container">
           <h2 id="activities-heading" class="section-title">Activities</h2>
@@ -117,50 +106,12 @@
       <!-- ========== DEMO ========== -->
       <section id="demo" class="section section-demo" aria-labelledby="demo-heading">
         <div class="container">
-          <h2 id="demo-heading" class="section-title">See Riverst in Action</h2>
-          <p class="section-intro">Watch Riverst in action, then try it yourself with a live avatar session.</p>
+          <h2 id="demo-heading" class="section-title">See KIVA in Action</h2>
+          <p class="section-intro">Watch a live KIVA tutoring session — real-time AI voice, lip-sync, and avatar interaction in the browser.</p>
 
           <!-- Demo video -->
-          <div id="demo-video-container" class="demo-subsection">
+          <div id="demo-video-container">
             <!-- Injected by renderDemoVideo() in main.js -->
-          </div>
-
-          <!-- Live widget subsection -->
-          <div id="demo-widget-container" class="demo-subsection demo-widget-section">
-            <h3 class="subsection-title">Live Demo</h3>
-            <p class="section-intro">An interactive demo is coming soon. Watch the videos above to see Riverst in action.</p>
-
-            <div id="demo-widget" class="demo-widget">
-              <!-- State: idle (hidden until JS enables live demo) -->
-              <div id="widget-idle" class="widget-state" aria-live="polite" hidden>
-                <button id="demo-cta-btn" class="btn btn-primary btn-large" type="button">
-                  Try Live Demo
-                </button>
-                <p class="mic-note">Microphone access required. Authorized accounts only.</p>
-              </div>
-
-              <!-- State: active/expiring — TalkingHead canvas -->
-              <div id="talkinghead-canvas-container" class="talkinghead-container" aria-label="Avatar interaction canvas" hidden></div>
-
-              <!-- Countdown + end-session controls (shown only during active/expiring) -->
-              <div id="demo-session-controls" class="demo-session-controls" hidden>
-                <span id="demo-countdown" class="demo-countdown" role="timer" aria-live="polite" aria-label="Remaining session time"></span>
-                <button id="demo-end-btn" type="button" class="btn btn-ghost btn-sm">End Session</button>
-              </div>
-
-              <!-- Status / message area — default content shown before JS loads -->
-              <div id="demo-status" class="demo-status" role="status" aria-live="polite" aria-atomic="true">
-                <div class="widget-message">
-                  <div class="widget-message-icon" aria-hidden="true">🚧</div>
-                  <p class="widget-message-title">Live Demo Coming Soon</p>
-                  <p class="widget-message-text">
-                    The interactive demo is currently in progress.
-                    Watch our videos below to see Riverst in action.
-                  </p>
-                  <a href="#demo-videos" class="btn btn-primary">Watch Videos</a>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
