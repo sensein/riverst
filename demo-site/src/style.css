@@ -348,13 +348,6 @@ a:hover {
   line-height: var(--line-height-loose);
 }
 
-.subsection-title {
-  font-size: var(--font-size-2xl);
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin-bottom: var(--space-6);
-}
-
 @media (max-width: 768px) {
   .section {
     padding: var(--space-12) 0;
@@ -606,47 +599,6 @@ a:hover {
   opacity: 1;
 }
 
-/* ── Background Section ──────────────────────────────── */
-.section-background {
-  background: var(--color-bg-alt);
-}
-
-#background-content p {
-  font-size: var(--font-size-lg);
-  line-height: var(--line-height-loose);
-  color: var(--color-text-primary);
-  max-width: 720px;
-  margin-bottom: var(--space-6);
-}
-
-#background-content p:last-child {
-  margin-bottom: 0;
-}
-
-.background-citations {
-  margin-top: var(--space-8);
-  padding-top: var(--space-6);
-  border-top: 1px solid var(--color-border);
-}
-
-.background-citations-title {
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--color-text-muted);
-  margin-bottom: var(--space-4);
-}
-
-.background-citations ol {
-  padding-left: var(--space-6);
-}
-
-.background-citations li {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  margin-bottom: var(--space-2);
-}
 
 /* ── Activities Grid ─────────────────────────────────── */
 .activities-grid {
@@ -751,145 +703,6 @@ a:hover {
   color: var(--color-text-secondary);
 }
 
-/* ── Live Demo Widget ────────────────────────────────── */
-.demo-widget-section {
-  border-top: 1px solid var(--color-border);
-  padding-top: var(--space-12);
-}
-
-.demo-widget {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-6);
-}
-
-#widget-idle {
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-4);
-}
-
-.mic-note {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-  max-width: 340px;
-  text-align: center;
-}
-
-.talkinghead-container {
-  width: 100%;
-  max-width: 640px;
-  min-height: 400px;
-  background: var(--color-gray-900);
-  border-radius: var(--radius-xl);
-  overflow: hidden;
-  box-shadow: var(--shadow-lg);
-  position: relative;
-}
-
-/* TalkingHead mounts a canvas directly inside */
-.talkinghead-container canvas {
-  width: 100% !important;
-  height: 100% !important;
-  display: block;
-}
-
-.demo-session-controls {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  width: 100%;
-  max-width: 640px;
-  padding: var(--space-2) var(--space-4);
-}
-
-.demo-countdown {
-  font-family: var(--font-mono);
-  font-size: var(--font-size-3xl);
-  font-weight: 700;
-  color: var(--color-text-primary);
-  letter-spacing: 0.02em;
-}
-
-.demo-countdown.expiring {
-  color: var(--color-danger);
-  animation: pulse 1s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
-}
-
-.demo-status {
-  max-width: 480px;
-  text-align: center;
-  font-size: var(--font-size-base);
-  color: var(--color-text-secondary);
-  min-height: 24px;
-}
-
-.widget-state {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-4);
-}
-
-/* Loading spinner for connecting state */
-.widget-spinner {
-  width: 48px;
-  height: 48px;
-  border: 4px solid var(--color-gray-200);
-  border-top-color: var(--color-accent);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-/* Auth rejected / error / expired states */
-.widget-message {
-  max-width: 440px;
-  padding: var(--space-8);
-  background: var(--color-bg-page);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-5);
-}
-
-.widget-message-icon {
-  font-size: 3rem;
-}
-
-.widget-message-title {
-  font-size: var(--font-size-xl);
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-
-.widget-message-text {
-  color: var(--color-text-secondary);
-  line-height: var(--line-height-loose);
-}
-
-/* Browser compatibility notice */
-.browser-notice {
-  padding: var(--space-6);
-  background: var(--color-warning-bg);
-  border: 1px solid #fde68a;
-  border-radius: var(--radius-lg);
-  max-width: 480px;
-  text-align: center;
-  color: var(--color-warning-text);
-}
 
 /* ── Team Section ────────────────────────────────────── */
 .section-team {

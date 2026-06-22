@@ -91,7 +91,7 @@ function renderHero() {
         <a href="#demo" class="btn btn-primary btn-large" id="hero-demo-cta">
           Watch Demo
         </a>
-        <
+        <a
           href="https://github.com/sensein/riverst"
           class="btn btn-ghost btn-large"
           target="_blank"
