@@ -1,0 +1,221 @@
+{
+  "title": "Audiobook Avatar Demo Configuration",
+  "description": "Schema for configuring the Audiobook Avatar Demo activity.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "const": "audiobook-avatar-demo"
+    },
+    "description": {
+      "type": "string",
+      "const": "Avatar reads an audiobook aloud with synchronized text display."
+    },
+    "options": {
+      "type": "object",
+      "properties": {
+        "advanced_flows": {
+          "type": "boolean",
+          "const": true,
+          "default": true,
+          "description": "This activity requires advanced flows for the reading pipeline."
+        },
+        "advanced_flows_config_path": {
+          "type": "string",
+          "const": "./activities/audiobook-avatar-demo/flow_config.json",
+          "default": "./activities/audiobook-avatar-demo/flow_config.json",
+          "description": "Path to the reading flow configuration file."
+        },
+        "activity_variables_path": {
+          "type": "string",
+          "description": "Path to the selected chapter JSON. Set programmatically from book and chapter selection."
+        },
+        "book": {
+          "type": "string",
+          "description": "Selected book key (directory name under audiobook/resources/)."
+        },
+        "chapter": {
+          "type": "string",
+          "description": "Selected chapter number as string."
+        },
+        "audio_flag": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable or disable avatar audio narration."
+        },
+        "text_flag": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable or disable the book text display panel."
+        },
+        "subtitles_flag": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable or disable word-by-word highlighting synchronized with the avatar's speech."
+        },
+        "settings_flag": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show or hide the in-session settings panel."
+        },
+        "pipeline_modality": {
+          "type": "string",
+          "enum": ["classic"],
+          "const": "classic",
+          "default": "classic",
+          "description": "Pipeline modality. Classic (STT + LLM + TTS) is required for advanced flows."
+        },
+        "stt_type": {
+          "type": "string",
+          "enum": ["openai", "whisper"],
+          "default": "openai",
+          "description": "The STT service to use."
+        },
+        "llm_type": {
+          "type": "string",
+          "enum": ["openai", "ollama/qwen3:4b-instruct-2507-q4_K_M"],
+          "default": "openai",
+          "description": "The LLM service to use."
+        },
+        "tts_type": {
+          "type": "string",
+          "enum": ["openai", "kokoro"],
+          "default": "openai",
+          "description": "The TTS service to use for the avatar's voice."
+        },
+        "tts_voice": {
+          "type": "string",
+          "enum": ["alloy", "ash", "ballad", "coral", "echo", "fable", "onyx", "nova", "shimmer", "verse"],
+          "default": "alloy",
+          "description": "The OpenAI TTS voice to use. Fixes one voice for the entire session to prevent mid-session voice changes. Only applies when tts_type is 'openai'."
+        },
+        "tts_model": {
+          "type": "string",
+          "enum": ["tts-1", "tts-1-hd", "gpt-4o-mini-tts"],
+          "default": "tts-1",
+          "description": "The OpenAI TTS model to use. 'tts-1' and 'tts-1-hd' are deterministic and keep the voice consistent throughout the session. 'gpt-4o-mini-tts' is more expressive but may vary in style between sentences. Only applies when tts_type is 'openai'."
+        },
+        "embodiment": {
+          "type": "string",
+          "enum": ["humanoid_avatar", "waveform"],
+          "default": "humanoid_avatar",
+          "description": "The visual embodiment of the avatar."
+        },
+        "body_animations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["dance", "wave", "i_have_a_question", "thank_you", "i_dont_know", "ok", "thumbup", "thumbdown", "happy", "sad", "angry", "fear", "disgust", "love", "sleep", "thinking"]
+          },
+          "default": ["wave", "thinking", "i_have_a_question", "thank_you", "happy"],
+          "description": "List of body animations available to the avatar during reading."
+        },
+        "camera_settings": {
+          "type": "string",
+          "enum": ["full", "mid", "upper", "head"],
+          "default": "upper",
+          "description": "Camera framing for the avatar panel."
+        },
+        "avatar_system_prompt": {
+          "type": "string",
+          "maxLength": 500,
+          "default": "You are a narrator reading a book aloud. Read the provided chapter text verbatim, clearly and expressively. Do not add commentary or respond to user input. Your output will be converted to speech, so do not include special characters in your output.",
+          "description": "Instructions defining how the avatar should behave while reading."
+        },
+        "avatar_personality_description": {
+          "type": "string",
+          "maxLength": 500,
+          "default": "You are a warm, engaging storyteller who brings books to life through expressive reading.",
+          "description": "Text describing the avatar's personality as a narrator."
+        },
+        "task_description": {
+          "type": "string",
+          "maxLength": 500,
+          "default": "Read the selected chapter aloud from beginning to end without interruption.",
+          "description": "Description of the reading task for this session."
+        },
+        "user_description": {
+          "type": "string",
+          "maxLength": 500,
+          "default": "",
+          "description": "Optional description of the listener."
+        },
+        "short_term_memory": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable or disable short-term memory across sessions at the same link."
+        },
+        "long_term_memory": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable or disable long-term memory across sessions for the same user."
+        },
+        "prolific_campaign": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether the activity is part of a Prolific campaign."
+        },
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["english"]
+          },
+          "const": ["english"],
+          "default": ["english"],
+          "description": "Language for the reading session. Only English is supported."
+        },
+        "video_flag": {
+          "type": "boolean",
+          "const": true,
+          "default": true,
+          "description": "Avatar video is always enabled for this activity."
+        },
+        "video_out_width": {
+          "type": "integer",
+          "const": 640,
+          "default": 640,
+          "description": "Width of the video output in pixels."
+        },
+        "video_out_height": {
+          "type": "integer",
+          "const": 320,
+          "default": 320,
+          "description": "Height of the video output in pixels."
+        },
+        "video_out_framerate": {
+          "type": "integer",
+          "const": 30,
+          "default": 30,
+          "description": "Framerate of the video output."
+        },
+        "user_transcript": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show transcript of the user's speech (not applicable for reading mode)."
+        },
+        "bot_transcript": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show transcript of the avatar's speech."
+        }
+      },
+      "required": [
+        "advanced_flows",
+        "advanced_flows_config_path",
+        "activity_variables_path",
+        "book",
+        "chapter",
+        "audio_flag",
+        "text_flag",
+        "subtitles_flag",
+        "settings_flag",
+        "camera_settings",
+        "video_flag",
+        "user_transcript",
+        "bot_transcript"
+      ]
+    }
+  },
+  "required": ["name", "description", "options"]
+}

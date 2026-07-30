@@ -384,11 +384,15 @@ class BotComponentFactory:
 
         emoji_filter = EmojiTextFilter()
         if self.tts_type == "openai":
-            return OpenAITTSService(
-                voice=self._get_voice_for_openai(),
-                model=(self.tts_params or {}).get("model", "gpt-4o-mini-tts"),
-                text_filters=[emoji_filter],
-            )
+            tts_params = self.tts_params or {}
+            voice = tts_params.get("voice", self._get_voice_for_openai())
+            model = tts_params.get("model", "tts-1")
+            kwargs = dict(voice=voice, model=model, text_filters=[emoji_filter])
+            # instructions only apply to gpt-4o-mini-tts; tts-1/tts-1-hd ignore it
+            instructions = tts_params.get("instructions")
+            if instructions and model == "gpt-4o-mini-tts":
+                kwargs["instructions"] = instructions
+            return OpenAITTSService(**kwargs)
         elif self.tts_type == "elevenlabs":
             return ElevenLabsTTSService(
                 api_key=os.getenv("ELEVENLABS_API_KEY"),

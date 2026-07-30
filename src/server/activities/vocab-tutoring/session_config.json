@@ -69,6 +69,18 @@
           "default": "openai",
           "description": "The TTS service to use."
         },
+        "tts_voice": {
+          "type": "string",
+          "enum": ["alloy", "ash", "ballad", "coral", "echo", "fable", "onyx", "nova", "shimmer", "verse"],
+          "default": "alloy",
+          "description": "The OpenAI TTS voice to use. Fixes one voice for the entire session to prevent mid-session voice changes. Only applies when tts_type is 'openai'."
+        },
+        "tts_model": {
+          "type": "string",
+          "enum": ["tts-1", "tts-1-hd", "gpt-4o-mini-tts"],
+          "default": "tts-1",
+          "description": "The OpenAI TTS model to use. 'tts-1' and 'tts-1-hd' are deterministic and keep the voice consistent throughout the session. 'gpt-4o-mini-tts' is more expressive but may vary in style between sentences. Only applies when tts_type is 'openai'."
+        },
         "embodiment": {
           "type": "string",
           "enum": ["humanoid_avatar", "waveform"],
