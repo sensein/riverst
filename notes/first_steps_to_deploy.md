@@ -2,14 +2,17 @@
 
 This guide explains step-by-step how to deploy the Riverst project on AWS using a Linux EC2 machine.
 
+> **CPU-only deployment**: All activities are now configured to use OpenAI APIs by default (STT, LLM, TTS). No GPU, NVIDIA drivers, or Ollama is required. Skip steps 4 and 5, use the CPU-only service config in step 9, and skip step 10.
+
 ---
 
 ## 1. Create an AWS EC2 instance
 
-- For GPU deployment, choose `g4dn.xlarge` as the instance type or more powerful.
-- For non-GPU deployment, choose a general-purpose Ubuntu instance sized for your traffic and disable accelerator usage with `RIVERST_COMPUTE_DEVICE=cpu`.
-- Use a Linux (Ubuntu) machine.
-- Set the storage volume to **64 GB** (or larger).
+**CPU-only (recommended):** Use `c6i.2xlarge` (8 vCPU, 16 GB RAM, ~$0.34/hr) or `m6i.xlarge` (4 vCPU, 16 GB RAM, ~$0.19/hr). Set storage to **30 GB**.
+
+**GPU deployment:** Choose `g4dn.xlarge` or more powerful. Set storage to **64 GB** (or larger).
+
+- Use a Linux (Ubuntu 22.04 LTS) machine.
 - Open these ports in the security group:
   - **22** (SSH)
   - **80** (HTTP)
@@ -20,10 +23,15 @@ This guide explains step-by-step how to deploy the Riverst project on AWS using 
 
 ## 2. Create and assign an Elastic IP
 
-- Go to the AWS console.
-- Create a new **Elastic IP**.
-- Associate it with your EC2 instance.
-- (Optional) If you have a domain or subdomain (like our `kivaproject.org` and `play.kivaproject.org`), connect it to the Elastic IP.
+**If replacing an existing instance (zero-downtime domain cutover):**
+1. Go to EC2 → Elastic IPs in the AWS console.
+2. Disassociate the existing Elastic IP from the old instance.
+3. Associate it with your new instance.
+4. DNS propagates instantly — no TTL wait needed since the IP address does not change.
+
+**If creating a fresh deployment:**
+- Create a new **Elastic IP** and associate it with your EC2 instance.
+- Point your domain or subdomain (e.g., `play.kivaproject.org`) DNS A record to the new Elastic IP.
 
 ---
 
@@ -38,7 +46,7 @@ ssh -i your-key.pem ubuntu@your-elastic-ip
 
 ## 4. Install NVIDIA drivers
 
-Only required for GPU deployment.
+**GPU deployment only — skip for CPU-only instances.**
 
 ```bash
 sudo apt update
@@ -50,6 +58,8 @@ sudo reboot
 ---
 
 ## 5. Install ollama
+
+**GPU deployment only — skip for CPU-only instances.**
 
 ```bash
 curl -fsSL https://ollama.com/install.sh | sh
@@ -129,6 +139,8 @@ nvm install 22
 ## 8. Install more system dependencies (required by riverst and for serving web apps - a.k.a. nginx)
 
 ```bash
+sudo add-apt-repository universe
+sudo apt update
 sudo apt install -y build-essential python3-dev ffmpeg git
 sudo apt install -y libsndfile1-dev pkg-config
 sudo apt install -y nginx
@@ -147,8 +159,8 @@ git clone https://github.com/sensein/riverst.git
 ```bash
 cd riverst/src/client/react/
 npm install
-cp .env.example .env
-# Edit `.env` to configure your settings following .env.example
+cp env.example .env
+# Edit `.env` to configure your settings following env.example
 npm run build
 sudo mkdir -p /var/www
 sudo ln -s /home/ubuntu/riverst/src/client/react/dist /var/www/play.kivaproject.org
@@ -161,21 +173,20 @@ conda create -n riverst python=3.11
 conda activate riverst
 cd riverst/src/server
 pip install -r requirements.txt
-cp .env.example .env
-# Edit `.env` to configure your settings following .env.example
+cp env.example .env
+# Edit `.env` to configure your settings following env.example
+# Required: OPENAI_API_KEY, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, SECRET_KEY
 # For CPU-only deployment add: RIVERST_COMPUTE_DEVICE=cpu
 # Edit the src/server/config/authorized_users.json
 
-# [In a tmux tab]
-sudo /home/ubuntu/miniconda3/envs/riverst/bin/python main.py \
-  --ssl-certfile /etc/letsencrypt/live/play.kivaproject.org/fullchain.pem \
-  --ssl-keyfile /etc/letsencrypt/live/play.kivaproject.org/privkey.pem
+# [In a tmux tab — nginx handles SSL, so no cert args needed]
+/home/ubuntu/miniconda3/envs/riverst/bin/python main.py
 ```
 
 
 Instead of starting the backend manually, you can run it as a service.
 
-- Run Riverst backend as a daemon
+- **CPU-only** — Run Riverst backend as a daemon (no Ollama dependency):
 ```
 sudo vim /etc/systemd/system/riverst-server.service
 ```
@@ -184,22 +195,38 @@ sudo vim /etc/systemd/system/riverst-server.service
 ```
 [Unit]
 Description=Riverst Python Server
-After=network.target ollama-server.service ollama-qwen3.service
-Requires=ollama-server.service ollama-qwen3.service
+After=network.target
 
 [Service]
 Type=simple
-User=root
+User=ubuntu
 WorkingDirectory=/home/ubuntu/riverst/src/server
-ExecStart=/home/ubuntu/miniconda3/envs/riverst/bin/python main.py \
-  --ssl-certfile /etc/letsencrypt/live/play.kivaproject.org/fullchain.pem \
-  --ssl-keyfile /etc/letsencrypt/live/play.kivaproject.org/privkey.pem
+Environment=RIVERST_COMPUTE_DEVICE=cpu
+ExecStart=/home/ubuntu/miniconda3/envs/riverst/bin/python main.py
 Restart=always
 RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
-Then enable and start:
+```
+
+- **GPU deployment** — include Ollama as a dependency instead:
+```
+[Unit]
+Description=Riverst Python Server
+After=network.target ollama-server.service ollama-qwen3.service
+Requires=ollama-server.service ollama-qwen3.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/riverst/src/server
+ExecStart=/home/ubuntu/miniconda3/envs/riverst/bin/python main.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
 ```
 
 - Run:
@@ -214,6 +241,8 @@ journalctl -u riverst-server.service -n 20 -f
 ---
 
 ## 10. Run ollama models
+
+**GPU deployment only — skip for CPU-only instances.**
 
 Run interactively (only one at a time because `ollama run` by default connects to a single Ollama server running at localhost:11434):
 
@@ -380,6 +409,7 @@ server {
 
     root /var/www/play.kivaproject.org;
     index index.html;
+    client_max_body_size 50M;
 
     #location / {
     #    proxy_pass http://localhost:5173;
@@ -395,15 +425,18 @@ server {
     }
 
     location /api/ {
-        proxy_pass https://localhost:7860/api/;
+        proxy_pass http://localhost:7860/api/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
         proxy_set_header Host $host;
         proxy_cache_bypass $http_upgrade;
+    }
 
-        # Because it's a self-signed or custom cert:
-        proxy_ssl_verify off;
+    location /uploads/ {
+        proxy_pass http://localhost:7860/uploads/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
     }
 }
 ```
@@ -416,6 +449,7 @@ sudo systemctl start nginx
 sudo systemctl status nginx
 ```
 
+> **Note on user-uploaded avatars**: Avatars uploaded by users are stored locally at `src/server/uploads/` on the EC2 instance and are gitignored. They will be lost if the instance is terminated or replaced. Consider snapshotting the EBS volume before replacing an instance, or migrating uploads to S3 in the future.
 
 ---
 
