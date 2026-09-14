@@ -74,8 +74,12 @@ class FixedOpenAIRealtimeLLMService(OpenAIRealtimeLLMService):
         samples = total_bytes / bytes_per_sample
         duration_seconds = samples / sample_rate
 
-        # Add a 85ms safety buffer by subtracting from the calculated duration
-        return int((duration_seconds * 1000) - 85)
+        # Add a 85ms safety buffer by subtracting from the calculated duration.
+        # Floor at 0: a negative audio_end_ms is rejected by the Realtime API,
+        # and that error arrives as a fatal ErrorFrame that tears down the
+        # session. This happens when the user barges in during the first ~85ms
+        # of the bot's response, before 85ms of audio has accumulated.
+        return max(0, int((duration_seconds * 1000) - 85))
 
 
 @dataclass
