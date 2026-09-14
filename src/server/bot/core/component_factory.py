@@ -6,10 +6,10 @@ from dataclasses import dataclass
 from pipecat.services.openai.stt import OpenAISTTService
 from pipecat.services.openai.tts import OpenAITTSService
 from pipecat.services.openai.llm import OpenAILLMService
-from pipecat.services.openai_realtime_beta import (
+from pipecat.services.openai_realtime import (
     InputAudioNoiseReduction,
     InputAudioTranscription,
-    OpenAIRealtimeBetaLLMService,
+    OpenAIRealtimeLLMService,
     SemanticTurnDetection,
     SessionProperties,
 )
@@ -58,7 +58,7 @@ class BotComponents(NamedTuple):
     lipsync_processor: object
 
 
-class FixedOpenAIRealtimeBetaLLMService(OpenAIRealtimeBetaLLMService):
+class FixedOpenAIRealtimeLLMService(OpenAIRealtimeLLMService):
     """This class overrides the _calculate_audio_duration_ms method to add a 85ms safety buffer.
 
     https://github.com/pipecat-ai/pipecat/issues/2106#issuecomment-3168228292
@@ -357,9 +357,9 @@ class BotComponentFactory:
                     instructions=instruction,
                     voice=voice,
                 )
-                return FixedOpenAIRealtimeBetaLLMService(
+                return FixedOpenAIRealtimeLLMService(
                     api_key=os.getenv("OPENAI_API_KEY"),
-                    model=(self.llm_params or {}).get("model", "gpt-realtime"),
+                    model=(self.llm_params or {}).get("model", "gpt-realtime-1.5"),
                     session_properties=props,
                     start_audio_paused=False,
                     send_transcription_frames=True,
