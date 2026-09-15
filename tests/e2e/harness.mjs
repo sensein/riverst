@@ -5,7 +5,7 @@
  * drives the real React client in headless Chromium.
  */
 
-import { spawn } from 'node:child_process'
+import { execSync, spawn } from 'node:child_process'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -104,26 +104,88 @@ function start(cmd, args, opts, name) {
  *   assuming this took effect.
  * @param {string} [opts.name] Process label used in dumped logs.
  */
-/**
- * Refuse to start when something already answers on a port we are about to
- * claim with --strictPort. Checked before spawning, because afterwards the
- * symptom is indistinguishable from a slow start.
- */
-async function assertPortFree(port, label) {
+function listenersOn(port) {
   try {
-    await fetch(`http://127.0.0.1:${port}/`, { signal: AbortSignal.timeout(1500) })
+    return execSync(`lsof -ti tcp:${port} -sTCP:LISTEN`, { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean)
   } catch {
-    return // nothing there, which is what we want
+    return [] // lsof exits non-zero when nothing matches
   }
-  throw new Error(
-    `Port ${port} is already serving something, so the ${label} this suite ` +
-      `starts would not be the one under test. Find and kill it:\n` +
-      `  lsof -nP -iTCP -sTCP:LISTEN | grep ':${port} '`
-  )
+}
+
+function describePid(pid) {
+  try {
+    return execSync(`ps -o command= -p ${pid}`, { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim()
+      .slice(0, 120)
+  } catch {
+    return '<gone>'
+  }
+}
+
+/**
+ * Take back a port this suite owns, killing a leaked server if one holds it.
+ *
+ * Both ports are claimed with --strictPort, so a squatter makes our own child
+ * exit while the port keeps answering -- and then every assertion runs against
+ * a different working tree and passes for reasons unrelated to the code under
+ * test. That happened: leftover vite servers from an interrupted run served the
+ * main checkout while the suite reported success against a worktree, and a real
+ * bug shipped behind a green run.
+ *
+ * Reclaiming rather than only refusing, because an interrupted run is the
+ * normal way one leaks and the next run should just work. These two ports are
+ * private to this suite (deliberately not vite's default 5173), so nothing here
+ * should ever belong to a real dev server -- but it always says what it killed,
+ * so it cannot be silent.
+ */
+async function reclaimPort(port, label) {
+  const answering = async () => {
+    try {
+      await fetch(`http://127.0.0.1:${port}/`, { signal: AbortSignal.timeout(1500) })
+      return true
+    } catch {
+      return false
+    }
+  }
+  const pids = listenersOn(port)
+  if (!pids.length && !(await answering())) return
+
+  for (const pid of pids) {
+    console.log(`  reclaiming port ${port} from pid ${pid}: ${describePid(pid)}`)
+    try {
+      process.kill(Number(pid), 'SIGTERM')
+    } catch {
+      // already gone
+    }
+  }
+  for (let i = 0; i < 20; i++) {
+    if (!listenersOn(port).length && !(await answering())) return
+    await new Promise((r) => setTimeout(r, 250))
+  }
+  for (const pid of listenersOn(port)) {
+    try {
+      process.kill(Number(pid), 'SIGKILL')
+    } catch {
+      // already gone
+    }
+  }
+  await new Promise((r) => setTimeout(r, 500))
+  if (await answering()) {
+    throw new Error(
+      `Port ${port} is still serving something after SIGTERM and SIGKILL, so ` +
+        `the ${label} this suite starts would not be the one under test:\n` +
+        `  lsof -nP -iTCP -sTCP:LISTEN | grep ':${port} '`
+    )
+  }
 }
 
 export async function startBackend({ port = API_PORT, env = {}, name = 'backend' } = {}) {
-  await assertPortFree(port, 'backend')
+  await reclaimPort(port, 'backend')
   const { log, entry } = start(
     'python',
     ['main.py', '--port', String(port)],
@@ -136,7 +198,7 @@ export async function startBackend({ port = API_PORT, env = {}, name = 'backend'
 
 /** Start the Vite dev server, proxying /api to our isolated backend. */
 export async function startFrontend() {
-  await assertPortFree(WEB_PORT, 'frontend')
+  await reclaimPort(WEB_PORT, 'frontend')
   const { log, entry } = start(
     'npm',
     ['run', 'dev', '--', '--port', String(WEB_PORT), '--strictPort', '--host', '127.0.0.1'],

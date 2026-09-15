@@ -63,6 +63,14 @@ them, rather than assuming it would.
 - An empty option list is reported as `[]`, not as a `locator.waitFor` timeout.
   The raw timeout reads like test flakiness and was previously misdiagnosed as
   such when the real cause was the dropdown having been emptied.
+- **Leaked servers are reclaimed, not tolerated.** Both ports are claimed with
+  `--strictPort`, so a server left over from an interrupted run makes this
+  suite's own child exit while the port keeps answering — and then every
+  assertion runs against whatever tree that other server is serving. That has
+  happened, and the suite reported a full pass against code that was not under
+  test. `startBackend`/`startFrontend` now kill whatever holds their port
+  first, printing the pid and command so it is never silent. If you see a
+  `reclaiming port` line, a previous run did not shut down cleanly.
 - `fetchRetry` exists because a long blocking step can outlive the server's
   keep-alive idle timeout, so a pooled socket fails with `ECONNRESET` before
   reaching the server — which looks exactly like the server having died.
