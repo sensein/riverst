@@ -31,20 +31,16 @@ from ..transport.custom_services.kokoro_service import KokoroTTSService
 from ..utils.device_utils import get_best_device
 from ..transport.custom_services.ollama_service import CustomOLLamaLLMService
 from ..components.memory import MemoryHandler
+from ..utils.capabilities import llm_allowed_for_modality
 
 ModalityType = Literal["classic", "e2e"]
-LLMType = Literal[
-    "openai",
-    "openai_gpt-realtime",
-    "ollama/qwen3:4b-instruct-2507-q4_K_M",
-]
+# Annotations only; the backend registry in bot/utils/capabilities.py is what
+# actually decides what is accepted. `ollama/<model>` is a family, so no
+# Literal can enumerate it -- str keeps this honest rather than naming the one
+# model today's configs happen to ship.
+LLMType = str
 STTType = Literal["openai", "whisper"]
-TTSType = Literal["openai", "kokoro"]
-
-ALLOWED_LLM = {
-    "classic": {"openai", "ollama/qwen3:4b-instruct-2507-q4_K_M"},
-    "e2e": {"openai_gpt-realtime"},
-}
+TTSType = Literal["openai", "kokoro", "elevenlabs"]
 
 
 class BotComponents(NamedTuple):
@@ -108,7 +104,11 @@ class BotComponentFactory:
     animation_instruction: str = ""
 
     def __post_init__(self):
-        if self.llm_type not in ALLOWED_LLM[self.modality]:
+        # Asked of the backend registry rather than a table restated here, so
+        # a backend's modality eligibility is declared once. Note `llm_type`
+        # is an overloaded key: in classic it names a text LLM, in e2e a
+        # speech-to-speech model.
+        if not llm_allowed_for_modality(self.modality, self.llm_type):
             raise ValueError(
                 f"LLM '{self.llm_type}' not allowed for modality '{self.modality}'."
             )
@@ -360,9 +360,7 @@ class BotComponentFactory:
                         input=AudioInput(
                             transcription=InputAudioTranscription(),
                             turn_detection=SemanticTurnDetection(),
-                            noise_reduction=InputAudioNoiseReduction(
-                                type="near_field"
-                            ),
+                            noise_reduction=InputAudioNoiseReduction(type="near_field"),
                         ),
                         output=AudioOutput(voice=voice),
                     ),

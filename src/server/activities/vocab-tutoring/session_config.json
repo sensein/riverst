@@ -49,7 +49,7 @@
           "type": "string",
           "enum": ["classic"],
           "default": "classic",
-          "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline. 'e2e' is not supported for advanced flows."
+          "description": "The modality of the pipeline. This is set to 'classic' for the stt, llm and tts pipeline, and to 'e2e' for the end to end pipeline. 'e2e' is not supported for advanced flows. Restricted to 'classic' for this activity: the separate stt -> llm -> tts stages give inspection points between each step, which the end-to-end speech-to-speech pipeline does not provide (it emits audio directly, with no point at which the response exists as text before the user hears it)."
         },
         "stt_type": {
           "type": "string",
@@ -59,7 +59,7 @@
         },
         "llm_type": {
           "type": "string",
-          "enum": ["openai", "openai_gpt-realtime", "ollama/qwen3:4b-instruct-2507-q4_K_M"],
+          "enum": ["openai", "ollama/qwen3:4b-instruct-2507-q4_K_M"],
           "default": "openai",
           "description": "The LLM service to use."
         },

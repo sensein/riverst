@@ -248,23 +248,34 @@ The `session_config.json` file is the cornerstone of every activity. It defines 
 },
 "stt_type": {
   "type": "string",
-  "enum": ["whisper", "openai"],  // Filtered by backend based on API keys
+  "enum": ["whisper", "openai"],  // Filtered per deployment -- see below
   "default": "openai",
   "description": "Speech-to-text service selection"
 },
 "llm_type": {
   "type": "string",
-  "enum": ["openai", "openai_gpt-realtime", "gemini"],  // Auto-filtered
+  "enum": ["openai", "openai_gpt-realtime"],  // Filtered per deployment
   "default": "openai",
   "description": "Language model service selection"
 },
 "tts_type": {
   "type": "string",
-  "enum": ["openai", "kokoro"],  // Add other TTS providers as needed
+  "enum": ["openai", "kokoro"],
   "default": "openai",
   "description": "Text-to-speech service selection"
 }
 ```
+
+Every value you list must exist in the backend registry
+(`bot/utils/capabilities.py`) for that slot — `test_capabilities.py` fails the
+build otherwise, rather than the value being silently unavailable at runtime.
+Adding a new provider means adding a `Backend` row alongside the
+`component_factory` code that builds it.
+
+Note that `openai_gpt-realtime` fills the `llm_type` slot but is not an LLM: it
+is a speech-to-speech model, so it is only usable when `pipeline_modality`
+includes `"e2e"`. Listing it in a classic-only activity offers an option that
+cannot be selected.
 
 #### Avatar and Embodiment Settings
 
@@ -333,17 +344,29 @@ The `session_config.json` file is the cornerstone of every activity. It defines 
 }
 ```
 
-### API Key Filtering System
+### Option Filtering System
 
-The backend automatically filters configuration options based on available API keys:
+`GET /api/activities/{name}/session_config` filters the enums you declare before
+the client sees them, so an activity can list everything it supports and each
+deployment offers only the subset it can actually serve. The rules live in the
+backend registry (`bot/utils/capabilities.py`), applied by
+`apply_deployment_policy()`:
 
-```python
-# From main.py - automatic filtering logic
-has_openai = os.getenv("OPENAI_API_KEY") is not None
-has_google = os.getenv("GOOGLE_API_KEY") is not None
+- **Missing credential.** A hosted backend is withheld when its API key is
+  absent (`OPENAI_API_KEY`, `ELEVENLABS_API_KEY`).
+- **Local models withheld.** ollama, Whisper and Kokoro are withheld when
+  `RIVERST_COMPUTE_DEVICE="cpu"`, or whenever `RIVERST_LOCAL_MODELS` says so.
+  The hosted deployment is deliberately GPU-less; those models would run there,
+  just too slowly to offer.
+- **Unservable modalities pruned.** If filtering leaves a modality with no way
+  to run (no s2s model for `e2e`, or no LLM/STT/TTS for `classic`), that
+  modality is removed from `pipeline_modality` too.
+- **`default` repaired.** A `default` that was filtered out is replaced with a
+  surviving option, so the form never opens on a value the server rejects.
 
-# Options are filtered to only show available services
-```
+A key whose every option was withheld is deleted from the schema entirely. Do
+not add a client-side copy of any of this — the frontend used to hardcode the
+`llm_type` list, which silently discarded all of the above.
 
 ### Conditional Schema Logic
 
@@ -813,7 +836,7 @@ Add your activity to `assets/activity_groups.json`.
 ### Core Endpoints
 
 - `GET /api/activities` - Returns activity groups for frontend display
-- `GET /api/activities/{name}/session_config` - Loads activity schema with API key filtering
+- `GET /api/activities/{name}/session_config` - Loads activity schema with per-deployment option filtering
 - `GET /api/resources?activity={name}` - Lists available resources for activity
 - `POST /api/session` - Creates new session with activity configuration
 - `POST /api/offer` - Establishes WebRTC connection and starts activity

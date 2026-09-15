@@ -11,3 +11,6 @@ src/client/react/public/avatars/sg-model2.glb
 # Demo site
 demo-site/.env.local
 dist-demo/
+
+# e2e test harness
+tests/e2e/node_modules/

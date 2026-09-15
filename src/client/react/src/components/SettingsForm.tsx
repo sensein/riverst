@@ -20,6 +20,7 @@ import {
   Typography,
   Checkbox,
   Tooltip,
+  message,
 } from 'antd';
 import { InfoCircleOutlined, CloseOutlined } from '@ant-design/icons';
 
@@ -35,10 +36,32 @@ interface SettingsFormProps {
   onSubmit: (data: any) => void;
 }
 
+// Which llm_type values belong to which modality. `llm_type` is an overloaded
+// key: in classic it names a text LLM, in e2e a speech-to-speech model that
+// replaces the whole STT -> LLM -> TTS chain. The server knows this from its
+// backend registry; until it sends those modalities alongside the enum, the
+// client has to infer it from the name, so it does so in exactly one place.
+const isSpeechToSpeech = (value: string) => value.startsWith('openai_gpt-realtime');
+// One accessor so every reader takes the offered values from the same place:
+// the server's filtered enum, never a list of our own.
+const offeredLlms = (optionsSchema: { [k: string]: JSONSchema7Definition }) =>
+  (((optionsSchema.llm_type as JSONSchema7)?.enum ?? []) as string[]);
+const llmValuesFor = (modality: string | undefined, offered: string[]) =>
+  offered.filter((v) => (modality === 'e2e' ? isSpeechToSpeech(v) : !isSpeechToSpeech(v)));
+
 const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
   const [form] = Form.useForm();
   const transportState = usePipecatClientTransportState();
   const [isValid, setIsValid] = useState(false);
+  // Separate from isValid, which validateSchema recomputes from ajv on every
+  // change. A deployment can serve no pipeline at all (no credential and no
+  // local models), and the server leaves pipeline_modality populated in that
+  // case, so ajv sees nothing wrong: the service keys are deleted from the
+  // schema and none of them is in any config's `required` list. Submitting
+  // then writes a config.json with no llm_type, and bot_runner.py reads
+  // config["llm_type"] -- an unhandled KeyError inside a background task,
+  // which the user only ever sees as a spinner that never resolves.
+  const [noPipelineAvailable, setNoPipelineAvailable] = useState(false);
   const [dynamicEnums, setDynamicEnums] = useState<{ books: { id: string; path: string; title: string }[] }>({ books: [] });
 
   // Extract activity name from schema
@@ -146,16 +169,91 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
     const currentValues = form.getFieldValue('options') || {};
     const updates = { ...currentValues };
 
+    // The server deletes a service key entirely when nothing is offerable
+    // there. None of these keys is in any config's `required` list, so a
+    // missing one passes validation and submits a config the server then
+    // rejects. Checked before writing classic defaults, from either branch --
+    // the e2e branch falls back to classic, so an unchecked fallback would
+    // write the same hole this refuses.
+    const classicMissing = () => {
+      const missing = ['stt_type', 'tts_type'].filter(
+        (key) => getDefault(key) === undefined
+      );
+      // llm_type needs a value classic can actually use, which is not the same
+      // as the key having a default -- see the selection below.
+      if (!llmValuesFor('classic', offeredLlms(optionsSchema)).length) {
+        missing.unshift('llm_type');
+      }
+      return missing;
+    };
+
     if (pipelineModality === 'classic') {
-      updates.llm_type = getDefault('llm_type');
+      const missing = classicMissing();
+      if (missing.length) {
+        message.error(
+          'The classic pipeline is not available on this deployment ' +
+            `(no ${missing.join(', ')}).`
+        );
+        setNoPipelineAvailable(true);
+        return;
+      }
+      // Chosen from the offered values, not taken from `default`: the server
+      // sets llm_type.default to a speech-to-speech model when it defaults the
+      // activity to e2e, so that its own default pair is self-consistent.
+      // Trusting that default here selected a realtime model in classic
+      // modality -- a pair component_factory rejects at session start.
+      const classicLlms = llmValuesFor('classic', offeredLlms(optionsSchema));
+      const schemaDefault = getDefault('llm_type');
+      updates.llm_type = classicLlms.includes(schemaDefault)
+        ? schemaDefault
+        : classicLlms[0];
       updates.stt_type = getDefault('stt_type');
       updates.tts_type = getDefault('tts_type');
     } else if (pipelineModality === 'e2e') {
-      updates.llm_type = 'openai_gpt-realtime';
+      // Pick the first realtime option the server actually offers rather than
+      // hardcoding one, which would select a value the server had filtered out
+      // (e.g. when OPENAI_API_KEY is absent).
+      //
+      // No fallback to the classic default: component_factory rejects any
+      // non-realtime llm_type in e2e modality, so falling back would guarantee
+      // a session that dies at connect.
+      //
+      // If the server offers no realtime option at all (e.g. no
+      // OPENAI_API_KEY), e2e cannot work here. llm_type is not in any config's
+      // `required` list, so leaving it undefined would submit a config with the
+      // key missing and fail with a KeyError server-side. Refuse the modality
+      // switch instead, and say why.
+      const realtime = llmValuesFor('e2e', offeredLlms(optionsSchema));
+      if (!realtime.length) {
+        const missing = classicMissing();
+        if (missing.length) {
+          // Neither modality is servable. Writing classic defaults here would
+          // put the very hole the classic branch refuses into the form, with
+          // no error the user could act on.
+          message.error(
+            'No pipeline is available on this deployment ' +
+              `(no speech-to-speech model, and no ${missing.join(', ')}).`
+          );
+          setNoPipelineAvailable(true);
+          return;
+        }
+        message.error(
+          'Speech-to-speech is not available on this deployment. Staying on the classic pipeline.'
+        );
+        updates.pipeline_modality = 'classic';
+        updates.llm_type = getDefault('llm_type');
+        updates.stt_type = getDefault('stt_type');
+        updates.tts_type = getDefault('tts_type');
+        setNoPipelineAvailable(false);
+        form.setFieldsValue({ options: updates });
+        return;
+      }
+      updates.llm_type = realtime[0];
       updates.stt_type = undefined;
       updates.tts_type = undefined;
     }
 
+    setNoPipelineAvailable(false);
     form.setFieldsValue({ options: updates });
   }, [pipelineModality, form, schema]);
 
@@ -199,11 +297,21 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
     }
     if (['stt_type', 'tts_type'].includes(key) && pipelineModality !== 'classic') return null;
 
-    if (key === 'llm_type') {
-      config.enum = pipelineModality === 'classic'
-        ? ['openai', 'ollama/qwen3:4b-instruct-2507-q4_K_M']
-        : ['openai_gpt-realtime'];
-    }
+    // The server is the source of truth for which services are offered: it
+    // filters the enum by available credentials and by whether this deployment
+    // can run local models (see bot/utils/capabilities.py). This used to
+    // overwrite config.enum with a hardcoded list, which silently re-added
+    // ollama on cpu-only deployments and hid new realtime options.
+    //
+    // Narrowed into a local value and never written back to `config`: that is
+    // the live fetched schema, shared with the effects above, and
+    // renderFormItem runs on every render. Assigning to it compounds the
+    // filter across renders -- an e2e render followed by a classic one narrows
+    // to nothing -- which silently empties the dropdown.
+    const enumForModality: string[] | undefined =
+      key === 'llm_type' && Array.isArray(config.enum)
+        ? llmValuesFor(pipelineModality, config.enum as string[])
+        : config.enum;
 
     const rules = [];
     if (requiredFields.includes(key)) rules.push({ required: true, message: `${key} is required` });
@@ -231,7 +339,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
     }
 
     // Enum select (from schema or API)
-    if ((config.enum || config.dynamicEnum) && config.type !== 'array') {
+    if ((enumForModality || config.dynamicEnum) && config.type !== 'array') {
       if (config.dynamicEnum === 'books') {
         return (
           <Form.Item key={key} name={namePath} label={labelWithTooltip} rules={rules}>
@@ -249,7 +357,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
       return (
         <Form.Item key={key} name={namePath} label={labelWithTooltip} rules={rules}>
           <Select>
-            {config.enum.map((val: string) => (
+            {(enumForModality ?? []).map((val: string) => (
               <Select.Option key={val} value={val}>
                 {val}
               </Select.Option>
@@ -372,7 +480,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
         <Form.Item>
           <Button
             type="primary"
-            disabled={!isValid || transportState === 'connecting'}
+            disabled={!isValid || noPipelineAvailable || transportState === 'connecting'}
             loading={transportState === 'connecting'}
             onClick={async () => {
               const values = await form.getFieldsValue(true);
