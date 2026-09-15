@@ -34,6 +34,10 @@ from fastapi.staticfiles import StaticFiles
 from loguru import logger
 
 from bot.core.bot_runner import run_bot
+from bot.utils.capabilities import (
+    apply_deployment_policy,
+    validate_deployment_env as _validate_deployment_env,
+)
 from pipecat.transports.smallwebrtc.connection import (
     IceServer,
     SmallWebRTCConnection,
@@ -49,8 +53,14 @@ from authorization.auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
 )
 
-# Load environment variables
+# Load environment variables. Note override=True: .env beats the real process
+# environment, so RIVERST_COMPUTE_DEVICE must be set in .env on a deployment
+# where it matters, not only in the systemd unit.
 load_dotenv(override=True)
+
+# Fail at startup on a malformed deployment knob rather than serving a generic
+# 500 for every activity request, with the real reason only in the log.
+_validate_deployment_env()
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 app = FastAPI()
@@ -428,7 +438,9 @@ async def upload_avatar(
 
     encoded_email = _email_to_dirname(current_user["sub"])
     model_url = f"/uploads/{encoded_email}/{unique_filename}"
-    logger.info(f"Avatar uploaded by {current_user['sub']}: {unique_filename} ({len(content)} bytes)")
+    logger.info(
+        f"Avatar uploaded by {current_user['sub']}: {unique_filename} ({len(content)} bytes)"
+    )
 
     return JSONResponse(content={"modelUrl": model_url})
 
@@ -488,11 +500,13 @@ async def get_my_avatars(
         return JSONResponse(content=[])
 
     glb_stems = {
-        f.stem for f in user_dir.iterdir()
+        f.stem
+        for f in user_dir.iterdir()
         if f.suffix == ".glb" and _UUID_GLB_RE.match(f.name)
     }
     json_stems = {
-        f.stem for f in user_dir.iterdir()
+        f.stem
+        for f in user_dir.iterdir()
         if f.suffix == ".json" and _UUID_GLB_RE.match(f.stem + ".glb")
     }
     all_stems = sorted(glb_stems | json_stems)
@@ -516,11 +530,13 @@ async def get_my_avatars(
             except Exception as e:
                 logger.warning(f"Failed to read gender sidecar {stem}.json: {e}")
 
-        avatars.append({
-            "modelUrl": f"/uploads/{encoded_email}/{stem}.glb",
-            "gender": gender,
-            "corrupted": corrupted,
-        })
+        avatars.append(
+            {
+                "modelUrl": f"/uploads/{encoded_email}/{stem}.glb",
+                "gender": gender,
+                "corrupted": corrupted,
+            }
+        )
 
     return JSONResponse(content=avatars)
 
@@ -649,41 +665,22 @@ async def get_activity_settings(activity_name: str) -> JSONResponse:
         with file_path.open("r", encoding="utf-8") as f:
             config = json.load(f)
 
-        has_openai = os.getenv("OPENAI_API_KEY") is not None
-        has_google = os.getenv("GOOGLE_API_KEY") is not None
-
         options_props: Dict[str, Any] = (
             config.get("properties", {}).get("options", {}).get("properties", {})
         )
 
-        for key, model_list in {
-            "llm_type": ["openai", "openai_gpt-realtime", "gemini"],
-            "stt_type": ["openai"],
-            "tts_type": ["openai"],
-        }.items():
-            if key in options_props and "enum" in options_props[key]:
-                allowed = options_props[key]["enum"]
-                filtered = [
-                    m
-                    for m in allowed
-                    if not (
-                        (not has_openai and m in ["openai", "openai_gpt-realtime"])
-                        or (not has_google and m == "gemini")
-                    )
-                ]
-                options_props[key]["enum"] = filtered
-
-                if (
-                    "default" in options_props[key]
-                    and options_props[key]["default"] not in filtered
-                ):
-                    if filtered:
-                        options_props[key]["default"] = filtered[0]
-                    else:
-                        logger.warning(
-                            f"No valid options left for '{key}' after filtering."
-                        )
-                        del options_props[key]
+        # Drop options this deployment cannot actually run: hosted services
+        # without credentials, and locally-run models on a cpu-only box. This
+        # is what lets the cpu and gpu deployments share one branch instead of
+        # maintaining hand-stripped session configs on a separate branch.
+        applied = apply_deployment_policy(options_props)
+        for key, entries in applied["removed_options"].items():
+            for value, reason in entries:
+                logger.debug(f"{activity_name}: hiding {key}={value} ({reason})")
+        for modality in applied["pruned_modalities"]:
+            logger.debug(f"{activity_name}: hiding modality {modality} (unservable)")
+        if applied["modality_default"]:
+            logger.debug(f"{activity_name}: defaulting pipeline_modality to e2e")
 
         return JSONResponse(content=config)
 

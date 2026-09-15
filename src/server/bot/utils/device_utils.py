@@ -16,6 +16,11 @@ def get_compute_device_policy() -> str:
 
     `auto` prefers accelerated backends when available.
     `cpu` forces all local model execution onto CPU.
+
+    Note this value has a second effect: bot/utils/capabilities.py reads it to
+    decide whether locally-run backends (ollama, Whisper, Kokoro) are offered at
+    all, so `cpu` both places execution on CPU *and* withholds those options.
+    Set RIVERST_LOCAL_MODELS=true to keep them while still forcing CPU.
     """
     policy = os.getenv(COMPUTE_DEVICE_ENV_VAR, "auto").strip().lower()
     if policy not in VALID_COMPUTE_DEVICE_POLICIES:
