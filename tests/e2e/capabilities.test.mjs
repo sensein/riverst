@@ -37,6 +37,10 @@ const ACTIVITY_GROUP = 'Playground just for fun'
 // is a stale hidden portal and the wait times out.
 const OPEN_DROPDOWN = '.ant-select-dropdown:not(.ant-select-dropdown-hidden)'
 
+// The same rule the component applies. Kept here deliberately rather than
+// imported: this file is checking that the client agrees with the server.
+const REALTIME = /^openai_gpt-realtime/
+
 const results = []
 let browser
 
@@ -47,6 +51,26 @@ function pass(name, note = '') {
 function fail(name, why) {
   results.push({ name, ok: false, note: why })
   console.log(`  FAIL  ${name} — ${why}`)
+}
+
+/**
+ * The value the LLM select currently holds, as antd renders it.
+ *
+ * The dropdown's *contents* were asserted long before this, and that was not
+ * enough: the server repairs llm_type.default to a speech-to-speech model when
+ * it defaults an activity to e2e, and the component then carried that default
+ * into classic. The options were right and the selection was wrong, which
+ * surfaced only as a ValueError in a background task after /api/offer had
+ * already returned 200 -- a session that looks connected and never starts.
+ */
+async function readLlmSelection(page) {
+  return (
+    await page
+      .locator('.ant-form-item', { hasText: /LLM TYPE/i })
+      .locator('.ant-select-selection-item')
+      .first()
+      .innerText()
+  ).trim()
 }
 
 /** Open the activity settings form, expanding the collapsed group first. */
@@ -110,8 +134,16 @@ async function main() {
   // and withholds local backends deterministically -- the state these
   // assertions need, since in the default state the server's list is identical
   // to the list the component used to hardcode.
-  console.log('Starting backend (local models withheld) and frontend…')
-  await startBackend({ env: { RIVERST_LOCAL_MODELS: 'false' } })
+  // Both vars, because they do different jobs and the interesting bug needed
+  // the second. RIVERST_LOCAL_MODELS withholds the local backends;
+  // RIVERST_COMPUTE_DEVICE=cpu is what makes the server default an activity to
+  // e2e and repair llm_type.default to a speech-to-speech model. Running
+  // without it left llm_type.default as 'openai', and the suite passed 8/8
+  // while the real cpu deployment failed on every switch to classic.
+  console.log('Starting backend (hosted cpu deployment state) and frontend…')
+  await startBackend({
+    env: { RIVERST_LOCAL_MODELS: 'false', RIVERST_COMPUTE_DEVICE: 'cpu' },
+  })
   await startFrontend()
 
   // What the server offers, as the UI will receive it.
@@ -177,6 +209,23 @@ async function main() {
     return false
   }
   pass('auth is bypassable')
+
+  // Asserted, not assumed: env.example ships RIVERST_COMPUTE_DEVICE and
+  // load_dotenv(override=True) makes .env win, so the cpu setting above can be
+  // silently ignored -- and without it the defaults below are the uninteresting
+  // ones that hid this bug.
+  const modalityDefault = cfg.properties.options.properties.pipeline_modality?.default
+  const llmDefault = llmProp.default
+  if (modalityDefault !== 'e2e' || !REALTIME.test(llmDefault)) {
+    fail(
+      'server serves the hosted cpu defaults',
+      `expected pipeline_modality default "e2e" with a realtime llm_type ` +
+        `default, got "${modalityDefault}" / "${llmDefault}". Comment out ` +
+        `RIVERST_COMPUTE_DEVICE in src/server/.env so the harness value wins.`
+    )
+    return false
+  }
+  pass('server serves the hosted cpu defaults', `${modalityDefault} / ${llmDefault}`)
 
   browser = await chromium.launch({ args: CHROMIUM_ARGS })
   const page = await browser.newPage()
@@ -246,7 +295,34 @@ async function main() {
       )
     }
 
-    // 3. Nothing the server did not offer may appear, in either modality.
+    // 3. The selected value must be usable in the selected modality.
+    //    component_factory rejects the pair, and because run_bot is a
+    //    background task that rejection is invisible to the browser.
+    await selectModality(page, 'classic')
+    const classicPick = await readLlmSelection(page)
+    if (classicPick && !REALTIME.test(classicPick) && serverEnum.includes(classicPick)) {
+      pass('classic selects an llm classic can run', classicPick)
+    } else {
+      fail(
+        'classic selects an llm classic can run',
+        `selected "${classicPick}" — component_factory raises "LLM ` +
+          `'${classicPick}' not allowed for modality 'classic'" in a ` +
+          `background task, so the session never starts and the UI shows no error`
+      )
+    }
+
+    await selectModality(page, 'e2e')
+    const e2ePick = await readLlmSelection(page)
+    if (e2ePick && REALTIME.test(e2ePick) && serverEnum.includes(e2ePick)) {
+      pass('e2e selects a speech-to-speech llm', e2ePick)
+    } else {
+      fail(
+        'e2e selects a speech-to-speech llm',
+        `selected "${e2ePick}", which e2e modality cannot run`
+      )
+    }
+
+    // 4. Nothing the server did not offer may appear, in either modality.
     const invented = [...e2eAgain, ...classicAgain].filter((o) => !serverEnum.includes(o))
     if (!invented.length) {
       pass('UI invents no options of its own')

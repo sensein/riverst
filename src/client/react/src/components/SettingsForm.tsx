@@ -36,6 +36,19 @@ interface SettingsFormProps {
   onSubmit: (data: any) => void;
 }
 
+// Which llm_type values belong to which modality. `llm_type` is an overloaded
+// key: in classic it names a text LLM, in e2e a speech-to-speech model that
+// replaces the whole STT -> LLM -> TTS chain. The server knows this from its
+// backend registry; until it sends those modalities alongside the enum, the
+// client has to infer it from the name, so it does so in exactly one place.
+const isSpeechToSpeech = (value: string) => value.startsWith('openai_gpt-realtime');
+// One accessor so every reader takes the offered values from the same place:
+// the server's filtered enum, never a list of our own.
+const offeredLlms = (optionsSchema: { [k: string]: JSONSchema7Definition }) =>
+  (((optionsSchema.llm_type as JSONSchema7)?.enum ?? []) as string[]);
+const llmValuesFor = (modality: string | undefined, offered: string[]) =>
+  offered.filter((v) => (modality === 'e2e' ? isSpeechToSpeech(v) : !isSpeechToSpeech(v)));
+
 const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
   const [form] = Form.useForm();
   const transportState = usePipecatClientTransportState();
@@ -162,8 +175,17 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
     // rejects. Checked before writing classic defaults, from either branch --
     // the e2e branch falls back to classic, so an unchecked fallback would
     // write the same hole this refuses.
-    const classicMissing = () =>
-      ['llm_type', 'stt_type', 'tts_type'].filter((key) => getDefault(key) === undefined);
+    const classicMissing = () => {
+      const missing = ['stt_type', 'tts_type'].filter(
+        (key) => getDefault(key) === undefined
+      );
+      // llm_type needs a value classic can actually use, which is not the same
+      // as the key having a default -- see the selection below.
+      if (!llmValuesFor('classic', offeredLlms(optionsSchema)).length) {
+        missing.unshift('llm_type');
+      }
+      return missing;
+    };
 
     if (pipelineModality === 'classic') {
       const missing = classicMissing();
@@ -175,7 +197,16 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
         setNoPipelineAvailable(true);
         return;
       }
-      updates.llm_type = getDefault('llm_type');
+      // Chosen from the offered values, not taken from `default`: the server
+      // sets llm_type.default to a speech-to-speech model when it defaults the
+      // activity to e2e, so that its own default pair is self-consistent.
+      // Trusting that default here selected a realtime model in classic
+      // modality -- a pair component_factory rejects at session start.
+      const classicLlms = llmValuesFor('classic', offeredLlms(optionsSchema));
+      const schemaDefault = getDefault('llm_type');
+      updates.llm_type = classicLlms.includes(schemaDefault)
+        ? schemaDefault
+        : classicLlms[0];
       updates.stt_type = getDefault('stt_type');
       updates.tts_type = getDefault('tts_type');
     } else if (pipelineModality === 'e2e') {
@@ -192,8 +223,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
       // `required` list, so leaving it undefined would submit a config with the
       // key missing and fail with a KeyError server-side. Refuse the modality
       // switch instead, and say why.
-      const offered = ((optionsSchema.llm_type as JSONSchema7)?.enum ?? []) as string[];
-      const realtime = offered.filter((v) => v.startsWith('openai_gpt-realtime'));
+      const realtime = llmValuesFor('e2e', offeredLlms(optionsSchema));
       if (!realtime.length) {
         const missing = classicMissing();
         if (missing.length) {
@@ -280,11 +310,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
     // to nothing -- which silently empties the dropdown.
     const enumForModality: string[] | undefined =
       key === 'llm_type' && Array.isArray(config.enum)
-        ? (config.enum as string[]).filter((v) =>
-            pipelineModality === 'e2e'
-              ? v.startsWith('openai_gpt-realtime')
-              : !v.startsWith('openai_gpt-realtime')
-          )
+        ? llmValuesFor(pipelineModality, config.enum as string[])
         : config.enum;
 
     const rules = [];

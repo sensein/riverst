@@ -26,8 +26,26 @@ function waitForHttp(url, { timeoutMs = 90000, label = url, entry = null } = {})
     for (;;) {
       try {
         const res = await fetch(url)
-        if (res.ok) return
-      } catch {
+        // Only a server WE started counts. Both ports use --strictPort, so a
+        // squatter from another checkout (or a leaked run) makes our child exit
+        // while the port keeps answering -- and every assertion then runs
+        // against someone else's working tree, passing or failing for reasons
+        // that have nothing to do with the code under test. This cost hours
+        // once; it is not allowed to be silent again.
+        if (res.ok) {
+          if (entry?.exited) {
+            throw new Error(
+              `${label} exited but ${url} still answers -- something else is ` +
+                `holding that port (a leaked run, or a dev server from another ` +
+                `checkout). Kill it and re-run:\n` +
+                `  lsof -nP -iTCP -sTCP:LISTEN | grep -E ':(${API_PORT}|${WEB_PORT}) '\n` +
+                entry.log.join('')
+            )
+          }
+          return
+        }
+      } catch (e) {
+        if (e instanceof Error && e.message.includes('still answers')) throw e
         // not up yet
       }
       // Fail immediately if the process is already gone, rather than polling a
@@ -86,7 +104,26 @@ function start(cmd, args, opts, name) {
  *   assuming this took effect.
  * @param {string} [opts.name] Process label used in dumped logs.
  */
+/**
+ * Refuse to start when something already answers on a port we are about to
+ * claim with --strictPort. Checked before spawning, because afterwards the
+ * symptom is indistinguishable from a slow start.
+ */
+async function assertPortFree(port, label) {
+  try {
+    await fetch(`http://127.0.0.1:${port}/`, { signal: AbortSignal.timeout(1500) })
+  } catch {
+    return // nothing there, which is what we want
+  }
+  throw new Error(
+    `Port ${port} is already serving something, so the ${label} this suite ` +
+      `starts would not be the one under test. Find and kill it:\n` +
+      `  lsof -nP -iTCP -sTCP:LISTEN | grep ':${port} '`
+  )
+}
+
 export async function startBackend({ port = API_PORT, env = {}, name = 'backend' } = {}) {
+  await assertPortFree(port, 'backend')
   const { log, entry } = start(
     'python',
     ['main.py', '--port', String(port)],
@@ -99,6 +136,7 @@ export async function startBackend({ port = API_PORT, env = {}, name = 'backend'
 
 /** Start the Vite dev server, proxying /api to our isolated backend. */
 export async function startFrontend() {
+  await assertPortFree(WEB_PORT, 'frontend')
   const { log, entry } = start(
     'npm',
     ['run', 'dev', '--', '--port', String(WEB_PORT), '--strictPort', '--host', '127.0.0.1'],
