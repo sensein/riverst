@@ -38,7 +38,7 @@ apt_retry apt-get update -y || echo "WARNING: apt-get update still failing; cont
 # official archive below instead, which is what AWS recommends anyway.
 # This one IS fatal if it cannot succeed -- nothing works without these.
 apt_retry apt-get install -y --no-install-recommends \
-  build-essential python3-dev git curl wget unzip jq \
+  build-essential python3-dev git curl wget unzip jq rsync \
   ffmpeg libsndfile1-dev pkg-config libgl1 libglib2.0-0 \
   nginx certbot python3-certbot-nginx coturn
 
@@ -172,67 +172,174 @@ WantedBy=multi-user.target
 SVCEOF
 
 # ------------------------------------------------------------------ frontend
+# `npm ci` needs package-lock.json, which is NOT tracked in the repo -- only
+# package.json is -- so it fails on a fresh clone. Prefer ci when a lockfile is
+# present (reproducible), fall back to install when it is not.
+# Committing src/client/react/package-lock.json would make frontend builds
+# reproducible across environments; until then this branch is required.
 sudo -u $APP_USER bash -lc "
+  set -e
   . \$HOME/.nvm/nvm.sh && nvm use 22
-  cd $REPO_DIR/src/client/react && npm ci && npm run build
+  cd $REPO_DIR/src/client/react
+  if [ -f package-lock.json ]; then npm ci; else npm install; fi
+  npm run build
 "
-mkdir -p /var/www
-ln -sfn $REPO_DIR/src/client/react/dist /var/www/$HOSTNAME_FQDN
+# Copy the build into /var/www rather than symlinking into $APP_HOME.
+# Ubuntu 24.04 creates /home/ubuntu mode 750, so nginx's www-data user cannot
+# traverse into it -- a docroot symlinked there yields "500 Internal Server
+# Error" (nginx cannot even stat the root), not a 404. Copying also removes the
+# broken-symlink failure mode when a build has not produced dist/ yet.
+DOCROOT=/var/www/$HOSTNAME_FQDN
+if [ ! -d "$REPO_DIR/src/client/react/dist" ]; then
+  echo "FATAL: frontend build produced no dist/ directory" >&2
+  exit 1
+fi
+# Earlier revisions symlinked $DOCROOT into the home directory. `mkdir -p` on an
+# existing symlink-to-directory is a silent no-op, so rsync would follow it and
+# copy dist/ into itself -- remove the symlink before creating a real directory.
+if [ -L "$DOCROOT" ]; then rm -f "$DOCROOT"; fi
+mkdir -p "$DOCROOT"
+rsync -a --delete "$REPO_DIR/src/client/react/dist/" "$DOCROOT/"
+chown -R root:root "$DOCROOT"
+chmod -R a+rX "$DOCROOT"
 
 # --------------------------------------------------------------------- nginx
-# Port 80 only at first: certbot --nginx rewrites this to add the 443 server
-# block once it has issued a certificate.
-cat > /etc/nginx/sites-available/$HOSTNAME_FQDN <<NGXEOF
+# The app's server-block body lives in a snippet included by both the HTTP-only
+# and the TLS config, so the two can never drift apart.
+mkdir -p /etc/nginx/snippets
+cat > /etc/nginx/snippets/riverst-app.conf <<NGXEOF
+root /var/www/$HOSTNAME_FQDN;
+index index.html;
+client_max_body_size 50M;
+
+location / {
+    try_files \$uri \$uri/ /index.html;
+}
+
+location /api/ {
+    proxy_pass http://localhost:7860/api/;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade \$http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host \$host;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+    proxy_read_timeout 300s;
+    proxy_cache_bypass \$http_upgrade;
+}
+
+location /uploads/ {
+    proxy_pass http://localhost:7860/uploads/;
+    proxy_http_version 1.1;
+    proxy_set_header Host \$host;
+}
+NGXEOF
+
+# nginx 1.25.1 introduced the `http2 on;` directive. Ubuntu 24.04 ships 1.24.0,
+# where HTTP/2 is a `listen` parameter and `http2` as a standalone directive is a
+# fatal "unknown directive" error that makes `nginx -t` fail -- which silently
+# leaves the previous config loaded.
+NGINX_VER=$(nginx -v 2>&1 | sed -E 's|.*nginx/([0-9.]+).*|\1|')
+if [ "$(printf '%s\n' 1.25.1 "$NGINX_VER" | sort -V | head -1)" = "1.25.1" ]; then
+  LISTEN_443='listen 443 ssl;
+    http2 on;'
+else
+  LISTEN_443='listen 443 ssl http2;'
+fi
+echo "nginx $NGINX_VER -> 443 listen directive: $LISTEN_443"
+
+# Two config generators. certbot is invoked with `certonly` and never allowed to
+# rewrite nginx config: an earlier revision let `certbot --nginx` inject the 443
+# block, which meant a re-run (cert already present, so certbot skipped) rewrote
+# the config back to HTTP-only and silently dropped the HTTPS listener.
+write_http_only_config() {
+  cat > /etc/nginx/sites-available/$HOSTNAME_FQDN <<NGXEOF
 server {
     listen 80;
     server_name $HOSTNAME_FQDN;
 
-    root /var/www/$HOSTNAME_FQDN;
-    index index.html;
-    client_max_body_size 50M;
-
-    location / {
-        try_files \$uri \$uri/ /index.html;
+    # ACME http-01 challenge must stay reachable over plain HTTP.
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
     }
 
-    location /api/ {
-        proxy_pass http://localhost:7860/api/;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host \$host;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_read_timeout 300s;
-        proxy_cache_bypass \$http_upgrade;
-    }
-
-    location /uploads/ {
-        proxy_pass http://localhost:7860/uploads/;
-        proxy_http_version 1.1;
-        proxy_set_header Host \$host;
-    }
+    include /etc/nginx/snippets/riverst-app.conf;
 }
 NGXEOF
+}
+
+write_tls_config() {
+  cat > /etc/nginx/sites-available/$HOSTNAME_FQDN <<NGXEOF
+server {
+    listen 80;
+    server_name $HOSTNAME_FQDN;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
+    }
+
+    location / {
+        return 301 https://\$host\$request_uri;
+    }
+}
+
+server {
+    $LISTEN_443
+    server_name $HOSTNAME_FQDN;
+
+    ssl_certificate     /etc/letsencrypt/live/$HOSTNAME_FQDN/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$HOSTNAME_FQDN/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+
+    include /etc/nginx/snippets/riverst-app.conf;
+}
+NGXEOF
+}
 
 rm -f /etc/nginx/sites-enabled/default
 ln -sfn /etc/nginx/sites-available/$HOSTNAME_FQDN /etc/nginx/sites-enabled/$HOSTNAME_FQDN
-nginx -t && systemctl enable --now nginx && systemctl reload nginx
+mkdir -p /var/www/html
 
 # ----------------------------------------------------------------------- TLS
-# The EIP association races instance boot, so retry until the ACME http-01
-# challenge can actually reach us.
-if [ ! -d "/etc/letsencrypt/live/$HOSTNAME_FQDN" ]; then
+if [ -d "/etc/letsencrypt/live/$HOSTNAME_FQDN" ]; then
+  # Cert already present (a re-run): go straight to the full TLS config.
+  write_tls_config
+else
+  # First boot: serve plain HTTP so the ACME challenge can reach us. The EIP
+  # association races instance boot, so retry until it does.
+  write_http_only_config
+  nginx -t && systemctl enable --now nginx && systemctl reload nginx
+
   for attempt in 1 2 3 4 5 6 7 8 9 10; do
-    if certbot --nginx --non-interactive --agree-tos \
-        -m "${certbot_email}" -d "$HOSTNAME_FQDN" --redirect; then
+    if certbot certonly --webroot -w /var/www/html --non-interactive --agree-tos \
+        -m "${certbot_email}" -d "$HOSTNAME_FQDN"; then
       echo "certbot succeeded on attempt $attempt"
       break
     fi
     echo "certbot attempt $attempt failed; DNS or EIP not ready yet, retrying in 30s"
     sleep 30
   done
+
+  if [ -d "/etc/letsencrypt/live/$HOSTNAME_FQDN" ]; then
+    write_tls_config
+  else
+    echo "WARNING: no certificate obtained; staying on HTTP. WebRTC needs HTTPS." >&2
+  fi
 fi
+
+nginx -t && systemctl enable --now nginx && systemctl reload nginx
+
+# Assert the listener we expect is actually up, rather than trusting a reload.
+if [ -d "/etc/letsencrypt/live/$HOSTNAME_FQDN" ]; then
+  sleep 2
+  if ! ss -ltn | grep -q ':443'; then
+    echo "FATAL: certificate present but nginx is not listening on 443" >&2
+    exit 1
+  fi
+  echo "verified: nginx listening on 443"
+fi
+
 # Packaged certbot ships a systemd renewal timer; make sure it is on.
 systemctl enable --now certbot.timer 2>/dev/null || true
 
