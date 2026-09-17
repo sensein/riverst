@@ -1,0 +1,10 @@
+.terraform/
+
+# .terraform.lock.hcl IS committed on purpose: it pins provider versions so
+# every machine and CI run resolves the same hashicorp/aws build.
+*.tfstate
+*.tfstate.*
+*.tfplan
+terraform.tfvars
+*.auto.tfvars
+crash.log

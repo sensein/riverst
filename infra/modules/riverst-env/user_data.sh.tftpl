@@ -1,0 +1,317 @@
+#!/usr/bin/env bash
+# Riverst ${environment} bootstrap -- codifies notes/first_steps_to_deploy.md.
+# Idempotent: safe to re-run via `cloud-init clean && reboot` or by hand.
+set -euo pipefail
+exec > >(tee -a /var/log/riverst-bootstrap.log) 2>&1
+echo "=== riverst bootstrap ${environment} $(date -Is) ==="
+
+export DEBIAN_FRONTEND=noninteractive
+
+# EC2's regional Ubuntu mirrors are frequently mid-sync, which makes apt exit
+# non-zero with "File has unexpected size". Under `set -e` that kills the whole
+# bootstrap, so every apt call is retried.
+apt_retry() {
+  local i
+  for i in 1 2 3 4 5; do
+    if "$@"; then return 0; fi
+    echo "apt attempt $i/5 failed: $*"
+    sleep 20
+  done
+  return 1
+}
+HOSTNAME_FQDN="${hostname}"
+APP_USER=ubuntu
+APP_HOME=/home/$APP_USER
+REPO_DIR=$APP_HOME/riverst
+CONDA_DIR=$APP_HOME/miniforge3
+AWS_REGION="${aws_region}"
+SSM_PREFIX="${ssm_prefix}"
+
+# ---------------------------------------------------------------- system deps
+# A stale index is survivable -- the packages below are long-established, so
+# proceed with cached lists rather than failing the build.
+apt_retry apt-get update -y || echo "WARNING: apt-get update still failing; continuing with cached indexes"
+
+# NOTE: no `awscli` here. Ubuntu 24.04 (noble) dropped the apt package entirely
+# -- `apt-cache policy awscli` reports no candidate -- and with `set -e` that one
+# missing package aborts this whole script. AWS CLI v2 is installed from the
+# official archive below instead, which is what AWS recommends anyway.
+# This one IS fatal if it cannot succeed -- nothing works without these.
+apt_retry apt-get install -y --no-install-recommends \
+  build-essential python3-dev git curl wget unzip jq \
+  ffmpeg libsndfile1-dev pkg-config libgl1 libglib2.0-0 \
+  nginx certbot python3-certbot-nginx coturn
+
+# ------------------------------------------------------------- aws cli v2
+# Required below to read this environment's secrets out of Parameter Store.
+if ! command -v aws >/dev/null 2>&1; then
+  curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
+  unzip -q -o /tmp/awscliv2.zip -d /tmp
+  /tmp/aws/install --update
+  rm -rf /tmp/aws /tmp/awscliv2.zip
+fi
+aws --version
+
+# ------------------------------------------------------------------ miniforge
+# Miniforge, NOT Miniconda. Two reasons:
+#   1. Miniconda's default channels (repo.anaconda.com/pkgs/main and /pkgs/r) now
+#      require accepting Anaconda's Terms of Service, which fails outright in a
+#      non-interactive context: `CondaToSNonInteractiveError`. conda create then
+#      silently does nothing and pip falls through to base Python.
+#   2. Those terms require a paid licence for organisations over 200 people.
+# Miniforge defaults to conda-forge, which has neither problem.
+if [ ! -x "$CONDA_DIR/bin/conda" ]; then
+  sudo -u $APP_USER bash -lc "
+    set -e
+    wget -q https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh -O /tmp/miniforge.sh
+    bash /tmp/miniforge.sh -b -u -p $CONDA_DIR
+    rm -f /tmp/miniforge.sh
+    $CONDA_DIR/bin/conda init --all
+  "
+fi
+
+# ----------------------------------------------------------------------- node
+if [ ! -d "$APP_HOME/.nvm" ]; then
+  sudo -u $APP_USER bash -lc "
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+    . \$HOME/.nvm/nvm.sh && nvm install 22
+  "
+fi
+
+# ------------------------------------------------------------------ app clone
+if [ ! -d "$REPO_DIR/.git" ]; then
+  sudo -u $APP_USER git clone "${git_repo}" "$REPO_DIR"
+fi
+sudo -u $APP_USER bash -lc "cd $REPO_DIR && git fetch --all --tags && git checkout '${git_ref}' && git pull --ff-only || true"
+
+# --------------------------------------------------- secrets from SSM -> .env
+# Values are fetched at boot, never baked into the AMI or the Terraform state.
+fetch_param() {
+  aws ssm get-parameter --with-decryption --region "$AWS_REGION" \
+    --name "$SSM_PREFIX/$1" --query 'Parameter.Value' --output text 2>/dev/null || echo ""
+}
+
+OPENAI_API_KEY=$(fetch_param OPENAI_API_KEY)
+GOOGLE_CLIENT_ID=$(fetch_param GOOGLE_CLIENT_ID)
+GOOGLE_CLIENT_SECRET=$(fetch_param GOOGLE_CLIENT_SECRET)
+SECRET_KEY=$(fetch_param SECRET_KEY)
+TURN_USERNAME=$(fetch_param TURN_USERNAME)
+TURN_CREDENTIAL=$(fetch_param TURN_CREDENTIAL)
+
+install -o $APP_USER -g $APP_USER -m 0600 /dev/null $REPO_DIR/src/server/.env
+# Variable names verified against the source, not assumed:
+#   authorization/auth.py -> GOOGLE_CLIENT_ID, SECRET_KEY, ENABLE_GOOGLE_AUTH
+#   main.py               -> OPENAI_API_KEY, TURN_URL, TURN_USERNAME, TURN_CREDENTIAL
+#   bot/utils/device_utils.py -> RIVERST_COMPUTE_DEVICE
+# SECRET_KEY is mandatory: auth.py raises at import time if it is unset.
+cat > $REPO_DIR/src/server/.env <<ENVEOF
+OPENAI_API_KEY=$OPENAI_API_KEY
+GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
+GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET
+SECRET_KEY=$SECRET_KEY
+ENABLE_GOOGLE_AUTH=true
+TURN_URL=turn:$HOSTNAME_FQDN:3478
+TURN_USERNAME=$TURN_USERNAME
+TURN_CREDENTIAL=$TURN_CREDENTIAL
+RIVERST_COMPUTE_DEVICE=${compute_device}
+RIVERST_ENVIRONMENT=${environment}
+ENVEOF
+chown $APP_USER:$APP_USER $REPO_DIR/src/server/.env
+chmod 0600 $REPO_DIR/src/server/.env
+
+install -o $APP_USER -g $APP_USER -m 0600 /dev/null $REPO_DIR/src/client/react/.env
+# VITE_GOOGLE_CLIENT_ID is baked into the bundle at BUILD time, so changing it
+# requires `npm run build` again -- restarting the service is not enough.
+# VITE_API_PROXY_TARGET is only read by vite.config.ts for the dev server; in
+# production nginx does the /api/ proxying, so it is deliberately not set here.
+cat > $REPO_DIR/src/client/react/.env <<ENVEOF
+VITE_GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
+ENVEOF
+chown $APP_USER:$APP_USER $REPO_DIR/src/client/react/.env
+
+# ------------------------------------------------------------------- backend
+# Absolute interpreter paths, never `conda activate`. Relying on activation is
+# what let the earlier failure pass unnoticed: the env did not exist, activation
+# failed, and pip ran against base Python 3.14 -- where numba refuses to build
+# (pipecat pins numba==0.61.2, which supports >=3.10,<3.14).
+if [ ! -x "$CONDA_DIR/envs/riverst/bin/python" ]; then
+  sudo -u $APP_USER "$CONDA_DIR/bin/conda" create -y -n riverst python=3.11 \
+    --override-channels -c conda-forge
+fi
+
+# Fail loudly if the interpreter is not the version the dependencies require.
+PYBIN="$CONDA_DIR/envs/riverst/bin/python"
+"$PYBIN" -V
+"$PYBIN" -c 'import sys; assert sys.version_info[:2] == (3, 11), f"expected 3.11, got {sys.version}"'
+
+sudo -u $APP_USER bash -lc "
+  set -e
+  cd $REPO_DIR/src/server
+  $CONDA_DIR/envs/riverst/bin/python -m pip install --no-cache-dir -r requirements.txt
+"
+
+cat > /etc/systemd/system/riverst-server.service <<SVCEOF
+[Unit]
+Description=Riverst Python Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=$APP_USER
+WorkingDirectory=$REPO_DIR/src/server
+EnvironmentFile=$REPO_DIR/src/server/.env
+ExecStart=$CONDA_DIR/envs/riverst/bin/python main.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+SVCEOF
+
+# ------------------------------------------------------------------ frontend
+sudo -u $APP_USER bash -lc "
+  . \$HOME/.nvm/nvm.sh && nvm use 22
+  cd $REPO_DIR/src/client/react && npm ci && npm run build
+"
+mkdir -p /var/www
+ln -sfn $REPO_DIR/src/client/react/dist /var/www/$HOSTNAME_FQDN
+
+# --------------------------------------------------------------------- nginx
+# Port 80 only at first: certbot --nginx rewrites this to add the 443 server
+# block once it has issued a certificate.
+cat > /etc/nginx/sites-available/$HOSTNAME_FQDN <<NGXEOF
+server {
+    listen 80;
+    server_name $HOSTNAME_FQDN;
+
+    root /var/www/$HOSTNAME_FQDN;
+    index index.html;
+    client_max_body_size 50M;
+
+    location / {
+        try_files \$uri \$uri/ /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://localhost:7860/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_read_timeout 300s;
+        proxy_cache_bypass \$http_upgrade;
+    }
+
+    location /uploads/ {
+        proxy_pass http://localhost:7860/uploads/;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+    }
+}
+NGXEOF
+
+rm -f /etc/nginx/sites-enabled/default
+ln -sfn /etc/nginx/sites-available/$HOSTNAME_FQDN /etc/nginx/sites-enabled/$HOSTNAME_FQDN
+nginx -t && systemctl enable --now nginx && systemctl reload nginx
+
+# ----------------------------------------------------------------------- TLS
+# The EIP association races instance boot, so retry until the ACME http-01
+# challenge can actually reach us.
+if [ ! -d "/etc/letsencrypt/live/$HOSTNAME_FQDN" ]; then
+  for attempt in 1 2 3 4 5 6 7 8 9 10; do
+    if certbot --nginx --non-interactive --agree-tos \
+        -m "${certbot_email}" -d "$HOSTNAME_FQDN" --redirect; then
+      echo "certbot succeeded on attempt $attempt"
+      break
+    fi
+    echo "certbot attempt $attempt failed; DNS or EIP not ready yet, retrying in 30s"
+    sleep 30
+  done
+fi
+# Packaged certbot ships a systemd renewal timer; make sure it is on.
+systemctl enable --now certbot.timer 2>/dev/null || true
+
+# -------------------------------------------------------------------- coturn
+PUBLIC_IP=$(curl -s --max-time 5 -H "X-aws-ec2-metadata-token: $(curl -s -X PUT 'http://169.254.169.254/latest/api/token' -H 'X-aws-ec2-metadata-token-ttl-seconds: 60')" http://169.254.169.254/latest/meta-data/public-ipv4 || echo "")
+PRIVATE_IP=$(hostname -I | awk '{print $1}')
+
+cat > /etc/turnserver.conf <<TURNEOF
+listening-port=3478
+fingerprint
+lt-cred-mech
+realm=$HOSTNAME_FQDN
+user=$TURN_USERNAME:$TURN_CREDENTIAL
+no-multicast-peers
+no-loopback-peers
+min-port=10000
+max-port=65535
+external-ip=$PUBLIC_IP/$PRIVATE_IP
+cert=/etc/letsencrypt/live/$HOSTNAME_FQDN/fullchain.pem
+pkey=/etc/letsencrypt/live/$HOSTNAME_FQDN/privkey.pem
+log-file=/var/log/turnserver.log
+TURNEOF
+
+chmod 0640 /etc/turnserver.conf
+sed -i 's/^#TURNSERVER_ENABLED=1/TURNSERVER_ENABLED=1/' /etc/default/coturn 2>/dev/null || true
+grep -q '^TURNSERVER_ENABLED=1' /etc/default/coturn 2>/dev/null || echo 'TURNSERVER_ENABLED=1' >> /etc/default/coturn
+usermod -aG ssl-cert turnserver 2>/dev/null || true
+systemctl enable --now coturn || true
+
+# ------------------------------------------------------- cloudwatch agent
+# Feeds the disk_used_percent alarm. Disk is the sleeper risk here: sessions and
+# uploads accumulate on the root volume with nothing rotating them.
+if [ ! -f /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl ]; then
+  wget -q https://amazoncloudwatch-agent.s3.amazonaws.com/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb \
+    -O /tmp/amazon-cloudwatch-agent.deb
+  dpkg -i -E /tmp/amazon-cloudwatch-agent.deb || apt-get install -f -y
+  rm -f /tmp/amazon-cloudwatch-agent.deb
+fi
+
+mkdir -p /opt/aws/amazon-cloudwatch-agent/etc
+cat > /opt/aws/amazon-cloudwatch-agent/etc/config.json <<'CWEOF'
+{
+  "agent": { "metrics_collection_interval": 60 },
+  "metrics": {
+    "append_dimensions": { "InstanceId": "$${aws:InstanceId}" },
+    "metrics_collected": {
+      "disk": {
+        "resources": ["/"],
+        "measurement": ["disk_used_percent"],
+        "metrics_collection_interval": 300
+      },
+      "mem": {
+        "measurement": ["mem_used_percent"],
+        "metrics_collection_interval": 300
+      }
+    }
+  },
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/var/log/riverst-bootstrap.log",
+            "log_group_name": "/riverst/${environment}/bootstrap",
+            "retention_in_days": 30
+          }
+        ]
+      }
+    }
+  }
+}
+CWEOF
+
+/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
+  -a fetch-config -m ec2 -s -c file:/opt/aws/amazon-cloudwatch-agent/etc/config.json || true
+
+# ------------------------------------------------------------------ start app
+systemctl daemon-reload
+systemctl enable --now riverst-server.service
+
+echo "=== riverst bootstrap complete $(date -Is) ==="
+echo "check: systemctl status riverst-server; journalctl -u riverst-server -n 50"
