@@ -28,6 +28,7 @@ from ..components.llm_tools.animation_handler import AnimationHandler
 from ..components.llm_tools.end_conversation_handler import EndConversationHandler
 from ..processors.speech.lipsync_processor import LipsyncProcessor
 from ..transport.custom_services.kokoro_service import KokoroTTSService
+from ..transport.custom_services.emoji_text_filter import EmojiTextFilter
 from ..utils.device_utils import get_best_device
 from ..transport.custom_services.ollama_service import CustomOLLamaLLMService
 from ..components.memory import MemoryHandler
@@ -186,6 +187,10 @@ class BotComponentFactory:
             "Speech style: Speak naturally with occasional interjections (oh, well, so), "
             "discourse markers (you know, I mean), and brief pauses (uh, um). "
             "Use sparingly; never in numbers or names.\n"
+        )
+        instruction += (
+            "Important: Do not use emojis or any special unicode symbols. "
+            "Your responses are converted directly to audio — emojis will be read aloud as their names.\n"
         )
 
         return instruction.strip()
@@ -369,7 +374,7 @@ class BotComponentFactory:
                 )
                 return FixedOpenAIRealtimeLLMService(
                     api_key=os.getenv("OPENAI_API_KEY"),
-                    model=(self.llm_params or {}).get("model", "gpt-realtime"),
+                    model=(self.llm_params or {}).get("model", "gpt-realtime-1.5"),
                     session_properties=props,
                     start_audio_paused=False,
                     send_transcription_frames=True,
@@ -392,20 +397,27 @@ class BotComponentFactory:
         if not self.tts_type:
             return None
 
+        emoji_filter = EmojiTextFilter()
         if self.tts_type == "openai":
-            return OpenAITTSService(
-                voice=self._get_voice_for_openai(),
-                model=(self.tts_params or {}).get("model", "gpt-4o-mini-tts"),
-            )
+            tts_params = self.tts_params or {}
+            voice = tts_params.get("voice", self._get_voice_for_openai())
+            model = tts_params.get("model", "tts-1")
+            kwargs = dict(voice=voice, model=model, text_filters=[emoji_filter])
+            # instructions only apply to gpt-4o-mini-tts; tts-1/tts-1-hd ignore it
+            instructions = tts_params.get("instructions")
+            if instructions and model == "gpt-4o-mini-tts":
+                kwargs["instructions"] = instructions
+            return OpenAITTSService(**kwargs)
         elif self.tts_type == "elevenlabs":
             return ElevenLabsTTSService(
                 api_key=os.getenv("ELEVENLABS_API_KEY"),
                 voice_id=self._get_voice_id_for_elevenlabs(),
                 model="eleven_flash_v2_5",
+                text_filters=[emoji_filter],
             )
         elif self.tts_type == "kokoro":
             device = get_best_device()
             return KokoroTTSService(
-                voice=self._get_voice_id_for_kokoro(), device=device
+                voice=self._get_voice_id_for_kokoro(), device=device, text_filters=[emoji_filter]
             )
         return None
