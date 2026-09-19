@@ -102,16 +102,26 @@ variable "enable_scheduled_shutdown" {
   default     = false
 }
 
-variable "shutdown_cron_utc" {
-  description = "EventBridge cron for stopping the instance (UTC)."
+variable "schedule_timezone" {
+  description = <<-EOT
+    IANA timezone the power schedules are interpreted in. Using a real zone
+    rather than UTC means the local start/stop times stay put across daylight
+    saving transitions instead of silently shifting by an hour.
+  EOT
   type        = string
-  default     = "cron(0 1 ? * * *)" # 01:00 UTC daily = 21:00 ET
+  default     = "UTC"
 }
 
-variable "startup_cron_utc" {
-  description = "EventBridge cron for starting the instance (UTC)."
+variable "shutdown_cron" {
+  description = "EventBridge cron for stopping the instance, in schedule_timezone."
   type        = string
-  default     = "cron(0 11 ? * MON-FRI *)" # 11:00 UTC weekdays = 07:00 ET
+  default     = "cron(0 1 ? * * *)"
+}
+
+variable "startup_cron" {
+  description = "EventBridge cron for starting the instance, in schedule_timezone."
+  type        = string
+  default     = "cron(0 11 ? * MON-FRI *)"
 }
 
 variable "enable_monitoring" {

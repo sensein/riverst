@@ -46,8 +46,8 @@ resource "aws_scheduler_schedule" "stop" {
   count                        = var.enable_scheduled_shutdown ? 1 : 0
   name                         = "${local.name}-stop"
   group_name                   = aws_scheduler_schedule_group.this[0].name
-  schedule_expression          = var.shutdown_cron_utc
-  schedule_expression_timezone = "UTC"
+  schedule_expression          = var.shutdown_cron
+  schedule_expression_timezone = var.schedule_timezone
   flexible_time_window { mode = "OFF" }
 
   target {
@@ -61,8 +61,8 @@ resource "aws_scheduler_schedule" "start" {
   count                        = var.enable_scheduled_shutdown ? 1 : 0
   name                         = "${local.name}-start"
   group_name                   = aws_scheduler_schedule_group.this[0].name
-  schedule_expression          = var.startup_cron_utc
-  schedule_expression_timezone = "UTC"
+  schedule_expression          = var.startup_cron
+  schedule_expression_timezone = var.schedule_timezone
   flexible_time_window { mode = "OFF" }
 
   target {

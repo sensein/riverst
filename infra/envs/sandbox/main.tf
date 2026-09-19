@@ -53,11 +53,14 @@ module "sandbox" {
   # status-check alarm would otherwise report as a failure.
   enable_monitoring = false
 
-  # Stopped overnight, but available every day including weekends: testers
-  # hitting a dead site at the weekend with no explanation is worse than the
-  # ~$25/month the extra uptime costs.
+  # Up 07:00-00:00 America/New_York, every day including weekends. Testers
+  # hitting a dead site with no explanation is worse than the extra uptime cost.
+  # Expressed in a real timezone, not UTC, so these local times survive the
+  # daylight saving change on 1 November instead of shifting by an hour.
   enable_scheduled_shutdown = true
-  startup_cron_utc          = "cron(0 11 ? * * *)" # 11:00 UTC daily = 07:00 ET
+  schedule_timezone         = "America/New_York"
+  startup_cron              = "cron(0 7 ? * * *)"  # 07:00 ET daily
+  shutdown_cron             = "cron(0 0 ? * * *)"  # 00:00 ET (midnight) daily
 
   # Shorter retention than prod: this data is disposable.
   snapshot_retain_count = 3
