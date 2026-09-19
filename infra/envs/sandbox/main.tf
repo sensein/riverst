@@ -53,8 +53,11 @@ module "sandbox" {
   # status-check alarm would otherwise report as a failure.
   enable_monitoring = false
 
-  # Stopped overnight and at weekends.
+  # Stopped overnight, but available every day including weekends: testers
+  # hitting a dead site at the weekend with no explanation is worse than the
+  # ~$25/month the extra uptime costs.
   enable_scheduled_shutdown = true
+  startup_cron_utc          = "cron(0 11 ? * * *)" # 11:00 UTC daily = 07:00 ET
 
   # Shorter retention than prod: this data is disposable.
   snapshot_retain_count = 3
