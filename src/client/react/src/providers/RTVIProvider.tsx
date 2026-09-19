@@ -1,66 +1,62 @@
 // src/providers/RTVIProvider.tsx
-import { PropsWithChildren } from 'react'
-import { PipecatClient } from '@pipecat-ai/client-js'
-import { SmallWebRTCTransport } from '@pipecat-ai/small-webrtc-transport'
-import { PipecatClientProvider } from '@pipecat-ai/client-react'
-import { useNavigate } from 'react-router-dom'
+import { PropsWithChildren } from "react";
+import { PipecatClient } from "@pipecat-ai/client-js";
+import { SmallWebRTCTransport } from "@pipecat-ai/small-webrtc-transport";
+import { PipecatClientProvider } from "@pipecat-ai/client-react";
+import { useNavigate } from "react-router-dom";
 
 interface RTVIProviderProps {
-  sessionId: string,
-  enableCam: boolean,
+  sessionId: string;
+  enableCam: boolean;
 }
 
 export function RTVIProvider({
   sessionId,
   enableCam,
-  children
+  children,
 }: PropsWithChildren<RTVIProviderProps>) {
   // Access environment variable correctly for React
-  const waitForICEGathering = import.meta.env.VITE_WAIT_FOR_ICE_GATHERING === 'true'
+  const waitForICEGathering =
+    import.meta.env.VITE_WAIT_FOR_ICE_GATHERING === "true";
 
   // keep the same transport instance
   const transport = new SmallWebRTCTransport({
-    connectionUrl: `/api/offer?session_id=${encodeURIComponent(
-      sessionId
-    )}`,
+    connectionUrl: `/api/offer?session_id=${encodeURIComponent(sessionId)}`,
     iceServers: [
       {
         urls: [
-          'stun:stun.l.google.com:19302',
-          'stun:stun.l.google.com:5349',
-          'stun:stun1.l.google.com:3478',
-          'stun:stun1.l.google.com:5349',
-          'stun:stun2.l.google.com:19302',
-          'stun:stun2.l.google.com:5349',
-          'stun:stun3.l.google.com:3478',
-          'stun:stun3.l.google.com:5349',
-          'stun:stun4.l.google.com:19302',
-          'stun:stun4.l.google.com:5349',
+          "stun:stun.l.google.com:19302",
+          "stun:stun1.l.google.com:3478",
+          "stun:stun2.l.google.com:19302",
+          "stun:stun3.l.google.com:3478",
+          "stun:stun4.l.google.com:19302",
         ],
       },
     ],
     waitForICEGathering,
   });
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   // recreate client whenever sessionId changes
   const client = new PipecatClient({
-        transport,
-        enableMic: true,
-        enableCam: enableCam,
-        callbacks: {
-          onError: (error) => {
-            console.error('PipecatClient error:', error);
-            navigate('/error', {
-              state: {
-                message: "A PipecatClient error occurred. Please try again.",
-                status: '500',
-              }
-            });
-          }
-        }
-      });
+    transport,
+    enableMic: true,
+    enableCam: enableCam,
+    callbacks: {
+      onError: (error) => {
+        console.error("PipecatClient error:", error);
+        navigate("/error", {
+          state: {
+            message: "A PipecatClient error occurred. Please try again.",
+            status: "500",
+          },
+        });
+      },
+    },
+  });
 
-  return <PipecatClientProvider client={client}>{children}</PipecatClientProvider>
+  return (
+    <PipecatClientProvider client={client}>{children}</PipecatClientProvider>
+  );
 }
