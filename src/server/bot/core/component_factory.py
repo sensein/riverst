@@ -13,6 +13,11 @@ from pipecat.services.openai_realtime import (
     SemanticTurnDetection,
     SessionProperties,
 )
+from pipecat.services.openai_realtime.events import (
+    AudioConfiguration,
+    AudioInput,
+    AudioOutput,
+)
 from pipecat.services.gemini_multimodal_live import GeminiMultimodalLiveLLMService
 from pipecat.services.whisper.stt import WhisperSTTService
 from pipecat.adapters.schemas.tools_schema import ToolsSchema
@@ -70,8 +75,12 @@ class FixedOpenAIRealtimeLLMService(OpenAIRealtimeLLMService):
         samples = total_bytes / bytes_per_sample
         duration_seconds = samples / sample_rate
 
-        # Add a 85ms safety buffer by subtracting from the calculated duration
-        return int((duration_seconds * 1000) - 85)
+        # Add a 85ms safety buffer by subtracting from the calculated duration.
+        # Floor at 0: a negative audio_end_ms is rejected by the Realtime API,
+        # and that error arrives as a fatal ErrorFrame that tears down the
+        # session. This happens when the user barges in during the first ~85ms
+        # of the bot's response, before 85ms of audio has accumulated.
+        return max(0, int((duration_seconds * 1000) - 85))
 
 
 @dataclass
@@ -343,19 +352,25 @@ class BotComponentFactory:
             if self.llm_type == "openai_gpt-realtime":
                 voice = self._get_voice_for_openai()
                 print(
-                    "Using OpenAI Realtime Beta LLM Service with voice:",
+                    "Using OpenAI Realtime LLM Service with voice:",
                     voice,
                     "avatar: ",
                     self.avatar,
                 )
+                # The GA Realtime API nests audio settings under `audio.input`
+                # and `audio.output`; the beta API took them as flat kwargs.
                 props = SessionProperties(
-                    input_audio_transcription=InputAudioTranscription(),
-                    turn_detection=SemanticTurnDetection(),
-                    input_audio_noise_reduction=InputAudioNoiseReduction(
-                        type="near_field"
-                    ),
                     instructions=instruction,
-                    voice=voice,
+                    audio=AudioConfiguration(
+                        input=AudioInput(
+                            transcription=InputAudioTranscription(),
+                            turn_detection=SemanticTurnDetection(),
+                            noise_reduction=InputAudioNoiseReduction(
+                                type="near_field"
+                            ),
+                        ),
+                        output=AudioOutput(voice=voice),
+                    ),
                 )
                 return FixedOpenAIRealtimeLLMService(
                     api_key=os.getenv("OPENAI_API_KEY"),

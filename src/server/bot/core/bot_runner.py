@@ -61,8 +61,7 @@ async def run_bot(
                 **(config.get("tts_params") or {}),
                 **({"voice": config["tts_voice"]} if config.get("tts_voice") else {}),
                 **({"model": config["tts_model"]} if config.get("tts_model") else {}),
-            }
-            or None,
+            } or None,
             short_term_memory=config.get("short_term_memory", False),
             long_term_memory=config.get("long_term_memory", False),
             task_description=config.get("task_description", ""),
