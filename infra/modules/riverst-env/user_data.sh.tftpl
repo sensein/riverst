@@ -416,6 +416,84 @@ CWEOF
 /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl \
   -a fetch-config -m ec2 -s -c file:/opt/aws/amazon-cloudwatch-agent/etc/config.json || true
 
+# ------------------------------------------------------------ deploy helper
+# One command to move the running instance to the latest commit on its branch.
+# Installed here so it is version-controlled and every environment gets it,
+# rather than living in someone's shell history.
+cat > /usr/local/sbin/riverst-deploy <<DEPLOYEOF
+#!/usr/bin/env bash
+# Update this environment to the latest commit on its branch (or a given ref).
+#   sudo riverst-deploy              # deploy ${git_ref}
+#   sudo riverst-deploy <ref>        # deploy a specific branch/tag/sha
+set -euo pipefail
+
+REF="\$${1:-${git_ref}}"
+REPO=$REPO_DIR
+DOCROOT=/var/www/$HOSTNAME_FQDN
+PYBIN=$CONDA_DIR/envs/riverst/bin/python
+LOG=/var/log/riverst-deploy.log
+
+exec > >(tee -a "\$LOG") 2>&1
+echo "=== riverst-deploy \$(date -Is) ref=\$REF ==="
+
+cd "\$REPO"
+BEFORE=\$(sudo -u ubuntu git rev-parse HEAD)
+sudo -u ubuntu git fetch origin --quiet
+sudo -u ubuntu git reset --hard "origin/\$REF" 2>/dev/null || sudo -u ubuntu git reset --hard "\$REF"
+AFTER=\$(sudo -u ubuntu git rev-parse HEAD)
+
+echo "  before: \$(git log --oneline -1 \$BEFORE)"
+echo "  after:  \$(git log --oneline -1 \$AFTER)"
+
+if [ "\$BEFORE" = "\$AFTER" ]; then
+  echo "  already up to date; restarting anyway to pick up config changes"
+  CHANGED=""
+else
+  CHANGED=\$(sudo -u ubuntu git diff --name-only "\$BEFORE" "\$AFTER")
+fi
+
+# Python deps only when requirements actually changed -- a pip install is slow.
+if printf '%s\n' "\$CHANGED" | grep -q 'src/server/requirements'; then
+  echo "=== requirements changed: installing ==="
+  sudo -u ubuntu bash -lc "cd \$REPO/src/server && \$PYBIN -m pip install -q -r requirements.txt"
+else
+  echo "=== requirements unchanged: skipping pip ==="
+fi
+
+# Frontend is a build artifact: only rebuild when its sources changed.
+if printf '%s\n' "\$CHANGED" | grep -q '^src/client/react/'; then
+  echo "=== frontend changed: npm ci && build ==="
+  sudo -u ubuntu bash -lc "cd \$REPO/src/client/react && . \\\$HOME/.nvm/nvm.sh && nvm use 22 >/dev/null && npm ci --no-audit --no-fund && npm run build"
+  if [ ! -d "\$REPO/src/client/react/dist" ]; then
+    echo "FATAL: build produced no dist/" >&2; exit 1
+  fi
+  rsync -a --delete "\$REPO/src/client/react/dist/" "\$DOCROOT/"
+  chown -R root:root "\$DOCROOT"; chmod -R a+rX "\$DOCROOT"
+  echo "  docroot updated"
+else
+  echo "=== frontend unchanged: skipping rebuild ==="
+fi
+
+echo "=== restarting backend ==="
+systemctl restart riverst-server
+for i in \$(seq 1 30); do
+  if ss -ltn | grep -q ':7860'; then echo "  listening after ~\$((i*5))s"; break; fi
+  sleep 5
+done
+
+# Verify rather than assume: imports take ~30s, so a bare systemctl status lies.
+CODE=\$(curl -sS -o /dev/null -w '%{http_code}' -m 20 http://localhost:7860/api/health || echo 000)
+echo "  /api/health -> \$CODE"
+if [ "\$CODE" != "200" ]; then
+  echo "FATAL: backend did not come up healthy. Recent log:" >&2
+  journalctl -u riverst-server -n 30 --no-pager >&2
+  exit 1
+fi
+
+echo "=== deployed \$(git log --oneline -1) ==="
+DEPLOYEOF
+chmod 0755 /usr/local/sbin/riverst-deploy
+
 # ------------------------------------------------------------------ start app
 systemctl daemon-reload
 systemctl enable --now riverst-server.service
