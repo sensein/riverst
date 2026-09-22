@@ -85,7 +85,7 @@ async def run_bot(
         lipsync_processor = components.lipsync_processor
 
         rtvi = RTVIProcessor(config=RTVIConfig(config=[]))
-        metrics_logger = MetricsLoggerProcessor(session_dir=session_dir, rtvi=rtvi)
+        metrics_logger = MetricsLoggerProcessor(session_dir=session_dir)
 
         # Setup WebRTC transport using configuration manager
         transport_manager = TransportConfigurationManager(config)
