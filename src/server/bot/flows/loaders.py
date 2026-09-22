@@ -12,6 +12,7 @@ from .handlers import (
     general_handler,
     get_user_handler,
     get_variable_action_handler,
+    story_context_lookup_handler,
 )
 
 
@@ -38,8 +39,7 @@ def load_custom_handler(handler_name: str, flow_config_path: str) -> callable:
 
     if not handlers_file.exists():
         raise FileNotFoundError(
-            f"Custom handler file not found: {handlers_file}. "
-            f"Create handlers.py in the activity directory."
+            f"Custom handler file not found: {handlers_file}. " f"Create handlers.py in the activity directory."
         )
 
     try:
@@ -62,28 +62,21 @@ def load_custom_handler(handler_name: str, flow_config_path: str) -> callable:
 
         # Get the handler function
         if not hasattr(module, handler_name):
-            available_handlers = [
-                attr for attr in dir(module) if not attr.startswith("_")
-            ]
+            available_handlers = [attr for attr in dir(module) if not attr.startswith("_")]
             raise AttributeError(
-                f"Handler '{handler_name}' not found in {handlers_file}. "
-                f"Available handlers: {available_handlers}"
+                f"Handler '{handler_name}' not found in {handlers_file}. " f"Available handlers: {available_handlers}"
             )
 
         handler_func = getattr(module, handler_name)
 
         # Verify it's callable
         if not callable(handler_func):
-            raise ValueError(
-                f"'{handler_name}' in {handlers_file} is not a callable function"
-            )
+            raise ValueError(f"'{handler_name}' in {handlers_file} is not a callable function")
 
         return handler_func
 
     except Exception as e:
-        raise ImportError(
-            f"Error loading custom handler '{handler_name}' from {handlers_file}: {str(e)}"
-        ) from e
+        raise ImportError(f"Error loading custom handler '{handler_name}' from {handlers_file}: {str(e)}") from e
 
 
 def resolve_handler(handler_string: str, flow_config_path: str) -> callable:
@@ -106,6 +99,8 @@ def resolve_handler(handler_string: str, flow_config_path: str) -> callable:
         return get_user_handler
     elif handler_string == "get_variable_action_handler":
         return get_variable_action_handler
+    elif handler_string == "story_context_lookup_handler":
+        return story_context_lookup_handler
 
     # Handle custom activity handlers
     elif handler_string.startswith("activity:"):
@@ -120,6 +115,67 @@ def resolve_handler(handler_string: str, flow_config_path: str) -> callable:
         )
 
 
+def _load_shared_persona() -> str:
+    """
+    Read and format the shared behavioral persona from shared_persona.json.
+
+    Reads from disk on every call so scenario changes take effect in the next
+    session without a server restart. Returns an empty string if the file is
+    absent or malformed so callers can safely skip injection.
+
+    Returns:
+        A formatted system-prompt string assembled from all scenario
+        instructions, or an empty string if the file is missing or invalid.
+    """
+    shared_persona_path = Path(__file__).parent.parent / "shared_persona.json"
+
+    if not shared_persona_path.exists():
+        return ""
+
+    try:
+        data = json.loads(shared_persona_path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return ""
+
+    scenarios = data.get("scenarios", [])
+    if not scenarios:
+        return ""
+
+    lines = ["--- Shared Behavioral Guidelines ---"]
+    for scenario in scenarios:
+        name = scenario.get("name", "")
+        instruction = scenario.get("instruction", "")
+        if instruction:
+            lines.append(f"[{name}] {instruction}")
+    lines.append("--- End Shared Behavioral Guidelines ---")
+
+    return "\n".join(lines)
+
+
+def _inject_shared_persona(flow_config_data: Dict[str, Any]) -> None:
+    """
+    Inject the shared behavioral persona into every node's role_messages.
+
+    Appends a system message containing all shared scenario instructions to
+    the role_messages list of each node. Nodes without an existing
+    role_messages field have one created. This is a no-op if the shared
+    persona file is missing or contains no scenarios.
+
+    Args:
+        flow_config_data: Raw flow configuration dict, modified in place.
+    """
+    shared_persona_text = _load_shared_persona()
+    if not shared_persona_text:
+        return
+
+    nodes = flow_config_data.get("flow_config", {}).get("nodes", {})
+    for node_data in nodes.values():
+        if not isinstance(node_data, dict):
+            continue
+        role_msgs = node_data.setdefault("role_messages", [])
+        role_msgs.append({"role": "system", "content": shared_persona_text})
+
+
 def load_config(
     flow_config_path: str,
     activity_variables_path: Optional[str] = None,
@@ -127,7 +183,28 @@ def load_config(
     end_conversation_handler=None,
 ) -> Tuple[FlowConfig, Dict[str, Any]]:
     """
-    Loads and validates the flow configuration from a JSON file.
+    Load and validate the flow configuration from a JSON file.
+
+    Reads the activity's flow_config.json, optionally merges session-specific
+    variables, runs any activity-level preprocessing hook, injects the shared
+    behavioral persona into all node role_messages, and validates the result
+    against the FlowConfigurationFile schema.
+
+    Args:
+        flow_config_path: Absolute path to the activity's flow_config.json.
+        activity_variables_path: Optional path to a JSON file of activity
+            variables (e.g., chapter text, vocab lists) to merge into state.
+        user_variables: Optional dict of user-level state overrides merged
+            on top of any existing user state in the config.
+        end_conversation_handler: Optional handler instance used to resolve
+            end_conversation post-actions.
+
+    Returns:
+        A tuple of (FlowConfig, state_dict) ready for pipeline initialization.
+
+    Raises:
+        FileNotFoundError: If flow_config_path does not exist.
+        ValueError: If the configuration is structurally invalid.
     """
     flow_config_file = Path(flow_config_path)
 
@@ -137,9 +214,7 @@ def load_config(
     flow_config_data = json.loads(flow_config_file.read_text())
 
     if "state_config" not in flow_config_data:
-        raise ValueError(
-            "State configuration is missing in the flow configuration file."
-        )
+        raise ValueError("State configuration is missing in the flow configuration file.")
 
     # Only check session variables if path is provided
     if activity_variables_path:
@@ -148,9 +223,22 @@ def load_config(
             activity_variables = load_activity_variables(activity_variables_path)
             flow_config_data["state_config"]["activity"] = activity_variables
 
+            # Allow the activity to preprocess the raw flow config dict before validation.
+            # Activities can define preprocess_flow_config(flow_config_data, activity_variables)
+            # in their handlers.py to inject content (e.g. chapter text) into role_messages.
+            try:
+                preprocess_fn = load_custom_handler("preprocess_flow_config", flow_config_path)
+                flow_config_data = preprocess_fn(flow_config_data, activity_variables)
+            except (FileNotFoundError, ImportError):
+                pass  # Activity has no preprocessing hook; continue normally
+
         # If user_variables is provided, merge it with existing user data
         existing_user = flow_config_data["state_config"].get("user", {})
         flow_config_data["state_config"]["user"] = {**existing_user, **user_variables}
+
+    # Inject shared behavioral persona into all node role_messages before validation.
+    # Reads shared_persona.json from disk each call so changes take effect next session.
+    _inject_shared_persona(flow_config_data)
 
     # Validate the complete configuration
     flow_config_data = FlowConfigurationFile(**flow_config_data)
@@ -167,30 +255,36 @@ def load_config(
 
 
 def load_activity_variables(activity_variables_path: Optional[str]) -> Dict[str, Any]:
+    """
+    Load session-specific activity variables from a JSON file.
 
+    Args:
+        activity_variables_path: Path to the JSON file, or None.
+
+    Returns:
+        Parsed dict of activity variables, or an empty dict if path is None.
+
+    Raises:
+        FileNotFoundError: If the file does not exist at the given path.
+        ValueError: If the file contains invalid JSON.
+    """
     if not activity_variables_path:
         return {}
 
     activity_variables_file = Path(activity_variables_path)
 
     if not activity_variables_file.exists():
-        raise FileNotFoundError(
-            f"Session variables file not found: {activity_variables_path}"
-        )
+        raise FileNotFoundError(f"Session variables file not found: {activity_variables_path}")
 
     try:
         activity_variables = json.loads(activity_variables_file.read_text())
     except json.JSONDecodeError as e:
-        raise ValueError(
-            f"Invalid JSON in session variables file: {activity_variables_path}"
-        ) from e
+        raise ValueError(f"Invalid JSON in session variables file: {activity_variables_path}") from e
 
     return activity_variables
 
 
-def get_flow_config(
-    config: FlowConfigurationFile, flow_config_path: str, end_conversation_handler=None
-) -> FlowConfig:
+def get_flow_config(config: FlowConfigurationFile, flow_config_path: str, end_conversation_handler=None) -> FlowConfig:
     """
     Extracts and processes the flow configuration from a validated configuration object.
 
@@ -221,9 +315,7 @@ def get_flow_config(
                 handler_string = func_def.get("function", {}).get("handler")
                 if handler_string:
                     try:
-                        func_def["function"]["handler"] = resolve_handler(
-                            handler_string, flow_config_path
-                        )
+                        func_def["function"]["handler"] = resolve_handler(handler_string, flow_config_path)
                     except (
                         FileNotFoundError,
                         AttributeError,
@@ -246,9 +338,7 @@ def get_flow_config(
                     action["handler"] = end_conversation_handler.handle_end_conversation
                 elif handler_string:
                     try:
-                        action["handler"] = resolve_handler(
-                            handler_string, flow_config_path
-                        )
+                        action["handler"] = resolve_handler(handler_string, flow_config_path)
                     except (
                         FileNotFoundError,
                         AttributeError,
@@ -264,9 +354,7 @@ def get_flow_config(
                 handler_string = action.get("handler")
                 if handler_string:
                     try:
-                        action["handler"] = resolve_handler(
-                            handler_string, flow_config_path
-                        )
+                        action["handler"] = resolve_handler(handler_string, flow_config_path)
                     except (
                         FileNotFoundError,
                         AttributeError,
@@ -303,10 +391,7 @@ def get_flow_state(config: FlowConfigurationFile) -> Dict[str, Any]:
     state_config = config.state_config
 
     state_dict = {
-        "stages": {
-            k: v.model_dump() if hasattr(v, "model_dump") else v
-            for k, v in state_config.stages.items()
-        },
+        "stages": {k: v.model_dump() if hasattr(v, "model_dump") else v for k, v in state_config.stages.items()},
         "user": state_config.user,
         "activity": state_config.activity,
     }

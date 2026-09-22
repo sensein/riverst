@@ -79,9 +79,7 @@ class IndexableVariableHandler:
         # Build response data
         return self._build_indexed_response(root_data, index_field, index)
 
-    def _resolve_index(
-        self, current_index: Optional[int], item_count: int
-    ) -> Optional[int]:
+    def _resolve_index(self, current_index: Optional[int], item_count: int) -> Optional[int]:
         """Resolve index from available sources."""
         # Priority 1: Explicit current_index from prompting user (1-based)
         if current_index is not None:
@@ -125,14 +123,10 @@ class IndexableVariableHandler:
 
         return self._error(message)
 
-    def _build_indexed_response(
-        self, root_data: dict, index_field: str, index: int
-    ) -> Dict[str, Any]:
+    def _build_indexed_response(self, root_data: dict, index_field: str, index: int) -> Dict[str, Any]:
         """Build response for successfully indexed variable."""
         # Copy all fields except indexing metadata
-        data = {
-            k: v for k, v in root_data.items() if k not in ["indexable_by", index_field]
-        }
+        data = {k: v for k, v in root_data.items() if k not in ["indexable_by", index_field]}
 
         # Add current indexed item (subtract 1 for 0-based array indexing)
         data[f"current_{index_field}"] = root_data[index_field][index - 1]
@@ -173,9 +167,7 @@ class VariableFormatter:
     def _format_value(key: str, value: Any) -> str:
         """Format a single key-value pair."""
         if isinstance(value, dict):
-            sub_items = [
-                f"  • {k.replace('_', ' ').title()}: {v}" for k, v in value.items()
-            ]
+            sub_items = [f"  • {k.replace('_', ' ').title()}: {v}" for k, v in value.items()]
             return f"**{key}:**\n" + "\n".join(sub_items)
 
         if isinstance(value, list):
@@ -209,9 +201,7 @@ class FlowStateManager:
     def update_checklist(self, args: FlowArgs, checklist: Dict[str, bool]) -> None:
         """Mark checklist items as complete based on args."""
         logger.info("Checklist before updating:\n{}", pformat(checklist))
-        checklist.update(
-            {field: True for field in args if args[field] and field in checklist}
-        )
+        checklist.update({field: True for field in args if args[field] and field in checklist})
         logger.info("Checklist after updating:\n{}", pformat(checklist))
 
     def update_user_fields(self, args: FlowArgs) -> None:
@@ -291,9 +281,7 @@ class FlowStateManager:
 # ====================
 
 
-async def general_handler(
-    args: FlowArgs, flow_manager: FlowManager
-) -> Tuple[Dict[str, Any], NodeConfig]:
+async def general_handler(args: FlowArgs, flow_manager: FlowManager) -> Tuple[Dict[str, Any], NodeConfig]:
     """
     General handler for flow progression and state management.
 
@@ -317,14 +305,11 @@ async def general_handler(
         _, next_node = state_manager.determine_next_node()
     else:
         incomplete_items = [item for item, done in checklist.items() if not done]
-        base_message = flow_manager.state["stages"][stage][
-            "checklist_incomplete_message"
-        ]
+        base_message = flow_manager.state["stages"][stage]["checklist_incomplete_message"]
         message = base_message.format(", ".join(incomplete_items))
         message = (
             "CRITICAL: You're rejoining mid-flow. CHECK YOUR INSTRUCTIONS CAREFULLY - "
-            "complete only required tasks, skip any I haven't asked you to repeat: "
-            + message
+            "complete only required tasks, skip any I haven't asked you to repeat: " + message
         )
         next_node = state_manager.create_current_node(message)
 
@@ -333,9 +318,7 @@ async def general_handler(
     return result, next_node
 
 
-async def get_activity_handler(
-    args: Union[FlowArgs, dict], flow_manager: FlowManager
-) -> Dict[str, Any]:
+async def get_activity_handler(args: Union[FlowArgs, dict], flow_manager: FlowManager) -> Dict[str, Any]:
     """Handler to retrieve activity variables."""
     variable_name = args.get("variable_name")
     if not variable_name:
@@ -349,9 +332,7 @@ async def get_activity_handler(
     )
 
 
-async def get_user_handler(
-    args: Union[FlowArgs, dict], flow_manager: FlowManager
-) -> Dict[str, Any]:
+async def get_user_handler(args: Union[FlowArgs, dict], flow_manager: FlowManager) -> Dict[str, Any]:
     """Handler to retrieve user-session variables."""
     variable_name = args.get("variable_name")
 
@@ -368,6 +349,132 @@ async def get_user_handler(
     return {"status": "success", "data": user_state[variable_name]}
 
 
+async def story_context_lookup_handler(args: Union[FlowArgs, dict], flow_manager: FlowManager) -> Dict[str, Any]:
+    """Retrieve a targeted slice of story content from session state.
+
+    Supports three context types:
+      - "book_summary": overall plot summary for the loaded book
+      - "chapter_summary": narrative summary for a specific chapter
+      - "vocab_word": in-story sentence and context description for a specific word,
+        or the list of available words for a chapter when no word is provided
+
+    Args:
+        args: Must contain 'context_type'. For chapter_summary and vocab_word,
+            'chapter_index' (1-based int) is required unless already stored in
+            user state. For vocab_word, 'word' (str) is optional; omitting it
+            returns the available word list for the chapter organized by grade level.
+        flow_manager: Active FlowManager with story data loaded into
+            state["activity"]["reading_context"] and state["activity"]["vocab"].
+
+    Returns:
+        Dict with "status" ("success"/"error") and "data" or "message".
+    """
+    context_type = args.get("context_type")
+    chapter_index = args.get("chapter_index")
+    word = args.get("word")
+
+    activity = flow_manager.state.get("activity", {})
+
+    def _resolve_index(items: list) -> Optional[int]:
+        """Resolve chapter index from args or user state (1-based)."""
+        idx = chapter_index
+        if idx is None:
+            idx = flow_manager.state.get("user", {}).get("index")
+        if idx is None:
+            return None
+        try:
+            idx = int(idx)
+        except (TypeError, ValueError):
+            return None
+        return idx if 1 <= idx <= len(items) else -1
+
+    if context_type == "book_summary":
+        reading_ctx = activity.get("reading_context")
+        if not reading_ctx:
+            return {
+                "status": "error",
+                "message": "Story content is not loaded. The session may not have a book configured.",
+            }
+        return {"status": "success", "data": reading_ctx.get("book_summary", "")}
+
+    if context_type == "chapter_summary":
+        reading_ctx = activity.get("reading_context")
+        if not reading_ctx:
+            return {
+                "status": "error",
+                "message": "Story content is not loaded. The session may not have a book configured.",
+            }
+        chapters = reading_ctx.get("chapters", [])
+        idx = _resolve_index(chapters)
+        if idx is None:
+            return {
+                "status": "error",
+                "message": "chapter_index is required for chapter_summary. Ask the child which chapter they are on.",
+            }
+        if idx == -1:
+            return {
+                "status": "error",
+                "message": f"chapter {chapter_index} is out of range. Valid chapters: 1–{len(chapters)}.",
+            }
+        return {"status": "success", "data": chapters[idx - 1]["chapter_summary"]}
+
+    if context_type == "vocab_word":
+        vocab_ctx = activity.get("vocab")
+        if not vocab_ctx:
+            return {
+                "status": "error",
+                "message": "Vocabulary data is not loaded. The session may not have a book configured.",
+            }
+        vocab_chapters = vocab_ctx.get("chapters", [])
+        reading_ctx = activity.get("reading_context", {})
+        reading_chapters = reading_ctx.get("chapters", [])
+        idx = _resolve_index(vocab_chapters if vocab_chapters else reading_chapters)
+        if idx is None:
+            return {
+                "status": "error",
+                "message": "chapter_index is required for vocab_word. Ask the child which chapter they are on.",
+            }
+        if idx == -1:
+            return {
+                "status": "error",
+                "message": f"chapter {chapter_index} is out of range. Valid chapters: 1–{len(vocab_chapters)}.",
+            }
+        vocab_words = vocab_chapters[idx - 1]["vocab_words"]
+        if not word:
+            available = {grade: [w["word"] for w in words] for grade, words in vocab_words.items()}
+            return {"status": "success", "data": {"available_words": available}}
+        for grade_words in vocab_words.values():
+            for entry in grade_words:
+                if entry["word"] == word:
+                    return {
+                        "status": "success",
+                        "data": {
+                            "word": entry["word"],
+                            "sentence": entry["sentence"],
+                            "context_description": entry["context_description"],
+                        },
+                    }
+        # Word not in curated list — search chapter_text sentences as fallback
+        chapter_text = activity.get("chapter_text", {})
+        chapter_text_chapters = chapter_text.get("chapters", [])
+        if chapter_text_chapters and 1 <= idx <= len(chapter_text_chapters):
+            sentences = chapter_text_chapters[idx - 1].get("sentences", [])
+            word_lower = word.lower()
+            for sentence in sentences:
+                if word_lower in sentence.lower():
+                    return {
+                        "status": "success",
+                        "data": {"word": word, "sentence": sentence, "context_description": None},
+                    }
+        all_words = [w["word"] for grade_words in vocab_words.values() for w in grade_words]
+        return {"status": "error", "message": f"'{word}' not found in chapter {idx}. Available words: {all_words}."}
+
+    return {
+        "status": "error",
+        "message": f"Unknown context_type '{context_type}'. Valid types: book_summary, chapter_summary, vocab_word.",
+    }
+
+
 async def get_variable_action_handler(action: dict, flow_manager: FlowManager) -> None:
     """Post-action handler that adds a variable value to the LLM context."""
     variable_name = action.get("variable_name")
@@ -380,16 +487,12 @@ async def get_variable_action_handler(action: dict, flow_manager: FlowManager) -
     result = handler.get_variable(variable_name, source)
 
     if result["status"] == "error":
-        logger.error(
-            f"Error retrieving variable '{variable_name}': {result['message']}"
-        )
+        logger.error(f"Error retrieving variable '{variable_name}': {result['message']}")
         content = result["message"]
     else:
         content = VariableFormatter.format(variable_name, result["data"])
 
     # Queue the message to LLM
-    await flow_manager.task.queue_frame(
-        LLMMessagesAppendFrame(messages=[{"role": "system", "content": content}])
-    )
+    await flow_manager.task.queue_frame(LLMMessagesAppendFrame(messages=[{"role": "system", "content": content}]))
 
     logger.debug(f"Added system message for variable '{variable_name}': {content}")

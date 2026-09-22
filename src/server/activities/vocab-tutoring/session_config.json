@@ -40,6 +40,15 @@
           "minimum": 1,
           "default": null
         },
+        "vocab_override": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "Vocabulary Override",
+          "default": [],
+          "description": "Optional: list of specific vocabulary words to teach this session, in order. When non-empty, overrides automatic grade-level word selection. Leave empty to use automatic selection."
+        },
         "prolific_campaign": {
           "type": "boolean",
           "default": false,
