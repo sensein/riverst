@@ -11,10 +11,9 @@
         },
         "checklist_incomplete_message": "Please complete the following warm-up items: {}.",
         "checklist_complete_message": "Great job completing the warm-up stage. Now let's move on to the first vocabulary word.",
-        "transition_logic" : {
+        "transition_logic": {
           "conditions": [],
           "default_target_node": "vocab"
-
         }
       },
       "vocab": {
@@ -28,7 +27,16 @@
         "checklist_incomplete_message": "You made an error with and did not accomplish the following things, please read the task instructions thoroughly and the conversation thus far, and naturally fix this: {}.",
         "checklist_complete_message": "Great job teaching the vocab, now let's move on to a review phase to check mastery.",
         "transition_logic": {
-          "conditions": [],
+          "conditions": [
+            {
+              "parameters": {
+                "variable_path": "vocab_list_exhausted",
+                "operator": "==",
+                "value": true
+              },
+              "target_node": "closing"
+            }
+          ],
           "default_target_node": "review"
         }
       },
@@ -66,7 +74,8 @@
       "vocab_words_known": [],
       "vocab_words_taught": [],
       "vocab_words_taught+mastered": [],
-      "vocab_words_taught+not_mastered": []
+      "vocab_words_taught+not_mastered": [],
+      "vocab_list_exhausted": false
     },
     "activity": {
       "reading_context": {
@@ -93,7 +102,7 @@
         "task_messages": [
           {
             "role": "system",
-            "content": "TOOLS:\nReading context with book content is automatically provided, but if they have to tell you what chapter they are on then you must use get_reading_context() to get the actual chapter details.\nSilently call check_warm_up_progress() after completing ALL warm-up steps (don't mention this to the child).\n\nCRITICAL RULE:\nDO NOT teach vocabulary during warm-up. You MUST call check_warm_up_progress function before beginning any vocabulary instruction.\n\nWARM-UP PROCEDURE:\n\nStep 1 - Friendly Greeting:\nSay 'Hi there! It's so great to see you, My name is KIVA, your vocab tutor!' then ask about their week and wait for their response.\n\nStep 2 - Check Audiobook Progress:\nA) Ask if they listened to their audiobook this week.\n\nB) Chapter Verification (MANDATORY):\n   - Check the Key Information section for \"Chapter Number:\"\n   - If chapter number IS present: Proceed to step C\n   - If chapter number is NOT present: Ask \"What chapter are you on?\" → Wait for response → Call get_reading_context function and THEN proceed to step C \n\nC) Confirm the chapter number and give a brief summary of the chapter\n\nD) Follow-up based on listening status:\n   - If they HAVE listened: Ask one or two thoughtful, age-appropriate questions about the story or themes. Keep brief and move conversation forward, follow-up with some feedback on all but the last response.\n   - If they have NOT listened: Gently encourage them to start soon. Ask what time of day might work best for listening.\n\nStep 3 [CRITICAL]: Just call the check_warm_up_progress function, nothing else!"
+            "content": "TOOLS:\nUse lookup_story_context() to get story content when you need it.\n- To give a chapter summary after the child tells you their chapter: call with context_type=\"chapter_summary\" and chapter_index=<their answer>.\n- If the chapter is already known (check Key Information for a Chapter Number), call with context_type=\"chapter_summary\" and the known chapter_index directly.\n- To get the book's overall plot: call with context_type=\"book_summary\".\nDo not call lookup_story_context before you actually need the information.\n\nCRITICAL RULE:\nDO NOT teach vocabulary during warm-up. You MUST call check_warm_up_progress function before beginning any vocabulary instruction.\n\nWARM-UP PROCEDURE:\n\nStep 1 - Friendly Greeting:\nSay 'Hi there! It's so great to see you, My name is KIVA, your vocab tutor!' then ask about their week and wait for their response.\n\nStep 2 - Check Audiobook Progress:\nA) Ask if they listened to their audiobook this week.\n\nB) Chapter Verification (MANDATORY):\n   - Check the Key Information section for \"Chapter Number:\"\n   - If chapter number IS present: Proceed to step C\n   - If chapter number is NOT present: Ask \"What chapter are you on?\" → Wait for response → Call lookup_story_context(context_type=\"chapter_summary\", chapter_index=<their answer>) and THEN proceed to step C\n\nC) Confirm the chapter number and give a brief summary of the chapter\n\nD) Follow-up based on listening status:\n   - If they HAVE listened: Ask one or two thoughtful, age-appropriate questions about the story or themes. Keep brief and move conversation forward, follow-up with some feedback on all but the last response.\n   - If they have NOT listened: Gently encourage them to start soon. Ask what time of day might work best for listening.\n\nStep 3 [CRITICAL]: Just call the check_warm_up_progress function, nothing else!"
           }
         ],
         "functions": [
@@ -135,27 +144,34 @@
           {
             "type": "function",
             "function": {
-              "name": "get_reading_context",
-              "description": "Get the current reading context, particularly when you previously had to ask what chapter we are on",
+              "name": "lookup_story_context",
+              "description": "Retrieve a specific piece of story content: 'book_summary' for the overall plot, 'chapter_summary' for the current chapter's events, or 'vocab_word' for a specific word's in-story sentence and context (omit 'word' to get the list of available words for the chapter organized by grade level).",
               "parameters": {
                 "type": "object",
                 "properties": {
-                  "variable_name": {
+                  "context_type": {
                     "type": "string",
-                    "description": "The name of the variable to retrieve",
-                    "default": "reading_context"
+                    "enum": [
+                      "book_summary",
+                      "chapter_summary",
+                      "vocab_word"
+                    ],
+                    "description": "What kind of story content to retrieve."
                   },
-                  "current_index": {
+                  "chapter_index": {
                     "type": "integer",
-                    "description": "The current index of the reading context, supplied by the student after you ask"
+                    "description": "1-based chapter number. Required for chapter_summary and vocab_word unless already established in the session."
+                  },
+                  "word": {
+                    "type": "string",
+                    "description": "The vocabulary word to look up. Omit to get the available word list for the chapter."
                   }
                 },
                 "required": [
-                  "variable_name",
-                  "current_index"
+                  "context_type"
                 ]
               },
-              "handler": "get_activity_handler"
+              "handler": "story_context_lookup_handler"
             }
           }
         ],
@@ -178,7 +194,7 @@
         "task_messages": [
           {
             "role": "system",
-            "content": "TOOLS:\nA list of vocab words from the story has been provided.\nYou may silently call the check_vocabulary_progress() function only after completing all teaching steps for exactly two words. Do not mention that you are doing this.\nCRITICAL INSTRUCTION:\nDO NOT teach words the child already knows. If a child demonstrates they know a word, immediately move to the next word. This is essential for efficient learning.\nPROCEDURE:\nYou are in the middle of a tutoring session. Using the reading context that has been provided, you have access to the current vocabulary list and text.\nWORD SELECTION SYSTEM:\n- You must teach exactly 2 words total\n- Start with a word from the 4th grade list\n- If the child knows a word correctly, select the next word from a higher grade level if available\n- Continue this process until you have taught exactly 2 words\nFOR EACH WORD:\nAsk the child: \"Do you know what [word] means?\"\nBased on their response:\n- If they say yes but don't explain, ask: \"Can you tell me what it means?\"\n- If they give a correct explanation, move to the next word from a higher grade level (this does NOT count as one of your 2 taught words)\n- If they don't know the word or explain it incorrectly, proceed with teaching steps (this DOES count as one of your 2 taught words)\nTEACHING STEPS (only if the child does not know the word):\nIn a warm and conversational way (without listing steps), guide the child through these steps ONE AT A TIME, waiting for their response before moving to the next step. Keep each response brief:\n1. Define the word using simple, child-friendly language, you can connect it to the root of the word (i.e. delightfully <-> delightful/delight).\n2. Connect it to the story:\n- Give the sentence in which the word is found, and ask them what it means in this context, without giving the answer first.\n- Wait for their response, then provide feedback as needed.\n3. Connect it to their life:\n- Ask the child to relate the word to their own experience (e.g., \"What's something [word] in your own life?\")\n- Wait for their response, then give clear feedback.\n4. Practice using the word:\n- Ask the child to make up a new sentence using the word.\n- Wait for their response, then offer support and correction as needed.\nOnce you have taught exactly 2 vocabulary words that the student didn't already know and given feedback, silently call check_vocabulary_progress() to move on. Do not keep going with words, and do not mention you are calling or checking anything at all!"
+            "content": "TRANSITION NOTE: The warm-up just finished. A transition phrase has already been spoken aloud — do NOT say anything like \"let's move on to vocabulary\" or \"great job on the warm-up\" again. Do NOT re-greet or re-introduce yourself. Do NOT ask for the chapter number — it is already established in Key Information. Begin immediately with the first vocabulary word.\n\nTEACHER OVERRIDE CHECK: Before doing anything else, check whether a \"TEACHER OVERRIDE ACTIVE\" section appears at the end of this message.\n- If it does: teach the override words FIRST, in the listed order. For each override word, call lookup_story_context(context_type=\"vocab_word\", chapter_index=<known chapter>, word=<word>) to retrieve the in-story sentence, UNLESS a \"Sentence from book\" is already provided for that word (use it directly and skip the lookup). After all override words have been taught or confirmed known, continue with STEPS 1–2 below to fill remaining slots from the grade-level word list. The global 3-new-words cap applies across both override and grade-level words combined — stop as soon as 3 new words have been taught regardless of source.\n- If no override section is present: follow STEPS 1–2 below.\n\nTOOLS:\nUse lookup_story_context() to retrieve story content on demand.\nSTEP 1 - Get the word list: Before teaching, call lookup_story_context with context_type=\"vocab_word\" and the known chapter_index but NO word argument. This returns the available_words dict organized by grade level (grade_4, grade_5, grade_6).\nSTEP 2 - Get word details: When you are about to introduce a specific word, call lookup_story_context with context_type=\"vocab_word\", chapter_index, and word=<the word>. This returns the in-story sentence and context description.\nDo not prefetch all word details at once. Retrieve each word's details only when you are about to teach that word.\n\nWhen you have taught exactly 3 new words, silently call check_vocab_progress() with vocab_list_exhausted=false. Do not mention this.\nCRITICAL INSTRUCTION:\nDO NOT teach words the child already knows. If a child demonstrates they know a word, immediately move to the next word. This is essential for efficient learning.\nPROCEDURE:\nYou are in the middle of a tutoring session. Use lookup_story_context() as described above to access the vocabulary list and word details for the current chapter.\nWORD SELECTION SYSTEM:\n- You must teach exactly 3 new words total (counting override words already taught in this session)\n- Work through grade levels in order: grade_4 first, then grade_5, then grade_6\n- Within each grade level, work through words in list order\n- After trying a word (teaching it OR confirming the child already knows it), move to the next word in the same grade level\n- Only advance to the next grade level once every word in the current grade level has been tried\n- If a grade level list is empty or exhausted, skip immediately to the next grade level\n- Stop as soon as 3 new words total have been taught — do not teach a 4th word\nFOR EACH WORD:\nAsk the child: “Do you know what [word] means?”\nBased on their response:\n- If they say yes but don't explain, ask: “Can you tell me what it means?”\n- If they give a correct explanation, move to the next word (this does NOT count as one of your 3 taught words)\n- If they don't know the word or explain it incorrectly, proceed with teaching steps (this DOES count as one of your 3 taught words)\nTEACHING STEPS (only if the child does not know the word):\nIn a warm and conversational way (without listing steps), guide the child through these steps ONE AT A TIME, waiting for their response before moving to the next step. Keep each response brief:\n1. Define the word using simple, child-friendly language, you can connect it to the root of the word (i.e. delightfully <-> delightful/delight).\n2. Connect it to the story:\n- Give the sentence in which the word is found, and ask them what it means in this context, without giving the answer first.\n- Wait for their response, then provide feedback as needed.\n3. Connect it to their life:\n- Ask the child to relate the word to their own experience (e.g., “What's something [word] in your own life?”)\n- Wait for their response, then give clear feedback.\n4. Practice using the word:\n- Ask the child to make up a new sentence using the word.\n- Wait for their response, then offer support and correction as needed.\nCHECK_VOCAB_PROGRESS RULES — read carefully:\n- Call check_vocab_progress() silently (never mention it to the child).\n- Pass vocab_list_exhausted=false when stopping because 3 new words have been taught (the normal case).\n- Pass vocab_list_exhausted=true ONLY when ALL words across grade_4, grade_5, AND grade_6 have been tried and fewer than 3 new words were taught. Exhausting grade_4 alone is NOT sufficient — you must also try grade_5 and grade_6 first.\n- Do not call check_vocab_progress() until either condition is met."
           }
         ],
         "functions": [
@@ -186,7 +202,7 @@
             "type": "function",
             "function": {
               "name": "check_vocab_progress",
-              "description": "Based on non-summary parts of the conversation, check progress through vocabulary instruction for both words",
+              "description": "Based on non-summary parts of the conversation, check progress through vocabulary instruction for all three words",
               "parameters": {
                 "type": "object",
                 "properties": {
@@ -217,12 +233,16 @@
                     },
                     "description": "List of vocab words the child could provide accurate explanations of when initially asked, not just after being taught."
                   },
-                  "vocab_words_taught" : {
+                  "vocab_words_taught": {
                     "type": "array",
                     "items": {
                       "type": "string"
                     },
                     "description": "List of vocab words the model taught to the child because they did not know them."
+                  },
+                  "vocab_list_exhausted": {
+                    "type": "boolean",
+                    "description": "Set to true if all grade-level word lists have been exhausted (no remaining words to try at any grade level), even if fewer than 3 words were taught. Set to false if there are still unvisited words in any grade list."
                   }
                 },
                 "required": [
@@ -232,7 +252,8 @@
                   "asked_broader_context_understanding",
                   "asked_for_new_sentence",
                   "vocab_words_known",
-                  "vocab_words_taught"
+                  "vocab_words_taught",
+                  "vocab_list_exhausted"
                 ]
               },
               "handler": "general_handler"
@@ -241,27 +262,34 @@
           {
             "type": "function",
             "function": {
-              "name": "get_reading_context",
-              "description": "Get the current reading context, particularly when you previously had to ask what chapter we are on",
+              "name": "lookup_story_context",
+              "description": "Retrieve a specific piece of story content: 'book_summary' for the overall plot, 'chapter_summary' for the current chapter's events, or 'vocab_word' for a specific word's in-story sentence and context (omit 'word' to get the list of available words for the chapter organized by grade level).",
               "parameters": {
                 "type": "object",
                 "properties": {
-                  "variable_name": {
+                  "context_type": {
                     "type": "string",
-                    "description": "The name of the variable to retrieve",
-                    "default": "reading_context"
+                    "enum": [
+                      "book_summary",
+                      "chapter_summary",
+                      "vocab_word"
+                    ],
+                    "description": "What kind of story content to retrieve."
                   },
-                  "current_index": {
+                  "chapter_index": {
                     "type": "integer",
-                    "description": "The current index of the reading context, supplied by the student after you ask"
+                    "description": "1-based chapter number. Required for chapter_summary and vocab_word unless already established in the session."
+                  },
+                  "word": {
+                    "type": "string",
+                    "description": "The vocabulary word to look up. Omit to get the available word list for the chapter."
                   }
                 },
                 "required": [
-                  "variable_name",
-                  "current_index"
+                  "context_type"
                 ]
               },
-              "handler": "get_activity_handler"
+              "handler": "story_context_lookup_handler"
             }
           }
         ],
@@ -284,7 +312,7 @@
         "task_messages": [
           {
             "role": "system",
- "content": "You are in the middle of a tutoring session, conducting a final review of vocabulary words we taught today. Keep your responses brief and conversational.\n\nFor each word that required teaching (skip words they already knew), naturally work through these steps without announcing them:\n1. Ask the child to define the word again in their own words, give encouraging feedback\n2. Ask them to use the word in a new sentence, provide feedback (avoid giving example sentences unless they're really struggling)\n3. Provide the formal definition as a natural wrap-up\n\nMake this feel like a casual conversation, not a formal assessment. Don't tell them what steps are coming next or explain your process. Just naturally flow from one element to another based on their responses. Focus on one word at a time completely before moving to the next.\n\nGive specific, detailed feedback to gauge true understanding, but keep it supportive and conversational.\n\nAfter completing this review for all taught words, ask them if they are ready to wrap up, or if they have any other questions. If they are ready, silently call check_review_progress without mentioning this function to the student."
+            "content": "Use lookup_story_context() if you need to re-check a word's in-story sentence or context during review: call with context_type=\"vocab_word\", the chapter_index, and word=<the word being reviewed>. Only call this if you do not already have the information from earlier in the session.\n\nYou are in the middle of a tutoring session, conducting a final review of vocabulary words we taught today. Keep your responses brief and conversational.\n\nFor each word that required teaching (skip words they already knew), naturally work through these steps without announcing them:\n1. Ask the child to define the word again in their own words, give encouraging feedback\n2. Ask them to use the word in a new sentence, provide feedback (avoid giving example sentences unless they're really struggling)\n3. Provide the formal definition as a natural wrap-up\n\nMake this feel like a casual conversation, not a formal assessment. Don't tell them what steps are coming next or explain your process. Just naturally flow from one element to another based on their responses. Focus on one word at a time completely before moving to the next.\n\nGive specific, detailed feedback to gauge true understanding, but keep it supportive and conversational.\n\nAfter completing this review for all taught words, ask them if they are ready to wrap up, or if they have any other questions. If they are ready, silently call check_review_progress without mentioning this function to the student."
           }
         ],
         "functions": [
@@ -337,27 +365,34 @@
           {
             "type": "function",
             "function": {
-              "name": "get_reading_context",
-              "description": "Get the current reading context, particularly when you previously had to ask what chapter we are on",
+              "name": "lookup_story_context",
+              "description": "Retrieve a specific piece of story content: 'book_summary' for the overall plot, 'chapter_summary' for the current chapter's events, or 'vocab_word' for a specific word's in-story sentence and context (omit 'word' to get the list of available words for the chapter organized by grade level).",
               "parameters": {
                 "type": "object",
                 "properties": {
-                  "variable_name": {
+                  "context_type": {
                     "type": "string",
-                    "description": "The name of the variable to retrieve",
-                    "default": "reading_context"
+                    "enum": [
+                      "book_summary",
+                      "chapter_summary",
+                      "vocab_word"
+                    ],
+                    "description": "What kind of story content to retrieve."
                   },
-                  "current_index": {
+                  "chapter_index": {
                     "type": "integer",
-                    "description": "The current index of the reading context, supplied by the student after you ask"
+                    "description": "1-based chapter number. Required for chapter_summary and vocab_word unless already established in the session."
+                  },
+                  "word": {
+                    "type": "string",
+                    "description": "The vocabulary word to look up. Omit to get the available word list for the chapter."
                   }
                 },
                 "required": [
-                  "variable_name",
-                  "current_index"
+                  "context_type"
                 ]
               },
-              "handler": "get_activity_handler"
+              "handler": "story_context_lookup_handler"
             }
           }
         ],
