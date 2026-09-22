@@ -61,7 +61,8 @@ async def run_bot(
                 **(config.get("tts_params") or {}),
                 **({"voice": config["tts_voice"]} if config.get("tts_voice") else {}),
                 **({"model": config["tts_model"]} if config.get("tts_model") else {}),
-            } or None,
+            }
+            or None,
             short_term_memory=config.get("short_term_memory", False),
             long_term_memory=config.get("long_term_memory", False),
             task_description=config.get("task_description", ""),
@@ -82,7 +83,9 @@ async def run_bot(
         context_aggregator = components.context_aggregator
         allowed_animations = components.used_animations
         lipsync_processor = components.lipsync_processor
-        metrics_logger = MetricsLoggerProcessor(session_dir=session_dir)
+
+        rtvi = RTVIProcessor(config=RTVIConfig(config=[]))
+        metrics_logger = MetricsLoggerProcessor(session_dir=session_dir, rtvi=rtvi)
 
         # Setup WebRTC transport using configuration manager
         transport_manager = TransportConfigurationManager(config)
@@ -96,8 +99,6 @@ async def run_bot(
             camera_out_width=config.get("video_out_width", 0),
             camera_out_height=config.get("video_out_height", 0),
         )
-
-        rtvi = RTVIProcessor(config=RTVIConfig(config=[]))
 
         # Tool registration will happen after task is initialized
 
@@ -162,11 +163,10 @@ async def run_bot(
             advanced_flows=config.get("advanced_flows", False),
             flow_config_path=config.get("advanced_flows_config_path"),
             activity_variables_path=config.get("activity_variables_path"),
-            user_activity_variables=(
-                {"index": config.get("index")}
-                if config.get("index") is not None
-                else {}
-            ),
+            user_activity_variables={
+                **({"index": config.get("index")} if config.get("index") is not None else {}),
+                **({"vocab_override": config.get("vocab_override")} if config.get("vocab_override") else {}),
+            },
             user_description=config.get("user_description", ""),
             enabled_animations=allowed_animations,
             end_conversation_handler=tool_handlers.get("end_conversation"),
