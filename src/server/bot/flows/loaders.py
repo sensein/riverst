@@ -120,6 +120,61 @@ def resolve_handler(handler_string: str, flow_config_path: str) -> callable:
         )
 
 
+def _load_shared_persona() -> str:
+    """
+    Read and format the shared behavioral persona from shared_persona.json.
+
+    Reads from disk on every call so scenario changes take effect in the next
+    session without a server restart. Returns an empty string if the file is
+    absent or malformed so callers can safely skip injection.
+
+    Returns:
+        A formatted system-prompt string assembled from all scenario
+        instructions, or an empty string if the file is missing or invalid.
+    """
+    shared_persona_path = Path(__file__).parent.parent / "shared_persona.json"
+    if not shared_persona_path.exists():
+        return ""
+    try:
+        data = json.loads(shared_persona_path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return ""
+    scenarios = data.get("scenarios", [])
+    if not scenarios:
+        return ""
+    lines = ["--- Shared Behavioral Guidelines ---"]
+    for scenario in scenarios:
+        name = scenario.get("name", "")
+        instruction = scenario.get("instruction", "")
+        if instruction:
+            lines.append(f"[{name}] {instruction}")
+    lines.append("--- End Shared Behavioral Guidelines ---")
+    return "\n".join(lines)
+
+
+def _inject_shared_persona(flow_config_data: Dict[str, Any]) -> None:
+    """
+    Inject the shared behavioral persona into every node's role_messages.
+
+    Appends a system message containing all shared scenario instructions to
+    the role_messages list of each node. Nodes without an existing
+    role_messages field have one created. This is a no-op if the shared
+    persona file is missing or contains no scenarios.
+
+    Args:
+        flow_config_data: Raw flow configuration dict, modified in place.
+    """
+    shared_persona_text = _load_shared_persona()
+    if not shared_persona_text:
+        return
+    nodes = flow_config_data.get("flow_config", {}).get("nodes", {})
+    for node_data in nodes.values():
+        if not isinstance(node_data, dict):
+            continue
+        role_msgs = node_data.setdefault("role_messages", [])
+        role_msgs.append({"role": "system", "content": shared_persona_text})
+
+
 def load_config(
     flow_config_path: str,
     activity_variables_path: Optional[str] = None,
@@ -127,7 +182,29 @@ def load_config(
     end_conversation_handler=None,
 ) -> Tuple[FlowConfig, Dict[str, Any]]:
     """
-    Loads and validates the flow configuration from a JSON file.
+    Load and validate the flow configuration from a JSON file.
+
+    Reads the flow config JSON, optionally merges activity and user variables
+    into the state config, injects the shared behavioral persona into every
+    node's role_messages, and validates the result against the
+    FlowConfigurationFile schema.
+
+    Args:
+        flow_config_path: Path to the activity's flow_config.json file.
+        activity_variables_path: Optional path to an activity variables JSON
+            file whose contents are merged into state_config.activity.
+        user_variables: Optional dict of user-specific values merged into
+            state_config.user (takes precedence over existing keys).
+        end_conversation_handler: Optional handler object whose
+            handle_end_conversation method is wired to end_conversation_handler
+            actions in pre_actions.
+
+    Returns:
+        A tuple of (FlowConfig, state_dict) ready for pipeline construction.
+
+    Raises:
+        FileNotFoundError: If flow_config_path does not exist.
+        ValueError: If state_config is missing or handler resolution fails.
     """
     flow_config_file = Path(flow_config_path)
 
@@ -152,6 +229,9 @@ def load_config(
         existing_user = flow_config_data["state_config"].get("user", {})
         flow_config_data["state_config"]["user"] = {**existing_user, **user_variables}
 
+    # Inject shared behavioral persona into every node's role_messages
+    _inject_shared_persona(flow_config_data)
+
     # Validate the complete configuration
     flow_config_data = FlowConfigurationFile(**flow_config_data)
 
@@ -167,7 +247,21 @@ def load_config(
 
 
 def load_activity_variables(activity_variables_path: Optional[str]) -> Dict[str, Any]:
+    """
+    Load activity variables from a JSON file.
 
+    Args:
+        activity_variables_path: Path to the activity variables JSON file,
+            or None to return an empty dict.
+
+    Returns:
+        Dict of activity variable key-value pairs, or an empty dict if path
+        is None.
+
+    Raises:
+        FileNotFoundError: If the file does not exist.
+        ValueError: If the file contains invalid JSON.
+    """
     if not activity_variables_path:
         return {}
 
