@@ -442,8 +442,10 @@ sudo -u ubuntu git fetch origin --quiet
 sudo -u ubuntu git reset --hard "origin/\$REF" 2>/dev/null || sudo -u ubuntu git reset --hard "\$REF"
 AFTER=\$(sudo -u ubuntu git rev-parse HEAD)
 
-echo "  before: \$(git log --oneline -1 \$BEFORE)"
-echo "  after:  \$(git log --oneline -1 \$AFTER)"
+# git as root against an ubuntu-owned repo trips safe.directory, so every git
+# call here runs as the owning user.
+echo "  before: \$(sudo -u ubuntu git -C "\$REPO" log --oneline -1 \$BEFORE)"
+echo "  after:  \$(sudo -u ubuntu git -C "\$REPO" log --oneline -1 \$AFTER)"
 
 if [ "\$BEFORE" = "\$AFTER" ]; then
   echo "  already up to date; restarting anyway to pick up config changes"
@@ -490,7 +492,7 @@ if [ "\$CODE" != "200" ]; then
   exit 1
 fi
 
-echo "=== deployed \$(git log --oneline -1) ==="
+echo "=== deployed \$(sudo -u ubuntu git -C "\$REPO" log --oneline -1) ==="
 DEPLOYEOF
 chmod 0755 /usr/local/sbin/riverst-deploy
 
