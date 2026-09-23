@@ -1,5 +1,6 @@
 python-dotenv
 aiofiles
+boto3
 uvicorn
 fastapi[all]
 pipecat-ai[google,elevenlabs,silero,webrtc,whisper,anthropic]==0.0.89

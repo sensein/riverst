@@ -59,11 +59,14 @@ module "sandbox" {
   # daylight saving change on 1 November instead of shifting by an hour.
   enable_scheduled_shutdown = true
   schedule_timezone         = "America/New_York"
-  startup_cron              = "cron(0 7 ? * * *)"  # 07:00 ET daily
-  shutdown_cron             = "cron(0 0 ? * * *)"  # 00:00 ET (midnight) daily
+  startup_cron              = "cron(0 7 ? * * *)" # 07:00 ET daily
+  shutdown_cron             = "cron(0 0 ? * * *)" # 00:00 ET (midnight) daily
 
   # Shorter retention than prod: this data is disposable.
   snapshot_retain_count = 3
+
+  # Durable off-instance copy of session transcripts (specs/009-sandbox-s3-transcripts).
+  enable_transcript_storage = true
 }
 
 output "url" { value = module.sandbox.url }
@@ -71,3 +74,4 @@ output "public_ip" { value = module.sandbox.public_ip }
 output "instance_id" { value = module.sandbox.instance_id }
 output "ssm_parameter_prefix" { value = module.sandbox.ssm_parameter_prefix }
 output "session_command" { value = module.sandbox.session_command }
+output "transcripts_bucket" { value = module.sandbox.transcripts_bucket }

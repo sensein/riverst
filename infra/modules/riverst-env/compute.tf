@@ -31,14 +31,15 @@ resource "aws_instance" "app" {
 
   user_data_replace_on_change = false
   user_data = templatefile("${path.module}/user_data.sh.tftpl", {
-    hostname        = var.hostname
-    certbot_email   = var.certbot_email
-    git_repo        = var.git_repo
-    git_ref         = var.git_ref
-    compute_device  = var.compute_device
-    ssm_prefix      = local.ssm_prefix
-    aws_region      = data.aws_region.current.name
-    environment     = var.environment
+    hostname           = var.hostname
+    certbot_email      = var.certbot_email
+    git_repo           = var.git_repo
+    git_ref            = var.git_ref
+    compute_device     = var.compute_device
+    ssm_prefix         = local.ssm_prefix
+    aws_region         = data.aws_region.current.name
+    environment        = var.environment
+    transcripts_bucket = var.enable_transcript_storage ? aws_s3_bucket.transcripts[0].id : ""
   })
 
   tags = merge(local.tags, { Name = "${local.name}" })

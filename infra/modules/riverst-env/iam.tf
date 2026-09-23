@@ -60,3 +60,28 @@ resource "aws_iam_instance_profile" "instance" {
   role = aws_iam_role.instance.name
   tags = local.tags
 }
+
+# Scoped to exactly this environment's own transcript bucket -- same
+# least-privilege shape as instance_secrets above. GetObject is included
+# alongside PutObject so a future read-side tool doesn't need a second IAM
+# change; it costs nothing extra on this one object prefix.
+data "aws_iam_policy_document" "transcript_upload" {
+  count = var.enable_transcript_storage ? 1 : 0
+
+  statement {
+    sid    = "ReadWriteOwnTranscripts"
+    effect = "Allow"
+    actions = [
+      "s3:PutObject",
+      "s3:GetObject",
+    ]
+    resources = ["${aws_s3_bucket.transcripts[0].arn}/*"]
+  }
+}
+
+resource "aws_iam_role_policy" "transcript_upload" {
+  count  = var.enable_transcript_storage ? 1 : 0
+  name   = "${local.name}-transcript-upload"
+  role   = aws_iam_role.instance.id
+  policy = data.aws_iam_policy_document.transcript_upload[0].json
+}
