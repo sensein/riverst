@@ -35,3 +35,8 @@ output "session_command" {
   description = "Shell access without an open SSH port."
   value       = "aws ssm start-session --target ${aws_instance.app.id} --region ${data.aws_region.current.name}"
 }
+
+output "transcripts_bucket" {
+  description = "Empty string when enable_transcript_storage is false."
+  value       = var.enable_transcript_storage ? aws_s3_bucket.transcripts[0].id : ""
+}

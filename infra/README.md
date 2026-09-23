@@ -96,6 +96,28 @@ sudo cloud-init clean && sudo reboot
 You also need a Google OAuth redirect URI for `https://sandbox.kivaproject.org`,
 and the sandbox user added to `src/server/config/authorized_users.json`.
 
+## Retrieving sandbox session transcripts
+
+Every sandbox session's transcript is uploaded automatically to a dedicated
+S3 bucket when the session ends (see `specs/009-sandbox-s3-transcripts/`),
+so it survives the instance being stopped, rebuilt, or terminated. Access is
+via the same account-level identity already used for everything else in
+this account — there is no separate reviewer-specific IAM role.
+
+```bash
+aws login   # if your session has expired
+BUCKET=$(cd infra/envs/sandbox && terraform output -raw transcripts_bucket)
+
+# List a session's transcript by its session ID:
+aws s3 ls "s3://$BUCKET/<session_id>/" --region us-east-2
+
+# Download it:
+aws s3 cp "s3://$BUCKET/<session_id>/transcript.json" ./transcript.json --region us-east-2
+```
+
+No SSH or `aws ssm start-session` access to the sandbox instance is needed
+for either of these.
+
 ## Adopting production — do this only after sandbox works
 
 `envs/prod` is written but **deliberately not applied**. The live service is the

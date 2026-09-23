@@ -103,6 +103,7 @@ install -o $APP_USER -g $APP_USER -m 0600 /dev/null $REPO_DIR/src/server/.env
 #   authorization/auth.py -> GOOGLE_CLIENT_ID, SECRET_KEY, ENABLE_GOOGLE_AUTH
 #   main.py               -> OPENAI_API_KEY, TURN_URL, TURN_USERNAME, TURN_CREDENTIAL
 #   bot/utils/device_utils.py -> RIVERST_COMPUTE_DEVICE
+#   bot/components/transcript_uploader.py -> RIVERST_TRANSCRIPTS_BUCKET (empty = upload no-ops)
 # SECRET_KEY is mandatory: auth.py raises at import time if it is unset.
 cat > $REPO_DIR/src/server/.env <<ENVEOF
 OPENAI_API_KEY=$OPENAI_API_KEY
@@ -115,6 +116,7 @@ TURN_USERNAME=$TURN_USERNAME
 TURN_CREDENTIAL=$TURN_CREDENTIAL
 RIVERST_COMPUTE_DEVICE=${compute_device}
 RIVERST_ENVIRONMENT=${environment}
+RIVERST_TRANSCRIPTS_BUCKET=${transcripts_bucket}
 ENVEOF
 chown $APP_USER:$APP_USER $REPO_DIR/src/server/.env
 chmod 0600 $REPO_DIR/src/server/.env
@@ -484,7 +486,7 @@ for i in \$(seq 1 30); do
 done
 
 # Verify rather than assume: imports take ~30s, so a bare systemctl status lies.
-CODE=\$(curl -sS -o /dev/null -w '%{http_code}' -m 20 http://localhost:7860/api/health || echo 000)
+CODE=\$(curl -sS -o /dev/null -w '%%{http_code}' -m 20 http://localhost:7860/api/health || echo 000)
 echo "  /api/health -> \$CODE"
 if [ "\$CODE" != "200" ]; then
   echo "FATAL: backend did not come up healthy. Recent log:" >&2
