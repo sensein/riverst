@@ -4,6 +4,7 @@ from typing import Any
 from dotenv import load_dotenv
 from loguru import logger
 import os
+import time
 
 # from pipecat.audio.filters.noisereduce_filter import NoisereduceFilter
 from pipecat.pipeline.runner import PipelineRunner
@@ -45,6 +46,10 @@ async def run_bot(
         config (dict): Dictionary containing the bot configuration.
         session_dir (str): Directory to store session artifacts.
     """
+    session_start = time.monotonic()
+    logger.info(
+        "[timing] session {} started", os.path.basename(session_dir.rstrip("/"))
+    )
     logger.info("Starting bot with config: {}", config)
     logger.info("Session directory: {}", session_dir)
 
@@ -178,7 +183,7 @@ async def run_bot(
         flow_manager = flow_factory.build()
 
         # Setup event handlers using event handler manager
-        event_manager = EventHandlerManager(session_dir)
+        event_manager = EventHandlerManager(session_dir, session_start=session_start)
         event_manager.register_all_handlers(
             transcript=transcript,
             transcript_handler=transcript_handler,

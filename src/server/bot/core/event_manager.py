@@ -1,21 +1,52 @@
 import os
+import time
+import json
 import datetime
 import asyncio
 from loguru import logger
 from ..utils.audio_utils import save_audio_file
-from ..processors.audio.analyzer import AudioAnalyzer
+# NOTE: AudioAnalyzer (senselab + SQUIM, ~hundreds of MB of models) is imported LAZILY inside
+# the ANALYZE_AUDIO branch below — importing it here loaded the whole analysis stack at startup
+# even when ANALYZE_AUDIO=false, bloating the process and thrashing swap.
 
 
 class EventHandlerManager:
     """Manages event handler registration and audio processing callbacks."""
 
-    def __init__(self, session_dir: str):
+    def __init__(self, session_dir: str, session_start: float | None = None):
         """Initialize event handler manager.
 
         Args:
             session_dir: Directory for session artifacts
+            session_start: time.monotonic() captured when the session (run_bot) began,
+                used to log/record time-to-ready. None disables the timing logs.
         """
         self.session_dir = session_dir
+        self.session_start = session_start
+        self.session_id = os.path.basename(session_dir.rstrip("/"))
+
+    def _record_ready_timing(self):
+        """Log and persist how long from session start until the bot became ready."""
+        if self.session_start is None:
+            return
+        elapsed = time.monotonic() - self.session_start
+        logger.info("[timing] session {} bot ready in {:.2f}s", self.session_id, elapsed)
+        try:
+            os.makedirs(self.session_dir, exist_ok=True)
+            with open(
+                os.path.join(self.session_dir, "startup_timing.json"), "w", encoding="utf-8"
+            ) as f:
+                json.dump(
+                    {
+                        "session_id": self.session_id,
+                        "ready_at": datetime.datetime.now().isoformat(),
+                        "time_to_ready_s": round(elapsed, 3),
+                    },
+                    f,
+                    indent=2,
+                )
+        except Exception as e:
+            logger.warning("[timing] could not write startup_timing.json: {}", e)
 
     def register_transcript_handlers(self, transcript, transcript_handler):
         """Register transcript-related event handlers.
@@ -72,6 +103,7 @@ class EventHandlerManager:
         @rtvi.event_handler("on_client_ready")
         async def on_client_ready(rtvi_instance):
             await rtvi_instance.set_bot_ready()
+            self._record_ready_timing()
             if flow_manager:
                 await flow_manager.initialize()
             else:
@@ -92,6 +124,12 @@ class EventHandlerManager:
 
         @pipecat_transport.event_handler("on_client_connected")
         async def on_client_connected(_, __):
+            if self.session_start is not None:
+                logger.info(
+                    "[timing] session {} client connected in {:.2f}s",
+                    self.session_id,
+                    time.monotonic() - self.session_start,
+                )
             await audiobuffer.start_recording()
 
         @pipecat_transport.event_handler("on_client_disconnected")
@@ -117,6 +155,10 @@ class EventHandlerManager:
                     )
 
                     if ANALYZE_AUDIO:
+                        # Lazy import: only pull in senselab/SQUIM (~hundreds of MB) when
+                        # analysis is actually enabled, so a lean deploy never loads it.
+                        from ..processors.audio.analyzer import AudioAnalyzer
+
                         # Trigger analysis on all files in audios_dir without waiting for them
                         for filename in os.listdir(audios_dir):
                             if filename.endswith(".wav"):

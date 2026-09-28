@@ -72,6 +72,40 @@ app.mount(
     name="uploads",
 )
 
+@app.on_event("startup")
+async def _warmup_models():
+    """Pre-cache the heavy per-session models (CUPE lip-sync + silero VAD) once at boot, in the
+    background, so the first session doesn't pay the cold load. The server starts serving
+    immediately; the models warm in a worker thread. Suited to a dedicated always-on box where the
+    models stay resident. Failures are non-fatal — sessions still work, just cold on first use.
+    """
+
+    async def _run():
+        try:
+            from bot.utils.device_utils import get_best_device
+            from bot.processors.speech.lipsync_processor import (
+                get_cupe_model,
+                LipsyncProcessor,
+            )
+
+            dev = get_best_device(options=["cuda", "cpu"])
+            # Populate the process-wide CUPE cache so LipsyncProcessor adopts it instantly.
+            await asyncio.to_thread(get_cupe_model, LipsyncProcessor.MODEL_NAME, dev)
+            # Warm silero VAD (small) so the first transport build isn't the first to load it.
+            from pipecat.audio.vad.silero import SileroVADAnalyzer
+
+            await asyncio.to_thread(SileroVADAnalyzer)
+            logger.info(
+                "[warmup] CUPE lip-sync + silero VAD pre-cached — first session will be warm"
+            )
+        except Exception as e:  # noqa: BLE001
+            logger.warning(
+                f"[warmup] pre-cache failed (sessions still work, just cold): {e}"
+            )
+
+    asyncio.create_task(_run())
+
+
 # Enable CORS for all origins
 app.add_middleware(
     CORSMiddleware,

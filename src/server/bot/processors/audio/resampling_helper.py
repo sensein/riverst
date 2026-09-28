@@ -1,11 +1,11 @@
 import types
-import torch
-import torchaudio
-import numpy as np
 from functools import lru_cache
 from loguru import logger
 from pipecat.processors.audio.audio_buffer_processor import AudioBufferProcessor
-from bot.utils.device_utils import get_best_device
+# torch / torchaudio / numpy / device_utils are imported LAZILY inside the methods that use
+# them: this module is imported on the startup path (bot_runner), and torch must NOT load at
+# process start. Resampling only fires mid-session when sample rates differ, so torch loads
+# then (if ever), not before.
 
 SAMPLING_RATE = 16000
 NUM_CHANNELS = 1
@@ -29,6 +29,7 @@ class AudioResamplingHelper:
         Returns:
             torchaudio.transforms.Resample: Cached resampler instance on target device
         """
+        import torchaudio
         resampler = torchaudio.transforms.Resample(orig_sr, target_sr)
         return resampler.to(device)
 
@@ -52,6 +53,10 @@ class AudioResamplingHelper:
 
         if orig_sr == target_sr:
             return frame.audio
+
+        import torch
+        import numpy as np
+        from bot.utils.device_utils import get_best_device
 
         # Get the best available device for processing (cached)
         if AudioResamplingHelper._device_cache is None:
