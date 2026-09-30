@@ -13,7 +13,6 @@ import {
   VoiceVisualizer
 } from '@pipecat-ai/client-react'
 import { RTVIEvent, Participant } from '@pipecat-ai/client-js'
-import { Spin } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 import { usePipecatClientMicControl } from "@pipecat-ai/client-react";
 
@@ -43,6 +42,16 @@ export default function AvatarInteractionContent({
   const [cameraType] = useState(initialCameraType)
   const [subtitlesEnabled] = useState(initialSubtitlesEnabled)
   const [loading, setLoading] = useState(true)
+
+  // Seconds elapsed while connecting — shown inside the loading spinner so the
+  // user can see the session is still starting up.
+  const [elapsed, setElapsed] = useState(0)
+  useEffect(() => {
+    if (!loading) return
+    const startedAt = Date.now()
+    const t = setInterval(() => setElapsed((Date.now() - startedAt) / 1000), 100)
+    return () => clearInterval(t)
+  }, [loading])
 
   const { enableMic } = usePipecatClientMicControl();
 
@@ -218,7 +227,20 @@ export default function AvatarInteractionContent({
             zIndex: 10000,
           }}
         >
-          <Spin indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />} />
+          <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+            <LoadingOutlined style={{ fontSize: 72 }} spin />
+            <span
+              style={{
+                position: 'absolute',
+                fontSize: 18,
+                fontWeight: 500,
+                color: '#1677ff',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {elapsed.toFixed(1)}s
+            </span>
+          </div>
         </div>
       )}
       <FloatGroup
