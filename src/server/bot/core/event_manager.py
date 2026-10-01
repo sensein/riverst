@@ -4,6 +4,7 @@ import asyncio
 from loguru import logger
 from ..utils.audio_utils import save_audio_file
 from ..processors.audio.analyzer import AudioAnalyzer
+from ..components.transcript_uploader import upload_transcript
 
 
 class EventHandlerManager:
@@ -129,6 +130,10 @@ class EventHandlerManager:
             audios_dir = f"{self.session_dir}/audios"
             asyncio.create_task(trigger_analysis_on_audios(audios_dir))
             video_buffer.save_video()
+
+            session_id = os.path.basename(self.session_dir.rstrip("/"))
+            transcript_path = os.path.join(self.session_dir, "transcript.json")
+            asyncio.create_task(upload_transcript(session_id, transcript_path))
 
     def register_all_handlers(
         self,
