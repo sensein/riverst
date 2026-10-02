@@ -134,3 +134,13 @@ variable "enable_monitoring" {
   type        = bool
   default     = false
 }
+
+variable "enable_transcript_storage" {
+  description = <<-EOT
+    Create a dedicated S3 bucket for this environment's session transcripts,
+    and grant the instance role write access to it. Off by default so prod
+    is unaffected until explicitly opted in.
+  EOT
+  type        = bool
+  default     = false
+}
