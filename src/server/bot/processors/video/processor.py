@@ -1,21 +1,23 @@
 """This module provides the VideoProcessor class for processing video frames with pose detection."""
 
 # import os
-import cv2
 import numpy as np
 import asyncio
 import logging
+# cv2 (OpenCV, ~80 MB) is imported lazily inside the frame-processing methods — it's only used
+# when video frames actually flow (video is off for the language tutor), so this keeps the
+# always-on backend light at startup.
 
 from pipecat.processors.frame_processor import FrameProcessor, FrameDirection
 from pipecat.frames.frames import Frame, InputImageRawFrame, OutputImageRawFrame
 
-from ultralytics import YOLO
-from ultralytics.utils import LOGGER
 from loguru import logger
 
 from ...utils.device_utils import get_best_device
 
-LOGGER.setLevel(logging.WARNING)
+# ultralytics/YOLO (pulls torch) is imported LAZILY inside _load_pose_inferencer — it's only
+# needed for pose detection, which is off for the language tutor. Keeping it out of module
+# scope keeps the always-on backend light at startup.
 
 
 class VideoProcessor(FrameProcessor):
@@ -51,6 +53,10 @@ class VideoProcessor(FrameProcessor):
 
     def _load_pose_inferencer(self):
         """Prefer ONNX when available, but keep CPU deployments functional without it."""
+        from ultralytics import YOLO
+        from ultralytics.utils import LOGGER
+        LOGGER.setLevel(logging.WARNING)
+
         yolo_model = YOLO("yolo11n-pose.pt")
         try:
             yolo_model.export(format="onnx")  # Creates 'yolo11n-pose.onnx'
@@ -66,6 +72,7 @@ class VideoProcessor(FrameProcessor):
     async def _run_pose_in_background(self, img: np.ndarray) -> None:
         if self._pose_lock.locked():
             return
+        import cv2
         async with self._pose_lock:
             try:
                 results = await asyncio.to_thread(self.pose_inferencer, img)
@@ -107,6 +114,7 @@ class VideoProcessor(FrameProcessor):
                 output_img = self.last_pose_results.copy()
 
                 if isinstance(output_img, np.ndarray):
+                    import cv2
                     if frame.size != (self._camera_out_width, self._camera_out_height):
                         output_img = cv2.resize(
                             output_img,

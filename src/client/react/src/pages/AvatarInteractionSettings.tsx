@@ -55,7 +55,9 @@ export default function AvatarInteractionSettings() {
           const response = await axios.get(`/api/avatars`);
           const avatars = response.data;
           if (avatars.length > 0) {
-            avatar = avatars[0];
+            // Default avatar for all KIVA activities: #4 (ready_player_me_2),
+            // falling back to the first avatar if id 4 is ever absent.
+            avatar = avatars.find((a: { id?: number }) => a.id === 4) ?? avatars[0];
             localStorage.setItem('selectedAvatar', JSON.stringify(avatar));
           } else {
             console.warn('No avatars returned from server.');

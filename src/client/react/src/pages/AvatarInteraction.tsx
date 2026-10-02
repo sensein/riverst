@@ -1,6 +1,6 @@
 // src/pages/AvatarInteraction.tsx
 import { useState, useEffect } from 'react'
-import { useParams, useLocation } from 'react-router-dom'
+import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { Spin, Alert } from 'antd'
 import { RTVIProvider } from '../providers/RTVIProvider'
 import AvatarInteractionContent from '../components/avatarInteraction/AvatarInteractionContent'
@@ -31,6 +31,18 @@ export default function AvatarInteraction() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [prolificId, setProlificId] = useState<string | null>(null)
+  const [sessionEnded, setSessionEnded] = useState(false)
+  const navigate = useNavigate()
+
+  // After a session ends we show a short "thank you", then return to the home
+  // page after 3s. Skip the auto-return for Prolific campaigns so participants
+  // have time to copy their completion ID.
+  useEffect(() => {
+    if (sessionEnded && !settings?.prolific_campaign) {
+      const t = setTimeout(() => navigate('/'), 3000)
+      return () => clearTimeout(t)
+    }
+  }, [sessionEnded, settings, navigate])
 
 
   // Check if this session has been marked as ended
@@ -49,9 +61,10 @@ const onSessionEnd = async (delay: number) => {
     const response = await axios.get(`/api/end_session/${sessionId}`);
     const prolific_id = response.data.prolific_id;
 
-    setTimeout(() =>
+    setTimeout(() => {
       setProlificId(prolific_id)
-    , delay);
+      setSessionEnded(true)
+    }, delay);
   } catch (error) {
     console.error("Failed to end session:", error);
     setError("Failed to end the session.");
@@ -71,6 +84,7 @@ const onSessionEnd = async (delay: number) => {
       if (isSessionEndedFlag) {
         setLoading(false)
         setProlificId(prolificId)
+        setSessionEnded(true)
         return
       }
 
@@ -130,7 +144,7 @@ const onSessionEnd = async (delay: number) => {
         </div>
       </div>
     )
-  } else if (prolificId) {
+  } else if (sessionEnded) {
     return (
       <div
         style={{
@@ -147,7 +161,7 @@ const onSessionEnd = async (delay: number) => {
             showIcon
             message="Thank you! Your session has ended."
             description={
-              settings.prolific_campaign ? (
+              settings.prolific_campaign && prolificId ? (
                 <div>
                   <p>Please copy the following ID and paste it into Prolific to complete your participation:</p>
                   <div style={{
@@ -177,7 +191,9 @@ const onSessionEnd = async (delay: number) => {
                     </button>
                   </div>
                 </div>
-              ) : null
+              ) : (
+                <span style={{ color: '#8c8c8c' }}>Returning you to the home page…</span>
+              )
             }
           />
         </div>
