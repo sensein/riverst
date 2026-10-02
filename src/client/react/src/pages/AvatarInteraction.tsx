@@ -212,6 +212,7 @@ const onSessionEnd = async (delay: number) => {
             bot: settings.bot_transcript,
           }}
           onSessionEnd={onSessionEnd}
+          sessionId={sessionId!}
         />
       </RTVIProvider>
     )
