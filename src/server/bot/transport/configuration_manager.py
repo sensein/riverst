@@ -32,7 +32,10 @@ class TransportConfigurationManager:
             audio_in_enabled=True,
             audio_out_enabled=True,
             vad_analyzer=SileroVADAnalyzer(),
-            turn_analyzer=LocalSmartTurnAnalyzerV3(params=SmartTurnParams()),
+            # stop_secs: fallback silence before a turn the model judged INCOMPLETE is
+            # force-completed. Default 3s made short child answers ("yes") sit silent ~3s;
+            # dropped to 1s to cut that dead air (tune up if children get cut off mid-pause).
+            turn_analyzer=LocalSmartTurnAnalyzerV3(params=SmartTurnParams(stop_secs=1)),
             audio_in_passthrough=True,
             audio_out_10ms_chunks=2,
         )
