@@ -361,11 +361,22 @@ class BotComponentFactory:
             return None
 
         if self.stt_type == "openai":
+            # Steer transcription toward the session language + domain. gpt-4o-transcribe's
+            # `language` hint alone doesn't stop accented English being emitted as other scripts
+            # (Cyrillic/Korean seen in testing); naming the language + context in the prompt, with
+            # temperature=0, biases it toward English words. (experiment — candidate fix)
+            _lang = (self.languages or ["english"])[0]
+            _stt_prompt = (self.stt_params or {}).get(
+                "prompt",
+                f"The speaker is a child speaking {_lang} during a reading and "
+                f"vocabulary tutoring session about a storybook.",
+            )
             return OpenAISTTService(
                 api_key=os.getenv("OPENAI_API_KEY"),
                 model=(self.stt_params or {}).get("model", "gpt-4o-transcribe"),
                 audio_passthrough=True,
-                prompt=(self.stt_params or {}).get("prompt", None),
+                prompt=_stt_prompt,
+                temperature=0,
             )
         elif self.stt_type == "whisper":
             best_device = str(get_best_device(options=["mps", "cpu"]))
