@@ -9,6 +9,7 @@ pipecat-ai-small-webrtc-prebuilt
 kokoro
 noisereduce
 pipecat-ai-flows
+openai>=1.74.0,<=1.99.1  # used directly by the teacher dashboard; range matches pipecat-ai 0.0.89
 senselab
 torchaudio
 praat-parselmouth

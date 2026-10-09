@@ -45,15 +45,24 @@ from authorization.auth import (
     create_access_token,
     create_bypass_token,
     get_current_user,
+    get_roles,
     is_google_auth_enabled,
+    require_researcher,
+    token_roles,
     ACCESS_TOKEN_EXPIRE_MINUTES,
 )
+from dashboard import analysis as dashboard_analysis
+from dashboard import repository as dashboard_repository
+from dashboard.codes import normalize_code
+from dashboard.db import init_schema as init_dashboard_schema
+from dashboard.router import router as teacher_router
 
 # Load environment variables
 load_dotenv(override=True)
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 app = FastAPI()
+app.include_router(teacher_router)
 
 BASE_SESSION_DIR = Path(__file__).parent
 
@@ -71,6 +80,15 @@ app.mount(
     StaticFiles(directory=AVATAR_UPLOADS_BASE),
     name="uploads",
 )
+
+@app.on_event("startup")
+async def _init_teacher_dashboard():
+    """Prepare the teacher dashboard database and restart any unfinished session analyses."""
+    init_dashboard_schema()
+    requeued = dashboard_analysis.requeue_pending()
+    if requeued:
+        logger.info(f"Re-queued {requeued} unfinished session analyses")
+
 
 @app.on_event("startup")
 async def _warmup_models():
@@ -204,9 +222,11 @@ async def google_auth(request: Request) -> JSONResponse:
         )
 
     # Create JWT token
+    roles = get_roles(email)
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": email, "name": name}, expires_delta=access_token_expires
+        data={"sub": email, "name": name, "roles": roles},
+        expires_delta=access_token_expires,
     )
 
     logger.info(f"Successful login: {email}")
@@ -215,7 +235,7 @@ async def google_auth(request: Request) -> JSONResponse:
         {
             "access_token": access_token,
             "token_type": "bearer",
-            "user": {"email": email, "name": name},
+            "user": {"email": email, "name": name, "roles": roles},
         }
     )
 
@@ -224,7 +244,11 @@ async def google_auth(request: Request) -> JSONResponse:
 async def get_me(current_user: dict = Depends(get_current_user)) -> JSONResponse:
     """Get current user information."""
     return JSONResponse(
-        {"email": current_user.get("sub"), "name": current_user.get("name")}
+        {
+            "email": current_user.get("sub"),
+            "name": current_user.get("name"),
+            "roles": token_roles(current_user),
+        }
     )
 
 
@@ -240,6 +264,17 @@ async def create_session(
     Returns:
         JSONResponse: Contains the newly generated session ID.
     """
+    student = None
+    if "student_code" in config:
+        code = normalize_code(config.pop("student_code"))
+        student = dashboard_repository.get_student_by_code(code) if code else None
+        if student is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="We didn't recognize that student code. Check with your teacher.",
+            )
+        config["user_id"] = student["user_key"]
+        config["student_id"] = student["id"]
     if not config.get("user_id"):
         return JSONResponse(status_code=400, content={"error": "User ID is required"})
     user_id = config["user_id"]
@@ -256,6 +291,29 @@ async def create_session(
     config_path = session_dir / "config.json"
     with config_path.open("w", encoding="utf-8") as f:
         json.dump(config, f, indent=2)
+
+    if student is not None:
+        activity = dashboard_analysis.activity_name(config) or "unknown"
+        book_id, book_title = dashboard_analysis.book_info(
+            config.get("activity_variables_path")
+        )
+        dashboard_repository.create_session_record(
+            session_dir_id=session_id,
+            student_id=student["id"],
+            started_at=datetime.datetime.now(datetime.timezone.utc).isoformat(
+                timespec="seconds"
+            ),
+            activity=activity,
+            book_id=book_id,
+            book_title=book_title,
+            chapter=config.get("index"),
+            vocab_override_used=bool(config.get("vocab_override")),
+            analysis_status=(
+                "pending"
+                if activity == dashboard_analysis.VOCAB_ACTIVITY
+                else "not_applicable"
+            ),
+        )
 
     logger.info(f"Session created: {session_id}")
     return JSONResponse({"session_id": session_id})
@@ -728,8 +786,23 @@ async def get_activity_settings(activity_name: str) -> JSONResponse:
         )
 
 
+@app.get("/api/student-code/{code}")
+async def check_student_code(
+    code: str, current_user: dict = Depends(get_current_user)
+) -> JSONResponse:
+    """Confirms a student code before a session starts, returning the student's first name."""
+    normalized = normalize_code(code)
+    student = dashboard_repository.get_student_by_code(normalized) if normalized else None
+    if student is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="We didn't recognize that student code.",
+        )
+    return JSONResponse({"display_name": student["display_name"]})
+
+
 @app.get("/api/sessions")
-async def list_sessions(current_user: dict = Depends(get_current_user)) -> JSONResponse:
+async def list_sessions(current_user: dict = Depends(require_researcher)) -> JSONResponse:
     """Lists all available sessions."""
     session_root = BASE_SESSION_DIR / "sessions"
     if not session_root.is_dir():
@@ -1024,7 +1097,7 @@ async def get_audiobook_info(
 
 @app.get("/api/session/{session_id}")
 async def get_session_data(
-    session_id: str, current_user: dict = Depends(get_current_user)
+    session_id: str, current_user: dict = Depends(require_researcher)
 ) -> JSONResponse:
     """Fetches the data for a specific session."""
     session_dir = BASE_SESSION_DIR / "sessions" / session_id

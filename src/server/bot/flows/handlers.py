@@ -10,6 +10,8 @@ from pprint import pformat
 import operator
 import json
 
+from dashboard.flow_snapshot import SESSION_DIR_KEY, write_snapshot
+
 
 class IndexableVariableHandler:
     """Handles retrieval and indexing of variables from flow state."""
@@ -314,6 +316,9 @@ async def general_handler(args: FlowArgs, flow_manager: FlowManager) -> Tuple[Di
         next_node = state_manager.create_current_node(message)
 
     result = {"status": "success" if complete else "error", "message": message}
+
+    # Keep the tutor's word decisions on disk for the teacher dashboard
+    write_snapshot(flow_manager.state.get(SESSION_DIR_KEY), flow_manager)
 
     return result, next_node
 

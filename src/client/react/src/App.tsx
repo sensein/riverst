@@ -10,6 +10,7 @@ import Homepage from './pages/Homepage';
 import { appTheme } from './theme';
 import FullPageLoader from './components/FullPageLoader';
 import ProtectedRoute from './components/ProtectedRoute';
+import TeacherRoute from './components/TeacherRoute';
 import { AuthProvider } from './contexts/AuthContext';
 
 import { Suspense, lazy } from 'react';
@@ -27,6 +28,12 @@ const LoginPage = lazy(() => import('./pages/LoginPage'));
 const ErrorPage = lazy(() => import('./pages/ErrorPage'));
 const AudioPlayerPage = lazy(() => import('./pages/AudioPlayerPage'));
 const ListenToAudioBookPage = lazy(() => import('./pages/ListenToAudioBookPage'));
+const KivaCodeEntry = lazy(() => import('./pages/KivaCodeEntry'));
+const ClassOverview = lazy(() => import('./pages/teacher/ClassOverview'));
+const TeacherStudentDetail = lazy(() => import('./pages/teacher/StudentDetail'));
+const TeacherSessionDetail = lazy(() => import('./pages/teacher/SessionDetail'));
+const WordInsights = lazy(() => import('./pages/teacher/WordInsights'));
+const StudentReport = lazy(() => import('./pages/teacher/StudentReport'));
 
 /**
  * AuthenticatedRoutes
@@ -94,6 +101,56 @@ const AuthenticatedRoutes = () => (
           <ProtectedRoute>
             <ListenToAudioBookPage />
           </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/kiva"
+        element={
+          <ProtectedRoute>
+            <KivaCodeEntry />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Teacher dashboard (teacher role only) */}
+      <Route
+        path="/teacher"
+        element={
+          <TeacherRoute>
+            <ClassOverview />
+          </TeacherRoute>
+        }
+      />
+      <Route
+        path="/teacher/words"
+        element={
+          <TeacherRoute>
+            <WordInsights />
+          </TeacherRoute>
+        }
+      />
+      <Route
+        path="/teacher/students/:id"
+        element={
+          <TeacherRoute>
+            <TeacherStudentDetail />
+          </TeacherRoute>
+        }
+      />
+      <Route
+        path="/teacher/students/:id/report"
+        element={
+          <TeacherRoute>
+            <StudentReport />
+          </TeacherRoute>
+        }
+      />
+      <Route
+        path="/teacher/sessions/:id"
+        element={
+          <TeacherRoute>
+            <TeacherSessionDetail />
+          </TeacherRoute>
         }
       />
       <Route path="*" element={<ErrorPage />} />

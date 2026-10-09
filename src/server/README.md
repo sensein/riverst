@@ -40,6 +40,17 @@ pip install -r requirements.gpu.txt
 
 **Note**: `authorization/authorized_users.json` is gitignored for security
 
+#### Teacher dashboard
+
+Teachers sign in the same way and use `/teacher` to follow their students' KIVA vocabulary progress.
+
+- Add teacher emails to a `teacher_emails` list in `authorization/authorized_users.json`. `authorized_emails` keeps full researcher access (including raw session history); an email can be in both lists. Teacher-only accounts can't open `/sessions` or raw session data.
+- Students don't sign in. The teacher adds them on the dashboard, and each student gets a 6-character code and a link (`/kiva?code=…`). Sessions started with a code are tracked for that student.
+- Sign student devices in with a classroom account that is **not** in `teacher_emails`, otherwise students could open the dashboard from that device.
+- Dashboard data lives in SQLite at `DASHBOARD_DB_PATH` (default `data/dashboard.db`, gitignored and mounted as a Docker volume). Keep it out of `sessions/`, which is served without auth.
+- After each student session, the server uses `OPENAI_API_KEY` and `DASHBOARD_ANALYSIS_MODEL` (default `gpt-4.1`) to classify the teaching steps and write summaries. Teachers see outcomes and summaries only, never transcripts or audio.
+- Only the "Child vocabulary training" activity (`vocab-tutoring`) is tracked in this version.
+
 5. [Optional] If you want to use local LLMs through `ollama` (e.g., `qwen3`), you need first to [install ollama on your machine](https://ollama.com/) and then run
 
 ```bash

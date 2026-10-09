@@ -3,5 +3,9 @@
     "email1",
     "email2",
     "..."
+  ],
+  "teacher_emails": [
+    "teacher-email1",
+    "..."
   ]
 }

@@ -16,6 +16,7 @@ services:
       RIVERST_COMPUTE_DEVICE: ${RIVERST_COMPUTE_DEVICE:-auto}
     volumes:
       - ./src/server/sessions:/app/sessions
+      - ./src/server/data:/app/data
 
   frontend:
     build:

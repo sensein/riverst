@@ -32,16 +32,20 @@ export const makeAuthenticatedRequest = (token: string | null) => ({
   get: (url: string, config = {}) => axios.get(url, withAuthHeaders(token, config)),
   post: (url: string, data: any, config = {}) => axios.post(url, data, withAuthHeaders(token, config)),
   put: (url: string, data: any, config = {}) => axios.put(url, data, withAuthHeaders(token, config)),
+  patch: (url: string, data: unknown, config = {}) => axios.patch(url, data, withAuthHeaders(token, config)),
   delete: (url: string, config = {}) => axios.delete(url, withAuthHeaders(token, config))
 });
 
 /**
  * User information structure.
  */
-interface User {
+export interface User {
   email: string;
   name: string;
+  /** Account roles from the allowlist: "researcher" and/or "teacher". */
+  roles?: string[];
 }
+
 
 /**
  * AuthContextType

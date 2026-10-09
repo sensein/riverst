@@ -20,11 +20,18 @@ import {
   Typography,
   Checkbox,
   Tooltip,
+  Alert,
 } from "antd";
 import { InfoCircleOutlined, CloseOutlined } from "@ant-design/icons";
 
 import { usePipecatClientTransportState } from "@pipecat-ai/client-react";
 import { getRandomUserId } from "../utils/userId";
+import { useAuth } from "../contexts/AuthContext";
+import { readStudentCode, saveStudentCode } from "../utils/studentCode";
+
+/** Activities whose sessions can be linked to a student for the teacher dashboard. */
+const STUDENT_CODE_ACTIVITIES = ["vocab-tutoring"];
+type CodeStatus = "idle" | "checking" | "valid" | "invalid";
 
 const { Title, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -45,6 +52,47 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
 
   // Extract activity name from schema
   const activityName = (schema?.properties as any)?.name?.const;
+
+  // Student code (teacher dashboard): links this session to a student in a teacher's class
+  const { authRequest } = useAuth();
+  const acceptsStudentCode = STUDENT_CODE_ACTIVITIES.includes(activityName);
+  const [studentCode, setStudentCode] = useState<string>(() =>
+    acceptsStudentCode ? readStudentCode() : "",
+  );
+  const [codeStatus, setCodeStatus] = useState<CodeStatus>("idle");
+  const [studentName, setStudentName] = useState<string>("");
+
+  useEffect(() => {
+    const code = studentCode.trim();
+    if (!acceptsStudentCode || code.length !== 6) {
+      setCodeStatus("idle");
+      return;
+    }
+    let cancelled = false;
+    setCodeStatus("checking");
+    authRequest
+      .get(`/api/student-code/${encodeURIComponent(code)}`)
+      .then((res) => {
+        if (cancelled) return;
+        setStudentName(res.data.display_name);
+        setCodeStatus("valid");
+        saveStudentCode(code);
+      })
+      .catch(() => {
+        if (!cancelled) setCodeStatus("invalid");
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [studentCode, acceptsStudentCode]);
+
+  const codeEntered = acceptsStudentCode && studentCode.trim().length > 0;
+  const codeBlocksSubmit = codeEntered && codeStatus !== "valid";
+  const withStudentCode = (payload: Record<string, unknown>) =>
+    codeEntered && codeStatus === "valid"
+      ? { ...payload, student_code: studentCode.trim() }
+      : payload;
   const [maxIndices, setMaxIndices] = useState<number | null>(null);
   const [indexType, setIndexType] = useState<string>("chapters");
 
@@ -460,12 +508,45 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
         form={form}
         layout="vertical"
         initialValues={{ options: defaultOptions }}
-        onFinish={({ options, user_id }) => onSubmit({ ...options, user_id })}
+        onFinish={({ options, user_id }) =>
+          onSubmit(withStudentCode({ ...options, user_id }))
+        }
         onFieldsChange={validateSchema}
       >
+        {acceptsStudentCode && (
+          <Form.Item
+            label="Student code"
+            extra="From your teacher. Leave empty if you don't have one."
+          >
+            <Input
+              value={studentCode}
+              maxLength={6}
+              onChange={(e) => setStudentCode(e.target.value.toUpperCase())}
+              style={{ fontFamily: "monospace", letterSpacing: 2 }}
+            />
+            {codeStatus === "valid" && (
+              <Alert
+                style={{ marginTop: 8 }}
+                type="success"
+                showIcon
+                message={`Hi, ${studentName}!`}
+              />
+            )}
+            {codeStatus === "invalid" && (
+              <Alert
+                style={{ marginTop: 8 }}
+                type="warning"
+                showIcon
+                message="We didn't recognize that code — check with your teacher."
+              />
+            )}
+          </Form.Item>
+        )}
+
         <Form.Item
           name="user_id"
           label="USER ID"
+          hidden={codeEntered && codeStatus === "valid"}
           rules={[{ required: true, message: "User ID is required" }]}
         >
           <Input />
@@ -478,13 +559,20 @@ const SettingsForm: React.FC<SettingsFormProps> = ({ schema, onSubmit }) => {
         <Form.Item>
           <Button
             type="primary"
-            disabled={!isValid || transportState === "connecting"}
+            disabled={
+              !isValid || codeBlocksSubmit || transportState === "connecting"
+            }
             loading={transportState === "connecting"}
             onClick={async () => {
               const values = await form.getFieldsValue(true);
               const result = validator.validateFormData(schema, values);
               if (result.errors.length === 0) {
-                onSubmit({ ...values.options, user_id: values.user_id });
+                onSubmit(
+                  withStudentCode({
+                    ...values.options,
+                    user_id: values.user_id,
+                  }),
+                );
               }
             }}
           >

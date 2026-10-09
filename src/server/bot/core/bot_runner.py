@@ -25,6 +25,7 @@ from ..processors.audio.resampling_helper import AudioResamplingHelper
 from ..transport.configuration_manager import TransportConfigurationManager
 from .pipeline_orchestrator import PipelineBuilder
 from .event_manager import EventHandlerManager
+from dashboard.flow_snapshot import SESSION_DIR_KEY
 from ..components.transcription import TranscriptHandler
 from .component_factory import BotComponentFactory
 from ..flows.flow_factory import FlowComponentFactory
@@ -181,6 +182,9 @@ async def run_bot(
             ),
         )
         flow_manager = flow_factory.build()
+        if flow_manager:
+            # Lets flow handlers save snapshots for the teacher dashboard
+            flow_manager.state[SESSION_DIR_KEY] = session_dir
 
         # Setup event handlers using event handler manager
         event_manager = EventHandlerManager(session_dir, session_start=session_start)

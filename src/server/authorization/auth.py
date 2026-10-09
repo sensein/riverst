@@ -1,7 +1,7 @@
 import os
 import json
 from datetime import datetime, timedelta
-from typing import Optional, Set
+from typing import List, Optional, Set
 from pathlib import Path
 
 from fastapi import HTTPException, Depends, status
@@ -35,8 +35,12 @@ USERS_FILE.parent.mkdir(exist_ok=True)
 REJECTION_LOG_FILE.parent.mkdir(exist_ok=True)
 
 
-def load_authorized_users() -> Set[str]:
-    """Load the list of authorized user emails from file."""
+ROLE_RESEARCHER = "researcher"
+ROLE_TEACHER = "teacher"
+
+
+def _load_users_file() -> dict:
+    """Read the allowlist file, creating the default one if missing."""
     if not USERS_FILE.exists():
         # Create default authorized users file
         default_users = {
@@ -47,15 +51,39 @@ def load_authorized_users() -> Set[str]:
         }
         with USERS_FILE.open("w") as f:
             json.dump(default_users, f, indent=2)
-        return set(default_users["authorized_emails"])
+        return default_users
 
     try:
         with USERS_FILE.open("r") as f:
-            data = json.load(f)
-            return set(data.get("authorized_emails", []))
+            return json.load(f)
     except Exception as e:
         logger.error(f"Error loading authorized users: {e}")
-        return set()
+        return {}
+
+
+def load_authorized_users() -> Set[str]:
+    """Load every email allowed to sign in: researchers (``authorized_emails``) and teachers (``teacher_emails``)."""
+    data = _load_users_file()
+    return set(data.get("authorized_emails", [])) | set(data.get("teacher_emails", []))
+
+
+def get_roles(email: str) -> List[str]:
+    """Return the roles for an email from the allowlist file.
+
+    Args:
+        email: The signed-in user's email.
+
+    Returns:
+        List[str]: ``researcher`` if listed in ``authorized_emails`` (full access, as before),
+        ``teacher`` if listed in ``teacher_emails``. Empty if the email is in neither list.
+    """
+    data = _load_users_file()
+    roles = []
+    if email in set(data.get("authorized_emails", [])):
+        roles.append(ROLE_RESEARCHER)
+    if email in set(data.get("teacher_emails", [])):
+        roles.append(ROLE_TEACHER)
+    return roles
 
 
 def log_rejected_login(email: str, name: str, reason: str):
@@ -152,8 +180,14 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) 
 
 def create_bypass_token() -> tuple[str, dict]:
     """Create a bypass token when Google auth is disabled."""
-    bypass_data = {"sub": "dev@localhost", "name": "Development User", "bypass": True}
-    user_data = {"email": "dev@localhost", "name": "Development User"}
+    roles = [ROLE_RESEARCHER, ROLE_TEACHER]
+    bypass_data = {
+        "sub": "dev@localhost",
+        "name": "Development User",
+        "bypass": True,
+        "roles": roles,
+    }
+    user_data = {"email": "dev@localhost", "name": "Development User", "roles": roles}
     access_token = create_access_token(
         bypass_data, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
@@ -163,3 +197,24 @@ def create_bypass_token() -> tuple[str, dict]:
 def get_current_user(token_data: dict = Depends(verify_token)) -> dict:
     """Get current authenticated user."""
     return token_data
+
+
+def token_roles(token_data: dict) -> List[str]:
+    """Roles carried by a token. Tokens issued before roles existed count as researcher, as they did then."""
+    return token_data.get("roles", [ROLE_RESEARCHER])
+
+
+def _require_role(role: str):
+    def dependency(current_user: dict = Depends(get_current_user)) -> dict:
+        if role not in token_roles(current_user):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This page isn't available for your account.",
+            )
+        return current_user
+
+    return dependency
+
+
+require_teacher = _require_role(ROLE_TEACHER)
+require_researcher = _require_role(ROLE_RESEARCHER)

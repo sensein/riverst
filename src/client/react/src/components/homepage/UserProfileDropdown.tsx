@@ -4,10 +4,12 @@ import {
   UserOutlined,
   SettingOutlined,
   HistoryOutlined,
-  LogoutOutlined
+  LogoutOutlined,
+  TeamOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { hasRole } from '../../utils/roles';
 import { LoadingOutlined } from '@ant-design/icons';
 
 const UserProfileDropdown: React.FC = () => {
@@ -15,10 +17,17 @@ const UserProfileDropdown: React.FC = () => {
   const { user, logout, authRequest } = useAuth();
   console.log(" UserProfileDropdown user:", user);
   const [sessions, setSessions] = useState<object[]>([]);
-  const [loading, setLoading] = useState(true);
+  const isResearcher = hasRole(user, 'researcher');
+  const isTeacher = hasRole(user, 'teacher');
+  const [loading, setLoading] = useState(isResearcher);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    // Raw session history is for researchers only; teacher-only accounts would get a 403.
+    if (!isResearcher) {
+      setLoading(false);
+      return;
+    }
     const fetchSessions = async () => {
       try {
         const response = await authRequest.get(`/api/sessions`);
@@ -43,7 +52,7 @@ const UserProfileDropdown: React.FC = () => {
         clearInterval(intervalRef.current);
       }
     };
-  }, []);
+  }, [isResearcher]);
 
   const handleLogout = () => {
     logout();
@@ -61,15 +70,29 @@ const UserProfileDropdown: React.FC = () => {
     {
       type: 'divider' as const
     },
-    {
-      key: 'history',
-      label: 'History',
-      icon: <HistoryOutlined />,
-      disabled: loading || sessions.length === 0,
-      onClick: () => {
-        if (sessions.length > 0) navigate('/sessions');
-      }
-    },
+    ...(isTeacher
+      ? [
+          {
+            key: 'teacher',
+            label: 'Teacher dashboard',
+            icon: <TeamOutlined />,
+            onClick: () => navigate('/teacher')
+          }
+        ]
+      : []),
+    ...(isResearcher
+      ? [
+          {
+            key: 'history',
+            label: 'History',
+            icon: <HistoryOutlined />,
+            disabled: loading || sessions.length === 0,
+            onClick: () => {
+              if (sessions.length > 0) navigate('/sessions');
+            }
+          }
+        ]
+      : []),
     {
       key: 'settings',
       label: 'Settings',
