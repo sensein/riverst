@@ -33,3 +33,4 @@ src/server/authorization/authorized_users.json
 src/server/authorization/logs/
 logs/*
 turn_credentials.json
+private_prompt_logs/

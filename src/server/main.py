@@ -51,6 +51,7 @@ from authorization.auth import (
     token_roles,
     ACCESS_TOKEN_EXPIRE_MINUTES,
 )
+from kiva_api import create_kiva_router
 from dashboard import analysis as dashboard_analysis
 from dashboard import repository as dashboard_repository
 from dashboard.codes import normalize_code
@@ -80,6 +81,18 @@ app.mount(
     StaticFiles(directory=AVATAR_UPLOADS_BASE),
     name="uploads",
 )
+
+
+def _write_kiva_runtime_session(session_id: str, config: dict) -> None:
+    """Persist the resolved study configuration for the existing WebRTC runtime (V2)."""
+    session_dir = BASE_SESSION_DIR / "sessions" / session_id
+    session_dir.mkdir(parents=True, exist_ok=True)
+    with (session_dir / "config.json").open("w", encoding="utf-8") as file:
+        json.dump(config, file, indent=2)
+
+
+app.include_router(create_kiva_router(_write_kiva_runtime_session))
+
 
 @app.on_event("startup")
 async def _init_teacher_dashboard():

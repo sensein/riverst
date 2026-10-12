@@ -180,14 +180,11 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) 
 
 def create_bypass_token() -> tuple[str, dict]:
     """Create a bypass token when Google auth is disabled."""
+    email = os.getenv("KIVA_DEV_BYPASS_EMAIL", "dev@localhost")
+    name = os.getenv("KIVA_DEV_BYPASS_NAME", "Development User")
     roles = [ROLE_RESEARCHER, ROLE_TEACHER]
-    bypass_data = {
-        "sub": "dev@localhost",
-        "name": "Development User",
-        "bypass": True,
-        "roles": roles,
-    }
-    user_data = {"email": "dev@localhost", "name": "Development User", "roles": roles}
+    bypass_data = {"sub": email, "name": name, "bypass": True, "roles": roles}
+    user_data = {"email": email, "name": name, "roles": roles}
     access_token = create_access_token(
         bypass_data, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
