@@ -172,12 +172,33 @@ class KivaBackend:
     def effective_app_config(self, person_id: str, application_key: str) -> dict[str, Any]:
         return self._saved_app_config(person_id, application_key) or self.default_app_config(application_key)
 
+    def app_config_fields(self, application_key: str) -> list[dict[str, Any]]:
+        """The editable field schema (key/type/enum/default/description) from session_config.json,
+        so the UI can render every original variable with the right control."""
+        activity = _APP_ACTIVITY.get(application_key)
+        if not activity:
+            return []
+        try:
+            schema = json.loads((_ACTIVITY_DIR / activity / "session_config.json").read_text(encoding="utf-8"))
+            options = schema.get("properties", {}).get("options", {}).get("properties", {})
+        except (OSError, ValueError, KeyError):
+            return []
+        fields = []
+        for key, spec in options.items():
+            if not isinstance(spec, dict):
+                continue
+            fields.append({"key": key, "type": spec.get("type"), "enum": spec.get("enum"),
+                           "default": spec.get("default"), "description": spec.get("description"),
+                           "title": spec.get("title")})
+        return fields
+
     def get_app_config(self, actor_account_id: str, application_key: str) -> dict[str, Any]:
         actor = self._require_instructor(actor_account_id)
         default = self.default_app_config(application_key)
         saved = self._saved_app_config(actor["person_id"], application_key)
         return {"application_key": application_key, "default": default,
-                "config": saved or default, "customized": saved is not None}
+                "config": saved or default, "customized": saved is not None,
+                "fields": self.app_config_fields(application_key)}
 
     def set_app_config(self, actor_account_id: str, application_key: str, config: dict[str, Any]) -> dict[str, Any]:
         actor = self._require_instructor(actor_account_id)

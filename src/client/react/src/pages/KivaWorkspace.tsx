@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Alert, Button, Card, Checkbox, Empty, Form, Input, Modal, Select, Space, Spin, Tag, Tabs, Typography } from 'antd';
+import { Alert, Button, Card, Checkbox, Empty, Form, Input, InputNumber, Modal, Select, Space, Spin, Switch, Tag, Tabs, Typography } from 'antd';
 import { BookOutlined, SettingOutlined } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import KivaAdmin from './KivaAdmin';
@@ -63,6 +63,7 @@ export default function KivaWorkspace() {
   const [configFull, setConfigFull] = useState<Record<string, unknown>>({});
   const [configCustomized, setConfigCustomized] = useState(false);
   const [configForm] = Form.useForm();
+  const [configFields, setConfigFields] = useState<any[]>([]);
 
   const refresh = async () => {
     setLoading(true);
@@ -85,7 +86,7 @@ export default function KivaWorkspace() {
   };
   const openConfig = () => perform(async () => {
     const r = await authRequest.get('/api/kiva/app-config/vocabulary');
-    setConfigFull(r.data.config); setConfigCustomized(r.data.customized);
+    setConfigFull(r.data.config); setConfigCustomized(r.data.customized); setConfigFields(r.data.fields || []);
     configForm.setFieldsValue(r.data.config); setConfigOpen(true);
   });
   const saveConfig = () => perform(async () => {
@@ -155,15 +156,15 @@ export default function KivaWorkspace() {
     <Modal open={configOpen} title="Voice & activity settings — yours, applies to all your studies" onCancel={() => setConfigOpen(false)}
       footer={[<Button key="reset" danger onClick={resetConfig} loading={working}>Reset to default</Button>, <Button key="cancel" onClick={() => setConfigOpen(false)}>Cancel</Button>, <Button key="save" type="primary" onClick={saveConfig} loading={working}>Save</Button>]}>
       {!configCustomized && <Alert type="info" showIcon message="You're on the default. Saving creates your own config — it won't affect other tutors." style={{ marginBottom: 12 }} />}
-      <Form autoComplete="off" form={configForm} layout="vertical">
-        <Typography.Text strong>Voice</Typography.Text>
-        <Form.Item name="tts_model" label="TTS model (speed ↔ quality)" style={{ marginTop: 8 }}><Select options={[{ value: 'tts-1', label: 'tts-1 — fastest' }, { value: 'tts-1-hd', label: 'tts-1-hd' }, { value: 'gpt-4o-mini-tts', label: 'gpt-4o-mini-tts — richer, slower' }]} /></Form.Item>
-        <Form.Item name="tts_voice" label="Voice"><Select options={['alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'onyx', 'nova', 'shimmer', 'verse'].map(v => ({ value: v, label: v }))} /></Form.Item>
-        <Form.Item name="stt_type" label="Speech-to-text"><Select options={[{ value: 'openai', label: 'openai — cloud, fast' }, { value: 'whisper', label: 'whisper — local' }]} /></Form.Item>
-        <Typography.Text strong>Activity</Typography.Text>
-        <Form.Item name="camera_settings" label="Camera" style={{ marginTop: 8 }}><Select options={['full', 'mid', 'upper', 'head'].map(v => ({ value: v, label: v }))} /></Form.Item>
-        <Form.Item name="embodiment" label="Embodiment"><Select options={[{ value: 'humanoid_avatar', label: 'Avatar' }, { value: 'waveform', label: 'Waveform' }]} /></Form.Item>
-        <Form.Item name="index" label="Chapter (index)"><Input type="number" min={1} /></Form.Item>
+      <Form autoComplete="off" form={configForm} layout="vertical" style={{ maxHeight: '60vh', overflowY: 'auto', paddingRight: 8 }}>
+        {configFields.map((f: any) => <Form.Item key={f.key} name={f.key} label={f.title || f.key} tooltip={f.description}
+          valuePropName={f.type === 'boolean' ? 'checked' : undefined}>
+          {f.enum ? <Select options={f.enum.map((v: any) => ({ value: v, label: String(v) }))} />
+            : f.type === 'boolean' ? <Switch />
+            : f.type === 'integer' ? <InputNumber style={{ width: '100%' }} />
+            : f.type === 'array' ? <Select mode="tags" tokenSeparators={[',']} />
+            : <Input />}
+        </Form.Item>)}
       </Form>
     </Modal>
   </div>;
