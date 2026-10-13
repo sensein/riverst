@@ -278,4 +278,18 @@ def create_kiva_router(write_runtime_session: Callable[[str, dict[str, Any]], No
         logged_in = run(lambda: actor(current_user))
         return run(lambda: backend.comment_problem(logged_in["account"]["account_id"], problem_id, payload.get("note", "")))
 
+    # Per-tutor app configuration ------------------------------------------------------------------
+
+    @router.get("/app-config/{application_key}")
+    def get_app_config(application_key: str, current_user: dict = Depends(get_current_user)):
+        logged_in = run(lambda: actor(current_user))
+        return run(lambda: backend.get_app_config(logged_in["account"]["account_id"], application_key))
+
+    @router.patch("/app-config/{application_key}")
+    def set_app_config(application_key: str, payload: dict = Body(...), current_user: dict = Depends(get_current_user)):
+        logged_in = run(lambda: actor(current_user))
+        if payload.get("reset"):
+            return run(lambda: backend.reset_app_config(logged_in["account"]["account_id"], application_key))
+        return run(lambda: backend.set_app_config(logged_in["account"]["account_id"], application_key, payload["config"]))
+
     return router

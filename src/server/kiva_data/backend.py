@@ -1,12 +1,23 @@
 """Backend-facing KIVA operations built on the repository/service layer."""
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any, Iterable
 
 from .database import KivaDatabase
 from .errors import AuthorizationError, ConflictError
 from .repositories import DropRepository, PeopleRepository, StudyRepository
 from .services import AccessService, EnrollmentService, OnboardingService, ProblemService, SessionService
+
+# Per-activity DEFAULT config comes from the original session_config.json files. A tutor's personal
+# override is stored on their person profile under "app_config.<application_key>". Effective launch
+# config = the tutor's saved config if present, else the file default (one config per tutor, for all
+# their studies).
+_ACTIVITY_DIR = Path(__file__).resolve().parent.parent / "activities"
+_APP_ACTIVITY = {"vocabulary": "vocab-tutoring"}
+_APP_CONFIG_PREFIX = "app_config."
+_DEFAULT_CONFIG_CACHE: dict[str, dict[str, Any]] = {}
 
 
 class KivaBackend:
@@ -120,14 +131,65 @@ class KivaBackend:
 
     def create_session(self, actor_account_id: str, subject_person_id: str, study_id: str,
                        application_key: str, metadata: dict[str, Any] | None = None) -> dict[str, Any]:
+        actor = self._actor(actor_account_id)
         apps = self.applications_for(actor_account_id, subject_person_id, study_id)
         app = next((item for item in apps if item["application_key"] == application_key), None)
         if app is None:
             raise AuthorizationError("Application is unavailable in this launch context")
-        import json
+        # Runtime config = the launching tutor's effective config (their saved config, else the file
+        # default) — one config per tutor, applied to all their studies; not the per-study snapshot.
+        config_snapshot = self.effective_app_config(actor["person_id"], application_key)
         return self.sessions.create(actor_account_id=actor_account_id, subject_person_id=subject_person_id,
                                     study_id=study_id, application_key=application_key,
-                                    config_snapshot=json.loads(app["config_json"]), metadata=metadata)
+                                    config_snapshot=config_snapshot, metadata=metadata)
+
+    # Per-tutor app configuration ------------------------------------------------------------------
+    # Default from the activity's session_config.json; tutor override on their person profile.
+
+    def default_app_config(self, application_key: str) -> dict[str, Any]:
+        if application_key in _DEFAULT_CONFIG_CACHE:
+            return dict(_DEFAULT_CONFIG_CACHE[application_key])
+        activity = _APP_ACTIVITY.get(application_key)
+        config: dict[str, Any] = {}
+        if activity:
+            try:
+                schema = json.loads((_ACTIVITY_DIR / activity / "session_config.json").read_text(encoding="utf-8"))
+                options = schema.get("properties", {}).get("options", {}).get("properties", {})
+                config = {key: spec["default"] for key, spec in options.items()
+                          if isinstance(spec, dict) and "default" in spec}
+                config["name"] = activity
+                config["description"] = activity
+            except (OSError, ValueError, KeyError):
+                config = {}
+        _DEFAULT_CONFIG_CACHE[application_key] = dict(config)
+        return dict(config)
+
+    def _saved_app_config(self, person_id: str, application_key: str) -> dict[str, Any] | None:
+        field = f"{_APP_CONFIG_PREFIX}{application_key}"
+        value = self.people.profile_slice(person_id, [field]).get(field)
+        return value if isinstance(value, dict) and value else None
+
+    def effective_app_config(self, person_id: str, application_key: str) -> dict[str, Any]:
+        return self._saved_app_config(person_id, application_key) or self.default_app_config(application_key)
+
+    def get_app_config(self, actor_account_id: str, application_key: str) -> dict[str, Any]:
+        actor = self._require_instructor(actor_account_id)
+        default = self.default_app_config(application_key)
+        saved = self._saved_app_config(actor["person_id"], application_key)
+        return {"application_key": application_key, "default": default,
+                "config": saved or default, "customized": saved is not None}
+
+    def set_app_config(self, actor_account_id: str, application_key: str, config: dict[str, Any]) -> dict[str, Any]:
+        actor = self._require_instructor(actor_account_id)
+        self.people.update(actor["person_id"], profile_patch={f"{_APP_CONFIG_PREFIX}{application_key}": config},
+                           actor_person_id=actor["person_id"])
+        return self.get_app_config(actor_account_id, application_key)
+
+    def reset_app_config(self, actor_account_id: str, application_key: str) -> dict[str, Any]:
+        actor = self._require_instructor(actor_account_id)
+        self.people.update(actor["person_id"], profile_patch={f"{_APP_CONFIG_PREFIX}{application_key}": None},
+                           actor_person_id=actor["person_id"])
+        return self.get_app_config(actor_account_id, application_key)
 
     def update_session(self, actor_account_id: str, session_id: str, *, status: str) -> dict[str, Any]:
         return self.sessions.update(actor_account_id, session_id, status=status)

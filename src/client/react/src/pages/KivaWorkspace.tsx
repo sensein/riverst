@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Alert, Button, Card, Checkbox, Empty, Form, Input, Modal, Select, Space, Spin, Tag, Tabs, Typography } from 'antd';
-import { BookOutlined } from '@ant-design/icons';
+import { BookOutlined, SettingOutlined } from '@ant-design/icons';
 import { useAuth } from '../contexts/AuthContext';
 import KivaAdmin from './KivaAdmin';
 import KivaProblems from './KivaProblems';
@@ -59,6 +59,10 @@ export default function KivaWorkspace() {
   const [newStudy, setNewStudy] = useState(false);
   const [section, setSection] = useState('workspace');
   const [studyForm] = Form.useForm();
+  const [configOpen, setConfigOpen] = useState(false);
+  const [configFull, setConfigFull] = useState<Record<string, unknown>>({});
+  const [configCustomized, setConfigCustomized] = useState(false);
+  const [configForm] = Form.useForm();
 
   const refresh = async () => {
     setLoading(true);
@@ -79,6 +83,22 @@ export default function KivaWorkspace() {
     try { await action(); } catch (caught: any) { setError(caught.response?.data?.detail || caught.message || 'This action could not be completed.'); }
     finally { setWorking(false); }
   };
+  const openConfig = () => perform(async () => {
+    const r = await authRequest.get('/api/kiva/app-config/vocabulary');
+    setConfigFull(r.data.config); setConfigCustomized(r.data.customized);
+    configForm.setFieldsValue(r.data.config); setConfigOpen(true);
+  });
+  const saveConfig = () => perform(async () => {
+    const edits = await configForm.validateFields();
+    if (edits.index === '' || edits.index === undefined || edits.index === null) delete edits.index;
+    else edits.index = Number(edits.index);
+    await authRequest.patch('/api/kiva/app-config/vocabulary', { config: { ...configFull, ...edits } });
+    setConfigOpen(false);
+  });
+  const resetConfig = () => perform(async () => {
+    await authRequest.patch('/api/kiva/app-config/vocabulary', { reset: true });
+    setConfigOpen(false);
+  });
   const createStudy = () => perform(async () => {
     const values = await studyForm.validateFields();
     const keys: string[] = values.applications;
@@ -126,11 +146,25 @@ export default function KivaWorkspace() {
     <Tabs activeKey={section} onChange={setSection} items={[
       { key: 'workspace', label: 'Learning workspace', children: <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px,.8fr) minmax(380px,1.2fr)', gap: 20 }}>
         <Card title="Who is learning today?">{!menu?.subjects.length ? <Empty description={instructor ? 'Create a study, then add a parent and child.' : 'No enrolled learners yet'} /> : <Select style={{ width: '100%' }} value={subject?.person.person_id} onChange={id => { const selected = menu.subjects.find(item => item.person.person_id === id) ?? null; setSubject(selected); setStudy(selected?.studies[0] ?? null); }} options={menu.subjects.map(item => ({ value: item.person.person_id, label: String(item.person.profile.display_name || item.person.person_id) }))} />}{subject && <div style={{ marginTop: 20, padding: 16, borderRadius: 12, background: '#eef4ff' }}><b>{String(subject.person.profile.display_name || 'Learner')}</b><br /><Typography.Text type="secondary">{subject.person.roles.join(' · ')}</Typography.Text></div>}</Card>
-        <Card title="Choose an activity" extra={study && <Tag color="blue">{study.name}</Tag>}>{!study ? <Empty description="Select an enrolled learner and study" /> : <Space direction="vertical" size={14} style={{ width: '100%' }}>{study.applications.filter(app => app.enabled).map(app => <Card key={app.application_key} size="small"><Space><BookOutlined style={{ fontSize: 22, color: '#2656d8' }} /><div><b>{app.name}</b><br /><Typography.Text type="secondary">Available through this study</Typography.Text></div><Button type="primary" loading={working} onClick={() => launch(app.application_key)}>Start</Button></Space></Card>)}</Space>}</Card>
+        <Card title="Choose an activity" extra={<Space>{study && <Tag color="blue">{study.name}</Tag>}{instructor && <Button size="small" icon={<SettingOutlined />} onClick={openConfig}>Settings</Button>}</Space>}>{!study ? <Empty description="Select an enrolled learner and study" /> : <Space direction="vertical" size={14} style={{ width: '100%' }}>{study.applications.filter(app => app.enabled).map(app => <Card key={app.application_key} size="small"><Space><BookOutlined style={{ fontSize: 22, color: '#2656d8' }} /><div><b>{app.name}</b><br /><Typography.Text type="secondary">Available through this study</Typography.Text></div><Button type="primary" loading={working} onClick={() => launch(app.application_key)}>Start</Button></Space></Card>)}</Space>}</Card>
       </div> },
       ...(instructor ? [{ key: 'manage', label: 'Manage studies, people & apps', children: <KivaAdmin onCreateStudy={() => setNewStudy(true)} /> }] : []),
       { key: 'testing', label: 'Testing & problems', children: <KivaProblems /> },
     ]} />
     <Modal open={newStudy} title="Create a study" onCancel={() => setNewStudy(false)} onOk={createStudy} confirmLoading={working} okText="Create study"><Form autoComplete="off" form={studyForm} layout="vertical" initialValues={{ applications: ['listen_audiobooks', 'vocabulary'] }}><Form.Item name="name" label="Study name" rules={[{ required: true, message: 'Enter a study name.' }]}><Input placeholder="e.g. Spring Reading Study" /></Form.Item><Form.Item name="applications" label="Applications"><Checkbox.Group options={[{ label: 'Listen to audiobooks', value: 'listen_audiobooks' }, { label: 'Learning vocabulary', value: 'vocabulary' }]} /></Form.Item></Form></Modal>
+    <Modal open={configOpen} title="Voice & activity settings — yours, applies to all your studies" onCancel={() => setConfigOpen(false)}
+      footer={[<Button key="reset" danger onClick={resetConfig} loading={working}>Reset to default</Button>, <Button key="cancel" onClick={() => setConfigOpen(false)}>Cancel</Button>, <Button key="save" type="primary" onClick={saveConfig} loading={working}>Save</Button>]}>
+      {!configCustomized && <Alert type="info" showIcon message="You're on the default. Saving creates your own config — it won't affect other tutors." style={{ marginBottom: 12 }} />}
+      <Form autoComplete="off" form={configForm} layout="vertical">
+        <Typography.Text strong>Voice</Typography.Text>
+        <Form.Item name="tts_model" label="TTS model (speed ↔ quality)" style={{ marginTop: 8 }}><Select options={[{ value: 'tts-1', label: 'tts-1 — fastest' }, { value: 'tts-1-hd', label: 'tts-1-hd' }, { value: 'gpt-4o-mini-tts', label: 'gpt-4o-mini-tts — richer, slower' }]} /></Form.Item>
+        <Form.Item name="tts_voice" label="Voice"><Select options={['alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'onyx', 'nova', 'shimmer', 'verse'].map(v => ({ value: v, label: v }))} /></Form.Item>
+        <Form.Item name="stt_type" label="Speech-to-text"><Select options={[{ value: 'openai', label: 'openai — cloud, fast' }, { value: 'whisper', label: 'whisper — local' }]} /></Form.Item>
+        <Typography.Text strong>Activity</Typography.Text>
+        <Form.Item name="camera_settings" label="Camera" style={{ marginTop: 8 }}><Select options={['full', 'mid', 'upper', 'head'].map(v => ({ value: v, label: v }))} /></Form.Item>
+        <Form.Item name="embodiment" label="Embodiment"><Select options={[{ value: 'humanoid_avatar', label: 'Avatar' }, { value: 'waveform', label: 'Waveform' }]} /></Form.Item>
+        <Form.Item name="index" label="Chapter (index)"><Input type="number" min={1} /></Form.Item>
+      </Form>
+    </Modal>
   </div>;
 }
