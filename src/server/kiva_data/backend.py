@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from .database import KivaDatabase
-from .errors import AuthorizationError, ConflictError
+from .errors import AuthorizationError, ConflictError, ValidationError
 from .repositories import DropRepository, PeopleRepository, StudyRepository
 from .services import AccessService, EnrollmentService, OnboardingService, ProblemService, SessionService
 
@@ -15,7 +15,7 @@ from .services import AccessService, EnrollmentService, OnboardingService, Probl
 # config = the tutor's saved config if present, else the file default (one config per tutor, for all
 # their studies).
 _ACTIVITY_DIR = Path(__file__).resolve().parent.parent / "activities"
-_APP_ACTIVITY = {"vocabulary": "vocab-tutoring"}
+_APP_ACTIVITY = {"vocabulary": "vocab-tutoring", "esl": "esl-vocab-tutoring", "isl": "isl-vocab-tutoring"}
 _APP_CONFIG_PREFIX = "app_config."
 _DEFAULT_CONFIG_CACHE: dict[str, dict[str, Any]] = {}
 
@@ -136,6 +136,10 @@ class KivaBackend:
         app = next((item for item in apps if item["application_key"] == application_key), None)
         if app is None:
             raise AuthorizationError("Application is unavailable in this launch context")
+        # Guard: surfaced activities without lesson content (no flow_config.json) can't run a session.
+        activity = _APP_ACTIVITY.get(application_key)
+        if activity and not (_ACTIVITY_DIR / activity / "flow_config.json").exists():
+            raise ValidationError(f"The '{application_key}' activity has no lesson content yet.")
         # Runtime config = the launching tutor's effective config (their saved config, else the file
         # default) — one config per tutor, applied to all their studies; not the per-study snapshot.
         config_snapshot = self.effective_app_config(actor["person_id"], application_key)

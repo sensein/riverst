@@ -45,6 +45,8 @@ const apps = {
       bot_transcript: true,
     },
   },
+  esl: { name: 'English (L2) — for Italian speakers', config: {} },
+  isl: { name: 'Italian (L2) — for English speakers', config: {} },
 };
 
 export default function KivaWorkspace() {
@@ -131,7 +133,7 @@ export default function KivaWorkspace() {
     if (!subject || !study) throw new Error('Select an enrolled learner and study first.');
     if (applicationKey === 'listen_audiobooks') { navigate('/listen-to-an-audio-book'); return; }
     const payload: Record<string, unknown> = {};
-    if (applicationKey === 'vocabulary') {
+    if (['vocabulary', 'esl', 'isl'].includes(applicationKey)) {
       const avatarResponse = await authRequest.get('/api/avatars');
       const avatars = avatarResponse.data as Array<{ id?: number }>;
       const avatar = avatars.find(item => item.id === 4) ?? avatars[0];
@@ -145,16 +147,22 @@ export default function KivaWorkspace() {
   const instructor = menu?.actor?.roles?.includes('instructor');
   return <div style={{ maxWidth: 1120, margin: '0 auto', padding: '40px 24px', background: '#f5f7fb', minHeight: '100vh' }}>
     <Typography.Text type="secondary" style={{ letterSpacing: 1 }}>MIT KIVA TEAM</Typography.Text><Typography.Title level={1} style={{ marginTop: 4 }}>Learning, made personal.</Typography.Title><Typography.Paragraph type="secondary">Choose who is learning, then launch an activity from their enrolled study.</Typography.Paragraph>
+    {instructor && <Space style={{ marginBottom: 16 }}><Typography.Text type="secondary">Avatar customization:</Typography.Text><Button size="small" onClick={() => navigate('/avatar-creation')}>Select avatar</Button><Button size="small" onClick={() => navigate('/avatar-upload')}>Upload avatar</Button></Space>}
     {error && <Alert message={error} type="error" closable onClose={() => setError('')} style={{ marginBottom: 16 }} />}
     <Tabs activeKey={section} destroyInactiveTabPane onChange={key => { setSection(key); if (key === 'workspace') void refresh(); }} items={[
       { key: 'workspace', label: 'Learning workspace', children: <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px,.8fr) minmax(380px,1.2fr)', gap: 20 }}>
         <Card title="Who is learning today?">{!menu?.subjects.length ? <Empty description={instructor ? 'Create a study, then add a parent and child.' : 'No enrolled learners yet'} /> : <Select style={{ width: '100%' }} value={subject?.person.person_id} onChange={id => { const selected = menu.subjects.find(item => item.person.person_id === id) ?? null; setSubject(selected); setStudy(selected?.studies[0] ?? null); }} options={menu.subjects.map(item => ({ value: item.person.person_id, label: String(item.person.profile.display_name || item.person.person_id) })).sort((a, b) => a.label.localeCompare(b.label))} />}{subject && <div style={{ marginTop: 20, padding: 16, borderRadius: 12, background: '#eef4ff' }}><b>{String(subject.person.profile.display_name || 'Learner')}</b><br /><Typography.Text type="secondary">{subject.person.roles.join(' · ')}</Typography.Text></div>}</Card>
         <Card title="Choose an activity" extra={<Space>{study && <Tag color="blue">{study.name}</Tag>}{instructor && <Button size="small" icon={<SettingOutlined />} onClick={openConfig}>Settings</Button>}</Space>}>{!study ? <Empty description="Select an enrolled learner and study" /> : <Space direction="vertical" size={14} style={{ width: '100%' }}>{study.applications.filter(app => app.enabled).map(app => <Card key={app.application_key} size="small"><Space><BookOutlined style={{ fontSize: 22, color: '#2656d8' }} /><div><b>{app.name}</b><br /><Typography.Text type="secondary">Available through this study</Typography.Text></div><Button type="primary" loading={working} onClick={() => launch(app.application_key)}>Start</Button></Space></Card>)}</Space>}</Card>
       </div> },
+      { key: 'playground', label: 'Playground', children: <Space direction="vertical" style={{ width: '100%', maxWidth: 560 }} size={14}>
+        <Typography.Paragraph type="secondary">Just for fun — open sessions not tied to a study or learner.</Typography.Paragraph>
+        <Card size="small"><Space style={{ justifyContent: 'space-between', width: '100%' }}><div><b>Free-style interaction</b><br /><Typography.Text type="secondary">Open, unstructured chat with the avatar</Typography.Text></div><Button type="primary" onClick={() => navigate('/avatar-interaction-settings')}>Start</Button></Space></Card>
+        <Card size="small"><Space style={{ justifyContent: 'space-between', width: '100%' }}><div><b>Demo ready to go</b><br /><Typography.Text type="secondary">A quick demo session</Typography.Text></div><Button type="primary" onClick={() => navigate('/avatar-interaction-settings')}>Start</Button></Space></Card>
+      </Space> },
       ...(instructor ? [{ key: 'manage', label: 'Manage studies, people & apps', children: <KivaAdmin onCreateStudy={() => setNewStudy(true)} /> }] : []),
       { key: 'testing', label: 'Testing & problems', children: <KivaProblems /> },
     ]} />
-    <Modal open={newStudy} title="Create a study" onCancel={() => setNewStudy(false)} onOk={createStudy} confirmLoading={working} okText="Create study"><Form autoComplete="off" form={studyForm} layout="vertical" initialValues={{ applications: ['listen_audiobooks', 'vocabulary'] }}><Form.Item name="name" label="Study name" rules={[{ required: true, message: 'Enter a study name.' }]}><Input placeholder="e.g. Spring Reading Study" /></Form.Item><Form.Item name="applications" label="Applications"><Checkbox.Group options={[{ label: 'Listen to audiobooks', value: 'listen_audiobooks' }, { label: 'Learning vocabulary', value: 'vocabulary' }]} /></Form.Item></Form></Modal>
+    <Modal open={newStudy} title="Create a study" onCancel={() => setNewStudy(false)} onOk={createStudy} confirmLoading={working} okText="Create study"><Form autoComplete="off" form={studyForm} layout="vertical" initialValues={{ applications: ['listen_audiobooks', 'vocabulary'] }}><Form.Item name="name" label="Study name" rules={[{ required: true, message: 'Enter a study name.' }]}><Input placeholder="e.g. Spring Reading Study" /></Form.Item><Form.Item name="applications" label="Applications"><Checkbox.Group options={[{ label: 'Listen to audiobooks', value: 'listen_audiobooks' }, { label: 'Learning vocabulary', value: 'vocabulary' }, { label: 'English (L2) for Italian speakers', value: 'esl' }, { label: 'Italian (L2) for English speakers', value: 'isl' }]} /></Form.Item></Form></Modal>
     <Modal open={configOpen} title="Voice & activity settings — yours, applies to all your studies" onCancel={() => setConfigOpen(false)}
       footer={[<Button key="reset" danger onClick={resetConfig} loading={working}>Reset to default</Button>, <Button key="cancel" onClick={() => setConfigOpen(false)}>Cancel</Button>, <Button key="save" type="primary" onClick={saveConfig} loading={working}>Save</Button>]}>
       {!configCustomized && <Alert type="info" showIcon message="You're on the default. Saving creates your own config — it won't affect other tutors." style={{ marginBottom: 12 }} />}
