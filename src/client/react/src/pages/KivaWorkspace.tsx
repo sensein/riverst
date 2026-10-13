@@ -164,7 +164,7 @@ export default function KivaWorkspace() {
           {f.enum ? <Select options={f.enum.map((v: any) => ({ value: v, label: String(v) }))} />
             : f.type === 'boolean' ? <Switch />
             : f.type === 'integer' ? <InputNumber style={{ width: '100%' }} />
-            : f.type === 'array' ? <Select mode="tags" tokenSeparators={[',']} />
+            : f.type === 'array' ? <Select mode={f.item_enum ? 'multiple' : 'tags'} tokenSeparators={[',']} allowClear options={f.item_enum ? f.item_enum.map((v: any) => ({ value: v, label: String(v) })) : undefined} />
             : <Input />}
         </Form.Item>)}
       </Form>

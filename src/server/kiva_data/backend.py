@@ -187,7 +187,9 @@ class KivaBackend:
         for key, spec in options.items():
             if not isinstance(spec, dict):
                 continue
+            items = spec.get("items") if isinstance(spec.get("items"), dict) else {}
             fields.append({"key": key, "type": spec.get("type"), "enum": spec.get("enum"),
+                           "item_enum": items.get("enum"),  # allowed values for array fields (e.g. languages)
                            "default": spec.get("default"), "description": spec.get("description"),
                            "title": spec.get("title")})
         return fields
