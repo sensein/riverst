@@ -66,13 +66,15 @@ export default function KivaWorkspace() {
   const [configFields, setConfigFields] = useState<any[]>([]);
 
   const refresh = async () => {
-    setLoading(true);
+    if (!menu) setLoading(true);  // full-page spinner only on first load, not on tab re-sync
     try {
       const result = await authRequest.get('/api/kiva/menu');
       const data = result.data as Menu;
       setMenu(data);
-      const first = data.subjects[0];
-      if (first) { setSubject(first); setStudy(first.studies[0] ?? null); }
+      // keep the currently-selected learner if they still exist, else fall back to the first
+      const keep = subject && data.subjects.find(item => item.person.person_id === subject.person.person_id);
+      const next = keep || data.subjects[0] || null;
+      setSubject(next); setStudy(next?.studies[0] ?? null);
     } catch (caught: any) { setError(caught.response?.data?.detail || 'Could not load KIVA.'); }
     finally { setLoading(false); }
   };
@@ -144,7 +146,7 @@ export default function KivaWorkspace() {
   return <div style={{ maxWidth: 1120, margin: '0 auto', padding: '40px 24px', background: '#f5f7fb', minHeight: '100vh' }}>
     <Typography.Text type="secondary" style={{ letterSpacing: 1 }}>MIT KIVA TEAM</Typography.Text><Typography.Title level={1} style={{ marginTop: 4 }}>Learning, made personal.</Typography.Title><Typography.Paragraph type="secondary">Choose who is learning, then launch an activity from their enrolled study.</Typography.Paragraph>
     {error && <Alert message={error} type="error" closable onClose={() => setError('')} style={{ marginBottom: 16 }} />}
-    <Tabs activeKey={section} onChange={setSection} items={[
+    <Tabs activeKey={section} destroyInactiveTabPane onChange={key => { setSection(key); if (key === 'workspace') void refresh(); }} items={[
       { key: 'workspace', label: 'Learning workspace', children: <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px,.8fr) minmax(380px,1.2fr)', gap: 20 }}>
         <Card title="Who is learning today?">{!menu?.subjects.length ? <Empty description={instructor ? 'Create a study, then add a parent and child.' : 'No enrolled learners yet'} /> : <Select style={{ width: '100%' }} value={subject?.person.person_id} onChange={id => { const selected = menu.subjects.find(item => item.person.person_id === id) ?? null; setSubject(selected); setStudy(selected?.studies[0] ?? null); }} options={menu.subjects.map(item => ({ value: item.person.person_id, label: String(item.person.profile.display_name || item.person.person_id) }))} />}{subject && <div style={{ marginTop: 20, padding: 16, borderRadius: 12, background: '#eef4ff' }}><b>{String(subject.person.profile.display_name || 'Learner')}</b><br /><Typography.Text type="secondary">{subject.person.roles.join(' · ')}</Typography.Text></div>}</Card>
         <Card title="Choose an activity" extra={<Space>{study && <Tag color="blue">{study.name}</Tag>}{instructor && <Button size="small" icon={<SettingOutlined />} onClick={openConfig}>Settings</Button>}</Space>}>{!study ? <Empty description="Select an enrolled learner and study" /> : <Space direction="vertical" size={14} style={{ width: '100%' }}>{study.applications.filter(app => app.enabled).map(app => <Card key={app.application_key} size="small"><Space><BookOutlined style={{ fontSize: 22, color: '#2656d8' }} /><div><b>{app.name}</b><br /><Typography.Text type="secondary">Available through this study</Typography.Text></div><Button type="primary" loading={working} onClick={() => launch(app.application_key)}>Start</Button></Space></Card>)}</Space>}</Card>
