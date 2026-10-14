@@ -192,6 +192,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setToken(null);
   };
 
+  // On a 401 (expired/invalid token) transparently recover instead of silently failing the action:
+  // bypass auth -> fetch a fresh token and replay the request once; Google auth -> force re-login.
+  useEffect(() => {
+    const id = axios.interceptors.response.use(
+      (res) => res,
+      async (error) => {
+        const original: any = error.config || {};
+        const url = String(original.url || '');
+        if (error.response?.status === 401 && !original.__isRetry && !url.includes('/api/auth/')) {
+          original.__isRetry = true;
+          try {
+            const bypass = await axios.post('/api/auth/bypass');   // 403s if Google auth is on
+            const fresh = bypass.data.access_token;
+            localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, fresh);
+            setToken(fresh);
+            original.headers = { ...(original.headers || {}), Authorization: `Bearer ${fresh}` };
+            return axios(original);
+          } catch {
+            logout();   // can't silently refresh (Google auth) -> back to login
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+    return () => axios.interceptors.response.eject(id);
+  }, []);
+
   const value: AuthContextType = {
     user,
     token,
