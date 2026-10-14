@@ -225,6 +225,14 @@ class KivaBackend:
         """Internal transport hook: abandon unfinished sessions without downgrading terminal ones."""
         return self.sessions.mark_disconnected(session_id)
 
+    def mark_running_session(self, session_id: str) -> dict[str, Any]:
+        """Internal transport hook: a runtime session's client connected — mark it running."""
+        return self.sessions.mark_running(session_id)
+
+    def finalize_session(self, session_id: str, completed: bool) -> dict[str, Any]:
+        """Internal transport hook: client disconnected — mark the session completed or abandoned."""
+        return self.sessions.finalize(session_id, completed=completed)
+
     # Problem tracker -----------------------------------------------------------------------------
     # Reporting / reading / commenting / re-testing are open to any active account; the
     # developer-only triage actions (assign / mark-fixed / close) require the `developer` role.

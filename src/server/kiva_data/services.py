@@ -217,6 +217,25 @@ class SessionService:
             data_location=f"sessions/{session_id}",
         )
 
+    def mark_running(self, session_id: str) -> dict[str, Any]:
+        """Internal runtime hook: the session's client connected — mark it running (sets started_at)."""
+        session = self.sessions.get(session_id)
+        if session["status"] != "created":
+            return session
+        return self.sessions.update(session_id, status="running")
+
+    def finalize(self, session_id: str, *, completed: bool) -> dict[str, Any]:
+        """Internal runtime hook: client disconnected — mark the session terminal. ``completed`` when the
+        flow reached a terminal node, else abandoned. Terminal states are preserved (idempotent)."""
+        session = self.sessions.get(session_id)
+        if session["status"] not in {"created", "running"}:
+            return session
+        if completed:
+            if session["status"] == "created":
+                self.sessions.update(session_id, status="running")
+            return self.sessions.update(session_id, status="completed", data_location=f"sessions/{session_id}")
+        return self.sessions.update(session_id, status="abandoned", data_location=f"sessions/{session_id}")
+
 
 class ProblemService:
     """Problem tracker: report, the state machine (report → fixed → re-test → close/reopen),
