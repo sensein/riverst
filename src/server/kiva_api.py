@@ -1,13 +1,26 @@
 """Authenticated KIVA routes backed by the KIVA SQLite service layer."""
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 import os
 import subprocess
+import time
 from pathlib import Path
 from typing import Any, Callable
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
+from fastapi.responses import FileResponse
+
+_SESSIONS_DIR = Path(__file__).parent / "sessions"
+
+
+def _media_sign(relpath: str, exp: int) -> str:
+    """HMAC a session media path + expiry with SECRET_KEY, so audio/video can load via a short-lived
+    signed URL the browser's <audio>/<video> can use without an auth header. Unforgeable without the key."""
+    secret = (os.getenv("SECRET_KEY") or "").encode()
+    return hmac.new(secret, f"{relpath}:{exp}".encode(), hashlib.sha256).hexdigest()
 
 from authorization.auth import get_current_user, get_roles, ROLE_RESEARCHER
 from kiva_data import AuthorizationError, ConflictError, KivaBackend, KivaDatabase, NotFoundError, ValidationError
@@ -156,12 +169,13 @@ def create_kiva_router(write_runtime_session: Callable[[str, dict[str, Any]], No
         ))
 
     @router.get("/people")
-    def list_people(role: str | None = None, status: str = "active", current_user: dict = Depends(get_current_user)):
+    def list_people(role: str | None = None, status: str = "active", study_id: str | None = None,
+                    current_user: dict = Depends(get_current_user)):
         logged_in = run(lambda: actor(current_user))
         if status not in {"active", "inactive", "all"}:
             raise HTTPException(status_code=400, detail="Invalid person status filter")
         return run(lambda: backend.list_people(logged_in["account"]["account_id"], role=role,
-                                               status=None if status == "all" else status))
+                                               status=None if status == "all" else status, study_id=study_id))
 
     @router.patch("/people/{person_id}")
     def update_person(person_id: str, payload: dict = Body(...), current_user: dict = Depends(get_current_user)):
@@ -291,5 +305,52 @@ def create_kiva_router(write_runtime_session: Callable[[str, dict[str, Any]], No
         if payload.get("reset"):
             return run(lambda: backend.reset_app_config(logged_in["account"]["account_id"], application_key))
         return run(lambda: backend.set_app_config(logged_in["account"]["account_id"], application_key, payload["config"]))
+
+    # Sessions + artifacts (study detail) -----------------------------------------------------------
+
+    @router.get("/subjects/{person_id}/sessions")
+    def list_sessions(person_id: str, study_id: str | None = None, current_user: dict = Depends(get_current_user)):
+        logged_in = run(lambda: actor(current_user))
+        return run(lambda: backend.list_sessions(logged_in["account"]["account_id"], person_id, study_id))
+
+    @router.get("/sessions/{session_id}/transcript")
+    def session_transcript(session_id: str, current_user: dict = Depends(get_current_user)):
+        logged_in = run(lambda: actor(current_user))
+        run(lambda: backend.get_session(logged_in["account"]["account_id"], session_id))  # authz + existence
+        transcript = _SESSIONS_DIR / session_id / "transcript.json"
+        if not transcript.is_file():
+            raise HTTPException(status_code=404, detail="No transcript for this session")
+        try:
+            return json.loads(transcript.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as error:
+            raise HTTPException(status_code=404, detail="Transcript could not be read") from error
+
+    @router.get("/sessions/{session_id}/artifacts")
+    def session_artifacts(session_id: str, current_user: dict = Depends(get_current_user)):
+        logged_in = run(lambda: actor(current_user))
+        run(lambda: backend.get_session(logged_in["account"]["account_id"], session_id))
+        session_dir = _SESSIONS_DIR / session_id
+        audio_dir = session_dir / "audios"
+        files = sorted(p.name for p in audio_dir.glob("*.wav")) if audio_dir.is_dir() else []
+        exp = int(time.time()) + 3600  # signed audio URLs valid for 1h
+        return {
+            "session_id": session_id,
+            "has_transcript": (session_dir / "transcript.json").is_file(),
+            "audio": [{"file": name,
+                       "url": f"/api/kiva/media/{session_id}/{name}?exp={exp}&sig={_media_sign(f'{session_id}/{name}', exp)}"}
+                      for name in files],
+        }
+
+    @router.get("/media/{session_id}/{filename}")
+    def session_media(session_id: str, filename: str, exp: int, sig: str):
+        # Intentionally NO auth header (so <audio>/<video> can load it) — gated by a short-lived HMAC.
+        if "/" in filename or "\\" in filename or ".." in filename:
+            raise HTTPException(status_code=400, detail="Invalid file")
+        if not os.getenv("SECRET_KEY") or exp < int(time.time()) or not hmac.compare_digest(sig, _media_sign(f"{session_id}/{filename}", exp)):
+            raise HTTPException(status_code=403, detail="Invalid or expired media link")
+        media = _SESSIONS_DIR / session_id / "audios" / filename
+        if not media.is_file():
+            raise HTTPException(status_code=404, detail="Media not found")
+        return FileResponse(str(media), media_type="audio/wav")
 
     return router
