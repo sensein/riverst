@@ -1,8 +1,12 @@
+from __future__ import annotations  # keep the cv2.VideoWriter annotation lazy (string)
+
 import os
-import cv2
 import numpy as np
 from typing import Optional
 from loguru import logger
+# cv2 (OpenCV, ~80 MB) imported lazily inside the methods that use it — this module is on the
+# always-on backend's startup path (via the processors package), but video recording only runs
+# during a session, so cv2 should not load at process startup.
 
 from pipecat.processors.frame_processor import FrameProcessor, FrameDirection
 from pipecat.frames.frames import Frame, InputImageRawFrame
@@ -33,6 +37,7 @@ class VideoBufferProcessor(FrameProcessor):
         await super().process_frame(frame, direction)
 
         if isinstance(frame, InputImageRawFrame):
+            import cv2
             try:
                 img = np.frombuffer(frame.image, dtype=np.uint8).reshape(
                     (frame.size[1], frame.size[0], 3)
@@ -55,6 +60,7 @@ class VideoBufferProcessor(FrameProcessor):
         if not self.frames:
             logger.warning("No frames to write.")
             return
+        import cv2
 
         i = 0
         while os.path.exists(os.path.join(self.session_dir, f"session_{i}.mp4")):

@@ -1,0 +1,7 @@
+# Let's Encrypt expiry notices go here.
+certbot_email = "you@example.org"
+# Only used when enable_monitoring is true (prod). Leave "" to skip.
+alarm_email   = "you@example.org"
+
+# For the parallel build, start on a staging hostname and cut over afterwards:
+# hostname = "play-next.kivaproject.org"

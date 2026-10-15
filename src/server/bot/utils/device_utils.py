@@ -1,9 +1,12 @@
 """Device detection utilities for PyTorch."""
 
+from __future__ import annotations  # keep the torch return annotation lazy (string-evaluated)
+
 import os
 
-import torch
-from torch import device as TorchDevice
+# NOTE: torch is imported LAZILY inside get_best_device(). This module is on the always-on
+# backend's startup path; importing torch here (~500 MB) would defeat the light-backend design
+# (auth/API stay light; torch loads only when a session actually builds its pipeline).
 
 COMPUTE_DEVICE_ENV_VAR = "RIVERST_COMPUTE_DEVICE"
 DEPLOYMENT_TARGET_ENV_VAR = "RIVERST_DEPLOYMENT_TARGET"
@@ -31,8 +34,10 @@ def get_deployment_target() -> str:
     return os.getenv(DEPLOYMENT_TARGET_ENV_VAR, "cpu").strip().lower()
 
 
-def get_best_device(options=None) -> TorchDevice:
+def get_best_device(options=None) -> "torch.device":
     """Return the best available torch device for the current runtime policy."""
+    import torch  # lazy: only loaded when a device is actually needed (session build)
+
     requested_options = list(options or DEFAULT_DEVICE_ORDER)
     policy = get_compute_device_policy()
 

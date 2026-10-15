@@ -15,10 +15,27 @@ from huggingface_hub import hf_hub_download
 import importlib.util
 import sys
 import os
+import threading
+from loguru import logger
 from ...utils.device_utils import get_best_device
 import asyncio
 import re
 import numpy as np
+
+# Process-wide cache for the CUPE model so it loads ONCE (e.g. during /api/warmup) and every
+# session reuses it, instead of reloading the checkpoint per session on the critical path.
+_CUPE_SINGLETON: dict = {}
+_CUPE_LOCK = threading.Lock()
+
+
+def get_cupe_model(model_name="multilingual-mls", device="cpu"):
+    """Load the CUPE model once per (model, device) and cache it for reuse. Thread-safe so a
+    warmup preload and a session build can't double-load it."""
+    key = (model_name, str(device))
+    with _CUPE_LOCK:
+        if key not in _CUPE_SINGLETON:
+            _CUPE_SINGLETON[key] = load_cupe_model(model_name=model_name, device=device)
+        return _CUPE_SINGLETON[key]
 
 
 def predict_phonemes_from_waveform(
@@ -253,6 +270,8 @@ class LipsyncProcessor(FrameProcessor):
     SAMPLE_RATE = 16000
     MIN_SAMPLES_TO_PROCESS = int(SAMPLE_RATE * MIN_DURATION_TO_PROCESS)
 
+    MODEL_NAME = "multilingual-mls"
+
     def __init__(self):
         super().__init__()
         self.device = get_best_device(options=["cuda", "cpu"])
@@ -260,31 +279,54 @@ class LipsyncProcessor(FrameProcessor):
         self.resampler = None
         self.viseme_map = self._load_viseme_map()
 
-        self.extractor, self.windowing, self.token_to_phoneme, self.token_to_group = (
-            load_cupe_model(model_name="multilingual-mls", device=self.device)
+        # Decoupled start: do NOT block construction on the CUPE load (it's heavy and would delay
+        # the bot's first words). Adopt it immediately if warmup already cached it; otherwise the
+        # model loads in the background on the first frame and audio passes through untouched until
+        # it's ready (the bot talks right away; the avatar's mouth joins a beat later).
+        self.extractor = self.windowing = self.token_to_phoneme = self.token_to_group = None
+        self._ready = False
+        self._load_started = False
+        cached = _CUPE_SINGLETON.get((self.MODEL_NAME, str(self.device)))
+        if cached is not None:
+            self._adopt_model(cached)
+
+    def _adopt_model(self, model):
+        self.extractor, self.windowing, self.token_to_phoneme, self.token_to_group = model
+        self._ready = True
+
+    async def _load_model_in_background(self):
+        """Load (or reuse) the CUPE model off the hot path; engage lip-sync once ready."""
+        try:
+            model = await asyncio.to_thread(get_cupe_model, self.MODEL_NAME, self.device)
+            await asyncio.to_thread(self._warm_up_with, model)
+            self._adopt_model(model)
+            logger.info("[lipsync] CUPE model ready — lip-sync engaged")
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"[lipsync] model load failed; continuing audio-only (no lip-sync): {e}")
+
+    def _warm_up_with(self, model):
+        extractor, windowing, token_to_phoneme, token_to_group = model
+        dummy_audio = torch.randn(16000).to(self.device)
+        predict_phonemes_from_waveform(
+            dummy_audio, extractor, windowing, token_to_phoneme, token_to_group, device=self.device
         )
-        self._warm_up()
 
     def _load_viseme_map(self):
         """Load the phoneme-viseme mapping from a JSON file."""
         with open(self.PHONEME_VISEME_MAP_PATH, "r", encoding="utf-8") as f:
             return json.load(f)
 
-    def _warm_up(self):
-        """Warm-up CUPE for reduced initial latency."""
-        dummy_audio = torch.randn(16000).to(self.device)
-        predict_phonemes_from_waveform(
-            dummy_audio,
-            self.extractor,
-            self.windowing,
-            self.token_to_phoneme,
-            self.token_to_group,
-            device=self.device,
-        )
-        # print("[LipsyncProcessor] Warm-up done.")
-
     async def process_frame(self, frame: Frame, direction: FrameDirection):
         await super().process_frame(frame, direction)
+
+        # Decoupled start: until the CUPE model is ready, pass everything through untouched so the
+        # bot speaks immediately. Kick off the background load on the first frame seen.
+        if not self._ready:
+            if not self._load_started:
+                self._load_started = True
+                asyncio.create_task(self._load_model_in_background())
+            await self.push_frame(frame, direction)
+            return
 
         if isinstance(frame, TTSStartedFrame):
             self._reset_buffers()

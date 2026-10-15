@@ -13,9 +13,9 @@ import {
   VoiceVisualizer
 } from '@pipecat-ai/client-react'
 import { RTVIEvent, Participant } from '@pipecat-ai/client-js'
-import { Spin } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 import { usePipecatClientMicControl } from "@pipecat-ai/client-react";
+import axios from 'axios'
 
 // assuming you’ve moved these out into their own files:
 import FloatGroup from './FloatGroup'
@@ -29,6 +29,7 @@ interface Props {
   videoFlag: boolean
   subtitlesEnabled: { user: boolean; bot: boolean }
   onSessionEnd: (delay: number) => Promise<void>
+  sessionId: string
 }
 
 export default function AvatarInteractionContent({
@@ -38,11 +39,39 @@ export default function AvatarInteractionContent({
   videoFlag,
   subtitlesEnabled: initialSubtitlesEnabled,
   onSessionEnd,
+  sessionId,
 }: Props) {
   // ---- state derived from props ----
   const [cameraType] = useState(initialCameraType)
   const [subtitlesEnabled] = useState(initialSubtitlesEnabled)
   const [loading, setLoading] = useState(true)
+
+  // Seconds elapsed while connecting — shown inside the loading spinner so the
+  // user can see the session is still starting up.
+  const [elapsed, setElapsed] = useState(0)
+  useEffect(() => {
+    if (!loading) return
+    const startedAt = Date.now()
+    const t = setInterval(() => setElapsed((Date.now() - startedAt) / 1000), 100)
+    return () => clearInterval(t)
+  }, [loading])
+
+  // Report the client-perceived connecting time (spinner shown → ready) to the
+  // server, so the real user-facing start latency is logged directly rather than
+  // reconstructed from backend timestamps. Fires exactly once, when loading clears.
+  const connectStartRef = useRef(Date.now())
+  const reportedTimingRef = useRef(false)
+  useEffect(() => {
+    if (loading || reportedTimingRef.current) return
+    reportedTimingRef.current = true
+    const seconds = (Date.now() - connectStartRef.current) / 1000
+    axios
+      .post(`/api/session/${sessionId}/client_event`, {
+        type: 'timing',
+        data: { event: 'spinner_ready', seconds: Number(seconds.toFixed(3)) },
+      })
+      .catch((e) => console.error('client_event timing post failed', e))
+  }, [loading, sessionId])
 
   const { enableMic } = usePipecatClientMicControl();
 
@@ -218,7 +247,20 @@ export default function AvatarInteractionContent({
             zIndex: 10000,
           }}
         >
-          <Spin indicator={<LoadingOutlined style={{ fontSize: 48 }} spin />} />
+          <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+            <LoadingOutlined style={{ fontSize: 72 }} spin />
+            <span
+              style={{
+                position: 'absolute',
+                fontSize: 18,
+                fontWeight: 500,
+                color: '#1677ff',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              {elapsed.toFixed(1)}s
+            </span>
+          </div>
         </div>
       )}
       <FloatGroup
@@ -228,6 +270,7 @@ export default function AvatarInteractionContent({
         <TalkingHeadWrapper
           avatar={avatar}
           cameraType={cameraType}
+          sessionId={sessionId}
           onAvatarMounted={() => {
             if (interactionPhase === 'mounting') {
               setInteractionPhase('ready')

@@ -1,0 +1,4 @@
+# Let's Encrypt expiry notices go here.
+certbot_email = "you@example.org"
+# Only used when enable_monitoring is true (prod). Leave "" to skip.
+alarm_email   = "you@example.org"

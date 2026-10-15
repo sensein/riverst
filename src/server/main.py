@@ -72,6 +72,40 @@ app.mount(
     name="uploads",
 )
 
+@app.on_event("startup")
+async def _warmup_models():
+    """Pre-cache the heavy per-session models (CUPE lip-sync + silero VAD) once at boot, in the
+    background, so the first session doesn't pay the cold load. The server starts serving
+    immediately; the models warm in a worker thread. Suited to a dedicated always-on box where the
+    models stay resident. Failures are non-fatal — sessions still work, just cold on first use.
+    """
+
+    async def _run():
+        try:
+            from bot.utils.device_utils import get_best_device
+            from bot.processors.speech.lipsync_processor import (
+                get_cupe_model,
+                LipsyncProcessor,
+            )
+
+            dev = get_best_device(options=["cuda", "cpu"])
+            # Populate the process-wide CUPE cache so LipsyncProcessor adopts it instantly.
+            await asyncio.to_thread(get_cupe_model, LipsyncProcessor.MODEL_NAME, dev)
+            # Warm silero VAD (small) so the first transport build isn't the first to load it.
+            from pipecat.audio.vad.silero import SileroVADAnalyzer
+
+            await asyncio.to_thread(SileroVADAnalyzer)
+            logger.info(
+                "[warmup] CUPE lip-sync + silero VAD pre-cached — first session will be warm"
+            )
+        except Exception as e:  # noqa: BLE001
+            logger.warning(
+                f"[warmup] pre-cache failed (sessions still work, just cold): {e}"
+            )
+
+    asyncio.create_task(_run())
+
+
 # Enable CORS for all origins
 app.add_middleware(
     CORSMiddleware,
@@ -759,6 +793,55 @@ async def add_device_fingerprint(data: dict = Body(...)) -> JSONResponse:
             return JSONResponse(
                 status_code=500, content={"error": f"Failed to write config: {str(e)}"}
             )
+
+    return JSONResponse(content={"success": True})
+
+
+# Upper bound on a single client event payload, so a client can never bloat the
+# session dir or the logs. Client events are small structured records, not blobs.
+_MAX_CLIENT_EVENT_BYTES = 4096
+
+
+@app.post("/api/session/{session_id}/client_event")
+async def record_client_event(session_id: str, data: dict = Body(...)) -> JSONResponse:
+    """Record a client-side observability event for a session.
+
+    One channel for anything the browser knows that the server can't observe on its
+    own: spinner/connect timing, reconnections, client-side errors, etc. Each event is
+    structured-logged and appended to the session's ``client_events.jsonl``. The
+    spinner's perceived start time arrives here as ``type="timing"``; future client
+    events (reconnects, errors) reuse the same endpoint with no new plumbing.
+
+    Body: ``{ "type": <str>, "data": <json> }``.
+    """
+    event_type = data.get("type")
+    if not event_type or not isinstance(event_type, str):
+        return JSONResponse(status_code=400, content={"error": "type is required"})
+
+    # Key strictly by session_id and confirm it resolves to a real session dir
+    # directly under sessions/ — never trust the client to point at another path.
+    sessions_root = (BASE_SESSION_DIR / "sessions").resolve()
+    session_dir = (sessions_root / session_id).resolve()
+    if session_dir.parent != sessions_root or not session_dir.is_dir():
+        return JSONResponse(status_code=404, content={"error": "Session not found"})
+
+    record = {
+        "ts": datetime.datetime.now().isoformat(),
+        "type": event_type,
+        "data": data.get("data", {}),
+    }
+    serialized = json.dumps(record)
+    if len(serialized.encode("utf-8")) > _MAX_CLIENT_EVENT_BYTES:
+        return JSONResponse(status_code=413, content={"error": "event too large"})
+
+    logger.info(
+        "[client] session {} event={} data={}", session_id, event_type, record["data"]
+    )
+    try:
+        with (session_dir / "client_events.jsonl").open("a", encoding="utf-8") as f:
+            f.write(serialized + "\n")
+    except Exception as e:
+        logger.warning("[client] could not append client_events.jsonl: {}", e)
 
     return JSONResponse(content={"success": True})
 

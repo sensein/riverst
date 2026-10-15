@@ -17,6 +17,7 @@ from pipecat.services.openai_realtime.events import (
     AudioConfiguration,
     AudioInput,
     AudioOutput,
+    ResponseCreateEvent,
 )
 from pipecat.services.gemini_multimodal_live import GeminiMultimodalLiveLLMService
 from pipecat.services.whisper.stt import WhisperSTTService
@@ -28,6 +29,7 @@ from ..components.llm_tools.animation_handler import AnimationHandler
 from ..components.llm_tools.end_conversation_handler import EndConversationHandler
 from ..processors.speech.lipsync_processor import LipsyncProcessor
 from ..transport.custom_services.kokoro_service import KokoroTTSService
+from ..transport.custom_services.emoji_text_filter import EmojiTextFilter
 from ..utils.device_utils import get_best_device
 from ..transport.custom_services.ollama_service import CustomOLLamaLLMService
 from ..components.memory import MemoryHandler
@@ -80,6 +82,53 @@ class FixedOpenAIRealtimeLLMService(OpenAIRealtimeLLMService):
         # session. This happens when the user barges in during the first ~85ms
         # of the bot's response, before 85ms of audio has accumulated.
         return max(0, int((duration_seconds * 1000) - 85))
+
+    # ── Serialize response.create at the chokepoint (the single-active-response invariant) ──
+    # The Realtime API allows exactly ONE active response. `response.create` is fired from TWO
+    # places in the base service — _create_response() (after a tool result / context frame) and
+    # _handle_user_stopped_speaking() (fired directly when our turn detection owns turns). The base
+    # only marks "a response is active" (_current_assistant_response) when the API ECHOES BACK
+    # conversation.item.added — i.e. AFTER the outbound create — so two creates fired in the same
+    # ~400ms window both read "idle" and the second is rejected with a FATAL
+    # `conversation_already_has_active_response` that drops the session.
+    #
+    # Fix (state-before-fire): gate at send_client_event — the single point every response.create
+    # passes through — and CLAIM the slot SYNCHRONOUSLY before the await. asyncio is cooperative,
+    # so with no await between the check and the set, two creates cannot both pass; the second is
+    # deferred and flushed when the active one ends. We reset to idle on every terminal path
+    # (response.done — which the API sends for completed AND cancelled — and, narrowly, an error on
+    # our own still-REQUESTED create); a stuck non-idle state would mute the model, worse than a crash.
+    _RESP_IDLE = "idle"
+    _RESP_REQUESTED = "requested"   # create sent; the API hasn't opened the response yet
+    _RESP_ACTIVE = "active"         # response is open (conversation.item.added seen)
+
+    async def send_client_event(self, event):
+        if isinstance(event, ResponseCreateEvent):
+            if getattr(self, "_resp_state", self._RESP_IDLE) != self._RESP_IDLE:
+                self._pending_response = True            # one outstanding — defer, don't fire a second
+                return
+            self._resp_state = self._RESP_REQUESTED      # claim the slot BEFORE the await (atomic gate)
+        await super().send_client_event(event)
+
+    async def _handle_evt_conversation_item_added(self, evt):
+        await super()._handle_evt_conversation_item_added(evt)
+        if self._current_assistant_response is not None:
+            self._resp_state = self._RESP_ACTIVE         # the create became a live response
+
+    async def _handle_evt_response_done(self, evt):
+        await super()._handle_evt_response_done(evt)     # clears _current_assistant_response
+        await self._response_became_idle()              # fires for completed AND cancelled responses
+
+    async def _handle_evt_error(self, evt):
+        await super()._handle_evt_error(evt)
+        if getattr(self, "_resp_state", self._RESP_IDLE) == self._RESP_REQUESTED:
+            await self._response_became_idle()          # our create was rejected → no done coming → unwedge
+
+    async def _response_became_idle(self):
+        self._resp_state = self._RESP_IDLE
+        if getattr(self, "_pending_response", False):
+            self._pending_response = False
+            await self._create_response()                # flush the deferred create (re-enters the gate)
 
 
 @dataclass
@@ -186,6 +235,10 @@ class BotComponentFactory:
             "Speech style: Speak naturally with occasional interjections (oh, well, so), "
             "discourse markers (you know, I mean), and brief pauses (uh, um). "
             "Use sparingly; never in numbers or names.\n"
+        )
+        instruction += (
+            "Important: Do not use emojis or any special unicode symbols. "
+            "Your responses are converted directly to audio — emojis will be read aloud as their names.\n"
         )
 
         return instruction.strip()
@@ -308,11 +361,22 @@ class BotComponentFactory:
             return None
 
         if self.stt_type == "openai":
+            # Steer transcription toward the session language + domain. gpt-4o-transcribe's
+            # `language` hint alone doesn't stop accented English being emitted as other scripts
+            # (Cyrillic/Korean seen in testing); naming the language + context in the prompt, with
+            # temperature=0, biases it toward English words. (experiment — candidate fix)
+            _lang = (self.languages or ["english"])[0]
+            _stt_prompt = (self.stt_params or {}).get(
+                "prompt",
+                f"The speaker is a child speaking {_lang} during a reading and "
+                f"vocabulary tutoring session about a storybook.",
+            )
             return OpenAISTTService(
                 api_key=os.getenv("OPENAI_API_KEY"),
                 model=(self.stt_params or {}).get("model", "gpt-4o-transcribe"),
                 audio_passthrough=True,
-                prompt=(self.stt_params or {}).get("prompt", None),
+                prompt=_stt_prompt,
+                temperature=0,
             )
         elif self.stt_type == "whisper":
             best_device = str(get_best_device(options=["mps", "cpu"]))
@@ -369,7 +433,7 @@ class BotComponentFactory:
                 )
                 return FixedOpenAIRealtimeLLMService(
                     api_key=os.getenv("OPENAI_API_KEY"),
-                    model=(self.llm_params or {}).get("model", "gpt-realtime"),
+                    model=(self.llm_params or {}).get("model", "gpt-realtime-1.5"),
                     session_properties=props,
                     start_audio_paused=False,
                     send_transcription_frames=True,
@@ -392,20 +456,27 @@ class BotComponentFactory:
         if not self.tts_type:
             return None
 
+        emoji_filter = EmojiTextFilter()
         if self.tts_type == "openai":
-            return OpenAITTSService(
-                voice=self._get_voice_for_openai(),
-                model=(self.tts_params or {}).get("model", "gpt-4o-mini-tts"),
-            )
+            tts_params = self.tts_params or {}
+            voice = tts_params.get("voice", self._get_voice_for_openai())
+            model = tts_params.get("model", "tts-1")
+            kwargs = dict(voice=voice, model=model, text_filters=[emoji_filter])
+            # instructions only apply to gpt-4o-mini-tts; tts-1/tts-1-hd ignore it
+            instructions = tts_params.get("instructions")
+            if instructions and model == "gpt-4o-mini-tts":
+                kwargs["instructions"] = instructions
+            return OpenAITTSService(**kwargs)
         elif self.tts_type == "elevenlabs":
             return ElevenLabsTTSService(
                 api_key=os.getenv("ELEVENLABS_API_KEY"),
                 voice_id=self._get_voice_id_for_elevenlabs(),
                 model="eleven_flash_v2_5",
+                text_filters=[emoji_filter],
             )
         elif self.tts_type == "kokoro":
             device = get_best_device()
             return KokoroTTSService(
-                voice=self._get_voice_id_for_kokoro(), device=device
+                voice=self._get_voice_id_for_kokoro(), device=device, text_filters=[emoji_filter]
             )
         return None

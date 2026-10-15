@@ -15,11 +15,13 @@ import {
   usePipecatClientTransportState,
 } from "@pipecat-ai/client-react";
 import { RTVIEvent } from "@pipecat-ai/client-js";
+import axios from "axios";
 
 interface Props {
   avatar: { id: number; modelUrl: string; gender: string };
   cameraType: "full" | "mid" | "upper" | "head";
   onAvatarMounted?: () => void;
+  sessionId: string;
 }
 
 interface TalkingHeadAPI {
@@ -42,7 +44,7 @@ interface TalkingHeadAPI {
 }
 
 const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
-  const { avatar, cameraType, onAvatarMounted } = props;
+  const { avatar, cameraType, onAvatarMounted, sessionId } = props;
 
   const divRef = useRef<HTMLDivElement>(null);
   const headRef = useRef<TalkingHeadAPI | null>(null);
@@ -61,9 +63,15 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
   // Load and mount the avatar model
   useEffect(() => {
     let isMounted = true;
+    // Avatar-load sub-timings: how long the TalkingHead JS chunk import takes vs.
+    // the GLB fetch+parse ("show"). Reported once via the client_event channel so we
+    // can see where the avatar-mount portion of the spinner actually goes (and whether
+    // preloading the avatar earlier would help). Purely observational.
+    const tStart = performance.now();
 
     import("./talkinghead/talkinghead.mjs").then((mod) => {
       if (!isMounted || !divRef.current) return;
+      const tImported = performance.now();
 
       const head = new mod.TalkingHead(divRef.current, {
         ttsEndpoint: "N/A",
@@ -76,7 +84,9 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
 
       const body = avatar.gender === "feminine" ? "F" : "M";
 
-      head.showAvatar(
+      // NOTE: the 2nd arg to showAvatar is `onprogress` (fires during GLB download),
+      // not a completion callback — left as-is to preserve existing ready behavior.
+      const shown = head.showAvatar(
         {
           url: avatar.modelUrl,
           body,
@@ -89,6 +99,25 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
           onAvatarMountedRef.current?.();
         }
       );
+
+      // Observe true completion (showAvatar is async) for instrumentation only.
+      Promise.resolve(shown)
+        .then(() => {
+          if (!isMounted) return;
+          const tShown = performance.now();
+          axios
+            .post(`/api/session/${sessionId}/client_event`, {
+              type: "timing",
+              data: {
+                event: "avatar_mount",
+                import_ms: Math.round(tImported - tStart),
+                show_ms: Math.round(tShown - tImported),
+                total_ms: Math.round(tShown - tStart),
+              },
+            })
+            .catch((e) => console.error("avatar_mount timing post failed", e));
+        })
+        .catch(() => {});
     });
 
     return () => {
@@ -96,7 +125,7 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
       headRef.current?.stop?.();
       headRef.current = null;
     };
-  }, [avatar]);
+  }, [avatar, sessionId]);
 
   // Set the camera view once transport is ready
   useEffect(() => {
