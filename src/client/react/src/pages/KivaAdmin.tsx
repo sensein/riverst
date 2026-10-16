@@ -92,6 +92,10 @@ export default function KivaAdmin({ onCreateStudy }: { onCreateStudy: () => void
     setTranscript(t.status === 'fulfilled' ? t.value.data : false);
     setArtifacts(a.status === 'fulfilled' ? a.value.data : { session_id: s.session_id, has_transcript: false, audio: [] });
   };
+  const removeSession = async (s: Session) => {
+    try { await authRequest.delete(`/api/kiva/sessions/${s.session_id}`); await loadSessions(s.subject_person_id); }
+    catch (e: any) { setError(e.response?.data?.detail || 'Could not remove the session.'); }
+  };
   return <>
     {error && <Alert type="error" message={error} closable onClose={() => setError('')} style={{ marginBottom: 16 }} />}
     <Tabs items={[
@@ -120,7 +124,12 @@ export default function KivaAdmin({ onCreateStudy }: { onCreateStudy: () => void
                   { title: 'Started', render: (_: unknown, s: Session) => String(s.started_at || s.created_at || '—') },
                   { title: 'Ended', render: (_: unknown, s: Session) => String(s.ended_at || '—') },
                   { title: 'Status', dataIndex: 'status', render: (v: string) => <Tag>{v}</Tag> },
-                  { title: '', render: (_: unknown, s: Session) => <Button size="small" onClick={() => void openSessionView(s)}>View</Button> },
+                  { title: '', render: (_: unknown, s: Session) => <Space>
+                      <Button size="small" onClick={() => void openSessionView(s)}>View</Button>
+                      <Popconfirm title="Remove this session?" description="Deletes the session and its transcript & audio. This cannot be undone." okText="Remove" okButtonProps={{ danger: true }} onConfirm={() => void removeSession(s)}>
+                        <Button size="small" danger>Remove</Button>
+                      </Popconfirm>
+                    </Space> },
                 ]} />;
             },
           }} />}
