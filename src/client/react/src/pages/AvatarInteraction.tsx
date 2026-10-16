@@ -27,6 +27,22 @@ export default function AvatarInteraction() {
   const location = useLocation()
   const initialSettings = location.state as SettingsState | null
 
+  // KIVA Study Workspace sessions get the classroom scene + whiteboard; Riverst (Original) sessions
+  // stay plain. The flag is passed in navigation state by KivaWorkspace and persisted per-session so
+  // a page reload (which drops router state) keeps the classroom.
+  const [kivaMode] = useState<boolean>(() => {
+    const key = `kiva:${sessionId}`
+    try {
+      if ((location.state as { kiva?: boolean } | null)?.kiva === true) {
+        sessionStorage.setItem(key, '1')
+        return true
+      }
+      return sessionStorage.getItem(key) === '1'
+    } catch {
+      return (location.state as { kiva?: boolean } | null)?.kiva === true
+    }
+  })
+
   const [settings, setSettings] = useState<SettingsState | null>(initialSettings)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -213,6 +229,7 @@ const onSessionEnd = async (delay: number) => {
           }}
           onSessionEnd={onSessionEnd}
           sessionId={sessionId!}
+          kivaMode={kivaMode}
         />
       </RTVIProvider>
     )

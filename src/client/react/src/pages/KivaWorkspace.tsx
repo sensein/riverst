@@ -144,7 +144,7 @@ export default function KivaWorkspace() {
       payload.avatar = avatar;
     }
     const result = await authRequest.post('/api/kiva/sessions', { subject_person_id: subject.person.person_id, study_id: study.study_id, application_key: applicationKey, metadata: payload });
-    navigate(`/avatar-interaction/${result.data.session_id}`);
+    navigate(`/avatar-interaction/${result.data.session_id}`, { state: { kiva: true } });
   });
   if (loading) return <div style={{ padding: 64, textAlign: 'center' }}><Spin size="large" /></div>;
   const instructor = menu?.actor?.roles?.includes('instructor');

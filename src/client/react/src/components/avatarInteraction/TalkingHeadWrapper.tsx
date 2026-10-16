@@ -9,6 +9,7 @@ import {
   forwardRef,
   useCallback,
   useImperativeHandle,
+  type CSSProperties,
 } from "react";
 import {
   useRTVIClientEvent,
@@ -22,6 +23,11 @@ interface Props {
   cameraType: "full" | "mid" | "upper" | "head";
   onAvatarMounted?: () => void;
   sessionId: string;
+  // Optional presentation overrides. Default background is the original light-blue tint; the KIVA
+  // workspace passes a transparent background (classroom is rendered as a separate full-screen layer)
+  // plus a containerStyle transform to shift the avatar to the right.
+  backgroundStyle?: string;
+  containerStyle?: CSSProperties;
 }
 
 interface TalkingHeadAPI {
@@ -44,7 +50,7 @@ interface TalkingHeadAPI {
 }
 
 const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
-  const { avatar, cameraType, onAvatarMounted, sessionId } = props;
+  const { avatar, cameraType, onAvatarMounted, sessionId, backgroundStyle, containerStyle } = props;
 
   const divRef = useRef<HTMLDivElement>(null);
   const headRef = useRef<TalkingHeadAPI | null>(null);
@@ -228,8 +234,9 @@ const TalkingHeadWrapper = forwardRef<object, Props>((props, ref) => {
       style={{
         width: "100%",
         height: "100vh",
-        background: "#BAE0FF1A",
+        background: backgroundStyle ?? "#BAE0FF1A",
         overflow: "hidden",
+        ...containerStyle,
       }}
     />
   );
