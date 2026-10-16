@@ -72,9 +72,9 @@ class KivaBackend:
         return self.studies.save_application(application_key, name)
 
     def list_people(self, actor_account_id: str, *, role: str | None = None,
-                    status: str | None = "active") -> list[dict[str, Any]]:
+                    status: str | None = "active", study_id: str | None = None) -> list[dict[str, Any]]:
         self._require_instructor(actor_account_id)
-        return self.people.find(role=role, status=status)
+        return self.people.find(role=role, status=status, study_id=study_id)
 
     def update_person(self, actor_account_id: str, person_id: str, *,
                       profile_patch: dict[str, Any] | None = None,
@@ -221,9 +221,34 @@ class KivaBackend:
     def update_session(self, actor_account_id: str, session_id: str, *, status: str) -> dict[str, Any]:
         return self.sessions.update(actor_account_id, session_id, status=status)
 
+    def delete_session(self, actor_account_id: str, session_id: str) -> dict[str, Any]:
+        """Hard-delete a session the actor created (DB record only; on-disk artifacts are removed by
+        the API layer, which owns the sessions directory)."""
+        return self.sessions.delete(actor_account_id, session_id)
+
     def mark_disconnected_session(self, session_id: str) -> dict[str, Any]:
         """Internal transport hook: abandon unfinished sessions without downgrading terminal ones."""
         return self.sessions.mark_disconnected(session_id)
+
+    def mark_running_session(self, session_id: str) -> dict[str, Any]:
+        """Internal transport hook: a runtime session's client connected — mark it running."""
+        return self.sessions.mark_running(session_id)
+
+    def finalize_session(self, session_id: str, completed: bool) -> dict[str, Any]:
+        """Internal transport hook: client disconnected — mark the session completed or abandoned."""
+        return self.sessions.finalize(session_id, completed=completed)
+
+    def list_sessions(self, actor_account_id: str, subject_person_id: str,
+                      study_id: str | None = None) -> list[dict[str, Any]]:
+        """Sessions for a learner (optionally within a study). Instructor-gated."""
+        self._require_instructor(actor_account_id)
+        return self.sessions.sessions.list(subject_person_id=subject_person_id, study_id=study_id)
+
+    def get_session(self, actor_account_id: str, session_id: str) -> dict[str, Any]:
+        """Authorize + fetch a KIVA session (raises NotFound if the id isn't a kiva_session) —
+        used to gate access to that session's on-disk artifacts (transcript/audio)."""
+        self._require_instructor(actor_account_id)
+        return self.sessions.sessions.get(session_id)
 
     # Problem tracker -----------------------------------------------------------------------------
     # Reporting / reading / commenting / re-testing are open to any active account; the

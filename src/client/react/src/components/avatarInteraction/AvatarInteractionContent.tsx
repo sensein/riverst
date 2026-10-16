@@ -20,6 +20,7 @@ import axios from 'axios'
 // assuming you’ve moved these out into their own files:
 import FloatGroup from './FloatGroup'
 import SubtitleOverlay from './SubtitleOverlay'
+import Whiteboard from './Whiteboard'
 import TalkingHeadWrapper from './TalkingHeadWrapper'
 
 interface Props {
@@ -30,6 +31,9 @@ interface Props {
   subtitlesEnabled: { user: boolean; bot: boolean }
   onSessionEnd: (delay: number) => Promise<void>
   sessionId: string
+  // KIVA Study Workspace sessions show the classroom scene + left-side whiteboard with the avatar
+  // shifted right. Riverst (Original) sessions stay plain (light background + bottom subtitles).
+  kivaMode?: boolean
 }
 
 export default function AvatarInteractionContent({
@@ -40,6 +44,7 @@ export default function AvatarInteractionContent({
   subtitlesEnabled: initialSubtitlesEnabled,
   onSessionEnd,
   sessionId,
+  kivaMode = false,
 }: Props) {
   // ---- state derived from props ----
   const [cameraType] = useState(initialCameraType)
@@ -235,6 +240,18 @@ export default function AvatarInteractionContent({
 
   return (
     <div className="app">
+      {kivaMode && (
+        // Full-screen classroom scene, behind the avatar. The TalkingHead canvas is transparent,
+        // so the avatar composites onto this layer.
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: "#dce8f3 url('/figures/classroom.svg') center / cover no-repeat",
+            zIndex: 0,
+          }}
+        />
+      )}
       {loading && (
         <div
           style={{
@@ -271,6 +288,8 @@ export default function AvatarInteractionContent({
           avatar={avatar}
           cameraType={cameraType}
           sessionId={sessionId}
+          backgroundStyle={kivaMode ? 'transparent' : undefined}
+          containerStyle={kivaMode ? { transform: 'translateX(-20%)' } : undefined}
           onAvatarMounted={() => {
             if (interactionPhase === 'mounting') {
               setInteractionPhase('ready')
@@ -304,7 +323,11 @@ export default function AvatarInteractionContent({
       )}
 
 
-      <SubtitleOverlay subtitles={subtitleList} />
+      {kivaMode ? (
+        <Whiteboard subtitles={subtitleList} />
+      ) : (
+        <SubtitleOverlay subtitles={subtitleList} />
+      )}
       <PipecatClientAudio />
       {videoFlag && (
         <video

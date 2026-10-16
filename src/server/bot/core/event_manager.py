@@ -12,6 +12,10 @@ from ..components.transcript_uploader import upload_transcript
 from dashboard import analysis as dashboard_analysis
 from dashboard import repository as dashboard_repository
 from dashboard.flow_snapshot import write_snapshot
+from kiva_data.runtime_lifecycle import mark_running_kiva_session, finalize_kiva_session
+
+# Flow nodes that mean the lesson reached its proper end (vs. the user leaving early).
+_KIVA_COMPLETED_NODES = {"closing", "end"}
 
 
 class EventHandlerManager:
@@ -142,10 +146,19 @@ class EventHandlerManager:
                     time.monotonic() - self.session_start,
                 )
             await audiobuffer.start_recording()
+            try:
+                mark_running_kiva_session(self.session_id)  # no-op for non-KIVA sessions
+            except Exception as exc:  # noqa: BLE001 — lifecycle must never break the session
+                logger.warning("kiva lifecycle: mark_running failed for {}: {}", self.session_id, exc)
 
         @pipecat_transport.event_handler("on_client_disconnected")
         async def on_client_disconnected(_, __):
             logger.info("Client disconnected")
+            try:
+                node = getattr(flow_manager, "current_node", None) if flow_manager else None
+                finalize_kiva_session(self.session_id, completed=node in _KIVA_COMPLETED_NODES)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("kiva lifecycle: finalize failed for {}: {}", self.session_id, exc)
             self._start_dashboard_analysis(flow_manager)
             await audiobuffer.stop_recording()
             await task.cancel()

@@ -21,6 +21,13 @@ const UserProfileDropdown: React.FC = () => {
   const isTeacher = hasRole(user, 'teacher');
   const [loading, setLoading] = useState(isResearcher);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [version, setVersion] = useState<string | null>(null);
+
+  useEffect(() => {
+    authRequest.get('/api/kiva/version').then(r => setVersion(r.data?.version || null)).catch(() => {});
+  }, [authRequest]);
+  // "v2.0.1" -> "V2.0.1"; leave commit-hash fallbacks (local dev) as-is.
+  const versionLabel = version && /\d+\.\d+/.test(version) ? 'V' + version.replace(/^v/i, '') : version;
 
   useEffect(() => {
     // Raw session history is for researchers only; teacher-only accounts would get a 403.
@@ -63,7 +70,12 @@ const UserProfileDropdown: React.FC = () => {
   const menuItems = [
     {
       key: 'user-info',
-      label: user?.name || 'User',
+      label: (
+        <span>
+          {user?.name || 'User'}
+          {versionLabel && <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 600, color: '#2656d8' }}>{versionLabel}</span>}
+        </span>
+      ),
       icon: <UserOutlined />,
       disabled: true
     },

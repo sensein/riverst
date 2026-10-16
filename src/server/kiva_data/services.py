@@ -201,6 +201,18 @@ class SessionService:
             data_location=f"sessions/{session_id}" if status in {"completed", "abandoned", "failed"} else None,
         )
 
+    def delete(self, actor_account_id: str, session_id: str) -> dict[str, Any]:
+        """Delete a session only for the account that created it (record only; the caller removes
+        the on-disk artifacts)."""
+        with self.database.transaction() as connection:
+            account = self.people._require(connection, "kiva_account", "account_id", actor_account_id)
+        if account["status"] != "active":
+            raise AuthorizationError("Inactive accounts cannot delete sessions")
+        session = self.sessions.get(session_id)
+        if session["actor_account_id"] != actor_account_id:
+            raise AuthorizationError("Only the session's supervising account can delete it")
+        return self.sessions.delete(session_id)
+
     def mark_disconnected(self, session_id: str) -> dict[str, Any]:
         """Finalize a runtime session as abandoned on transport disconnect.
 
@@ -216,6 +228,25 @@ class SessionService:
             status="abandoned",
             data_location=f"sessions/{session_id}",
         )
+
+    def mark_running(self, session_id: str) -> dict[str, Any]:
+        """Internal runtime hook: the session's client connected — mark it running (sets started_at)."""
+        session = self.sessions.get(session_id)
+        if session["status"] != "created":
+            return session
+        return self.sessions.update(session_id, status="running")
+
+    def finalize(self, session_id: str, *, completed: bool) -> dict[str, Any]:
+        """Internal runtime hook: client disconnected — mark the session terminal. ``completed`` when the
+        flow reached a terminal node, else abandoned. Terminal states are preserved (idempotent)."""
+        session = self.sessions.get(session_id)
+        if session["status"] not in {"created", "running"}:
+            return session
+        if completed:
+            if session["status"] == "created":
+                self.sessions.update(session_id, status="running")
+            return self.sessions.update(session_id, status="completed", data_location=f"sessions/{session_id}")
+        return self.sessions.update(session_id, status="abandoned", data_location=f"sessions/{session_id}")
 
 
 class ProblemService:

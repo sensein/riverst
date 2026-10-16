@@ -359,6 +359,15 @@ class SessionRepository(Repository):
             self._audit(connection, "session.update", "session", session_id, after["actor_person_id"], before, after)
             return after
 
+    def delete(self, session_id: str) -> dict[str, Any]:
+        """Hard-delete a session row (no dependent FK rows reference kiva_session). Returns the
+        record as it was, so the caller can clean up the matching on-disk artifacts."""
+        with self.database.transaction() as connection:
+            before = self._read(connection, session_id)
+            connection.execute("DELETE FROM kiva_session WHERE session_id = ?", (session_id,))
+            self._audit(connection, "session.delete", "session", session_id, before["actor_person_id"], before, None)
+            return before
+
     def get(self, session_id: str) -> dict[str, Any]:
         with self.database.transaction() as connection:
             return self._read(connection, session_id)
