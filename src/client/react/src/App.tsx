@@ -4,11 +4,12 @@
  * Sets up global providers, routing, and code-splitting.
  */
 
-import { ConfigProvider, Tabs } from 'antd';
+import { ConfigProvider, Space, Tabs } from 'antd';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { appTheme } from './theme';
 import FullPageLoader from './components/FullPageLoader';
 import VersionBadge from './components/VersionBadge';
+import UserProfileDropdown from './components/homepage/UserProfileDropdown';
 import ProtectedRoute from './components/ProtectedRoute';
 import TeacherRoute from './components/TeacherRoute';
 import { AuthProvider } from './contexts/AuthContext';
@@ -51,7 +52,10 @@ const WorkspaceTabShell = ({ activeKey, children }: { activeKey: 'original' | 'k
           ]}
           style={{ flex: 1 }}
         />
-        <VersionBadge />
+        <Space size={12}>
+          <VersionBadge />
+          <UserProfileDropdown />
+        </Space>
       </nav>
       {children}
     </>
