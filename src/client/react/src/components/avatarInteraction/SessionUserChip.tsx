@@ -6,9 +6,14 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 
-export default function SessionUserChip() {
+interface SessionUserChipProps {
+  sessionId: string
+}
+
+export default function SessionUserChip({ sessionId }: SessionUserChipProps) {
   const [name, setName] = useState<string | null>(null)
   const [version, setVersion] = useState<string | null>(null)
+  const [removing, setRemoving] = useState(false)
 
   useEffect(() => {
     const token = localStorage.getItem('auth_token')
@@ -31,6 +36,22 @@ export default function SessionUserChip() {
     localStorage.removeItem('selected_avatar')
     localStorage.removeItem('uploaded_avatars')
     window.location.href = '/'
+  }
+
+  const removeSession = async () => {
+    if (removing) return
+    if (!window.confirm('Remove this session and its transcript & audio? This cannot be undone.')) return
+    setRemoving(true)
+    const token = localStorage.getItem('auth_token')
+    try {
+      await axios.delete(`/api/kiva/sessions/${sessionId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      window.location.href = '/workspace'
+    } catch {
+      setRemoving(false)
+      window.alert('Could not remove the session. Please try again.')
+    }
   }
 
   // "v2.0.1" -> "V2.0.1"; leave commit-hash fallbacks (local dev) as-is.
@@ -69,6 +90,23 @@ export default function SessionUserChip() {
           {versionLabel}
         </span>
       )}
+      <button
+        onClick={removeSession}
+        disabled={removing}
+        style={{
+          border: '1px solid #e2b4b4',
+          background: '#fff',
+          color: '#c0392b',
+          borderRadius: 999,
+          padding: '5px 12px',
+          fontSize: 13,
+          fontWeight: 600,
+          cursor: removing ? 'default' : 'pointer',
+          opacity: removing ? 0.6 : 1,
+        }}
+      >
+        {removing ? 'Removing…' : 'Remove session'}
+      </button>
       <button
         onClick={logout}
         style={{

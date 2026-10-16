@@ -62,7 +62,8 @@ def _version_info() -> dict[str, str]:
     return {"version": f"{branch}@{commit}{dirty}", "env": env, "commit": commit, "deployed_at": ""}
 
 
-def create_kiva_router(write_runtime_session: Callable[[str, dict[str, Any]], None]) -> APIRouter:
+def create_kiva_router(write_runtime_session: Callable[[str, dict[str, Any]], None],
+                       delete_runtime_session: Callable[[str], None] | None = None) -> APIRouter:
     path = Path(os.getenv("KIVA_DB_PATH", str(Path.home() / "riverst-data" / "kiva.sqlite3")))
     database = KivaDatabase(path)
     database.initialize(Path(__file__).parent / "kiva_data" / "schema.sql")
@@ -222,6 +223,15 @@ def create_kiva_router(write_runtime_session: Callable[[str, dict[str, Any]], No
         if status not in {"running", "completed", "abandoned", "failed"}:
             raise HTTPException(status_code=400, detail="Invalid session lifecycle status")
         return run(lambda: backend.update_session(logged_in["account"]["account_id"], session_id, status=status))
+
+    @router.delete("/sessions/{session_id}")
+    def delete_session(session_id: str, current_user: dict = Depends(get_current_user)):
+        """Remove a session: its DB record (actor-owned) AND its on-disk artifacts."""
+        logged_in = run(lambda: actor(current_user))
+        result = run(lambda: backend.delete_session(logged_in["account"]["account_id"], session_id))
+        if delete_runtime_session is not None:
+            delete_runtime_session(session_id)
+        return result
 
     # Problem tracker ------------------------------------------------------------------------------
 

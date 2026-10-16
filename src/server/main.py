@@ -91,7 +91,14 @@ def _write_kiva_runtime_session(session_id: str, config: dict) -> None:
         json.dump(config, file, indent=2)
 
 
-app.include_router(create_kiva_router(_write_kiva_runtime_session))
+def _delete_kiva_runtime_session(session_id: str) -> None:
+    """Remove a session's on-disk artifacts (config/transcript/audios). Paired with the DB delete so
+    'remove session' leaves nothing behind. session_id is a kiva-issued UUID (no path traversal)."""
+    import shutil
+    shutil.rmtree(BASE_SESSION_DIR / "sessions" / session_id, ignore_errors=True)
+
+
+app.include_router(create_kiva_router(_write_kiva_runtime_session, _delete_kiva_runtime_session))
 
 
 @app.on_event("startup")

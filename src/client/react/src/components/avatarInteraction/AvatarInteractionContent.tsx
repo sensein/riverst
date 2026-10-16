@@ -324,7 +324,7 @@ export default function AvatarInteractionContent({
       )}
 
 
-      {kivaMode && <SessionUserChip />}
+      {kivaMode && <SessionUserChip sessionId={sessionId} />}
       {kivaMode ? (
         <Whiteboard subtitles={subtitleList} />
       ) : (

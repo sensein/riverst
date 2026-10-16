@@ -221,6 +221,11 @@ class KivaBackend:
     def update_session(self, actor_account_id: str, session_id: str, *, status: str) -> dict[str, Any]:
         return self.sessions.update(actor_account_id, session_id, status=status)
 
+    def delete_session(self, actor_account_id: str, session_id: str) -> dict[str, Any]:
+        """Hard-delete a session the actor created (DB record only; on-disk artifacts are removed by
+        the API layer, which owns the sessions directory)."""
+        return self.sessions.delete(actor_account_id, session_id)
+
     def mark_disconnected_session(self, session_id: str) -> dict[str, Any]:
         """Internal transport hook: abandon unfinished sessions without downgrading terminal ones."""
         return self.sessions.mark_disconnected(session_id)
