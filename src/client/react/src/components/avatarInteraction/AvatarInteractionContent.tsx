@@ -21,6 +21,7 @@ import axios from 'axios'
 import FloatGroup from './FloatGroup'
 import SubtitleOverlay from './SubtitleOverlay'
 import Whiteboard from './Whiteboard'
+import SessionUserChip from './SessionUserChip'
 import TalkingHeadWrapper from './TalkingHeadWrapper'
 
 interface Props {
@@ -289,7 +290,7 @@ export default function AvatarInteractionContent({
           cameraType={cameraType}
           sessionId={sessionId}
           backgroundStyle={kivaMode ? 'transparent' : undefined}
-          containerStyle={kivaMode ? { transform: 'translateX(-10%)' } : undefined}
+          containerStyle={kivaMode ? { transform: 'translateX(-20%)' } : undefined}
           onAvatarMounted={() => {
             if (interactionPhase === 'mounting') {
               setInteractionPhase('ready')
@@ -323,6 +324,7 @@ export default function AvatarInteractionContent({
       )}
 
 
+      {kivaMode && <SessionUserChip />}
       {kivaMode ? (
         <Whiteboard subtitles={subtitleList} />
       ) : (
