@@ -8,6 +8,7 @@ import { ConfigProvider, Tabs } from 'antd';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { appTheme } from './theme';
 import FullPageLoader from './components/FullPageLoader';
+import VersionBadge from './components/VersionBadge';
 import ProtectedRoute from './components/ProtectedRoute';
 import TeacherRoute from './components/TeacherRoute';
 import { AuthProvider } from './contexts/AuthContext';
@@ -40,7 +41,7 @@ const WorkspaceTabShell = ({ activeKey, children }: { activeKey: 'original' | 'k
   const navigate = useNavigate();
   return (
     <>
-      <nav aria-label="Workspace pages" style={{ padding: '4px 24px 0', background: '#fff', borderBottom: '1px solid #e7eaf0' }}>
+      <nav aria-label="Workspace pages" style={{ padding: '4px 24px 0', background: '#fff', borderBottom: '1px solid #e7eaf0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
         <Tabs
           activeKey={activeKey}
           onChange={(key) => navigate(key === 'original' ? '/' : '/workspace')}
@@ -48,7 +49,9 @@ const WorkspaceTabShell = ({ activeKey, children }: { activeKey: 'original' | 'k
             { key: 'original', label: 'Riverst (Original)' },
             { key: 'kiva', label: 'KIVA Study Workspace' },
           ]}
+          style={{ flex: 1 }}
         />
+        <VersionBadge />
       </nav>
       {children}
     </>

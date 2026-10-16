@@ -32,7 +32,7 @@
   </g>
 
   <!-- window (left) -->
-  <g transform="translate(1050,0)">
+  <g transform="translate(-80,-60)">
     <rect x="95" y="120" width="360" height="330" rx="8" fill="#ffffff"/>
     <rect x="110" y="135" width="330" height="300" rx="4" fill="url(#sky)"/>
     <circle cx="360" cy="215" r="110" fill="url(#sun)"/>
