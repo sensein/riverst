@@ -10,6 +10,8 @@ from pprint import pformat
 import operator
 import json
 
+from dashboard.flow_snapshot import SESSION_DIR_KEY, write_snapshot
+
 
 class IndexableVariableHandler:
     """Handles retrieval and indexing of variables from flow state."""
@@ -315,6 +317,9 @@ async def general_handler(args: FlowArgs, flow_manager: FlowManager) -> Tuple[Di
 
     result = {"status": "success" if complete else "error", "message": message}
 
+    # Keep the tutor's word decisions on disk for the teacher dashboard
+    write_snapshot(flow_manager.state.get(SESSION_DIR_KEY), flow_manager)
+
     return result, next_node
 
 
@@ -388,6 +393,17 @@ async def story_context_lookup_handler(args: Union[FlowArgs, dict], flow_manager
             return None
         return idx if 1 <= idx <= len(items) else -1
 
+    def _persist_chapter(idx: int) -> None:
+        """Remember the established chapter for the rest of the session so warm-up and later tool
+        calls stop re-asking 'what chapter are you on?'. Writes both the resolver fallback
+        (state.user.index) and the LLM-visible Key Information ('Chapter Number')."""
+        flow_manager.state.setdefault("user", {})["index"] = idx
+        rc = activity.get("reading_context")
+        if isinstance(rc, dict):
+            ki = rc.setdefault("key_information", {})
+            if isinstance(ki, dict):
+                ki["Chapter Number"] = idx
+
     if context_type == "book_summary":
         reading_ctx = activity.get("reading_context")
         if not reading_ctx:
@@ -416,6 +432,7 @@ async def story_context_lookup_handler(args: Union[FlowArgs, dict], flow_manager
                 "status": "error",
                 "message": f"chapter {chapter_index} is out of range. Valid chapters: 1–{len(chapters)}.",
             }
+        _persist_chapter(idx)
         return {"status": "success", "data": chapters[idx - 1]["chapter_summary"]}
 
     if context_type == "vocab_word":
@@ -439,6 +456,7 @@ async def story_context_lookup_handler(args: Union[FlowArgs, dict], flow_manager
                 "status": "error",
                 "message": f"chapter {chapter_index} is out of range. Valid chapters: 1–{len(vocab_chapters)}.",
             }
+        _persist_chapter(idx)
         vocab_words = vocab_chapters[idx - 1]["vocab_words"]
         if not word:
             available = {grade: [w["word"] for w in words] for grade, words in vocab_words.items()}

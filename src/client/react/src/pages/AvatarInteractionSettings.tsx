@@ -1,18 +1,20 @@
 // src/pages/AvatarInteractionSettings.tsx
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { Spin, Alert, Modal, Button, QRCode, Typography, Divider, Tooltip } from 'antd';
+import { Spin, Alert, Modal, Button, QRCode, Typography, Divider, Tooltip, App } from 'antd';
 import { CopyOutlined } from '@ant-design/icons';
 import { LoadingOutlined } from '@ant-design/icons';
 
 import axios from 'axios';
 import SettingsForm from '../components/SettingsForm';
 import { useAuth } from '../contexts/AuthContext';
+import { httpDetail, httpStatus } from '../utils/studentCode';
 const { Paragraph, Text } = Typography;
 
 export default function AvatarInteractionSettings() {
   const location = useLocation();
   const { authRequest } = useAuth();
+  const { message } = App.useApp();
   interface LocationState {
     settingsUrl?: string;
   }
@@ -83,6 +85,11 @@ export default function AvatarInteractionSettings() {
       setModalVisible(true);
     } catch (err) {
       console.error('Failed to create session:', err);
+      if (httpStatus(err) === 422) {
+        message.error(httpDetail(err) ?? "We didn't recognize that student code. Check with your teacher.");
+      } else {
+        message.error("We couldn't start the session. Check your connection and try again.");
+      }
     }
   };
 

@@ -31,6 +31,7 @@ const clearUserSessionStorage = () => {
 export const makeAuthenticatedRequest = (token: string | null) => ({
   get: (url: string, config = {}) => axios.get(url, withAuthHeaders(token, config)),
   post: (url: string, data: any, config = {}) => axios.post(url, data, withAuthHeaders(token, config)),
+  patch: (url: string, data: any, config = {}) => axios.patch(url, data, withAuthHeaders(token, config)),
   put: (url: string, data: any, config = {}) => axios.put(url, data, withAuthHeaders(token, config)),
   delete: (url: string, config = {}) => axios.delete(url, withAuthHeaders(token, config))
 });
@@ -38,10 +39,13 @@ export const makeAuthenticatedRequest = (token: string | null) => ({
 /**
  * User information structure.
  */
-interface User {
+export interface User {
   email: string;
   name: string;
+  /** Account roles from the allowlist: "researcher" and/or "teacher". */
+  roles?: string[];
 }
+
 
 /**
  * AuthContextType
@@ -187,6 +191,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(null);
     setToken(null);
   };
+
+  // On a 401 (expired/invalid token) transparently recover instead of silently failing the action:
+  // bypass auth -> fetch a fresh token and replay the request once; Google auth -> force re-login.
+  useEffect(() => {
+    const id = axios.interceptors.response.use(
+      (res) => res,
+      async (error) => {
+        const original: any = error.config || {};
+        const url = String(original.url || '');
+        if (error.response?.status === 401 && !original.__isRetry && !url.includes('/api/auth/')) {
+          original.__isRetry = true;
+          try {
+            const bypass = await axios.post('/api/auth/bypass');   // 403s if Google auth is on
+            const fresh = bypass.data.access_token;
+            localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, fresh);
+            setToken(fresh);
+            original.headers = { ...(original.headers || {}), Authorization: `Bearer ${fresh}` };
+            return axios(original);
+          } catch {
+            logout();   // can't silently refresh (Google auth) -> back to login
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+    return () => axios.interceptors.response.eject(id);
+  }, []);
 
   const value: AuthContextType = {
     user,

@@ -4,15 +4,16 @@
  * Sets up global providers, routing, and code-splitting.
  */
 
-import { ConfigProvider } from 'antd';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Homepage from './pages/Homepage';
+import { ConfigProvider, Tabs } from 'antd';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { appTheme } from './theme';
 import FullPageLoader from './components/FullPageLoader';
+import UserProfileDropdown from './components/homepage/UserProfileDropdown';
 import ProtectedRoute from './components/ProtectedRoute';
+import TeacherRoute from './components/TeacherRoute';
 import { AuthProvider } from './contexts/AuthContext';
 
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, type ReactNode } from 'react';
 
 /**
  * Lazy-loaded pages for code-splitting and faster initial load.
@@ -27,6 +28,35 @@ const LoginPage = lazy(() => import('./pages/LoginPage'));
 const ErrorPage = lazy(() => import('./pages/ErrorPage'));
 const AudioPlayerPage = lazy(() => import('./pages/AudioPlayerPage'));
 const ListenToAudioBookPage = lazy(() => import('./pages/ListenToAudioBookPage'));
+const Homepage = lazy(() => import('./pages/Homepage'));
+const KivaWorkspace = lazy(() => import('./pages/KivaWorkspace'));
+const KivaCodeEntry = lazy(() => import('./pages/KivaCodeEntry'));
+const ClassOverview = lazy(() => import('./pages/teacher/ClassOverview'));
+const TeacherStudentDetail = lazy(() => import('./pages/teacher/StudentDetail'));
+const TeacherSessionDetail = lazy(() => import('./pages/teacher/SessionDetail'));
+const WordInsights = lazy(() => import('./pages/teacher/WordInsights'));
+const StudentReport = lazy(() => import('./pages/teacher/StudentReport'));
+
+const WorkspaceTabShell = ({ activeKey, children }: { activeKey: 'original' | 'kiva'; children: ReactNode }) => {
+  const navigate = useNavigate();
+  return (
+    <>
+      <nav aria-label="Workspace pages" style={{ padding: '4px 24px 0', background: '#fff', borderBottom: '1px solid #e7eaf0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+        <Tabs
+          activeKey={activeKey}
+          onChange={(key) => navigate(key === 'original' ? '/' : '/workspace')}
+          items={[
+            { key: 'original', label: 'Riverst (Original)' },
+            { key: 'kiva', label: 'KIVA Study Workspace' },
+          ]}
+          style={{ flex: 1 }}
+        />
+        <UserProfileDropdown />
+      </nav>
+      {children}
+    </>
+  );
+};
 
 /**
  * AuthenticatedRoutes
@@ -44,10 +74,11 @@ const AuthenticatedRoutes = () => (
         path="/"
         element={
           <ProtectedRoute>
-            <Homepage />
+            <WorkspaceTabShell activeKey="original"><Homepage /></WorkspaceTabShell>
           </ProtectedRoute>
         }
       />
+      <Route path="/workspace" element={<ProtectedRoute><WorkspaceTabShell activeKey="kiva"><KivaWorkspace /></WorkspaceTabShell></ProtectedRoute>} />
       <Route
         path="/avatar-upload"
         element={
@@ -94,6 +125,56 @@ const AuthenticatedRoutes = () => (
           <ProtectedRoute>
             <ListenToAudioBookPage />
           </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/kiva"
+        element={
+          <ProtectedRoute>
+            <KivaCodeEntry />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Teacher dashboard (teacher role only) */}
+      <Route
+        path="/teacher"
+        element={
+          <TeacherRoute>
+            <ClassOverview />
+          </TeacherRoute>
+        }
+      />
+      <Route
+        path="/teacher/words"
+        element={
+          <TeacherRoute>
+            <WordInsights />
+          </TeacherRoute>
+        }
+      />
+      <Route
+        path="/teacher/students/:id"
+        element={
+          <TeacherRoute>
+            <TeacherStudentDetail />
+          </TeacherRoute>
+        }
+      />
+      <Route
+        path="/teacher/students/:id/report"
+        element={
+          <TeacherRoute>
+            <StudentReport />
+          </TeacherRoute>
+        }
+      />
+      <Route
+        path="/teacher/sessions/:id"
+        element={
+          <TeacherRoute>
+            <TeacherSessionDetail />
+          </TeacherRoute>
         }
       />
       <Route path="*" element={<ErrorPage />} />

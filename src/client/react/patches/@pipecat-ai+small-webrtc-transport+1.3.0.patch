@@ -1,0 +1,24 @@
+diff --git a/node_modules/@pipecat-ai/small-webrtc-transport/dist/index.js b/node_modules/@pipecat-ai/small-webrtc-transport/dist/index.js
+index e6425db..edea1a2 100644
+--- a/node_modules/@pipecat-ai/small-webrtc-transport/dist/index.js
++++ b/node_modules/@pipecat-ai/small-webrtc-transport/dist/index.js
+@@ -3131,6 +3131,7 @@ class $8381b73e1f76ead9$export$62043589d053a879 extends (0, $7ytRB$pipecataiclie
+             await this.pc.setLocalDescription(offer);
+             // Wait for ICE gathering to complete
+             if (this._waitForICEGathering) await new Promise((resolve)=>{
++                setTimeout(resolve, 1500); // KIVA: cap ICE-gathering wait — on restrictive/symmetric-NAT networks gathering never reaches "complete"; the TURN relay candidate is gathered in <1s
+                 if (this.pc.iceGatheringState === "complete") resolve();
+                 else {
+                     const checkState = ()=>{
+diff --git a/node_modules/@pipecat-ai/small-webrtc-transport/dist/index.module.js b/node_modules/@pipecat-ai/small-webrtc-transport/dist/index.module.js
+index 2f58208..5f0def2 100644
+--- a/node_modules/@pipecat-ai/small-webrtc-transport/dist/index.module.js
++++ b/node_modules/@pipecat-ai/small-webrtc-transport/dist/index.module.js
+@@ -3107,6 +3107,7 @@ class $b31644dc78dca54a$export$62043589d053a879 extends (0, $99wTV$Transport) {
+             await this.pc.setLocalDescription(offer);
+             // Wait for ICE gathering to complete
+             if (this._waitForICEGathering) await new Promise((resolve)=>{
++                setTimeout(resolve, 1500); // KIVA: cap ICE-gathering wait — on restrictive/symmetric-NAT networks gathering never reaches "complete"; the TURN relay candidate is gathered in <1s
+                 if (this.pc.iceGatheringState === "complete") resolve();
+                 else {
+                     const checkState = ()=>{

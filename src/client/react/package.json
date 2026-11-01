@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "format": "prettier --write .",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@ant-design/v5-patch-for-react-19": "~1.0.3",
@@ -41,6 +42,7 @@
     "eslint-plugin-react-hooks": "~5.2.0",
     "eslint-plugin-react-refresh": "~0.4.19",
     "globals": "~16.0.0",
+    "patch-package": "^8.0.1",
     "prettier": "~3.6.2",
     "typescript": "~5.8.3",
     "typescript-eslint": "~8.37.0",

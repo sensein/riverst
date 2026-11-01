@@ -9,6 +9,13 @@ from ..utils.audio_utils import save_audio_file
 # the ANALYZE_AUDIO branch below — importing it here loaded the whole analysis stack at startup
 # even when ANALYZE_AUDIO=false, bloating the process and thrashing swap.
 from ..components.transcript_uploader import upload_transcript
+from dashboard import analysis as dashboard_analysis
+from dashboard import repository as dashboard_repository
+from dashboard.flow_snapshot import write_snapshot
+from kiva_data.runtime_lifecycle import mark_running_kiva_session, finalize_kiva_session
+
+# Flow nodes that mean the lesson reached its proper end (vs. the user leaving early).
+_KIVA_COMPLETED_NODES = {"closing", "end"}
 
 
 class EventHandlerManager:
@@ -111,7 +118,13 @@ class EventHandlerManager:
                 await task.queue_frames([context_aggregator.user().get_context_frame()])
 
     def register_transport_handlers(
-        self, pipecat_transport, audiobuffer, task, metrics_logger, video_buffer
+        self,
+        pipecat_transport,
+        audiobuffer,
+        task,
+        metrics_logger,
+        video_buffer,
+        flow_manager=None,
     ):
         """Register WebRTC transport event handlers.
 
@@ -121,6 +134,7 @@ class EventHandlerManager:
             task: Pipeline task instance
             metrics_logger: Metrics logger instance
             video_buffer: Video buffer processor instance
+            flow_manager: Flow manager instance (can be None)
         """
 
         @pipecat_transport.event_handler("on_client_connected")
@@ -132,10 +146,20 @@ class EventHandlerManager:
                     time.monotonic() - self.session_start,
                 )
             await audiobuffer.start_recording()
+            try:
+                mark_running_kiva_session(self.session_id)  # no-op for non-KIVA sessions
+            except Exception as exc:  # noqa: BLE001 — lifecycle must never break the session
+                logger.warning("kiva lifecycle: mark_running failed for {}: {}", self.session_id, exc)
 
         @pipecat_transport.event_handler("on_client_disconnected")
         async def on_client_disconnected(_, __):
             logger.info("Client disconnected")
+            try:
+                node = getattr(flow_manager, "current_node", None) if flow_manager else None
+                finalize_kiva_session(self.session_id, completed=node in _KIVA_COMPLETED_NODES)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("kiva lifecycle: finalize failed for {}: {}", self.session_id, exc)
+            self._start_dashboard_analysis(flow_manager)
             await audiobuffer.stop_recording()
             await task.cancel()
             await metrics_logger.aggregate_and_save()
@@ -208,5 +232,27 @@ class EventHandlerManager:
         self.register_audio_handlers(audiobuffer)
         self.register_rtvi_handlers(rtvi, task, context_aggregator, flow_manager)
         self.register_transport_handlers(
-            pipecat_transport, audiobuffer, task, metrics_logger, video_buffer
+            pipecat_transport,
+            audiobuffer,
+            task,
+            metrics_logger,
+            video_buffer,
+            flow_manager,
         )
+
+    def _start_dashboard_analysis(self, flow_manager):
+        """Save the final flow state and start the teacher-dashboard analysis for student sessions.
+
+        Never raises, so session teardown always continues.
+
+        Args:
+            flow_manager: Flow manager instance (can be None)
+        """
+        try:
+            write_snapshot(self.session_dir, flow_manager)
+            session_id = os.path.basename(os.path.normpath(self.session_dir))
+            if dashboard_repository.get_session_record_by_dir(session_id) is not None:
+                dashboard_analysis.ingest_flow_state(session_id)
+                dashboard_analysis.schedule_post_session(session_id)
+        except Exception as e:
+            logger.error(f"Could not start teacher dashboard analysis: {e}")
