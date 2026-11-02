@@ -23,5 +23,10 @@
     "id": 5,
     "modelUrl": "/avatars/rocketbox_teacher.glb?morphTargets=ARKit,Oculus+Visemes,mouthOpen,mouthSmile,eyesClosed,eyesLookUp,eyesLookDown&textureSizeLimit=1024&textureFormat=png",
     "gender": "feminine"
+  },
+  {
+    "id": 6,
+    "modelUrl": "/avatars/rocketbox_teacher_male.glb?morphTargets=ARKit,Oculus+Visemes,mouthOpen,mouthSmile,eyesClosed,eyesLookUp,eyesLookDown&textureSizeLimit=1024&textureFormat=png",
+    "gender": "masculine"
   }
 ]

@@ -1,4 +1,4 @@
-"""Build the teacher avatar (src/client/react/public/avatars/rocketbox_teacher.glb).
+"""Build the teacher avatars (src/client/react/public/avatars/rocketbox_teacher*.glb).
 
 Converts a Microsoft Rocketbox avatar (MIT, github.com/microsoft/Microsoft-Rocketbox) into a TalkingHead-ready GLB:
 the 3ds Max Biped rig is rebuilt as a Ready Player Me-named skeleton (hips at 1 m, RPM bone roll), facial bones are
@@ -6,12 +6,16 @@ folded into Head, and the shipped ARKit (AK_*) and viseme (AA_VI_*) blendshapes 
 plus the extra mouthOpen, mouthSmile, eyesClosed, eyesLookUp and eyesLookDown keys. A soft smile is baked into
 the rest shape (strength set by the REST_SCALE env var, default 2.2) so the avatar looks friendly when idle.
 Optional outfit step: JEANS_TINT re-dyes the jeans (sRGB hex) and SHOES_GLB swaps the boots for the sneakers of
-another GLB built by this script; the jeans are run down to the ankle to meet them.
+another GLB built by this script; the jeans are run down to the ankle to meet them. DYE re-dyes neutral fabric
+by height band and UNTUCK=1 pulls a tucked-in shirt out over the waistband.
 
 Requirements (as used to build the committed GLB):
   - Blender 5.0.1
   - Rocketbox avatar folder, e.g. Assets/Avatars/Adults/Female_Adult_14 (Export/*_facial.fbx and Textures/*.tga)
-  - for the committed GLB: REST_SCALE=2.2 JEANS_TINT=6584ad SHOES_GLB=<Sports_Female_02 built by this script>
+  - rocketbox_teacher.glb: Female_Adult_14 with REST_SCALE=2.2 JEANS_TINT=6584ad
+    SHOES_GLB=<Sports_Female_02 built by this script>
+  - rocketbox_teacher_male.glb: Professions/Business_Male_06 with REST_SCALE=3.0 UNTUCK=1
+    DYE="1.09:1.80=6f93c8,0.05:1.15=b8a07a"
   - talkinghead-addon.py from github.com/met4citizen/TalkingHead/tree/main/blender/MPFB, in <talkinghead_dir>
 
 Run: Blender -b --python build_rocketbox_avatar.py -- <talkinghead_dir> <avatar_dir> <out.glb>
@@ -251,6 +255,11 @@ for m in mesh.data.materials:
 # Rocketbox avatars share one UV layout and skeleton, so the donor's shoes fit after aligning the feet.
 SHOES_GLB = os.environ.get("SHOES_GLB", "")  # a GLB built by this script, e.g. from Sports_Female_02
 JEANS_TINT = os.environ.get("JEANS_TINT", "")  # sRGB hex of the denim wash, e.g. "8fa9c9"
+# DYE="zlo:zhi=hex,..." re-dyes the neutral (white/grey/black) fabric of the body UV islands that lie within each
+# height band, e.g. "1.09:1.80=4a78b5" for a white shirt. UNTUCK=1 pulls a tucked-in shirt out over the belt.
+DYE = os.environ.get("DYE", "")
+UNTUCK = os.environ.get("UNTUCK", "") == "1"
+UNTUCK_DROP = float(os.environ.get("UNTUCK_DROP", "0.11"))  # how far the hem hangs below the waistband (m)
 
 
 def body_islands(obj):
@@ -316,29 +325,108 @@ def uv_mask(obj, faces, w, h, grow=3):
     return mask
 
 
-if SHOES_GLB or JEANS_TINT:
+def body_pixels():
+    """The body colour texture and its pixels as an (h, w, 4) float array."""
+    body_mat = next(m for m in mesh.data.materials if m.name.endswith("_body"))
+    image = next(n.image for n in body_mat.node_tree.nodes if n.type == "TEX_IMAGE" and "color" in n.image.name)
+    px = np.empty(image.size[0] * image.size[1] * 4, np.float32)
+    image.pixels.foreach_get(px)
+    return image, px.reshape(image.size[1], image.size[0], 4)
+
+
+def dye(px, mask, hexcol, gamma=None):
+    """Re-dye the masked pixels, keeping the fabric's own shading, folds and seams."""
+    lum = px[..., :3] @ np.array([0.2126, 0.7152, 0.0722], np.float32)
+    tint = np.array([int(hexcol[i:i + 2], 16) / 255 for i in (0, 2, 4)], np.float32)
+    mean = lum[mask].mean()
+    if gamma is None:
+        gamma = 0.8 if mean > 0.25 else 0.45  # dark cloth: its noise would be blown up when lightened
+    dyed = np.clip(tint * (lum / mean)[..., None] ** gamma, 0, 1)
+    px[..., :3][mask] = dyed[mask]
+
+
+if SHOES_GLB or JEANS_TINT or DYE or UNTUCK:
     import bmesh
     import numpy as np
     islands = body_islands(mesh)
-    legs = [faces for faces, z0, z1 in islands if z0 < 0.3 and z1 > 0.9]  # the two jeans legs
+    legs = [faces for faces, z0, z1 in islands if z0 < 0.3 and z1 > 0.9]  # the two trouser legs
     boots = [f for faces, z0, z1 in islands if z1 < 0.25 for f in faces]
 
 if JEANS_TINT:
-    body_mat = next(m for m in mesh.data.materials if m.name.endswith("_body"))
-    image = next(n.image for n in body_mat.node_tree.nodes if n.type == "TEX_IMAGE" and "color" in n.image.name)
-    w, h = image.size
-    px = np.empty(w * h * 4, np.float32)
-    image.pixels.foreach_get(px)
-    px = px.reshape(h, w, 4)
-    m = uv_mask(mesh, [f for faces in legs for f in faces], w, h)
-    lum = px[..., :3] @ np.array([0.2126, 0.7152, 0.0722], np.float32)
-    tint = np.array([int(JEANS_TINT[i:i + 2], 16) / 255 for i in (0, 2, 4)], np.float32)
-    # keep the denim's own fades and seams, re-dyed to the new wash
-    dyed = np.clip(tint * (lum / lum[m].mean())[..., None] ** 0.8, 0, 1)
-    px[..., :3][m] = dyed[m]
+    image, px = body_pixels()
+    m = uv_mask(mesh, [f for faces in legs for f in faces], image.size[0], image.size[1])
+    dye(px, m, JEANS_TINT, gamma=0.8)
     image.pixels.foreach_set(px.ravel())
     image.pack()
     print("JEANS recoloured %d px" % m.sum())
+
+if DYE:
+    image, px = body_pixels()
+    rgb = px[..., :3]
+    neutral = (rgb.max(-1) - rgb.min(-1)) / np.maximum(rgb.max(-1), 1e-4) < 0.3  # fabric, not skin
+    for spec in DYE.split(","):
+        band, hexcol = spec.split("=")
+        zlo, zhi = (float(z) for z in band.split(":"))
+        faces = [f for fs, z0, z1 in islands if z0 >= zlo and z1 <= zhi for f in fs]
+        m = uv_mask(mesh, faces, image.size[0], image.size[1]) & neutral
+        dye(px, m, hexcol)
+        print("DYE %s %d faces %d px" % (spec, len(faces), m.sum()))
+    image.pixels.foreach_set(px.ravel())
+    image.pack()
+
+if UNTUCK:
+    # Pull a tucked-in shirt out over the waistband: run its hem below the belt, keep it just outside the
+    # trousers, and let the new skirt of the shirt follow the hips and thighs like the trousers do.
+    from mathutils import kdtree
+    me = mesh.data
+    hips_z = (arm.matrix_world @ arm.data.bones["Hips"].head_local).z
+    torso = max((fs for fs, z0, z1 in islands if hips_z + 0.05 < z0 < hips_z + 0.2), key=len)
+    shirt_v = sorted({v for f in torso for v in me.polygons[f].vertices})
+    pant_v = sorted({v for fs in legs for f in fs for v in me.polygons[f].vertices})
+    top = max(me.vertices[v].co.z for v in pant_v)  # top of the waistband
+    hem = min(me.vertices[v].co.z for v in shirt_v)
+    new_hem, z1 = top - UNTUCK_DROP, top + 0.12
+    tree = kdtree.KDTree(len(pant_v))
+    for v in pant_v:
+        tree.insert(me.vertices[v].co, v)
+    tree.balance()
+    band = [me.vertices[v].co for v in pant_v if me.vertices[v].co.z > top - 0.15]
+    cx, cy = sum(c.x for c in band) / len(band), sum(c.y for c in band) / len(band)
+    gname = {g.index: g.name for g in mesh.vertex_groups}
+
+    def weights(v):
+        return {gname[ge.group]: ge.weight for ge in me.vertices[v].groups}
+
+    moved = {}
+    for v in shirt_v:
+        co = me.vertices[v].co
+        if co.z >= z1:
+            continue
+        z = new_hem + (co.z - hem) * (z1 - new_hem) / (z1 - hem)
+        pco, pv, _ = tree.find(Vector((co.x, co.y, z)))
+        d = Vector((co.x - cx, co.y - cy))
+        need = Vector((pco.x - cx, pco.y - cy)).length + 0.012 + 0.02 * (z1 - z) / (z1 - new_hem)  # slight flare
+        if d.length < need:
+            d *= need / max(d.length, 1e-6)
+        t = min(max((top - z) / (top - new_hem), 0.0), 1.0)
+        moved[v] = (Vector((cx + d.x, cy + d.y, z)), pv, t)
+    old_w = {v: weights(v) for v in moved}
+    pant_w = {pv: weights(pv) for _, pv, _ in moved.values()}
+    for coords in [k.data for k in kb] + [me.vertices]:
+        for v, (co, _, _) in moved.items():
+            coords[v].co = co
+    for v, (_, pv, t) in moved.items():
+        if t <= 0:
+            continue
+        ws, wp = old_w[v], pant_w[pv]
+        for n in set(ws) | set(wp):
+            w = ws.get(n, 0.0) * (1 - t) + wp.get(n, 0.0) * t
+            g = mesh.vertex_groups.get(n) or mesh.vertex_groups.new(name=n)
+            if w > 1e-4:
+                g.add([v], w, "REPLACE")
+            else:
+                g.remove([v])
+    print("UNTUCK hem %.3f -> %.3f (waistband %.3f), moved %d verts" % (hem, new_hem, top, len(moved)))
 
 if SHOES_GLB:
     # run the jeans down to the ankle, where the boot shafts used to cover them

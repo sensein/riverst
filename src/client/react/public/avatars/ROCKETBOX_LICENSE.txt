@@ -1,5 +1,7 @@
 rocketbox_teacher.glb is derived from Microsoft Rocketbox avatar Female_Adult_14 (sneakers from Sports_Female_02)
-(https://github.com/microsoft/Microsoft-Rocketbox), converted with notes/avatars/build_rocketbox_avatar.py.
+rocketbox_teacher_male.glb is derived from Microsoft Rocketbox avatar Business_Male_06.
+Both come from https://github.com/microsoft/Microsoft-Rocketbox and are converted with
+notes/avatars/build_rocketbox_avatar.py.
 
 MIT License
 
